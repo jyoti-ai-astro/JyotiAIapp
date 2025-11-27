@@ -51,9 +51,6 @@ export const cosmicChromaticShader = {
     uniform float uPrismStrength;
     uniform vec2 uResolution;
     uniform vec2 uGlobalMotion;
-    uniform sampler2D inputTexture;
-    
-    varying vec2 vUv;
     
     // ============================================
     // PRISM DISPERSION GRADIENT (Gold → Violet)
@@ -153,9 +150,7 @@ export const cosmicChromaticShader = {
       return flare * uPrismStrength;
     }
     
-    void main() {
-      vec2 uv = vUv;
-      
+    void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
       // Apply velocity warp
       vec2 warpedUV = calculateVelocityWarp(uv, uGlobalMotion);
       
@@ -172,10 +167,10 @@ export const cosmicChromaticShader = {
       greenUV = clamp(greenUV, 0.0, 1.0);
       blueUV = clamp(blueUV, 0.0, 1.0);
       
-      // Sample RGB channels
-      float r = texture2D(inputTexture, redUV).r;
-      float g = texture2D(inputTexture, greenUV).g;
-      float b = texture2D(inputTexture, blueUV).b;
+      // Sample RGB channels from inputBuffer (provided by postprocessing)
+      float r = texture2D(inputBuffer, redUV).r;
+      float g = texture2D(inputBuffer, greenUV).g;
+      float b = texture2D(inputBuffer, blueUV).b;
       
       vec3 color = vec3(r, g, b);
       
@@ -199,7 +194,7 @@ export const cosmicChromaticShader = {
       // Clamp
       color = clamp(color, 0.0, 1.0);
       
-      gl_FragColor = vec4(color, 1.0);
+      outputColor = vec4(color, inputColor.a);
     }
   `,
 };
