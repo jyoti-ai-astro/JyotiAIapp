@@ -67,11 +67,14 @@ const config = {
           dark: "#4D2AA3",
         },
         aura: {
+          DEFAULT: "#17E8F6",  // Aura Cyan (default)
           blue: "#17E8F6",     // Aura Cyan
+          cyan: "#17E8F6",     // Aura Cyan (alias)
           green: "#4ECB71",    // Aura Green
           orange: "#FF8C42",   // Aura Orange
           red: "#FF6B6B",      // Aura Red
           violet: "#9D4EDD",   // Aura Violet
+          gold: "#F2C94C",     // Ethereal Gold (aura variant)
         },
         gold: {
           DEFAULT: "#F2C94C",  // Ethereal Gold
