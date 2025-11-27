@@ -168,8 +168,13 @@ export default function OnboardingPage() {
     }
   }
 
+  useEffect(() => {
+    if (!user) {
+      router.push('/login')
+    }
+  }, [user, router])
+
   if (!user) {
-    router.push('/login')
     return null
   }
 
