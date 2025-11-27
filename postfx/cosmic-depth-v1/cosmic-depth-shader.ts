@@ -256,8 +256,6 @@ export const cocShader = {
     uniform float uTime;
     uniform sampler2D depthBuffer;
     
-    varying vec2 vUv;
-    
     float depthToLinear(float depth) {
       float z = depth * 2.0 - 1.0;
       return (2.0 * uCameraNear * uCameraFar) / (uCameraFar + uCameraNear - z * (uCameraFar - uCameraNear));
@@ -282,12 +280,12 @@ export const cocShader = {
       return coc;
     }
     
-    void main() {
-      float depth = texture2D(depthBuffer, vUv).r;
+    void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+      float depth = texture2D(depthBuffer, uv).r;
       float coc = calculateCoC(depth);
       
       // Output CoC in red channel
-      gl_FragColor = vec4(coc, 0.0, 0.0, 1.0);
+      outputColor = vec4(coc, 0.0, 0.0, 1.0);
     }
   `,
 };
