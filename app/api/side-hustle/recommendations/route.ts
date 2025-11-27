@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { generateSideHustles } from '@/lib/engines/career/side-hustle-engine'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Get Side Hustle Recommendations
  * Milestone 8 - Step 5

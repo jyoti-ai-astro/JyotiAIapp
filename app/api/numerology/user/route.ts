@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Get User Numerology
  * Part B - Section 4: Milestone 4 - Step 1

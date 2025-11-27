@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { getUpcomingTransits, matchTransitsWithKundali } from '@/lib/engines/transit/transit-engine'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Get Upcoming Transits
  * Part B - Section 8: Notifications & Daily Insights
