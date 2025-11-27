@@ -27,25 +27,26 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    /* Cosmic Dark Theme - Master Plan v1.0 */
+    --background: 220 40% 3%;        /* Deep Navy #020916 */
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 220 40% 5%;              /* Slightly lighter navy */
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 220 40% 5%;
     --popover-foreground: 210 40% 98%;
-    --primary: 262.1 83.3% 57.8%;
+    --primary: 262 83% 58%;          /* Cosmic Purple #6E2DEB */
     --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 220 30% 15%;        /* Mystic Indigo #0A0F2B */
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 220 30% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 262 83% 58%;           /* Cosmic Purple */
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 262.1 83.3% 57.8%;
+    --border: 220 30% 20%;
+    --input: 220 30% 15%;
+    --ring: 262 83% 58%;             /* Cosmic Purple */
   }
 }
 
@@ -159,22 +160,109 @@
     animation: shimmer 3s infinite;
   }
   
-  /* Brand colors and gradients */
+  /* Brand colors and gradients - Master Plan v1.0 */
   .jyoti-gradient {
-    @apply bg-gradient-to-br from-cosmic via-mystic to-gold;
+    @apply bg-gradient-to-br from-cosmic-navy via-cosmic-purple to-cosmic-gold;
+  }
+  
+  .cosmic-gradient {
+    @apply bg-gradient-to-br from-cosmic-navy via-cosmic-indigo to-cosmic-purple;
+  }
+  
+  .aura-gradient {
+    @apply bg-gradient-to-br from-aura-blue via-aura-violet to-aura-green;
   }
   
   .jyoti-glow {
-    box-shadow: 0 0 30px rgba(90, 63, 239, 0.4);
+    box-shadow: 0 0 30px rgba(110, 45, 235, 0.4);
   }
   
-  /* Smooth hover effects */
+  .cosmic-glow {
+    box-shadow: 0 0 20px rgba(23, 232, 246, 0.3);
+  }
+  
+  .gold-glow {
+    box-shadow: 0 0 25px rgba(242, 201, 76, 0.3);
+  }
+  
+  /* Soft aura-like glows (not harsh neon) */
+  .aura-glow-soft {
+    box-shadow: 0 0 40px rgba(110, 45, 235, 0.15);
+  }
+  
+  /* Smooth hover effects - Cosmic interaction personality */
   .hover-lift {
     @apply transition-transform duration-300 ease-out;
   }
   
   .hover-lift:hover {
     @apply transform -translate-y-1;
+  }
+  
+  .hover-glow {
+    @apply transition-shadow duration-300 ease-out;
+  }
+  
+  .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(110, 45, 235, 0.4);
+  }
+  
+  /* Circular UI elements (sacred geometry) */
+  .cosmic-button {
+    @apply rounded-full px-6 py-3 transition-all duration-300 ease-out;
+  }
+  
+  .cosmic-card {
+    @apply rounded-2xl border border-cosmic-indigo/20 bg-cosmic-navy/50 backdrop-blur-sm;
+  }
+  
+  /* Breathing animations (meditative rhythm) */
+  @keyframes breathe {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.9;
+    }
+    50% {
+      transform: scale(1.02);
+      opacity: 1;
+    }
+  }
+  
+  .breathe {
+    animation: breathe 4s ease-in-out infinite;
+  }
+  
+  /* Mandala rotation (slow, continuous) */
+  @keyframes mandala-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .mandala-rotate {
+    animation: mandala-rotate 60s linear infinite;
+  }
+  
+  /* Particle drift (cosmic wind effect) */
+  @keyframes particle-drift {
+    0% {
+      transform: translate(0, 0);
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.6;
+    }
+    100% {
+      transform: translate(100px, 100px);
+      opacity: 0;
+    }
+  }
+  
+  .particle-drift {
+    animation: particle-drift 20s ease-in-out infinite;
   }
 }
 

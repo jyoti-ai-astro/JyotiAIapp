@@ -52,27 +52,31 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Jyoti.ai Custom Colors
+        // Jyoti.ai Cosmic Color Palette (Master Plan v1.0)
         cosmic: {
-          DEFAULT: "#0D0A33",
-          light: "#1A1544",
-          dark: "#080520",
+          DEFAULT: "#020916",  // Deep Navy - Primary dark background
+          navy: "#020916",
+          indigo: "#0A0F2B",   // Mystic Indigo - Secondary dark
+          purple: "#6E2DEB",   // Cosmic Purple - Accent
+          cyan: "#17E8F6",     // Aura Cyan - Highlight
+          gold: "#F2C94C",     // Ethereal Gold - Premium accent
         },
         mystic: {
-          DEFAULT: "#5A3FEF",
-          light: "#7B5FFF",
-          dark: "#3D2AA3",
-        },
-        gold: {
-          DEFAULT: "#D4AF37",
-          light: "#E5C158",
-          dark: "#B8941F",
+          DEFAULT: "#6E2DEB",  // Cosmic Purple
+          light: "#8B6FEF",
+          dark: "#4D2AA3",
         },
         aura: {
-          blue: "#4ECAFF",
-          green: "#4ECB71",
-          orange: "#FF8C42",
-          red: "#FF6B6B",
+          blue: "#17E8F6",     // Aura Cyan
+          green: "#4ECB71",    // Aura Green
+          orange: "#FF8C42",   // Aura Orange
+          red: "#FF6B6B",      // Aura Red
+          violet: "#9D4EDD",   // Aura Violet
+        },
+        gold: {
+          DEFAULT: "#F2C94C",  // Ethereal Gold
+          light: "#F5D675",
+          dark: "#D4AF37",
         },
       },
       borderRadius: {
