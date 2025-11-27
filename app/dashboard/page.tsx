@@ -5,9 +5,8 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
+import { CosmicDashboard } from '@/components/dashboard/CosmicDashboard'
+import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
 
 interface DashboardData {
   user: {
@@ -161,38 +160,67 @@ export default function DashboardPage() {
     }
   }
 
-  if (!user || !user.onboarded) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    )
-  }
+  // Transform data for CosmicDashboard
+  const dashboardData = data ? {
+    user: {
+      name: data.user.name,
+      photo: data.user.photo,
+      rashi: data.user.rashi || 'Unknown',
+      nakshatra: data.user.nakshatra || 'Unknown',
+      lagna: data.user.lagna || 'Unknown',
+    },
+    todayHoroscope: horoscope ? {
+      rashi: horoscope.rashi,
+      general: horoscope.general,
+      love: horoscope.love,
+      career: horoscope.career,
+      money: horoscope.money,
+      health: horoscope.health,
+      luckyColor: horoscope.luckyColor,
+      luckyNumber: horoscope.luckyNumber,
+    } : null,
+    quickInfo: {
+      rashi: data.user.rashi || 'Unknown',
+      lagna: data.user.lagna || 'Unknown',
+      nakshatra: data.user.nakshatra || 'Unknown',
+      dasha: data.dasha 
+        ? `${data.dasha.mahadasha.planet} / ${data.dasha.antardasha.planet}`
+        : 'Unknown',
+    },
+    transits: [
+      ...transits.map((t) => ({
+        planet: t.transit.planet,
+        event: t.transit.event,
+        date: t.transit.date,
+        impact: t.transit.impact,
+      })),
+      ...data.nextTransits.map((t) => ({
+        planet: t.planet,
+        event: t.event,
+        date: t.date,
+        impact: t.impact,
+      })),
+    ],
+  } : undefined;
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-mystic border-t-transparent mx-auto"></div>
-          <p className="text-muted-foreground">Loading your spiritual profile...</p>
-        </div>
-      </div>
-    )
-  }
+  return (
+    <>
+      {/* Subtle R3F Cosmic Background */}
+      <CosmicBackground />
+      
+      {/* Cosmic Dashboard */}
+      <CosmicDashboard
+        data={dashboardData}
+        loading={loading}
+        error={error}
+        onRetry={fetchDashboardData}
+      />
+    </>
+  )
+}
 
-  if (error || !data) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-destructive">{error || 'Failed to load dashboard'}</p>
-          <Button onClick={fetchDashboardData}>Retry</Button>
-        </div>
-      </div>
-    )
-  }
-
+// Legacy dashboard code below (kept for reference, can be removed later)
+function LegacyDashboard() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Welcome Banner */}
