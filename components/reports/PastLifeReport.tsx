@@ -49,7 +49,7 @@ export function PastLifeReport({ pastLife }: PastLifeReportProps) {
           </div>
           <p className="text-white/80 text-center leading-relaxed">
             In your past life, you carried the essence of a <span className="text-gold font-heading">{pastLife.pastLifeRole}</span>. 
-            This role shapes your current life's purpose, talents, and the lessons you're here to learn.
+            This role shapes your current life&apos;s purpose, talents, and the lessons you&apos;re here to learn.
           </p>
         </div>
       </ReportSection>
@@ -131,7 +131,7 @@ export function PastLifeReport({ pastLife }: PastLifeReportProps) {
           <p className="text-white/80 text-center leading-relaxed">
             Your soul strength of <span className="text-gold font-heading">{pastLife.soulStrength}/5</span> indicates 
             your spiritual resilience and capacity for growth. This strength helps you navigate 
-            karmic challenges and fulfill your soul's purpose.
+            karmic challenges and fulfill your soul&apos;s purpose.
           </p>
         </div>
       </ReportSection>

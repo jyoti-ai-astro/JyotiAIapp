@@ -177,7 +177,7 @@ export default function OnboardingPage() {
         <CardHeader>
           <CardTitle className="text-3xl font-display">Welcome to Jyoti.ai</CardTitle>
           <CardDescription>
-            Let's set up your spiritual profile. This will take just a few minutes.
+            Let&apos;s set up your spiritual profile. This will take just a few minutes.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -233,7 +233,7 @@ export default function OnboardingPage() {
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold">Step 2: Confirm Your Rashi</h3>
                 <p className="text-sm text-muted-foreground">
-                  Based on your birth details, we've calculated your Rashi. Please select which one you follow.
+                  Based on your birth details, we&apos;ve calculated your Rashi. Please select which one you follow.
                 </p>
                 
                 <div className="space-y-3 rounded-lg border p-4">

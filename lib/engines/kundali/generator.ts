@@ -30,7 +30,7 @@ export interface KundaliData {
  */
 export class KundaliGenerator {
   /**
-   * Generate complete Kundali
+ * Generate complete Kundali
    */
   async generate(birth: BirthDetails): Promise<KundaliData> {
     return generateFullKundali(birth)

@@ -845,7 +845,7 @@ export class GuruChatEngine {
   getTimelineSummary(): TimelineSummary | null {
     return this.timelineSummary;
   }
-  
+
   /**
    * Get compatibility timeline (Phase 22 - F37)
    */

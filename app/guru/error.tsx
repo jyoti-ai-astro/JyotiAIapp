@@ -33,7 +33,7 @@ export default function GuruError({
         />
 
         <h1 className="text-2xl font-display font-bold text-gold mb-4">
-          The Guru's cosmic connection was interrupted
+          The Guru&apos;s cosmic connection was interrupted
         </h1>
 
         <p className="text-white/70 mb-6">

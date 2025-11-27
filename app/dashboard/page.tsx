@@ -272,7 +272,7 @@ export default function DashboardPage() {
       {horoscope && (
         <Card>
           <CardHeader>
-            <CardTitle>🌟 Today's Horoscope</CardTitle>
+            <CardTitle>🌟 Today&apos;s Horoscope</CardTitle>
             <CardDescription>Your daily spiritual guidance for {horoscope.rashi}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

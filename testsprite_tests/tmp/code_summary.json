@@ -1,0 +1,108 @@
+{
+  "projectName": "JyotiAIapp",
+  "techStack": {
+    "frontend": {
+      "framework": "Next.js 14",
+      "language": "TypeScript",
+      "styling": "Tailwind CSS + ShadCN UI",
+      "stateManagement": "Zustand",
+      "animations": "Framer Motion, GSAP",
+      "3d": "Three.js, React Three Fiber"
+    },
+    "backend": {
+      "framework": "Next.js API Routes",
+      "database": "Firebase Firestore",
+      "storage": "Firebase Storage",
+      "authentication": "Firebase Auth",
+      "backgroundJobs": "Cloudflare Workers"
+    },
+    "ai": {
+      "llm": "OpenAI GPT-4, Google Gemini",
+      "rag": "Pinecone Vector Database",
+      "vision": "OpenAI Vision, Gemini Vision"
+    },
+    "payments": {
+      "provider": "Razorpay"
+    }
+  },
+  "features": [
+    "Vedic Astrology (Kundali Engine)",
+    "Palmistry (AI Vision)",
+    "Face Reading (AI Vision)",
+    "Aura Analysis",
+    "Numerology",
+    "Vastu Shastra",
+    "Chakra Analysis",
+    "Dream Interpretation",
+    "Business & Career Guidance",
+    "Compatibility Matching",
+    "Pregnancy & Baby Predictions",
+    "AI Guru (RAG-powered spiritual assistant)"
+  ],
+  "mainPages": {
+    "public": [
+      "Homepage",
+      "About",
+      "Pricing",
+      "Contact",
+      "Blog",
+      "Privacy Policy",
+      "Terms & Conditions"
+    ],
+    "authenticated": [
+      "Dashboard",
+      "Onboarding",
+      "Kundali",
+      "Numerology",
+      "Palmistry",
+      "Aura",
+      "Reports",
+      "AI Guru Chat",
+      "Profile",
+      "Settings",
+      "Notifications",
+      "Payments"
+    ],
+    "admin": [
+      "Admin Dashboard",
+      "Users Management",
+      "Reports Manager",
+      "Payments",
+      "Guru Monitoring",
+      "Knowledge Base Manager",
+      "Content System",
+      "Logs",
+      "Jobs Queue",
+      "Backup/Restore"
+    ]
+  },
+  "keyComponents": [
+    "GalaxyScene (3D cosmic background)",
+    "GuruChatShell (AI chat interface)",
+    "KundaliChart (Birth chart visualization)",
+    "MotionOrchestrator (Animation coordination)",
+    "CosmicHero (Homepage hero section)",
+    "FeatureCards (Feature showcase)",
+    "PredictionTimeline (12-month predictions)",
+    "CompatibilityTimeline (Compatibility analysis)"
+  ],
+  "authentication": {
+    "methods": [
+      "Google OAuth",
+      "Facebook OAuth",
+      "Email Magic Link"
+    ],
+    "provider": "Firebase Auth"
+  },
+  "apiEndpoints": {
+    "auth": "/api/auth/*",
+    "kundali": "/api/kundali/*",
+    "guru": "/api/guru/*",
+    "reports": "/api/reports/*",
+    "payments": "/api/payments/*",
+    "admin": "/api/admin/*"
+  },
+  "port": 3000,
+  "type": "frontend"
+}
+

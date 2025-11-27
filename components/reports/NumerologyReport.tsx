@@ -58,7 +58,7 @@ export function NumerologyReport({ numerology }: NumerologyReportProps) {
             <p className="text-white/80 mb-4 leading-relaxed">
               Your Life Path Number <span className="text-gold font-heading text-2xl">{numerology.lifePath}</span> represents 
               the core purpose and direction of your life journey. It reveals your natural talents, 
-              challenges, and the lessons you're here to learn.
+              challenges, and the lessons you&apos;re here to learn.
             </p>
             <p className="text-white/60 text-sm">
               {getNumberMeaning(numerology.lifePath, 'lifePath')}
@@ -170,7 +170,7 @@ export function NumerologyReport({ numerology }: NumerologyReportProps) {
           <div className="bg-white/5 rounded-lg p-6 border border-gold/20">
             <p className="text-white/80 mb-4 leading-relaxed">
               You are in a <span className="text-gold font-heading">{numerology.yearCycle}</span> year cycle. 
-              This cycle influences the themes and opportunities you'll experience throughout the year. 
+              This cycle influences the themes and opportunities you&apos;ll experience throughout the year. 
               Each number brings its own unique energy and lessons.
             </p>
             <p className="text-white/60 text-sm">

@@ -1,0 +1,728 @@
+[
+  {
+    "id": "TC001",
+    "title": "Successful Google OAuth Login",
+    "description": "Verify that a user can log in successfully using Google OAuth authentication.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Click on the 'Login with Google' button."
+      },
+      {
+        "type": "assertion",
+        "description": "User is redirected to Google OAuth consent screen."
+      },
+      {
+        "type": "action",
+        "description": "Enter valid Google account credentials and grant permissions."
+      },
+      {
+        "type": "assertion",
+        "description": "User is redirected back to the app and authenticated successfully."
+      },
+      {
+        "type": "assertion",
+        "description": "The user dashboard is displayed with personalized data."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Failed Google OAuth Login with Invalid Account",
+    "description": "Verify that login fails gracefully when using an invalid or unauthorized Google account during OAuth login.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Click on the 'Login with Google' button."
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid Google account credentials or cancel consent."
+      },
+      {
+        "type": "assertion",
+        "description": "User is shown an appropriate error message without crashing."
+      },
+      {
+        "type": "assertion",
+        "description": "User remains on the login page and can attempt to log in again."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Successful Facebook OAuth Login",
+    "description": "Verify that a user can log in successfully using Facebook OAuth authentication.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Click the 'Login with Facebook' button."
+      },
+      {
+        "type": "assertion",
+        "description": "User is redirected to Facebook OAuth consent screen."
+      },
+      {
+        "type": "action",
+        "description": "Enter valid Facebook account credentials and grant permissions."
+      },
+      {
+        "type": "assertion",
+        "description": "User is redirected back and authenticated successfully."
+      },
+      {
+        "type": "assertion",
+        "description": "Dashboard loads with user-specific content."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Failed Facebook OAuth Login with Invalid Credentials",
+    "description": "Verify that login fails gracefully and shows a relevant error message when Facebook login credentials are invalid.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page."
+      },
+      {
+        "type": "action",
+        "description": "Click 'Login with Facebook' button."
+      },
+      {
+        "type": "action",
+        "description": "Enter incorrect Facebook credentials or deny permissions."
+      },
+      {
+        "type": "assertion",
+        "description": "Display appropriate error message without app crash."
+      },
+      {
+        "type": "assertion",
+        "description": "Remain on login page allowing retry."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Email Magic Link Authentication Success",
+    "description": "Verify that a user can request and use the Magic Link email login to authenticate successfully.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter a registered email and request Magic Link."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirmation message prompts user to check their email."
+      },
+      {
+        "type": "action",
+        "description": "Open email, click on Magic Link."
+      },
+      {
+        "type": "assertion",
+        "description": "User is redirected to app and logged in."
+      },
+      {
+        "type": "assertion",
+        "description": "Dashboard loads with personalized data."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Email Magic Link Authentication Failure",
+    "description": "Verify that attempting Magic Link login with an unregistered email shows an error and does not generate a login link.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter an unregistered email and submit Magic Link request."
+      },
+      {
+        "type": "assertion",
+        "description": "Display an error message indicating the email is not recognized."
+      },
+      {
+        "type": "assertion",
+        "description": "No Magic Link email is sent."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Onboarding Flow for New User",
+    "description": "Validate that a new user can complete the onboarding process successfully, including capturing personal birth details, preferences, and uploads.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as a new user."
+      },
+      {
+        "type": "action",
+        "description": "Complete multi-step onboarding: enter birth date/time/location."
+      },
+      {
+        "type": "action",
+        "description": "Set user preferences for astrology and spiritual interests."
+      },
+      {
+        "type": "action",
+        "description": "Upload palm, face, and aura images."
+      },
+      {
+        "type": "assertion",
+        "description": "Each step validates required input fields and shows errors for invalid or missing data."
+      },
+      {
+        "type": "assertion",
+        "description": "On completing the final step, user is redirected to the dashboard."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "3D Kundali Chart Rendering and Interaction",
+    "description": "Verify the Kundali 3D chart is rendered correctly with interactivity and smooth animation at 60fps on desktop and adaptive fallback on mobile.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in and navigate to the Kundali page."
+      },
+      {
+        "type": "assertion",
+        "description": "Kundali 3D chart loads with accurate birth chart data."
+      },
+      {
+        "type": "action",
+        "description": "Interact with the 3D chart by rotating, zooming, and selecting elements."
+      },
+      {
+        "type": "assertion",
+        "description": "Interactions respond smoothly without animation jank at 60fps on desktop."
+      },
+      {
+        "type": "assertion",
+        "description": "On mobile devices, adaptive shader and animation complexity adjusts for optimal performance."
+      },
+      {
+        "type": "assertion",
+        "description": "Low-performance devices fallback to static or Lottie animation."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Numerology Profile Generation",
+    "description": "Validate that the Numerology feature generates detailed, accurate profiles based on user inputs and displays them correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Numerology section."
+      },
+      {
+        "type": "action",
+        "description": "Input necessary data such as name and birthdate."
+      },
+      {
+        "type": "assertion",
+        "description": "Numerology report is generated with all expected profile elements."
+      },
+      {
+        "type": "assertion",
+        "description": "Displayed information matches the calculated numerology data."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "AI Vision Palmistry and Face Reading",
+    "description": "Verify AI Vision correctly analyzes uploaded palm and face images and returns accurate palmistry and face reading results.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Upload a palm image for analysis."
+      },
+      {
+        "type": "assertion",
+        "description": "System processes image using AI Vision and returns palmistry insights."
+      },
+      {
+        "type": "action",
+        "description": "Upload a face image for face reading."
+      },
+      {
+        "type": "assertion",
+        "description": "System processes face image and returns face reading results."
+      },
+      {
+        "type": "assertion",
+        "description": "Results are displayed clearly and correspond to the uploaded images."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "AI Guru Chat Functionality and Contextual Responses",
+    "description": "Validate that the AI Guru chat interface provides contextual, personalized, and scripture-referenced spiritual guidance.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to AI Guru Chat page."
+      },
+      {
+        "type": "action",
+        "description": "Send a query related to astrology or spirituality."
+      },
+      {
+        "type": "assertion",
+        "description": "AI Guru returns a relevant, coherent, and context-aware response."
+      },
+      {
+        "type": "assertion",
+        "description": "Response includes appropriate scripture references where applicable."
+      },
+      {
+        "type": "action",
+        "description": "Send multiple context-dependent queries to verify session context is maintained."
+      },
+      {
+        "type": "assertion",
+        "description": "Responses maintain continuity and relevance across session."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Payment Flow with Razorpay Integration",
+    "description": "Verify that payment transactions through Razorpay complete successfully, update subscription states, and handle payment failures properly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to subscription/payment page."
+      },
+      {
+        "type": "action",
+        "description": "Select a subscription plan."
+      },
+      {
+        "type": "action",
+        "description": "Proceed to pay using Razorpay gateway."
+      },
+      {
+        "type": "action",
+        "description": "Complete payment with valid card details."
+      },
+      {
+        "type": "assertion",
+        "description": "Payment is processed successfully."
+      },
+      {
+        "type": "assertion",
+        "description": "User subscription state is updated accordingly in their profile."
+      },
+      {
+        "type": "action",
+        "description": "Attempt payment with invalid card details."
+      },
+      {
+        "type": "assertion",
+        "description": "Payment fails with clear error message."
+      },
+      {
+        "type": "assertion",
+        "description": "Subscription state remains unchanged in failure case."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Responsive UI and Adaptive Animations",
+    "description": "Verify that the app UI and animations adapt correctly and maintain performance across desktop, tablet, and mobile devices.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Load the app on desktop browser."
+      },
+      {
+        "type": "assertion",
+        "description": "UI layouts are correct and animations run smoothly at 60fps."
+      },
+      {
+        "type": "action",
+        "description": "Load the app on a tablet device."
+      },
+      {
+        "type": "assertion",
+        "description": "UI adapts to tablet screen size; shader and animation complexity adjust for performance."
+      },
+      {
+        "type": "action",
+        "description": "Load the app on a mobile device."
+      },
+      {
+        "type": "assertion",
+        "description": "UI adapts correctly for mobile; complex animations degrade gracefully with fallback."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Accessibility Compliance Testing",
+    "description": "Ensure all pages and components meet WCAG 2.2 Level AA standards including keyboard navigability, screen reader support, focus outlines, and reduced motion support.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate the app using keyboard only."
+      },
+      {
+        "type": "assertion",
+        "description": "All interactive elements are reachable and usable with keyboard."
+      },
+      {
+        "type": "action",
+        "description": "Use screen reader to access key pages (dashboard, onboarding, AI Guru chat)."
+      },
+      {
+        "type": "assertion",
+        "description": "Screen reader reads meaningful, descriptive labels and statuses."
+      },
+      {
+        "type": "action",
+        "description": "Enable reduced motion mode in system or app settings."
+      },
+      {
+        "type": "assertion",
+        "description": "App respects reduced motion preference, disabling or simplifying animations."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Soundscape and Animation Volume Controls",
+    "description": "Verify that soundscape, music volume toggles, and animation volume controls function correctly and respect user system preferences and app settings.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to settings or dashboard where sound and animation controls are accessible."
+      },
+      {
+        "type": "action",
+        "description": "Toggle soundscape and animation volume on/off."
+      },
+      {
+        "type": "assertion",
+        "description": "Sound and animation volume respond immediately to toggles."
+      },
+      {
+        "type": "action",
+        "description": "Set system-level preference for reduced motion or muted sound."
+      },
+      {
+        "type": "assertion",
+        "description": "App respects system preference automatically."
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Notification Center Functionality",
+    "description": "Verify that users receive, view, and interact with notifications related to horoscope updates, reports, and payment statuses, ensuring accessibility and responsiveness.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger notifications for horoscope updates, report availability, and payment status changes."
+      },
+      {
+        "type": "assertion",
+        "description": "Notifications appear in the notification center."
+      },
+      {
+        "type": "action",
+        "description": "Access notification center and interact with notifications."
+      },
+      {
+        "type": "assertion",
+        "description": "Notifications can be marked read, dismissed, or used to navigate to relevant content."
+      },
+      {
+        "type": "assertion",
+        "description": "Notification center is keyboard navigable and screen-reader accessible."
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Admin Panel User Management",
+    "description": "Verify that administrators can view, search, filter, add, edit, and deactivate user accounts with RBAC enforced and proper UI feedback.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in to the admin panel with an admin account."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to user management section."
+      },
+      {
+        "type": "action",
+        "description": "Search for users by email, name, or ID."
+      },
+      {
+        "type": "assertion",
+        "description": "Users matching search criteria appear."
+      },
+      {
+        "type": "action",
+        "description": "Edit a user's profile and save changes."
+      },
+      {
+        "type": "assertion",
+        "description": "Changes are saved and reflected immediately."
+      },
+      {
+        "type": "action",
+        "description": "Deactivate a user account."
+      },
+      {
+        "type": "assertion",
+        "description": "User access is revoked and status updated."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access admin features with a non-admin user."
+      },
+      {
+        "type": "assertion",
+        "description": "Access is denied with appropriate error message."
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Admin Panel Payment Processing and Monitoring",
+    "description": "Verify that admin users can monitor, process, and manage payments and subscriptions, including viewing payment logs and statuses securely.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as admin."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to payments management section."
+      },
+      {
+        "type": "assertion",
+        "description": "Display list of all payments with filters by date, user, status."
+      },
+      {
+        "type": "action",
+        "description": "View detailed log of a payment transaction."
+      },
+      {
+        "type": "assertion",
+        "description": "Payment details and status shown accurately."
+      },
+      {
+        "type": "action",
+        "description": "Attempt payment refund or retry actions (if supported)."
+      },
+      {
+        "type": "assertion",
+        "description": "Actions complete successfully with updated logs."
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Performance Testing: Stable FPS and Resource Usage",
+    "description": "Ensure the app maintains stable 60fps on desktop and adapts rendering on low-performance devices, while resource usage stays within defined limits without UI jank.",
+    "category": "performance",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Load the app on a high-performance desktop."
+      },
+      {
+        "type": "assertion",
+        "description": "FPS is consistently near 60fps during animations and interactions."
+      },
+      {
+        "type": "action",
+        "description": "Load the app on low-performance or mobile device."
+      },
+      {
+        "type": "assertion",
+        "description": "Rendering adjusts automatically, maintaining smooth UI experience."
+      },
+      {
+        "type": "assertion",
+        "description": "Resource usage monitored (CPU/GPU/memory) stays below thresholds."
+      },
+      {
+        "type": "action",
+        "description": "Navigate through multiple feature pages rapidly."
+      },
+      {
+        "type": "assertion",
+        "description": "No significant frame drops, no animation jank or delays."
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Content Accessibility and Navigation in Admin Panel",
+    "description": "Verify that all admin panel components for content system and knowledge base are accessible, editable, and searchable with proper RBAC enforced.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Admin logs in and accesses content system."
+      },
+      {
+        "type": "action",
+        "description": "Search, create, edit, and delete knowledge base articles."
+      },
+      {
+        "type": "assertion",
+        "description": "Operations complete without errors and changes persist."
+      },
+      {
+        "type": "action",
+        "description": "Non-admin users attempt to access admin content pages."
+      },
+      {
+        "type": "assertion",
+        "description": "Access is denied with appropriate error messages."
+      }
+    ]
+  },
+  {
+    "id": "TC021",
+    "title": "Validation of Multi-Step Onboarding Error Handling",
+    "description": "Verify proper validation triggers error messages when required fields are empty or invalid during onboarding steps.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Start onboarding flow as new user."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to proceed with missing birth details."
+      },
+      {
+        "type": "assertion",
+        "description": "Validation error message is shown preventing progression."
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid data formats (e.g., text in date fields)."
+      },
+      {
+        "type": "assertion",
+        "description": "Relevant error message displayed and focus set on invalid field."
+      },
+      {
+        "type": "action",
+        "description": "Skip image uploads or upload unsupported formats."
+      },
+      {
+        "type": "assertion",
+        "description": "Error is shown and user is instructed to fix the issue."
+      }
+    ]
+  },
+  {
+    "id": "TC022",
+    "title": "Verification of Subscription State Consistency Post Payment",
+    "description": "Verify that subscription states remain consistent and accurately reflect the user's current plan after payment processing or cancellation.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Complete a payment for a subscription plan."
+      },
+      {
+        "type": "assertion",
+        "description": "User subscription status is updated to active with correct plan details."
+      },
+      {
+        "type": "action",
+        "description": "Cancel the subscription."
+      },
+      {
+        "type": "assertion",
+        "description": "Subscription status updates correctly to cancelled or expired."
+      },
+      {
+        "type": "action",
+        "description": "Make partial or failed payments."
+      },
+      {
+        "type": "assertion",
+        "description": "Subscription state remains accurate without granting premium access."
+      }
+    ]
+  }
+]

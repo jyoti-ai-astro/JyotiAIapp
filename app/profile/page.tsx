@@ -252,7 +252,7 @@ export default function ProfilePage() {
             {regenerating ? 'Regenerating...' : 'Regenerate Kundali'}
           </Button>
           <p className="text-xs text-muted-foreground">
-            Regenerate your kundali if you've updated your birth details.
+            Regenerate your kundali if you&apos;ve updated your birth details.
           </p>
         </CardContent>
       </Card>

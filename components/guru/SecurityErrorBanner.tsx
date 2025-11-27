@@ -29,8 +29,8 @@ export interface SecurityErrorBannerProps {
 }
 
 const errorMessages: Record<SecurityErrorType, string> = {
-  rate_limit: 'You\'ve sent too many messages. Please wait a moment before trying again.',
-  validation_failure: 'Your message couldn\'t be processed. Please check and try again.',
+  rate_limit: "You've sent too many messages. Please wait a moment before trying again.",
+  validation_failure: "Your message couldn't be processed. Please check and try again.",
   file_error: 'File upload failed. Please check the file format and size, then try again.',
   video_error: 'Video stream error. Please check your camera permissions and try again.',
   audio_error: 'Audio recording error. Please check your microphone permissions and try again.',
@@ -79,7 +79,7 @@ export function SecurityErrorBanner({
             </p>
             {error === 'rate_limit' && (
               <p className="text-white/60 text-xs">
-                This helps protect the Guru's energy and ensures everyone has a fair experience.
+                This helps protect the Guru{'&apos;'}s energy and ensures everyone has a fair experience.
               </p>
             )}
             {error === 'cooldown' && (

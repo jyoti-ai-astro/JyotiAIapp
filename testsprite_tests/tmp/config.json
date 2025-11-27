@@ -1,0 +1,15 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "executionArgs": {
+    "projectName": "JyotiAIapp",
+    "projectPath": "/Users/diptanshuojha/Desktop/JyotiAIapp",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-j7MD7zNfeASmOW16V1Rm14aToAmaa38GfhHjTNCHixlMIuaoEQOX4jKUYlW0lVpOWuFcq1teGaEi7jlmMp97nFkEqfd6TCovSsj5Bskz-vBzOySVPwfJM2a8_nOI26hEGTU"
+    }
+  }
+}
