@@ -7,3 +7,4 @@
 
 // Placeholder for chakra bars implementation
 
+export {};

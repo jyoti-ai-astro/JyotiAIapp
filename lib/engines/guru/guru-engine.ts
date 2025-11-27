@@ -7,6 +7,7 @@
  */
 
 import { retrieveRelevantDocuments } from '@/lib/rag/rag-service'
+import { envVars } from '@/lib/env/env.mjs'
 
 export interface GuruContext {
   kundali?: {

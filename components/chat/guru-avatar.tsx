@@ -8,3 +8,4 @@
 
 // Placeholder for guru avatar implementation
 
+export {};

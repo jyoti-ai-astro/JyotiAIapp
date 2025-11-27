@@ -87,7 +87,7 @@ import { motionOrchestrator, MotionState } from '../motion/orchestrator';
 import { useScrollMotion, useMouseMotion } from '@/hooks/motion';
 import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
 import { useBlessingWaveStore } from '@/lib/motion/blessing-wave-store';
-import { shouldUpdateScene, handleSceneUpdateFailure, freezeScene, disableAnimations, resetSceneState } from '@/lib/security/galaxy-scene-failover';
+import { shouldUpdateScene, handleSceneUpdateFailure, freezeScene, disableAnimations, resetSceneState, getSceneState } from '@/lib/security/galaxy-scene-failover';
 import { detectGPU, getPerformanceSettings, PerformanceTier } from '@/lib/optimization/gpu-detection';
 import { EffectComposer, ToneMapping } from '@react-three/postprocessing';
 import { ToneMappingMode } from 'postprocessing';
@@ -320,12 +320,18 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({
     nebulaParallax: number;
     starfieldDensity: number;
     motionBlurSmear: number;
+    starfieldFocus: number;
+    nebulaHueShift: number;
+    nebulaBrightness: number;
   }>({
     bloomIntensity: 1.0,
     filmGrainIntensity: 0.15,
     nebulaParallax: 0.0,
     starfieldDensity: 1.0,
     motionBlurSmear: 0.5,
+    starfieldFocus: 0,
+    nebulaHueShift: 0,
+    nebulaBrightness: 1.0,
   });
   
   // Interaction state for UI → Scene events (Phase 12 - F27)
@@ -404,6 +410,7 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({
   const adaptiveMode = fps < 45; // Phase 27 - F42: Adaptive mode when FPS drops below 45
   
   // Phase 30 - F45: Pause star particle simulation on low FPS or tab hidden
+  const sceneState = getSceneState();
   const shouldPauseParticles = fps < 30 || !isTabVisible || sceneState.isFrozen;
   
   // FPS tracking (Phase 27 - F42)
@@ -528,22 +535,24 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({
         
         if (type?.includes('enter')) {
           // Ramp up effects
-          setTransitionState({
+          setTransitionState((prev) => ({
+            ...prev,
             bloomIntensity: 1.0 + progress * 0.5,
             filmGrainIntensity: 0.15 + progress * 0.1,
             nebulaParallax: progress * 0.1,
             starfieldDensity: 1.0 - progress * 0.2,
             motionBlurSmear: 0.5 + progress * 0.3,
-          });
+          }));
         } else if (type?.includes('exit')) {
           // Ramp down effects
-          setTransitionState({
+          setTransitionState((prev) => ({
+            ...prev,
             bloomIntensity: 1.0 - progress * 0.3,
             filmGrainIntensity: 0.15 - progress * 0.05,
             nebulaParallax: -progress * 0.1,
             starfieldDensity: 1.0 + progress * 0.1,
             motionBlurSmear: 0.5 - progress * 0.2,
-          });
+          }));
         }
       }
     };
@@ -787,7 +796,9 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({
           case 'video-chakra':
             // Chakra waveform → mandalaRotation acceleration (Phase 19 - F34)
             const chakras = payload?.chakras || {};
-            const avgChakraStrength = Object.values(chakras).reduce((a: number, b: number) => a + b, 0) / Object.keys(chakras).length || 5;
+            const chakraValues = Object.values(chakras) as number[];
+            const chakraCount = chakraValues.length || 1;
+            const avgChakraStrength = chakraValues.reduce((a: number, b: number) => a + b, 0) / chakraCount || 5;
             const rotationAccel = (avgChakraStrength - 5) * 0.01; // -0.05 to +0.05
             setInteractionState((prev) => ({
               ...prev,
@@ -1394,7 +1405,7 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({
         }}
         blessingWaveProgress={blessingWaveProgress}
         isGuruHovered={isGuruHovered}
-        isBlessingWaveActive={isBlessingWaveActive}
+        isBlessingWaveActive={blessingWaveActive}
       />
       
       {/* Cosmic UI Raymarch Overlay (E19 - after CameraController, above all engines) */}
@@ -1594,7 +1605,6 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({
         onBlessingWave={() => {
           // Trigger blessing wave via interaction engine
           triggerBlessingWave();
-          setIsBlessingWaveActive(true);
         }}
         onHover={(hovered) => {
           setIsGuruHovered(hovered);
@@ -2431,8 +2441,12 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({
         }}
         onWaveProgressChange={(progress) => {
           // Update blessing wave progress for camera
-          setBlessingWaveProgress(progress);
-          setIsBlessingWaveActive(progress > 0);
+          useBlessingWaveStore.getState().setBlessingProgress(progress);
+          if (progress > 0 && !useBlessingWaveStore.getState().blessingActive) {
+            useBlessingWaveStore.setState({ blessingActive: true });
+          } else if (progress === 0 && useBlessingWaveStore.getState().blessingActive) {
+            useBlessingWaveStore.setState({ blessingActive: false });
+          }
           
           // Feed wave progress to bloom engine (E12)
           // Bloom intensity can be boosted by wave progress

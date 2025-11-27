@@ -117,3 +117,21 @@ export async function deleteAllVectors(): Promise<void> {
   await index.namespace(NAMESPACE).deleteAll()
 }
 
+/**
+ * Upsert single embedding (wrapper for API routes)
+ */
+export async function upsertEmbedding(
+  id: string,
+  values: number[],
+  metadata?: Record<string, any>
+): Promise<void> {
+  await upsertEmbeddings([{ id, values, metadata }])
+}
+
+/**
+ * Delete single embedding by ID (wrapper for API routes)
+ */
+export async function deleteEmbedding(id: string): Promise<void> {
+  await deleteVectors([id])
+}
+

@@ -16,6 +16,7 @@ import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { useCTAGlow } from '@/hooks/cta/use-cta-glow';
 import { useCTAParallax } from '@/hooks/cta/use-cta-parallax';
 import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
+import { scrollGlowPulse } from '@/lib/motion/gsap-motion-bridge';
 
 export interface CosmicCTAProps {
   /** CTA variant */

@@ -154,14 +154,14 @@ export class Timeline {
       }
     }
 
-    this.update();
+    this.updateInternal();
     return this.getProgress();
   }
 
   /**
    * Internal update (interpolate keyframes)
    */
-  private update(): void {
+  private updateInternal(): void {
     if (this.keyframes.length === 0) {
       // No keyframes, use easing on progress
       const eased = this.easing(this.progress);

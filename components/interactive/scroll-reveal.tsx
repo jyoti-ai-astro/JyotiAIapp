@@ -8,3 +8,5 @@
 
 // Placeholder for scroll reveal implementation
 
+
+export {};

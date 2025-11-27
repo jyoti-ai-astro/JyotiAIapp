@@ -12,6 +12,9 @@ import { frameLoop, FrameData } from './frame-loop';
 import { MotionSync, MotionState } from './motion-sync';
 import { FFTData } from '../audio/fft-processor';
 
+// Re-export MotionState for convenience
+export type { MotionState };
+
 export type EngineUpdateFunction = (motionState: MotionState) => void;
 
 export interface RegisteredEngine {

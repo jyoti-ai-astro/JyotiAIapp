@@ -24,7 +24,50 @@ export interface KundaliData {
 }
 
 /**
- * Generate complete Kundali
+ * Kundali Generator Class
+ * 
+ * Main class for generating complete Kundali charts
+ */
+export class KundaliGenerator {
+  /**
+   * Generate complete Kundali
+   */
+  async generate(birth: BirthDetails): Promise<KundaliData> {
+    return generateFullKundali(birth)
+  }
+  
+  /**
+   * Generate complete Kundali (alias)
+   */
+  async generateFull(birth: BirthDetails): Promise<KundaliData> {
+    return this.generate(birth)
+  }
+  
+  /**
+   * Generate D1 chart only
+   */
+  async generateD1(birth: BirthDetails): Promise<DivisionalChart> {
+    const grahas = await calculateGrahas(birth)
+    const lagna = await calculateLagnaData(birth)
+    const bhavas = await calculateBhavas(birth, lagna.longitude, grahas, 'placidus')
+    return generateD1Chart(grahas, bhavas, lagna)
+  }
+  
+  /**
+   * Calculate Dasha only
+   */
+  async calculateDasha(birth: BirthDetails): Promise<DashaCalculation> {
+    const grahas = await calculateGrahas(birth)
+    return calculateVimshottariDasha(
+      grahas.moon.nakshatra,
+      grahas.moon.pada,
+      new Date(birth.year, birth.month - 1, birth.day, birth.hour, birth.minute)
+    )
+  }
+}
+
+/**
+ * Generate complete Kundali (standalone function for backward compatibility)
  */
 export async function generateFullKundali(birth: BirthDetails): Promise<KundaliData> {
   // Step 1: Calculate Grahas (Planets)

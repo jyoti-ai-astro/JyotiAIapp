@@ -7,3 +7,4 @@
 
 // Placeholder for chat container implementation
 
+export {};

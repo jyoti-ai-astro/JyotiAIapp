@@ -7,7 +7,14 @@
  */
 
 import { upsertEmbeddings, queryVectors } from './pinecone-client'
-import { generateEmbedding } from './embeddings'
+import { generateEmbedding as generateEmbeddingInternal } from './embeddings'
+
+/**
+ * Generate embedding for text (re-exported for API routes)
+ */
+export async function generateEmbedding(text: string): Promise<number[]> {
+  return generateEmbeddingInternal(text)
+}
 
 export interface KnowledgeDocument {
   id: string

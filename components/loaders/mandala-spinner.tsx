@@ -7,3 +7,5 @@
 
 // Placeholder for mandala spinner implementation
 
+
+export {};

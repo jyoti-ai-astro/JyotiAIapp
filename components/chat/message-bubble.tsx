@@ -7,3 +7,4 @@
 
 // Placeholder for message bubble implementation
 
+export {};

@@ -53,6 +53,12 @@ export interface GuruEnergyProps {
   
   /** On hover callback */
   onHover?: (hovered: boolean) => void;
+  
+  /** Blessing wave progress (0-1) */
+  blessingWaveProgress?: number;
+  
+  /** On breath update callback */
+  onBreathUpdate?: (phase: number, strength: number) => void;
 }
 
 export const GuruEnergy: React.FC<GuruEnergyProps> = ({

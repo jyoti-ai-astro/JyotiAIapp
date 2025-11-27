@@ -8,3 +8,4 @@
 
 // Placeholder for useReducedMotion hook implementation
 
+export {};

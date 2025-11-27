@@ -36,7 +36,8 @@ export * from './aura-shield';
 export * from './path-indicator';
 export * from './memory-stream';
 export * from './timeline-stream';
-export * from './dharma-wheel';
+// V1 exports (kept for backward compatibility, but types may conflict with v2)
+// export * from './dharma-wheel';
 export * from './karmic-thread';
 export * from './soul-mirror';
 export * from './divine-compass';
@@ -44,7 +45,7 @@ export * from './astral-trail';
 export * from './astral-veil';
 export * from './fate-ripple';
 export * from './soul-star';
-export * from './celestial-gate';
+// export * from './celestial-gate'; // Conflicts with v2
 export * from './astral-lotus';
 export * from './astral-mandala';
 export * from './chakra-pulse';

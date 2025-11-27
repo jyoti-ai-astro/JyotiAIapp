@@ -7,3 +7,4 @@
 
 // Placeholder for astro glyph implementation
 
+export {};

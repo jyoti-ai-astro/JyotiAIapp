@@ -22,6 +22,7 @@ import { Remedy } from '@/lib/guru/remedy-engine';
 import { VoiceEngine } from '@/lib/guru/voice-engine';
 import { VisionResult } from '@/lib/guru/vision-engine';
 import { VideoEngine, VideoFrameInsight } from '@/lib/guru/video-engine';
+import { CompatibilityMonth } from '@/lib/guru/compatibility-timeline';
 // Phase 30 - F45: Dynamic imports for heavy components
 import dynamic from 'next/dynamic';
 import { SecurityErrorBanner, SecurityErrorType } from './SecurityErrorBanner';
@@ -43,6 +44,11 @@ const PredictionTimeline = dynamic(() => import('./PredictionTimeline').then(mod
 });
 
 const CompatibilityPanel = dynamic(() => import('./CompatibilityPanel').then(mod => ({ default: mod.CompatibilityPanel })), {
+  loading: () => <div className="animate-pulse bg-white/5 rounded-lg h-64" />,
+  ssr: false,
+});
+
+const CompatibilityTimeline = dynamic(() => import('./CompatibilityTimeline').then(mod => ({ default: mod.CompatibilityTimeline })), {
   loading: () => <div className="animate-pulse bg-white/5 rounded-lg h-64" />,
   ssr: false,
 });
@@ -101,6 +107,16 @@ export function GuruChatShell() {
   const [currentChakras, setCurrentChakras] = useState<{ [key: string]: number }>({});
   const [videoInsights, setVideoInsights] = useState<VideoFrameInsight[]>([]);
   const lastAutoMessageRef = useRef<number>(0);
+  
+  // Security error state (Phase 28 - F43)
+  const [securityError, setSecurityError] = useState<{
+    type: SecurityErrorType;
+    message?: string;
+    show: boolean;
+  }>({
+    type: 'generic',
+    show: false,
+  });
   
   // Initialize chat engine and voice engine
   useEffect(() => {
@@ -1527,7 +1543,7 @@ export function GuruChatShell() {
           >
             <CompatibilityTimeline
               timeline={chatEngineRef.current.getCompatibilityTimeline()!}
-              onMonthClick={(month) => {
+              onMonthClick={(month: CompatibilityMonth) => {
                 // Scene events are emitted from CompatibilityTimeline component
               }}
             />

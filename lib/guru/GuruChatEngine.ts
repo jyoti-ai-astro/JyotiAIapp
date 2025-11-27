@@ -845,6 +845,13 @@ export class GuruChatEngine {
   getTimelineSummary(): TimelineSummary | null {
     return this.timelineSummary;
   }
+  
+  /**
+   * Get compatibility timeline (Phase 22 - F37)
+   */
+  getCompatibilityTimeline(): CompatibilityMonth[] | null {
+    return this.compatibilityTimeline;
+  }
 
   /**
    * Get prediction memory summary

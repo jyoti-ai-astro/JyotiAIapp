@@ -7,3 +7,4 @@
 
 // Placeholder for chat input implementation
 
+export {};

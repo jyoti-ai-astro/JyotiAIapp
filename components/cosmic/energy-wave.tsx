@@ -7,3 +7,4 @@
 
 // Placeholder for energy wave implementation
 
+export {};

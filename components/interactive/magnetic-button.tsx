@@ -8,3 +8,5 @@
 
 // Placeholder for magnetic button implementation
 
+
+export {};

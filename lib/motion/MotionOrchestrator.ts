@@ -30,7 +30,7 @@ export interface AudioReactiveData {
 export class MotionOrchestrator {
   private animationRegistry: AnimationRegistry = new Map();
   private scrollListener: (() => void) | null = null;
-  private mouseListener: (() => void) | null = null;
+  private mouseListener: ((e: MouseEvent) => void) | null = null;
   private isHydrated = false;
   private config: MotionOrchestratorConfig;
   
@@ -202,37 +202,7 @@ export class MotionOrchestrator {
     return this.blessingWaveProgress;
   }
   
-  /**
-   * Page transition: cosmic-mist-enter
-   */
-  cosmicMistEnter(element: HTMLElement, callback?: () => void): void {
-    this.dispatch('onRouteChange', { type: 'cosmic-mist-enter', element });
-    if (callback) callback();
-  }
-  
-  /**
-   * Page transition: cosmic-mist-exit
-   */
-  cosmicMistExit(element: HTMLElement, callback?: () => void): void {
-    this.dispatch('onRouteChange', { type: 'cosmic-mist-exit', element });
-    if (callback) callback();
-  }
-  
-  /**
-   * Page transition: mandala-zoom-enter
-   */
-  mandalaZoomEnter(element: HTMLElement, callback?: () => void): void {
-    this.dispatch('onRouteChange', { type: 'mandala-zoom-enter', element });
-    if (callback) callback();
-  }
-  
-  /**
-   * Page transition: nebula-shift-exit
-   */
-  nebulaShiftExit(element: HTMLElement, callback?: () => void): void {
-    this.dispatch('onRouteChange', { type: 'nebula-shift-exit', element });
-    if (callback) callback();
-  }
+  // Note: Transition methods are defined later with Promise return types
   
   /**
    * Section enter
@@ -247,6 +217,41 @@ export class MotionOrchestrator {
    */
   onSectionExit(sectionId: string): void {
     this.dispatch('onSectionExit', { sectionId });
+  }
+  
+  /**
+   * Scroll parallax for section
+   */
+  scrollParallax(sectionId: string, progress: number): void {
+    this.dispatch('scrollParallax', { sectionId, progress });
+  }
+  
+  /**
+   * Scroll reveal for section
+   */
+  scrollReveal(sectionId: string, progress: number): void {
+    this.dispatch('scrollReveal', { sectionId, progress });
+  }
+  
+  /**
+   * Scroll glow for section
+   */
+  scrollGlow(sectionId: string, progress: number): void {
+    this.dispatch('scrollGlow', { sectionId, progress });
+  }
+  
+  /**
+   * Scroll nebula react
+   */
+  scrollNebulaReact(progress: number): void {
+    this.dispatch('scrollNebulaReact', { progress });
+  }
+  
+  /**
+   * Scroll starfield react
+   */
+  scrollStarfieldReact(progress: number): void {
+    this.dispatch('scrollStarfieldReact', { progress });
   }
   
   /**

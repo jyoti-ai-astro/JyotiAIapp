@@ -8,3 +8,4 @@
 
 // Placeholder for useCosmicMotion hook implementation
 
+export {};
