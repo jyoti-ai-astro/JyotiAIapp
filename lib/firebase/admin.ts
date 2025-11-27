@@ -10,10 +10,10 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore'
 import { getStorage, Storage } from 'firebase-admin/storage'
 import { envVars } from '@/lib/env/env.mjs'
 
-let app: App
-let adminAuth: Auth
-let adminDb: Firestore
-let adminStorage: Storage
+let app: App | undefined
+let adminAuth: Auth | undefined
+let adminDb: Firestore | undefined
+let adminStorage: Storage | undefined
 
 if (typeof window === 'undefined') {
   // Server-side only
@@ -23,23 +23,32 @@ if (typeof window === 'undefined') {
     if (!projectId || !privateKey || !clientEmail) {
       console.warn('Firebase Admin credentials not configured. Admin features will be disabled.')
     } else {
-      app = initializeApp({
-        credential: cert({
-          projectId,
-          privateKey,
-          clientEmail,
-        }),
-      })
-      
+      try {
+        app = initializeApp({
+          credential: cert({
+            projectId,
+            privateKey,
+            clientEmail,
+          }),
+        })
+        
+        adminAuth = getAuth(app)
+        adminDb = getFirestore(app)
+        adminStorage = getStorage(app)
+      } catch (error) {
+        console.error('Failed to initialize Firebase Admin:', error)
+        console.warn('Admin features will be disabled.')
+      }
+    }
+  } else {
+    try {
+      app = getApps()[0]
       adminAuth = getAuth(app)
       adminDb = getFirestore(app)
       adminStorage = getStorage(app)
+    } catch (error) {
+      console.error('Failed to get Firebase Admin instance:', error)
     }
-  } else {
-    app = getApps()[0]
-    adminAuth = getAuth(app)
-    adminDb = getFirestore(app)
-    adminStorage = getStorage(app)
   }
 }
 
