@@ -8,7 +8,10 @@
  */
 
 import * as THREE from 'three';
-import { Uniform, Vector2 } from 'three';
+const { Uniform, Vector2 } = THREE;
+
+
+
 import { cosmicFilmGrainShader } from './cosmic-filmgrain-shader';
 
 export interface CosmicFilmGrainEngineConfig {

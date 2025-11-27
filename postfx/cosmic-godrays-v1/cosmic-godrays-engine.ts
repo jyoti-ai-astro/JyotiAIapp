@@ -8,7 +8,10 @@
  */
 
 import * as THREE from 'three';
-import { Uniform, Vector2, Vector3 } from 'three';
+const { Uniform, Vector2, Vector3 } = THREE;
+
+
+
 import { cosmicGodRaysShader } from './cosmic-godrays-shader';
 
 export interface CosmicGodRaysEngineConfig {

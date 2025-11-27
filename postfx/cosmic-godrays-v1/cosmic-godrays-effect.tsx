@@ -13,7 +13,10 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Vector2, Vector3 } from 'three';
+const { Vector2, Vector3 } = THREE;
+
+
+
 import { CosmicGodRaysPass } from './cosmic-godrays-pass';
 
 const Effect = wrapEffect(CosmicGodRaysPass);

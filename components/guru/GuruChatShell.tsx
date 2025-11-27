@@ -761,7 +761,177 @@ export function GuruChatShell() {
     };
     return colorMap[emotion] || '#FFFFFF';
   }, []);
-  
+
+  const recentMessagesStart = Math.max(0, messages.length - 40);
+  const recentMessages = messages.slice(recentMessagesStart);
+  const renderedMessages = recentMessages.map((message, index) => {
+    const actualIndex = recentMessagesStart + index;
+    return (
+      <React.Fragment key={`msg-${actualIndex}`}>
+        {/* Gold shimmer line between user and guru messages */}
+        {message.role === 'user' &&
+          actualIndex > 0 &&
+          messages[actualIndex - 1]?.role === 'assistant' && (
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              className="relative w-full flex justify-center my-2"
+            >
+              <div className="w-32 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
+            </motion.div>
+          )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+          className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}
+        >
+          {message.role === 'assistant' && (
+            <motion.div
+              className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center flex-shrink-0"
+              animate={{
+                boxShadow: [
+                  '0 0 10px rgba(242, 201, 76, 0.3)',
+                  '0 0 20px rgba(242, 201, 76, 0.5)',
+                  '0 0 10px rgba(242, 201, 76, 0.3)',
+                ],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            >
+              <span className="text-gold text-xl">✨</span>
+            </motion.div>
+          )}
+
+          <div className={`flex-1 ${message.role === 'user' ? 'flex justify-end' : ''}`}>
+            <motion.div
+              className={`rounded-xl p-4 md:p-5 max-w-[85%] md:max-w-[80%] relative ${
+                message.role === 'user'
+                  ? 'bg-gold/10 border border-gold/30'
+                  : 'bg-white/5 border border-white/10'
+              }`}
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                duration: 0.4,
+                ease: [0.4, 0, 0.2, 1], // power2.out equivalent
+              }}
+              whileHover={{ scale: 1.02 }}
+              style={{
+                boxShadow:
+                  message.role === 'user'
+                    ? '0 8px 32px rgba(242, 201, 76, 0.25), 0 2px 8px rgba(242, 201, 76, 0.15)'
+                    : '0 8px 32px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(255, 255, 255, 0.04)',
+              }}
+            >
+              <p className={message.role === 'user' ? 'text-gold' : 'text-white/80'}>
+                {message.content}
+              </p>
+
+              {/* Orchestrated Badges (Phase 25 - F40, Phase 26 - F41: Polish) */}
+              {message.role === 'assistant' && (
+                <div className="flex flex-wrap gap-2 md:gap-3 mt-4">
+                  {/* Unified Insight Badge */}
+                  {message.insights && message.insights.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, y: 5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{
+                        duration: 0.4,
+                        delay: 0.1,
+                        ease: [0.4, 0, 0.2, 1],
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      className="px-3 py-1.5 bg-gold/20 border border-gold/40 rounded-full text-xs md:text-sm text-gold backdrop-blur-sm shadow-[0_2px_8px_rgba(242,201,76,0.2)]"
+                    >
+                      ✨ Unified Insight
+                    </motion.div>
+                  )}
+
+                  {/* Fusion Prediction Badge */}
+                  {chatEngineRef.current?.getPredictions() && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, y: 5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{
+                        duration: 0.4,
+                        delay: 0.15,
+                        ease: [0.4, 0, 0.2, 1],
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      className="px-3 py-1.5 bg-violet/20 border border-violet/40 rounded-full text-xs md:text-sm text-violet-300 backdrop-blur-sm shadow-[0_2px_8px_rgba(139,92,246,0.2)]"
+                    >
+                      🔮 Fusion Prediction
+                    </motion.div>
+                  )}
+
+                  {/* Karmic Resonance Badge */}
+                  {chatEngineRef.current?.getPastLifeResult() && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, y: 5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{
+                        duration: 0.4,
+                        delay: 0.2,
+                        ease: [0.4, 0, 0.2, 1],
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      className="px-3 py-1.5 bg-amber/20 border border-amber/40 rounded-full text-xs md:text-sm text-amber-300 backdrop-blur-sm shadow-[0_2px_8px_rgba(255,193,7,0.2)]"
+                    >
+                      ⚡ Karmic Resonance
+                    </motion.div>
+                  )}
+
+                  {/* Cosmic Synergy Badge */}
+                  {chatEngineRef.current && chatEngineRef.current.getSynergyScore() >= 0.7 && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, y: 5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{
+                        duration: 0.4,
+                        delay: 0.25,
+                        ease: [0.4, 0, 0.2, 1],
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      className="px-3 py-1.5 bg-cyan/20 border border-cyan/40 rounded-full text-xs md:text-sm text-cyan-300 backdrop-blur-sm shadow-[0_2px_8px_rgba(6,182,212,0.2)]"
+                    >
+                      🌟 Cosmic Synergy
+                    </motion.div>
+                  )}
+                </div>
+              )}
+
+              {/* Timestamp */}
+              {message.timestamp && (
+                <p
+                  className={`text-xs mt-2 ${
+                    message.role === 'user' ? 'text-gold/60' : 'text-white/40'
+                  }`}
+                >
+                  {formatTimestamp(message.timestamp)}
+                </p>
+              )}
+            </motion.div>
+          </div>
+
+          {message.role === 'user' && (
+            <motion.div
+              className="w-10 h-10 rounded-full bg-aura-blue/20 flex items-center justify-center flex-shrink-0"
+              whileHover={{ scale: 1.1 }}
+            >
+              <span className="text-aura-blue text-xl">👤</span>
+            </motion.div>
+          )}
+        </motion.div>
+      </React.Fragment>
+    );
+  });
+
   return (
     <section
       ref={shellRef}
@@ -811,173 +981,7 @@ export function GuruChatShell() {
               <div className="flex-1 space-y-4 overflow-y-auto max-h-[500px] pr-2">
                 <AnimatePresence>
                   {/* Phase 27 - F42: Only render last 40 messages + current streaming for performance */}
-                  {(messages.length > 40 ? messages.slice(-40) : messages).map((message, index) => {
-                    const actualIndex = messages.length > 40 ? messages.length - 40 + index : index;
-                    return (
-                    <React.Fragment key={`msg-${actualIndex}`}>
-                      {/* Gold shimmer line between user and guru messages */}
-                      {message.role === 'user' && actualIndex > 0 && messages[actualIndex - 1]?.role === 'assistant' && (
-                        <motion.div
-                          initial={{ opacity: 0, scaleX: 0 }}
-                          animate={{ opacity: 1, scaleX: 1 }}
-                          className="relative w-full flex justify-center my-2"
-                        >
-                          <div className="w-32 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
-                        </motion.div>
-                      )}
-                      
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }}
-                        className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}
-                      >
-                        {message.role === 'assistant' && (
-                          <motion.div
-                            className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center flex-shrink-0"
-                            animate={{
-                              boxShadow: [
-                                '0 0 10px rgba(242, 201, 76, 0.3)',
-                                '0 0 20px rgba(242, 201, 76, 0.5)',
-                                '0 0 10px rgba(242, 201, 76, 0.3)',
-                              ],
-                            }}
-                            transition={{
-                              duration: 3,
-                              repeat: Infinity,
-                              ease: 'easeInOut',
-                            }}
-                          >
-                            <span className="text-gold text-xl">✨</span>
-                          </motion.div>
-                        )}
-                        
-                        <div className={`flex-1 ${message.role === 'user' ? 'flex justify-end' : ''}`}>
-                          <motion.div
-                            className={`rounded-xl p-4 md:p-5 max-w-[85%] md:max-w-[80%] relative ${
-                              message.role === 'user'
-                                ? 'bg-gold/10 border border-gold/30'
-                                : 'bg-white/5 border border-white/10'
-                            }`}
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{ 
-                              duration: 0.4,
-                              ease: [0.4, 0, 0.2, 1] // power2.out equivalent
-                            }}
-                            whileHover={{ scale: 1.02 }}
-                            style={{
-                              boxShadow: message.role === 'user'
-                                ? '0 8px 32px rgba(242, 201, 76, 0.25), 0 2px 8px rgba(242, 201, 76, 0.15)'
-                                : '0 8px 32px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(255, 255, 255, 0.04)',
-                            }}
-                          >
-                            <p
-                              className={
-                                message.role === 'user' ? 'text-gold' : 'text-white/80'
-                              }
-                            >
-                              {message.content}
-                            </p>
-                            
-                            {/* Orchestrated Badges (Phase 25 - F40, Phase 26 - F41: Polish) */}
-                            {message.role === 'assistant' && (
-                              <div className="flex flex-wrap gap-2 md:gap-3 mt-4">
-                                {/* Unified Insight Badge */}
-                                {message.insights && message.insights.length > 0 && (
-                                  <motion.div
-                                    initial={{ opacity: 0, scale: 0.8, y: 5 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    transition={{ 
-                                      duration: 0.4,
-                                      delay: 0.1,
-                                      ease: [0.4, 0, 0.2, 1]
-                                    }}
-                                    whileHover={{ scale: 1.05 }}
-                                    className="px-3 py-1.5 bg-gold/20 border border-gold/40 rounded-full text-xs md:text-sm text-gold backdrop-blur-sm shadow-[0_2px_8px_rgba(242,201,76,0.2)]"
-                                  >
-                                    ✨ Unified Insight
-                                  </motion.div>
-                                )}
-                                
-                                {/* Fusion Prediction Badge */}
-                                {chatEngineRef.current?.getPredictions() && (
-                                  <motion.div
-                                    initial={{ opacity: 0, scale: 0.8, y: 5 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    transition={{ 
-                                      duration: 0.4,
-                                      delay: 0.15,
-                                      ease: [0.4, 0, 0.2, 1]
-                                    }}
-                                    whileHover={{ scale: 1.05 }}
-                                    className="px-3 py-1.5 bg-violet/20 border border-violet/40 rounded-full text-xs md:text-sm text-violet-300 backdrop-blur-sm shadow-[0_2px_8px_rgba(139,92,246,0.2)]"
-                                  >
-                                    🔮 Fusion Prediction
-                                  </motion.div>
-                                )}
-                                
-                                {/* Karmic Resonance Badge */}
-                                {chatEngineRef.current?.getPastLifeResult() && (
-                                  <motion.div
-                                    initial={{ opacity: 0, scale: 0.8, y: 5 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    transition={{ 
-                                      duration: 0.4,
-                                      delay: 0.2,
-                                      ease: [0.4, 0, 0.2, 1]
-                                    }}
-                                    whileHover={{ scale: 1.05 }}
-                                    className="px-3 py-1.5 bg-amber/20 border border-amber/40 rounded-full text-xs md:text-sm text-amber-300 backdrop-blur-sm shadow-[0_2px_8px_rgba(255,193,7,0.2)]"
-                                  >
-                                    ⚡ Karmic Resonance
-                                  </motion.div>
-                                )}
-                                
-                                {/* Cosmic Synergy Badge */}
-                                {chatEngineRef.current && chatEngineRef.current.getSynergyScore() >= 0.7 && (
-                                  <motion.div
-                                    initial={{ opacity: 0, scale: 0.8, y: 5 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    transition={{ 
-                                      duration: 0.4,
-                                      delay: 0.25,
-                                      ease: [0.4, 0, 0.2, 1]
-                                    }}
-                                    whileHover={{ scale: 1.05 }}
-                                    className="px-3 py-1.5 bg-cyan/20 border border-cyan/40 rounded-full text-xs md:text-sm text-cyan-300 backdrop-blur-sm shadow-[0_2px_8px_rgba(6,182,212,0.2)]"
-                                  >
-                                    🌟 Cosmic Synergy
-                                  </motion.div>
-                                )}
-                              </div>
-                            )}
-                            
-                            {/* Timestamp */}
-                            {message.timestamp && (
-                              <p
-                                className={`text-xs mt-2 ${
-                                  message.role === 'user' ? 'text-gold/60' : 'text-white/40'
-                                }`}
-                              >
-                                {formatTimestamp(message.timestamp)}
-                              </p>
-                            )}
-                          </motion.div>
-                        </div>
-                        
-                        {message.role === 'user' && (
-                          <motion.div
-                            className="w-10 h-10 rounded-full bg-aura-blue/20 flex items-center justify-center flex-shrink-0"
-                            whileHover={{ scale: 1.1 }}
-                          >
-                            <span className="text-aura-blue text-xl">👤</span>
-                          </motion.div>
-                        )}
-                      </motion.div>
-                    </React.Fragment>
-                  ))}
+                  {renderedMessages}
                   
                   {/* Streaming message */}
                   {isStreaming && currentStreamingMessage && (

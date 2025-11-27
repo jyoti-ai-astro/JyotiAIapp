@@ -8,7 +8,10 @@
  */
 
 import * as THREE from 'three';
-import { Uniform, Vector2 } from 'three';
+const { Uniform, Vector2 } = THREE;
+
+
+
 import { cosmicHalationShader } from './cosmic-halation-shader';
 
 export interface CosmicHalationEngineConfig {

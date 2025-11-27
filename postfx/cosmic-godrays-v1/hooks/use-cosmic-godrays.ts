@@ -9,8 +9,11 @@
 
 import { useRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Vector2, Vector3 } from 'three';
+
 import * as THREE from 'three';
+const { Vector2, Vector3 } = THREE;
+
+
 import { motionOrchestrator } from '../../../cosmos/motion/orchestrator';
 import { CosmicGodRaysPass } from '../cosmic-godrays-pass';
 

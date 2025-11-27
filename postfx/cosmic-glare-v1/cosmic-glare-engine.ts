@@ -9,7 +9,10 @@
  */
 
 import * as THREE from 'three';
-import { Uniform, WebGLRenderTarget, Vector2 } from 'three';
+const { Uniform, WebGLRenderTarget, Vector2 } = THREE;
+
+
+
 import { cosmicGlareShader, horizontalStreakShader, verticalStreakShader } from './cosmic-glare-shader';
 
 export interface CosmicGlareEngineConfig {

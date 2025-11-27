@@ -9,7 +9,6 @@
 
 import * as THREE from 'three';
 import { Effect, BlendFunction } from 'postprocessing';
-import { Uniform, WebGLRenderTarget, Vector2 } from 'three';
 import { cosmicBloomShader, downsampleShader, upsampleShader } from './cosmic-bloom-shader';
 
 export interface CosmicBloomEngineConfig {
@@ -18,6 +17,8 @@ export interface CosmicBloomEngineConfig {
   resolution?: number;
   kernelSize?: number;
 }
+
+const { Uniform, WebGLRenderTarget, Vector2 } = THREE;
 
 export class CosmicBloomEngine {
   private config: CosmicBloomEngineConfig;

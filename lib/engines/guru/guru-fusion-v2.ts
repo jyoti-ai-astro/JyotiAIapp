@@ -8,7 +8,6 @@
 
 import { generateGuruResponse, type GuruContext } from './guru-engine'
 import { consolidatePredictions } from '@/lib/engines/prediction/consolidation-layer'
-import { generateGuruResponse, type GuruContext } from './guru-engine'
 import type { PredictionReport } from '@/lib/engines/reports/prediction-engine'
 
 export interface EnhancedGuruResponse {

@@ -14,10 +14,9 @@ import { Button } from '@/components/ui/button';
 import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
-import { gsapHeroReveal } from '@/lib/motion/gsap-motion-bridge';
+import { gsapHeroReveal, scrollParallaxY } from '@/lib/motion/gsap-motion-bridge';
 import { useSectionMotion } from '@/hooks/motion/useSectionMotion';
 import { useScrollMotion } from '@/hooks/motion/useScrollMotion';
-import { scrollParallaxY } from '@/lib/motion/gsap-motion-bridge';
 
 export interface CosmicHeroProps {
   /** Hero title */

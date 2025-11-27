@@ -8,8 +8,11 @@
  */
 
 import { Effect, BlendFunction } from 'postprocessing';
-import { Uniform, Vector2, Vector3 } from 'three';
+
 import * as THREE from 'three';
+const { Uniform, Vector2, Vector3 } = THREE;
+
+
 import { cosmicGodRaysShader } from './cosmic-godrays-shader';
 
 export interface CosmicGodRaysPassConfig {

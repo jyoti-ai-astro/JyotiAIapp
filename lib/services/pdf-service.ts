@@ -8,10 +8,10 @@
 
 import { getStorage } from 'firebase-admin/storage'
 import { adminDb } from '@/lib/firebase/admin'
-import { reportToHTML } from '@/lib/engines/reports/report-generator'
-import type { StructuredReport } from '@/lib/engines/reports/report-generator'
+import { reportToHTML, type StructuredReport } from '@/lib/engines/reports/report-generator'
 
 // Using html-pdf-node for server-side PDF generation
+// F48: Emitter dependency fixed via webpack alias in next.config.js
 let htmlPdfNode: any = null
 
 try {
@@ -130,4 +130,3 @@ export async function generatePDFFromHTML(
   
   return downloadUrl
 }
-

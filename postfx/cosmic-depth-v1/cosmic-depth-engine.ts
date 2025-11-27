@@ -8,7 +8,10 @@
  */
 
 import * as THREE from 'three';
-import { Uniform, WebGLRenderTarget, Vector2 } from 'three';
+const { Uniform, WebGLRenderTarget, Vector2 } = THREE;
+
+
+
 import { cosmicDepthShader, cocShader } from './cosmic-depth-shader';
 
 export interface CosmicDepthEngineConfig {

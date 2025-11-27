@@ -21,6 +21,27 @@ const nextConfig = {
   
   // Phase 30 - F45: Code splitting optimization
   webpack: (config, { isServer, dev }) => {
+    // F48: Fix emitter dependency for html-pdf-node
+    if (isServer) {
+      const webpack = require('webpack');
+      // Replace 'emitter' with Node's built-in 'events' module
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^emitter$/, 'events')
+      );
+      // Ensure 'events' is treated as a Node.js built-in
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'events': false, // Use Node.js built-in
+      };
+    } else {
+      // Client-side: externalize html-pdf-node and its dependencies
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'html-pdf-node': false,
+        'emitter': false,
+      };
+    }
+    
     if (!isServer && !dev) {
       // Phase 30 - F45: Optimize chunk splitting
       config.optimization = {

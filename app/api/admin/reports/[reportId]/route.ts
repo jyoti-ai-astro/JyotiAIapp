@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebase/admin'
+import { adminDb, adminStorage } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
-import { adminStorage } from '@/lib/firebase/admin'
 
 /**
  * Get Report Details API
