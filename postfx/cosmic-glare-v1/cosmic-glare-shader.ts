@@ -52,9 +52,6 @@ export const cosmicGlareShader = {
     uniform float uStarStrength;
     uniform vec2 uResolution;
     uniform float uKernelSize;
-    uniform sampler2D inputTexture;
-    
-    varying vec2 vUv;
     
     // ============================================
     // BRIGHT PIXEL EXTRACTION
@@ -225,23 +222,18 @@ export const cosmicGlareShader = {
       return shimmer * 0.3;
     }
     
-    void main() {
-      vec2 uv = vUv;
-      
-      // Sample input texture
-      vec4 inputColor = texture2D(inputTexture, uv);
-      
+    void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
       // Extract brightness for mask
       float brightness = extractBrightness(inputColor);
       
-      // Horizontal anamorphic streak
-      vec3 hStreak = horizontalStreak(inputTexture, uv, uStreakLength);
+      // Horizontal anamorphic streak (use inputBuffer provided by postprocessing)
+      vec3 hStreak = horizontalStreak(inputBuffer, uv, uStreakLength);
       
       // Vertical streak (secondary)
-      vec3 vStreak = verticalStreak(inputTexture, uv, uStreakLength * 0.5);
+      vec3 vStreak = verticalStreak(inputBuffer, uv, uStreakLength * 0.5);
       
       // Starburst pattern
-      vec3 star = starburst(inputTexture, uv) * uStarStrength;
+      vec3 star = starburst(inputBuffer, uv) * uStarStrength;
       
       // Blessing flare burst
       vec3 flare = blessingFlare(uv);
@@ -263,7 +255,7 @@ export const cosmicGlareShader = {
       // Clamp
       finalColor = clamp(finalColor, 0.0, 1.0);
       
-      gl_FragColor = vec4(finalColor, inputColor.a);
+      outputColor = vec4(finalColor, inputColor.a);
     }
   `,
 };
