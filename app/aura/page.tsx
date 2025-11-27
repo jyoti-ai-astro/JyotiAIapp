@@ -5,9 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
+import { CosmicAura } from '@/components/aura/CosmicAura'
 
 export default function AuraPage() {
   const router = useRouter()
@@ -107,130 +105,15 @@ export default function AuraPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-display font-bold">Aura Reading</h1>
-        <Link href="/dashboard">
-          <Button variant="outline">Back to Dashboard</Button>
-        </Link>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload Your Selfie</CardTitle>
-          <CardDescription>
-            Upload a clear selfie to analyze your aura colors and chakra balance
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <label className="mb-2 block text-sm font-medium">Selfie Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
-              className="w-full text-sm"
-            />
-          </div>
-
-          {imagePreview && (
-            <div className="rounded-lg border p-4">
-              <img src={imagePreview} alt="Selfie preview" className="w-full rounded-lg" />
-            </div>
-          )}
-
-          <Button
-            onClick={handleUpload}
-            disabled={!imageFile || uploading || analyzing}
-            className="w-full"
-          >
-            {uploading ? 'Uploading...' : analyzing ? 'Analyzing...' : 'Upload & Analyze'}
-          </Button>
-
-          <p className="text-xs text-muted-foreground">
-            Tips: Use natural lighting, face the camera directly, ensure clear visibility. Maximum
-            file size: 10MB
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Analysis Results */}
-      {analysis && (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Aura Colors</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div>
-                  <p className="text-sm font-medium">Primary Color</p>
-                  <p className="text-lg font-semibold text-mystic capitalize">
-                    {analysis.primaryColor}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">All Colors Detected</p>
-                  <div className="flex gap-2 mt-2">
-                    {analysis.auraColors.map((color: string, i: number) => (
-                      <span
-                        key={i}
-                        className="rounded-full bg-mystic/10 px-3 py-1 text-sm capitalize"
-                      >
-                        {color}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Energy Score</p>
-                  <p className="text-2xl font-bold text-mystic">{analysis.energyScore}/100</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Chakra Balance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.entries(analysis.chakraBalance).map(([chakra, score]: [string, any]) => (
-                  <div key={chakra}>
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium capitalize">{chakra}</p>
-                      <p className="text-sm">{score}/100</p>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-muted">
-                      <div
-                        className="h-2 rounded-full bg-mystic"
-                        style={{ width: `${score}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {analysis.recommendations && analysis.recommendations.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Recommendations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                  {analysis.recommendations.map((rec: string, i: number) => (
-                    <li key={i}>{rec}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-    </div>
+    <CosmicAura
+      imageFile={imageFile}
+      imagePreview={imagePreview}
+      onFileSelect={handleFileSelect}
+      onUpload={handleUpload}
+      uploading={uploading}
+      analyzing={analyzing}
+      analysis={analysis}
+    />
   )
 }
 
