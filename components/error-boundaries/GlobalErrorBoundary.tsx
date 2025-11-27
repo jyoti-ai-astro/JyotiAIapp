@@ -116,16 +116,23 @@ export class GlobalErrorBoundary extends Component<Props, State> {
               </motion.button>
             </div>
 
-            {/* Error details (development only) */}
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {/* Error details (always show in production for debugging) */}
+            {this.state.error && (
               <details className="mt-6 text-left">
                 <summary className="text-white/60 text-sm cursor-pointer mb-2">
-                  Error Details (Development)
+                  Error Details
                 </summary>
                 <pre className="text-xs text-white/50 bg-black/20 p-4 rounded overflow-auto max-h-40">
-                  {this.state.error.message}
+                  <div className="font-bold mb-2">Error: {this.state.error.message}</div>
+                  {this.state.error.stack && (
+                    <div className="mt-2 text-xs">
+                      <div className="font-semibold mb-1">Stack:</div>
+                      {this.state.error.stack.substring(0, 1000)}
+                    </div>
+                  )}
                   {this.state.errorInfo?.componentStack && (
-                    <div className="mt-2">
+                    <div className="mt-2 text-xs">
+                      <div className="font-semibold mb-1">Component Stack:</div>
                       {this.state.errorInfo.componentStack.substring(0, 500)}
                     </div>
                   )}

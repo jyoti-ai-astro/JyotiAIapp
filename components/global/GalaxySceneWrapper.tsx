@@ -70,10 +70,19 @@ export function GalaxySceneWrapper({
   globalFade = 1.0,
 }: GalaxySceneWrapperProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   
-  // Get scroll and mouse from orchestrator if available
-  const scrollMotion = useScrollMotion();
-  const mouseMotion = useMouseMotion();
+  // Get scroll and mouse from orchestrator if available (with error handling)
+  let scrollMotion = { scrollY: 0, scrollVelocity: 0, direction: 'none' as const, sectionProgress: {}, sectionActive: null };
+  let mouseMotion = { mouseX: 0, mouseY: 0, deltaX: 0, deltaY: 0, velocity: 0, direction: 'none' as const };
+  
+  try {
+    scrollMotion = useScrollMotion();
+    mouseMotion = useMouseMotion();
+  } catch (error) {
+    console.warn('[GalaxySceneWrapper] Motion hooks error, using defaults:', error);
+    // Use default values if hooks fail
+  }
   
   // Use orchestrator values if available, fallback to props
   const scroll = scrollMotion.scrollY > 0 
@@ -92,6 +101,17 @@ export function GalaxySceneWrapper({
     return () => clearTimeout(timer);
   }, []);
   
+  // If error occurred, show fallback
+  if (hasError) {
+    return (
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-cosmic via-purple-900 to-cosmic">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-white/60 text-sm font-heading">Cosmic scene unavailable</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-0">
       {isLoading && <LoadingShimmer />}
@@ -103,7 +123,7 @@ export function GalaxySceneWrapper({
         onError={(error) => {
           // Phase 29 - F44: Handle R3F errors gracefully - freeze scene, disable animations
           console.warn('[GalaxyScene] Canvas error, scene frozen gracefully:', error);
-          // Scene will continue normally, just log the error
+          setHasError(true);
         }}
       >
         <Suspense fallback={null}>

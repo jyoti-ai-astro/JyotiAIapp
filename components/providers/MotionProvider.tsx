@@ -43,29 +43,56 @@ interface MotionProviderProps {
 }
 
 export function MotionProvider({ children }: MotionProviderProps) {
-  const [orchestrator] = useState(() => getMotionOrchestrator());
+  const [orchestrator, setOrchestrator] = useState<MotionOrchestrator | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [hasError, setHasError] = useState(false);
   
   useEffect(() => {
-    // Initialize orchestrator
-    orchestrator.init();
-    
-    // Lazy load GSAP
-    loadGSAP().then(() => {
-      setIsReady(true);
-    });
-    
-    // Cleanup on unmount (Phase 27 - F42: Enhanced cleanup)
-    return () => {
-      orchestrator.cleanup();
-      // Phase 27 - F42: Cleanup ScrollTrigger instances
-      if (typeof window !== 'undefined') {
-        import('@/lib/motion/gsap-motion-bridge').then(({ cleanupScrollTriggers }) => {
-          cleanupScrollTriggers();
-        });
-      }
-    };
-  }, [orchestrator]);
+    try {
+      const orch = getMotionOrchestrator();
+      setOrchestrator(orch);
+      
+      // Initialize orchestrator
+      orch.init();
+      
+      // Lazy load GSAP
+      loadGSAP().then(() => {
+        setIsReady(true);
+      }).catch((error) => {
+        console.warn('[MotionProvider] GSAP load error:', error);
+        setIsReady(true); // Continue anyway
+      });
+      
+      // Cleanup on unmount (Phase 27 - F42: Enhanced cleanup)
+      return () => {
+        try {
+          orch.cleanup();
+          // Phase 27 - F42: Cleanup ScrollTrigger instances
+          if (typeof window !== 'undefined') {
+            import('@/lib/motion/gsap-motion-bridge').then(({ cleanupScrollTriggers }) => {
+              cleanupScrollTriggers();
+            }).catch(() => {
+              // Ignore cleanup errors
+            });
+          }
+        } catch (error) {
+          console.warn('[MotionProvider] Cleanup error:', error);
+        }
+      };
+    } catch (error) {
+      console.error('[MotionProvider] Initialization error:', error);
+      setHasError(true);
+    }
+  }, []);
+  
+  // If orchestrator failed to initialize, still render children (graceful degradation)
+  if (hasError || !orchestrator) {
+    return (
+      <MotionContext.Provider value={{ orchestrator: orchestrator || getMotionOrchestrator(), isReady: false }}>
+        {children}
+      </MotionContext.Provider>
+    );
+  }
   
   return (
     <MotionContext.Provider value={{ orchestrator, isReady }}>
