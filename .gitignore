@@ -47,3 +47,9 @@ firestore-debug.log
 *.swo
 *~
 
+# Local configuration
+.mcp-config.json
+.cursor/mcp.json
+.cursor/settings.json
+.cursor/config.json
+
