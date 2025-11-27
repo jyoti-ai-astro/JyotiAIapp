@@ -54,9 +54,6 @@ export const cosmicHalationShader = {
     uniform float uBlessingWaveProgress;
     uniform float uCameraFOV;
     uniform vec2 uResolution;
-    uniform sampler2D inputTexture;
-    
-    varying vec2 vUv;
     
     // ============================================
     // BRIGHT PIXEL EXTRACTION (Bloom Mask)
@@ -216,11 +213,7 @@ export const cosmicHalationShader = {
       return warmFlash * 0.5;
     }
     
-    void main() {
-      vec2 uv = vUv;
-      
-      // Sample input texture
-      vec4 inputColor = texture2D(inputTexture, uv);
+    void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
       vec3 color = inputColor.rgb;
       
       // Extract brightness for bloom mask interaction
@@ -253,7 +246,7 @@ export const cosmicHalationShader = {
       // Clamp
       finalColor = clamp(finalColor, 0.0, 1.0);
       
-      gl_FragColor = vec4(finalColor, inputColor.a);
+      outputColor = vec4(finalColor, inputColor.a);
     }
   `,
 };

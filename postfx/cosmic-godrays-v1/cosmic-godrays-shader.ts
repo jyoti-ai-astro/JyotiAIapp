@@ -59,7 +59,6 @@ export const cosmicGodRaysShader = {
     uniform float uBlessingWaveProgress;
     uniform float uCameraFOV;
     uniform sampler2D uDepthTexture;
-    uniform sampler2D inputTexture;
     uniform vec2 uResolution;
     uniform float uParallaxStrength;
     uniform float uScatteringStrength;
@@ -198,11 +197,7 @@ export const cosmicGodRaysShader = {
       return whiteGold * beam * 0.6;
     }
     
-    void main() {
-      vec2 uv = vUv;
-      
-      // Sample input texture
-      vec4 inputColor = texture2D(inputTexture, uv);
+    void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
       vec3 color = inputColor.rgb;
       
       // Extract brightness for shadow mask
@@ -239,7 +234,7 @@ export const cosmicGodRaysShader = {
       // Clamp
       color = clamp(color, 0.0, 1.0);
       
-      gl_FragColor = vec4(color, inputColor.a);
+      outputColor = vec4(color, inputColor.a);
     }
   `,
 };
