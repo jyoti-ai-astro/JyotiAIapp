@@ -46,9 +46,6 @@ export const cosmicBloomShader = {
     uniform float uBlessingWaveProgress;
     uniform float uFOV;
     uniform vec2 uResolution;
-    uniform sampler2D inputTexture;
-    
-    varying vec2 vUv;
     
     // ============================================
     // GAUSSIAN BLUR KERNEL (9-tap)
@@ -99,13 +96,13 @@ export const cosmicBloomShader = {
       bloom *= (1.0 + uMid * 0.2);
       
       // High → Sparkle Bloom Layer
-      float sparkle = sin(vUv.x * 20.0 + vUv.y * 20.0 + uTime * 2.0) * 0.5 + 0.5;
+      float sparkle = sin(uv.x * 20.0 + uv.y * 20.0 + uTime * 2.0) * 0.5 + 0.5;
       sparkle = smoothstep(0.7, 1.0, sparkle);
       sparkle *= uHigh;
       bloom += sparkle * 0.3;
       
       // Temporal shimmer from uTime, uHigh
-      float temporalShimmer = sin(uTime * 3.0 + vUv.x * 10.0 + vUv.y * 10.0) * 0.1 + 1.0;
+      float temporalShimmer = sin(uTime * 3.0 + uv.x * 10.0 + uv.y * 10.0) * 0.1 + 1.0;
       temporalShimmer *= (1.0 + uHigh * 0.2);
       bloom *= temporalShimmer;
       
@@ -136,14 +133,8 @@ export const cosmicBloomShader = {
       return center + offset;
     }
     
-    void main() {
-      // Apply FOV warp
-      vec2 warpedUV = applyFOVWarp(vUv);
-      
-      // Sample input texture (from @react-three/postprocessing)
-      vec4 inputColor = texture2D(inputTexture, warpedUV);
-      
-      // Extract brightness for bloom
+    void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+      // Extract brightness for bloom (using inputColor directly)
       vec4 bloomColor = extractBrightness(inputColor);
       
       // Composite bloom (additive blending)
@@ -152,7 +143,7 @@ export const cosmicBloomShader = {
       // Clamp
       finalColor = clamp(finalColor, 0.0, 1.0);
       
-      gl_FragColor = vec4(finalColor, inputColor.a);
+      outputColor = vec4(finalColor, inputColor.a);
     }
   `,
 };
