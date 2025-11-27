@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * List Guru Chats API
  * Milestone 10 - Step 6

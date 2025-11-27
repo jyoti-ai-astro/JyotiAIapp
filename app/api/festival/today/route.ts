@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { getFestivalToday, checkDashaSensitivity } from '@/lib/engines/festival/festival-engine'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Get Today's Festival
  * Part B - Section 8: Notifications & Daily Insights

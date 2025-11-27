@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Get Kundali
  * Part B - Section 4: Step 8

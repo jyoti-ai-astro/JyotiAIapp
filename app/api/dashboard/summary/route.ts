@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Dashboard Summary API
  * Part B - Section 4: Milestone 3 - Step 1

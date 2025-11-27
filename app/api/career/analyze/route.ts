@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { analyzeCareer } from '@/lib/engines/career/career-engine'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Analyze Career
  * Milestone 8 - Step 2

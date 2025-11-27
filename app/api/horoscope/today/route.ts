@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { generateDailyHoroscope } from '@/lib/engines/horoscope/daily-horoscope'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Get Today's Horoscope
  * Part B - Section 8: Notifications & Daily Insights
