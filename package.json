@@ -2,6 +2,12 @@
   "name": "jyoti-ai",
   "version": "1.0.0",
   "private": true,
+  "sideEffects": [
+    "**/*.css",
+    "**/postfx/**/*.ts",
+    "**/cosmos/**/*.ts",
+    "**/lib/**/*.ts"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
