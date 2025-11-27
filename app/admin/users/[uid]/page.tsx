@@ -5,6 +5,7 @@
  * Milestone 10 - Step 3
  */
 
+'use client';
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'

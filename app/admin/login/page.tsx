@@ -5,6 +5,7 @@
  * Milestone 10 - Step 1
  */
 
+'use client';
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

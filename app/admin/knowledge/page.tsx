@@ -5,6 +5,7 @@
  * Milestone 10 - Step 7
  */
 
+'use client';
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
