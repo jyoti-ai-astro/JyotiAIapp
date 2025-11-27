@@ -7,6 +7,8 @@
 import type { Metadata } from 'next';
 import { AboutPageClient } from './about-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'About | Jyoti.ai - Our Story & Mission',
   description: 'Learn about Jyoti.ai, our mission to combine ancient Indian sciences with modern AI technology for spiritual guidance',
