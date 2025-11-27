@@ -85,10 +85,19 @@ export function MotionProvider({ children }: MotionProviderProps) {
     }
   }, []);
   
-  // If orchestrator failed to initialize, still render children (graceful degradation)
+  // If orchestrator failed to initialize, create a minimal fallback
   if (hasError || !orchestrator) {
+    // Create a minimal orchestrator that won't throw
+    const fallbackOrchestrator = {
+      init: () => {},
+      cleanup: () => {},
+      register: () => {},
+      unregister: () => {},
+      emit: () => {},
+    } as MotionOrchestrator;
+    
     return (
-      <MotionContext.Provider value={{ orchestrator: orchestrator || getMotionOrchestrator(), isReady: false }}>
+      <MotionContext.Provider value={{ orchestrator: fallbackOrchestrator, isReady: false }}>
         {children}
       </MotionContext.Provider>
     );
