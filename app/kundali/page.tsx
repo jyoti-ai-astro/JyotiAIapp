@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { KundaliWheel3D } from '@/components/organisms/kundali-wheel-3d'
+import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
 import Link from 'next/link'
 
 interface KundaliData {
@@ -109,25 +111,61 @@ export default function KundaliPage() {
   const bhavas = kundali.D1?.bhavas || {}
   const lagna = kundali.D1?.lagna
 
+  // Transform grahas to 3D wheel format
+  const grahaPositions = Object.entries(grahas).map(([planetName, graha]: [string, any]) => ({
+    planet: graha.planet || planetName,
+    degrees: graha.degreesInSign || 0,
+    sign: graha.sign,
+    house: graha.house || 0,
+    longitude: graha.longitude || 0,
+    latitude: graha.latitude || 0,
+  }));
+
+  const lagnaDegrees = lagna?.longitude || 0;
+  const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
+      {/* Subtle cosmic background */}
+      <CosmicBackground />
+      
+      <div className="container mx-auto p-6 space-y-6 relative z-10">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-4xl font-display font-bold">Your Kundali</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-4xl font-display font-bold text-cosmic-gold">Your Kundali</h1>
+          <p className="text-aura-cyan">
             Generated on {new Date(kundali.meta.generatedAt).toLocaleDateString()}
           </p>
         </div>
         <Link href="/dashboard">
-          <Button variant="outline">Back to Dashboard</Button>
+          <Button className="cosmic-button border-aura-cyan/30 text-aura-cyan hover:bg-aura-cyan/10">
+            Back to Dashboard
+          </Button>
         </Link>
       </div>
 
+      {/* 3D Kundali Wheel */}
+      {grahaPositions.length > 0 && (
+        <div className="mb-8">
+          <KundaliWheel3D
+            grahas={grahaPositions}
+            lagna={lagnaDegrees}
+            onPlanetHover={setHoveredPlanet}
+            className="h-[600px]"
+          />
+          {hoveredPlanet && (
+            <div className="mt-4 text-center">
+              <p className="text-aura-cyan">Hovering: {hoveredPlanet}</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Lagna Details */}
       {lagna && (
-        <Card>
+        <Card className="cosmic-card border-aura-blue/30 bg-cosmic-indigo/10">
           <CardHeader>
-            <CardTitle>Lagna (Ascendant)</CardTitle>
+            <CardTitle className="text-cosmic-gold">Lagna (Ascendant)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
@@ -157,10 +195,10 @@ export default function KundaliPage() {
       )}
 
       {/* Grahas (Planets) Table */}
-      <Card>
+      <Card className="cosmic-card border-aura-violet/30 bg-cosmic-indigo/10">
         <CardHeader>
-          <CardTitle>Grahas (Planets)</CardTitle>
-          <CardDescription>Planetary positions in your birth chart</CardDescription>
+          <CardTitle className="text-aura-violet">Grahas (Planets)</CardTitle>
+          <CardDescription className="text-aura-cyan">Planetary positions in your birth chart</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -201,10 +239,10 @@ export default function KundaliPage() {
       </Card>
 
       {/* Bhavas (Houses) Table */}
-      <Card>
+      <Card className="cosmic-card border-aura-green/30 bg-cosmic-indigo/10">
         <CardHeader>
-          <CardTitle>Bhavas (Houses)</CardTitle>
-          <CardDescription>House cusps and planetary placements</CardDescription>
+          <CardTitle className="text-aura-green">Bhavas (Houses)</CardTitle>
+          <CardDescription className="text-aura-cyan">House cusps and planetary placements</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -235,10 +273,10 @@ export default function KundaliPage() {
 
       {/* Dasha Summary */}
       {kundali.dasha && (
-        <Card>
+        <Card className="cosmic-card border-aura-orange/30 bg-cosmic-indigo/10">
           <CardHeader>
-            <CardTitle>Vimshottari Dasha</CardTitle>
-            <CardDescription>Current life phase periods</CardDescription>
+            <CardTitle className="text-aura-orange">Vimshottari Dasha</CardTitle>
+            <CardDescription className="text-aura-cyan">Current life phase periods</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -286,10 +324,10 @@ export default function KundaliPage() {
 
       {/* Aspects */}
       {kundali.D1?.aspects && kundali.D1.aspects.length > 0 && (
-        <Card>
+        <Card className="cosmic-card border-aura-red/30 bg-cosmic-indigo/10">
           <CardHeader>
-            <CardTitle>Planetary Aspects</CardTitle>
-            <CardDescription>Important planetary relationships</CardDescription>
+            <CardTitle className="text-aura-red">Planetary Aspects</CardTitle>
+            <CardDescription className="text-aura-cyan">Important planetary relationships</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -308,6 +346,7 @@ export default function KundaliPage() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   )
 }

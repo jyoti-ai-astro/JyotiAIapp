@@ -5,9 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { CosmicOnboarding } from '@/components/onboarding/CosmicOnboarding'
 
 interface RashiData {
   moon: string
@@ -31,8 +29,8 @@ export default function OnboardingPage() {
   })
 
   // Step 1: Save birth details with geocoding
-  const handleBirthDetailsSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleBirthDetailsSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     setLoading(true)
 
     try {
@@ -178,6 +176,24 @@ export default function OnboardingPage() {
     return null
   }
 
+  return (
+    <CosmicOnboarding
+      step={step}
+      formData={formData}
+      setFormData={setFormData}
+      rashiData={rashiData}
+      selectedRashi={selectedRashi}
+      setSelectedRashi={setSelectedRashi}
+      onBirthDetailsSubmit={handleBirthDetailsSubmit}
+      onRashiConfirm={handleRashiConfirm}
+      onComplete={handleComplete}
+      loading={loading}
+    />
+  )
+}
+
+// Legacy onboarding code below (kept for reference)
+function LegacyOnboarding() {
   return (
     <div className="container mx-auto flex min-h-screen items-center justify-center p-6">
       <Card className="w-full max-w-2xl">

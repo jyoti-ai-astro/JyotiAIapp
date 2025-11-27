@@ -39,25 +39,8 @@ export interface KundaliWheel3DProps {
   className?: string;
 }
 
-// Placeholder for R3F implementation
-// TODO: Install @react-three/fiber and @react-three/drei
-// TODO: Implement Phase 2 — Section 2: Galaxy Scene Blueprint
-// TODO: Implement 3D wheel with planets, houses, signs
-const KundaliWheel3DCanvas: React.FC<{ grahas: GrahaPosition[]; lagna: number }> = ({
-  grahas,
-  lagna,
-}) => {
-  // Placeholder - will be replaced with actual R3F implementation
-  return (
-    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1D0F3A] to-[#493B8A] rounded-xl">
-      <div className="text-center space-y-2">
-        <div className="text-4xl mb-4">🔯</div>
-        <p className="text-white/60 text-sm">3D Kundali Wheel</p>
-        <p className="text-white/40 text-xs">R3F implementation pending</p>
-      </div>
-    </div>
-  );
-};
+// Import the actual R3F implementation
+import { KundaliWheel3DCanvas } from '@/components/kundali/KundaliWheel3DCanvas';
 
 export const KundaliWheel3D: React.FC<KundaliWheel3DProps> = ({
   grahas,
@@ -100,7 +83,11 @@ export const KundaliWheel3D: React.FC<KundaliWheel3DProps> = ({
             </div>
           }
         >
-          <KundaliWheel3DCanvas grahas={grahas} lagna={lagna} />
+          <KundaliWheel3DCanvas
+            grahas={grahas}
+            lagna={lagna}
+            onPlanetHover={onPlanetHover}
+          />
         </Suspense>
       </div>
       
