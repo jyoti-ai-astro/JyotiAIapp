@@ -7,6 +7,8 @@
 import type { Metadata } from 'next';
 import { ContactPageClient } from './contact-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: "Contact | Jyoti.ai - We're Here in the Cosmic Loop",
   description: "Get in touch with Jyoti.ai. We're here to help you on your spiritual journey. Reach out via email, social media, or our support channels.",

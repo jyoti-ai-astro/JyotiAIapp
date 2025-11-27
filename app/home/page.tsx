@@ -7,6 +7,8 @@
 import type { Metadata } from 'next';
 import { HomePageClient } from './home-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Home | Jyoti.ai - Your Spiritual Operating System',
   description: 'AI-powered spiritual guidance combining astrology, palmistry, face reading, aura analysis, and more',

@@ -7,6 +7,8 @@
 import type { Metadata } from 'next';
 import { AstroPageClient } from './astro-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Astrology | Jyoti.ai - Vedic Astrology & Kundali',
   description: 'Get your personalized Vedic astrology readings, kundali analysis, and horoscope predictions powered by AI',

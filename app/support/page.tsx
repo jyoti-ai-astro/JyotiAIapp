@@ -7,6 +7,8 @@
 import type { Metadata } from 'next';
 import { SupportPageClient } from './support-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Support | Jyoti.ai - Guided Help from the Cosmos',
   description: 'Get help and support for your Jyoti.ai journey. Browse FAQs, contact support, or find answers to common questions about astrology, numerology, and our spiritual services.',

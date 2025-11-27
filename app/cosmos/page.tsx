@@ -7,6 +7,8 @@
 import type { Metadata } from 'next';
 import { CosmosPageClient } from './cosmos-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Cosmos | Jyoti.ai - Immersive Cosmic Experience',
   description: 'Explore the cosmic universe with our immersive 3D galaxy scene and spiritual visualizations',

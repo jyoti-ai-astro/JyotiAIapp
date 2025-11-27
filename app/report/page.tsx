@@ -9,6 +9,8 @@
 import { Metadata } from 'next';
 import { ReportPageClient } from './report-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Cosmic Reports | Jyoti.ai',
   description: 'Comprehensive spiritual reports: Kundali, Numerology, Aura Chakra, Past Life, Predictions, and Compatibility',

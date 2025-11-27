@@ -7,6 +7,8 @@
 import type { Metadata } from 'next';
 import { BlogPageClient } from './blog-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Blog | Jyoti.ai - Spiritual Knowledge Base',
   description: 'Read articles about astrology, numerology, spiritual guidance, and ancient wisdom from Jyoti.ai',

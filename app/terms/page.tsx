@@ -7,6 +7,8 @@
 import type { Metadata } from 'next';
 import { TermsPageClient } from './terms-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Terms of Service | Jyoti.ai',
   description: 'Read Jyoti.ai terms of service to understand the rules and guidelines for using our platform',

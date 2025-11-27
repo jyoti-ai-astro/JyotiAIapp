@@ -9,6 +9,8 @@
 import type { Metadata } from 'next';
 import { GuruPageClient } from './guru-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'AI Guru Chat | Jyoti.ai - Your Spiritual Guide',
   description: 'Chat with your AI Spiritual Guide. Get personalized answers combining insights from Kundali, Numerology, Aura analysis, and more.',

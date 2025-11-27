@@ -7,6 +7,8 @@
 import type { Metadata } from 'next';
 import { PrivacyPageClient } from './privacy-page-client';
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Privacy Policy | Jyoti.ai',
   description: 'Read Jyoti.ai privacy policy to understand how we collect, use, and protect your personal information',
