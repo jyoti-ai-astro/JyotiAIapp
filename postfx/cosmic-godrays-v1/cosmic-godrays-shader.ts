@@ -38,7 +38,6 @@ export const cosmicGodRaysShader = {
   },
 
   vertexShader: `
-    varying vec2 vUv;
     
     void main() {
       vUv = uv;
@@ -65,7 +64,6 @@ export const cosmicGodRaysShader = {
     uniform float uStepCount;
     uniform vec2 uMouse;
     
-    varying vec2 vUv;
     
     // ============================================
     // DEPTH SAMPLE (Linearize depth)
