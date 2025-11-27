@@ -18,7 +18,6 @@ import { gsapHeroReveal } from '@/lib/motion/gsap-motion-bridge';
 import { useSectionMotion } from '@/hooks/motion/useSectionMotion';
 import { useScrollMotion } from '@/hooks/motion/useScrollMotion';
 import { scrollParallaxY } from '@/lib/motion/gsap-motion-bridge';
-import { useEffect } from 'react';
 
 export interface CosmicHeroProps {
   /** Hero title */
@@ -390,8 +389,6 @@ export function CosmicHero({
               className="absolute w-96 h-96 rounded-full blur-3xl"
               style={{
                 background: 'radial-gradient(circle, rgba(242, 201, 76, 0.2) 0%, rgba(242, 201, 76, 0.1) 50%, transparent 100%)',
-              }}
-              style={{
                 x: springX,
                 y: springY,
                 opacity: 0.4 * globalProgress,

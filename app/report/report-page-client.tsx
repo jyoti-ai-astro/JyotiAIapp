@@ -18,7 +18,6 @@ import { PastLifeReport } from '@/components/reports/PastLifeReport';
 import { PredictionReport } from '@/components/reports/PredictionReport';
 import { CompatibilityReport } from '@/components/reports/CompatibilityReport';
 import { GuruChatEngine } from '@/lib/guru/GuruChatEngine';
-import { useGuruContext } from '@/components/guru/GuruContextProvider';
 
 export type ReportType = 'kundali' | 'numerology' | 'aura-chakra' | 'past-life' | 'prediction' | 'compatibility' | 'guru';
 

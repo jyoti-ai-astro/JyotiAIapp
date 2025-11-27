@@ -758,7 +758,7 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({
             break;
           case 'video-aura':
             // Aura color → nebulaHueShift dynamic (Phase 19 - F34)
-            const auraColor = payload?.color || 'Violet';
+            const auraColorVideo = payload?.color || 'Violet';
             const auraHueMap: { [key: string]: number } = {
               'Red': 0.0,
               'Orange': 0.1,
@@ -768,7 +768,7 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({
               'Indigo': 0.5,
               'Violet': 0.6,
             };
-            const auraHue = auraHueMap[auraColor] || 0.3;
+            const auraHue = auraHueMap[auraColorVideo] || 0.3;
             setInteractionState((prev) => ({
               ...prev,
               nebulaHueShift: auraHue,
