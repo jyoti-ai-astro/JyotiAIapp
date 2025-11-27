@@ -54,9 +54,6 @@ export const cosmicVignetteShader = {
     uniform float uCameraFOV;
     uniform vec2 uResolution;
     uniform float uIsCircular;
-    uniform sampler2D inputTexture;
-    
-    varying vec2 vUv;
     
     // ============================================
     // RADIAL VIGNETTE (Inner Softness + Outer Fade)
@@ -168,11 +165,7 @@ export const cosmicVignetteShader = {
       return color;
     }
     
-    void main() {
-      vec2 uv = vUv;
-      
-      // Sample input texture
-      vec4 inputColor = texture2D(inputTexture, uv);
+    void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
       vec3 color = inputColor.rgb;
       
       // Calculate vignette
@@ -197,7 +190,7 @@ export const cosmicVignetteShader = {
       // Clamp
       color = clamp(color, 0.0, 1.0);
       
-      gl_FragColor = vec4(color, inputColor.a);
+      outputColor = vec4(color, inputColor.a);
     }
   `,
 };
