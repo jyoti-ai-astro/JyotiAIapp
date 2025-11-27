@@ -58,9 +58,6 @@ export const cosmicFilmGrainShader = {
     uniform vec2 uResolution;
     uniform float uGrainSize;
     uniform float uDisableChroma;
-    uniform sampler2D inputTexture;
-    
-    varying vec2 vUv;
     
     // ============================================
     // HASH FUNCTION (for noise)
@@ -203,11 +200,7 @@ export const cosmicFilmGrainShader = {
       return pulse * 0.3;
     }
     
-    void main() {
-      vec2 uv = vUv;
-      
-      // Sample input texture
-      vec4 inputColor = texture2D(inputTexture, uv);
+    void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
       vec3 color = inputColor.rgb;
       
       // Luma grain
@@ -242,7 +235,7 @@ export const cosmicFilmGrainShader = {
       // Clamp
       color = clamp(color, 0.0, 1.0);
       
-      gl_FragColor = vec4(color, inputColor.a);
+      outputColor = vec4(color, inputColor.a);
     }
   `,
 };

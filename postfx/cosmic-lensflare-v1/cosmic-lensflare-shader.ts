@@ -60,9 +60,6 @@ export const cosmicLensFlareShader = {
     uniform vec2 uResolution;
     uniform float uGhostCount;
     uniform vec2 uFlareCenter;
-    uniform sampler2D inputTexture;
-    
-    varying vec2 vUv;
     
     // ============================================
     // HASH FUNCTION (for noise)
@@ -164,8 +161,8 @@ export const cosmicLensFlareShader = {
         // Clamp to screen bounds
         if (ghostUV.x < 0.0 || ghostUV.x > 1.0 || ghostUV.y < 0.0 || ghostUV.y > 1.0) continue;
         
-        // Sample bright areas
-        vec4 ghostColor = texture2D(inputTexture, ghostUV);
+        // Sample bright areas (use inputBuffer provided by postprocessing)
+        vec4 ghostColor = texture2D(inputBuffer, ghostUV);
         float ghostBrightness = extractBrightness(ghostColor);
         
         // Ghost intensity (decays with order)
@@ -236,12 +233,8 @@ export const cosmicLensFlareShader = {
       return whiteGold * flare * 2.0;
     }
     
-    void main() {
-      vec2 uv = vUv;
+    void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
       vec2 center = uFlareCenter;
-      
-      // Sample input texture
-      vec4 inputColor = texture2D(inputTexture, uv);
       
       // Extract brightness for bloom mask interaction
       float brightness = extractBrightness(inputColor);
@@ -273,7 +266,7 @@ export const cosmicLensFlareShader = {
       // Clamp
       finalColor = clamp(finalColor, 0.0, 1.0);
       
-      gl_FragColor = vec4(finalColor, inputColor.a);
+      outputColor = vec4(finalColor, inputColor.a);
     }
   `,
 };
