@@ -28,7 +28,7 @@ export interface FeatureModule {
 
 export interface CosmicFeaturesProps {
   /** Features to display */
-  features: FeatureModule[];
+  features?: FeatureModule[];
   
   /** Section title */
   title?: string;
