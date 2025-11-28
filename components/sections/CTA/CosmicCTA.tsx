@@ -161,16 +161,16 @@ export function CosmicCTA({
   const { sectionRef: sectionMotionRef, smoothedProgress, scrollDirection, scrollVelocity } = useSectionMotion({
     sectionId,
     onEnter: () => {
-      orchestrator.onSectionEnter(sectionId);
+      orchestrator?.onSectionEnter?.(sectionId);
     },
     onExit: () => {
-      orchestrator.onSectionExit(sectionId);
+      orchestrator?.onSectionExit?.(sectionId);
     },
     onProgress: (progress) => {
-      orchestrator.ctaPulse(progress, sectionId);
+      orchestrator?.ctaPulse?.(progress, sectionId);
       // Pulse intensity based on scroll progress
       const pulseIntensity = 0.5 + progress * 0.5;
-      orchestrator.scrollGlow(sectionId, pulseIntensity);
+      orchestrator?.scrollGlow?.(sectionId, pulseIntensity);
     },
   });
   

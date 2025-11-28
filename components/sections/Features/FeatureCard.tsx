@@ -48,16 +48,16 @@ export function FeatureCard({ feature, index, isInView, intensity = 1.0 }: Featu
   const { sectionRef, smoothedProgress, scrollDirection, scrollVelocity } = useSectionMotion({
     sectionId,
     onEnter: () => {
-      orchestrator.onSectionEnter(sectionId);
+      orchestrator?.onSectionEnter?.(sectionId);
     },
     onExit: () => {
-      orchestrator.onSectionExit(sectionId);
+      orchestrator?.onSectionExit?.(sectionId);
     },
     onProgress: (progress) => {
-      orchestrator.cardTilt(progress, sectionId);
-      orchestrator.scrollParallax(sectionId, progress);
-      orchestrator.scrollGlow(sectionId, progress);
-      orchestrator.scrollDepthShift(sectionId, progress);
+      orchestrator?.cardTilt?.(progress, sectionId);
+      orchestrator?.scrollParallax?.(sectionId, progress);
+      orchestrator?.scrollGlow?.(sectionId, progress);
+      orchestrator?.scrollDepthShift?.(sectionId, progress);
     },
   });
   
