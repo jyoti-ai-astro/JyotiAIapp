@@ -8,11 +8,15 @@
 
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, useInView, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useGlobalProgress } from '@/hooks/use-global-progress';
+import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
+import { useSectionMotion } from '@/hooks/motion/useSectionMotion';
+import { useScrollMotion } from '@/hooks/motion/useScrollMotion';
+import { scrollTilt, scrollGlowPulse } from '@/lib/motion/gsap-motion-bridge';
 
 export interface FeatureCardData {
   id: string;

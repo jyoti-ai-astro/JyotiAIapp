@@ -8,7 +8,7 @@
 
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useGlobalProgress } from '@/hooks/use-global-progress';
@@ -17,6 +17,10 @@ import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
 import { gsapHeroReveal, scrollParallaxY } from '@/lib/motion/gsap-motion-bridge';
 import { useSectionMotion } from '@/hooks/motion/useSectionMotion';
 import { useScrollMotion } from '@/hooks/motion/useScrollMotion';
+import { Canvas } from '@react-three/fiber';
+import { NebulaShader } from '@/components/cosmic/NebulaShader';
+import { ParticleField } from '@/components/cosmic/ParticleField';
+import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
 
 export interface CosmicHeroProps {
   /** Hero title */
@@ -605,6 +609,19 @@ export function CosmicHero({
         opacity: globalProgress,
       }}
     >
+      {/* R3F Background Canvas */}
+      {variant === 'home' && (
+        <div className="absolute inset-0 z-0">
+          <Canvas camera={{ position: [0, 0, 1], fov: 75 }}>
+            <Suspense fallback={null}>
+              <NebulaShader intensity={1.0} />
+              <ParticleField count={3000} intensity={1.0} />
+              <RotatingMandala speed={0.1} intensity={1.0} />
+            </Suspense>
+          </Canvas>
+        </div>
+      )}
+
       {/* Decorative background elements */}
       <div className={styles.decoration}>
         {renderDecoration()}

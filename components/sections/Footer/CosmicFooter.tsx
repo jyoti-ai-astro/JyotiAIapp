@@ -8,11 +8,14 @@
 
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useGlobalProgress } from '@/hooks/use-global-progress';
+import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
+import { useSectionMotion } from '@/hooks/motion/useSectionMotion';
+import { useScrollMotion } from '@/hooks/motion/useScrollMotion';
 
 export interface CosmicFooterProps {
   /** Footer intensity multiplier (0-2) */
@@ -190,84 +193,88 @@ export function CosmicFooter({ intensity = 1.0, className = '' }: CosmicFooterPr
       
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          {/* Navigation Column 1 */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-12">
+          {/* Column 1: Brand */}
           <div>
-            <h3 className="text-gold font-heading text-lg mb-4">Navigation</h3>
+            <h3 className="text-gold font-heading text-xl mb-4">Jyoti</h3>
+            <p className="text-white/70 text-sm mb-4">
+              Your Personal Spiritual OS. Combining ancient Indian sciences with modern AI technology.
+            </p>
+            {/* Social Icons */}
+            <div className="flex gap-3 mt-4">
+              <SocialIcon
+                href="https://instagram.com/jyoti.ai"
+                label="Instagram"
+                icon="📷"
+                intensity={intensity}
+              />
+              <SocialIcon
+                href="https://youtube.com/@jyoti.ai"
+                label="YouTube"
+                icon="▶️"
+                intensity={intensity}
+              />
+              <SocialIcon
+                href="https://twitter.com/jyoti_ai"
+                label="Twitter/X"
+                icon="🐦"
+                intensity={intensity}
+              />
+              <SocialIcon
+                href="mailto:support@jyoti.ai"
+                label="Email"
+                icon="✉️"
+                intensity={intensity}
+              />
+            </div>
+          </div>
+          
+          {/* Column 2: Product */}
+          <div>
+            <h3 className="text-gold font-heading text-lg mb-4">Product</h3>
             <nav className="space-y-2">
-              <FooterLink href="/home" label="Home" intensity={intensity} />
-              <FooterLink href="/cosmos" label="Features" intensity={intensity} />
+              <FooterLink href="/features" label="Features" intensity={intensity} />
+              <FooterLink href="/pricing" label="Pricing" intensity={intensity} />
               <FooterLink href="/guru" label="AI Guru" intensity={intensity} />
-              <FooterLink href="/premium" label="Pricing" intensity={intensity} />
-              <FooterLink href="/about" label="About" intensity={intensity} />
+              <FooterLink href="/modules" label="Modules" intensity={intensity} />
+              <FooterLink href="/updates" label="Updates" intensity={intensity} />
             </nav>
           </div>
           
-          {/* Navigation Column 2 */}
+          {/* Column 3: Company */}
+          <div>
+            <h3 className="text-gold font-heading text-lg mb-4">Company</h3>
+            <nav className="space-y-2">
+              <FooterLink href="/about" label="About" intensity={intensity} />
+              <FooterLink href="/blog" label="Blog" intensity={intensity} />
+              <FooterLink href="/company/careers" label="Careers" intensity={intensity} />
+              <FooterLink href="/company/press-kit" label="Press Kit" intensity={intensity} />
+              <FooterLink href="/contact" label="Contact" intensity={intensity} />
+            </nav>
+          </div>
+          
+          {/* Column 4: Resources */}
           <div>
             <h3 className="text-gold font-heading text-lg mb-4">Resources</h3>
             <nav className="space-y-2">
-              <FooterLink href="/blog" label="Blog" intensity={intensity} />
-              <FooterLink href="/contact" label="Contact" intensity={intensity} />
-              <FooterLink href="/support" label="Support" intensity={intensity} />
-              <FooterLink href="/astro" label="Astrology" intensity={intensity} />
+              <FooterLink href="/support" label="Help Center" intensity={intensity} />
+              <FooterLink href="/company/community" label="Community" intensity={intensity} />
+              <FooterLink href="/company/guides" label="Guides" intensity={intensity} />
+              <FooterLink href="/company/api-docs" label="API Docs" intensity={intensity} />
+              <FooterLink href="/status" label="Status" intensity={intensity} />
             </nav>
           </div>
           
-          {/* Legal Column */}
+          {/* Column 5: Legal */}
           <div>
             <h3 className="text-gold font-heading text-lg mb-4">Legal</h3>
             <nav className="space-y-2">
-              <FooterLink href="/privacy" label="Privacy Policy" intensity={intensity} />
-              <FooterLink href="/terms" label="Terms of Service" intensity={intensity} />
+              <FooterLink href="/legal/privacy" label="Privacy Policy" intensity={intensity} />
+              <FooterLink href="/legal/terms" label="Terms of Service" intensity={intensity} />
+              <FooterLink href="/legal/security" label="Security" intensity={intensity} />
+              <FooterLink href="/legal/cookies" label="Cookies" intensity={intensity} />
+              <FooterLink href="/legal/licenses" label="Licenses" intensity={intensity} />
             </nav>
-          </div>
-          
-          {/* Social & CTA Column */}
-          <div>
-            <h3 className="text-gold font-heading text-lg mb-4">Connect</h3>
-            <div className="space-y-4">
-              {/* Social Icons */}
-              <div className="flex gap-4">
-                <SocialIcon
-                  href="https://instagram.com/jyoti.ai"
-                  label="Instagram"
-                  icon="📷"
-                  intensity={intensity}
-                />
-                <SocialIcon
-                  href="https://youtube.com/@jyoti.ai"
-                  label="YouTube"
-                  icon="▶️"
-                  intensity={intensity}
-                />
-                <SocialIcon
-                  href="https://twitter.com/jyoti_ai"
-                  label="Twitter/X"
-                  icon="🐦"
-                  intensity={intensity}
-                />
-                <SocialIcon
-                  href="mailto:support@jyoti.ai"
-                  label="Email"
-                  icon="✉️"
-                  intensity={intensity}
-                />
-              </div>
-              
-              {/* App CTA */}
-              <Link href="/login">
-                <Button
-                  size="sm"
-                  className="w-full bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 font-heading"
-                  style={{
-                    boxShadow: `0 0 ${10 * intensity}px rgba(242, 201, 76, ${0.3 * intensity})`,
-                  }}
-                >
-                  Start Your Cosmic Journey
-                </Button>
-              </Link>
-            </div>
           </div>
         </div>
         
