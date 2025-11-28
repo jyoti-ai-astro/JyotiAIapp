@@ -167,14 +167,14 @@ export function CosmicHero({
       });
       
       // Listen for route changes to re-animate
-      orchestrator.register('hero-re-animate', (data: any) => {
+      orchestrator?.register?.('hero-re-animate', (data: any) => {
         if (data.trigger === 'onRouteChange' && data.data?.type?.includes('enter')) {
           handleRouteChange();
         }
       });
       
       return () => {
-        orchestrator.unregister('hero-re-animate');
+        orchestrator?.unregister?.('hero-re-animate');
       };
     }
   }, [orchestrator]);
@@ -632,9 +632,9 @@ export function CosmicHero({
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
         onMouseEnter={() => {
           // Emit scene event for hero hover (Phase 12 - F27)
-          orchestrator.emitSceneEvent('hero-hover');
+          orchestrator?.emitSceneEvent?.('hero-hover');
           // Trigger small blessing wave (Phase 13 - F28)
-          orchestrator.triggerBlessingWave(0.3);
+          orchestrator?.triggerBlessingWave?.(0.3);
         }}
         style={{ pointerEvents: 'auto' }}
       >
@@ -656,7 +656,8 @@ export function CosmicHero({
       <motion.div
         className="relative z-10 text-center space-y-8 max-w-5xl mx-auto"
         initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: globalProgress, y: 0 }}
+        animate={{ y: 0 }}
+        style={{ opacity: globalProgress }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
       >
         {subtitle && (
@@ -664,7 +665,8 @@ export function CosmicHero({
             ref={subtitleRef}
             className={styles.subtitle}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: globalProgress, y: 0 }}
+            animate={{ y: 0 }}
+            style={{ opacity: globalProgress }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             {subtitle}
@@ -675,7 +677,8 @@ export function CosmicHero({
           ref={titleRef}
           className={styles.title}
           initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: globalProgress, y: 0 }}
+          animate={{ y: 0 }}
+          style={{ opacity: globalProgress }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
           {title}
@@ -686,7 +689,8 @@ export function CosmicHero({
             ref={descriptionRef}
             className={styles.description}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: globalProgress, y: 0 }}
+            animate={{ y: 0 }}
+            style={{ opacity: globalProgress }}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
             {description}
@@ -698,7 +702,8 @@ export function CosmicHero({
             ref={ctaRef}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8"
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: globalProgress, y: 0 }}
+            animate={{ y: 0 }}
+            style={{ opacity: globalProgress }}
             transition={{ duration: 0.6, delay: 0.7 }}
           >
             {primaryCTA && (
