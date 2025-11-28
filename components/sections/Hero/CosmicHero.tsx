@@ -158,8 +158,8 @@ export function CosmicHero({
       
       // Initial reveal
       handleRouteChange();
-      orchestrator.onHeroLoaded();
-      orchestrator.heroReveal({
+      orchestrator.onHeroLoaded?.();
+      orchestrator.heroReveal?.({
         title: titleRef.current,
         subtitle: subtitleRef.current || null,
         description: descriptionRef.current || null,
