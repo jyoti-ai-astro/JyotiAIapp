@@ -1,68 +1,61 @@
-/**
- * Firebase Admin SDK initialization
- * 
- * ⚠️ SERVER-SIDE ONLY ⚠️
- * This file must ONLY be imported in:
- * - API routes (app/api/**/*.ts)
- * - Server components
- * - Server-side utilities (lib/services, lib/workers, etc.)
- * 
- * NEVER import this in:
- * - Client components ('use client')
- * - Hooks
- * - Components
- * - Cosmos/Postfx scenes
- * - Utils that might be used client-side
- */
+import * as admin from "firebase-admin";
 
-// Phase 31 - F46: Use validated environment variables
-import { initializeApp, getApps, cert, App } from 'firebase-admin/app'
-import { getAuth, Auth } from 'firebase-admin/auth'
-import { getFirestore, Firestore } from 'firebase-admin/firestore'
-import { getStorage, Storage } from 'firebase-admin/storage'
-import { envVars } from '@/lib/env/env.mjs'
+// ⚠️ SERVER-SIDE ONLY ⚠️
+// This file must NEVER be imported in:
+// - Client components
+// - React components
+// - Hooks
+// - UI elements
+// - Cosmos / postfx / shaders
+// Allowed imports only in:
+// - API routes (app/api/**)
+// - Server utilities (lib/services, lib/workers)
+// - Logging / security modules
 
-let app: App | undefined
-let adminAuth: Auth | undefined
-let adminDb: Firestore | undefined
-let adminStorage: Storage | undefined
+let app: admin.app.App | undefined;
 
-if (typeof window === 'undefined') {
-  // Server-side only
-  if (!getApps().length) {
-    const { projectId, privateKey, clientEmail } = envVars.firebaseAdmin
-    
-    if (!projectId || !privateKey || !clientEmail) {
-      console.warn('Firebase Admin credentials not configured. Admin features will be disabled.')
-    } else {
-      try {
-        app = initializeApp({
-          credential: cert({
-            projectId,
-            privateKey,
-            clientEmail,
-          }),
-        })
-        
-        adminAuth = getAuth(app)
-        adminDb = getFirestore(app)
-        adminStorage = getStorage(app)
-      } catch (error) {
-        console.error('Failed to initialize Firebase Admin:', error)
-        console.warn('Admin features will be disabled.')
-      }
-    }
-  } else {
-    try {
-      app = getApps()[0]
-      adminAuth = getAuth(app)
-      adminDb = getFirestore(app)
-      adminStorage = getStorage(app)
-    } catch (error) {
-      console.error('Failed to get Firebase Admin instance:', error)
-    }
+export function getFirebaseAdmin() {
+  if (app) return app;
+
+  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+
+  if (!projectId || !privateKey || !clientEmail) {
+    console.warn("Firebase Admin credentials missing — admin features disabled.");
+    return undefined;
   }
+
+  try {
+    app = admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId,
+        privateKey,
+        clientEmail,
+      }),
+    });
+  } catch (e) {
+    console.warn("Failed to initialize Firebase Admin", e);
+    return undefined;
+  }
+
+  return app;
 }
 
-export { app, adminAuth, adminDb, adminStorage }
+export function getAdminAuth() {
+  return getFirebaseAdmin()?.auth();
+}
 
+export function getAdminDb() {
+  return getFirebaseAdmin()?.firestore();
+}
+
+export function getAdminStorage() {
+  return getFirebaseAdmin()?.storage();
+}
+
+// Lazy exports for backward compatibility
+export const adminAuth = getAdminAuth();
+export const adminDb = getAdminDb();
+export const adminStorage = getAdminStorage();
+export { getFirebaseAdmin as getApp };

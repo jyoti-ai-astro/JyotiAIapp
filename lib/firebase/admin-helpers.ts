@@ -3,52 +3,56 @@
  * Safe wrappers for Firebase Admin operations
  */
 
-import { adminAuth, adminDb, adminStorage, app } from './admin'
+import { getFirebaseAdmin, getAdminAuth, getAdminDb, getAdminStorage, adminAuth, adminDb, adminStorage } from './admin'
 
 /**
  * Check if Firebase Admin is initialized
  */
 export function isFirebaseAdminInitialized(): boolean {
-  return !!(app && adminAuth && adminDb)
+  return !!getFirebaseAdmin()
 }
 
 /**
  * Get Firebase Admin Auth (throws if not initialized)
  */
-export function getAdminAuth() {
-  if (!adminAuth) {
+export function getAdminAuthSafe() {
+  const auth = getAdminAuth()
+  if (!auth) {
     throw new Error('Firebase Admin Auth is not initialized. Please configure FIREBASE_ADMIN_* environment variables.')
   }
-  return adminAuth
+  return auth
 }
 
 /**
  * Get Firestore Admin (throws if not initialized)
  */
-export function getAdminDb() {
-  if (!adminDb) {
+export function getAdminDbSafe() {
+  const db = getAdminDb()
+  if (!db) {
     throw new Error('Firebase Admin Firestore is not initialized. Please configure FIREBASE_ADMIN_* environment variables.')
   }
-  return adminDb
+  return db
 }
 
 /**
  * Get Firebase Admin Storage (throws if not initialized)
  */
-export function getAdminStorage() {
-  if (!adminStorage) {
+export function getAdminStorageSafe() {
+  const storage = getAdminStorage()
+  if (!storage) {
     throw new Error('Firebase Admin Storage is not initialized. Please configure FIREBASE_ADMIN_* environment variables.')
   }
-  return adminStorage
+  return storage
 }
 
 /**
  * Get Firebase Admin App (throws if not initialized)
  */
 export function getAdminApp() {
-  if (!app) {
+  const firebaseApp = getFirebaseAdmin()
+  if (!firebaseApp) {
     throw new Error('Firebase Admin App is not initialized. Please configure FIREBASE_ADMIN_* environment variables.')
   }
-  return app
+  return firebaseApp
 }
 
