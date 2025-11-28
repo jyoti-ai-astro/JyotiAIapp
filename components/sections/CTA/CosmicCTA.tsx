@@ -347,7 +347,8 @@ export function CosmicCTA({
       <motion.div
         className="relative z-10 max-w-4xl mx-auto text-center space-y-8"
         initial={{ opacity: 0, y: 50 }}
-        animate={isInView ? { opacity: globalProgress, y: 0 } : { opacity: 0, y: 50 }}
+        animate={isInView ? { y: 0 } : { opacity: 0, y: 50 }}
+        style={isInView ? { opacity: globalProgress } : undefined}
         transition={{ duration: 0.8, ease: 'easeOut' }}
       >
         {/* Subtitle */}
@@ -355,7 +356,8 @@ export function CosmicCTA({
           <motion.p
             className="text-xl md:text-2xl text-gold font-heading"
             initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: globalProgress, y: 0 } : { opacity: 0, y: 20 }}
+            animate={isInView ? { y: 0 } : { opacity: 0, y: 20 }}
+            style={isInView ? { opacity: globalProgress } : undefined}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             {finalSubtitle}
@@ -366,7 +368,8 @@ export function CosmicCTA({
         <motion.h2
           className="text-4xl md:text-6xl font-display font-bold text-white"
           initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: globalProgress, y: 0 } : { opacity: 0, y: 30 }}
+          animate={isInView ? { y: 0 } : { opacity: 0, y: 30 }}
+          style={isInView ? { opacity: globalProgress } : undefined}
           transition={{ duration: 0.8, delay: 0.3 }}
           style={{
             textShadow: `0 0 ${glowIntensity * 30}px rgba(242, 201, 76, ${glowIntensity * 0.5})`,
@@ -380,7 +383,8 @@ export function CosmicCTA({
           <motion.p
             className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: globalProgress, y: 0 } : { opacity: 0, y: 20 }}
+            animate={isInView ? { y: 0 } : { opacity: 0, y: 20 }}
+            style={isInView ? { opacity: globalProgress } : undefined}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
             {finalDescription}
@@ -392,7 +396,8 @@ export function CosmicCTA({
           <motion.div
             className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8"
             initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: globalProgress, y: 0 } : { opacity: 0, y: 20 }}
+            animate={isInView ? { y: 0 } : { opacity: 0, y: 20 }}
+            style={isInView ? { opacity: globalProgress } : undefined}
             transition={{ duration: 0.6, delay: 0.7 }}
           >
             {finalPrimaryCTA && (

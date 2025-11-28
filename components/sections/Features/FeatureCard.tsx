@@ -147,7 +147,8 @@ export function FeatureCard({ feature, index, isInView, intensity = 1.0 }: Featu
       data-feature-card
       className="relative group"
       initial={{ opacity: 0, y: 50 }}
-      animate={cardInView && isInView ? { opacity: globalProgress * intensity, y: 0 } : { opacity: 0, y: 50 }}
+      animate={cardInView && isInView ? { y: 0 } : { opacity: 0, y: 50 }}
+      style={cardInView && isInView ? { opacity: globalProgress * intensity } : undefined}
       transition={{ duration: 0.6, delay: index * 0.1 }}
       style={{
         rotateX: tiltX,
@@ -294,7 +295,8 @@ export function FeatureCard({ feature, index, isInView, intensity = 1.0 }: Featu
                 key={i}
                 className="text-white/70 text-sm flex items-start"
                 initial={{ opacity: 0, x: -10 }}
-                animate={cardInView ? { opacity: globalProgress, x: 0 } : { opacity: 0, x: -10 }}
+                animate={cardInView ? { x: 0 } : { opacity: 0, x: -10 }}
+                style={cardInView ? { opacity: globalProgress } : undefined}
                 transition={{ duration: 0.4, delay: index * 0.1 + i * 0.1 }}
               >
                 <span className="text-gold mr-2">✦</span>

@@ -147,7 +147,8 @@ export function CosmicContentBlock({
       data-section-id={sectionId}
       className={`relative py-16 md:py-24 px-4 ${className}`}
       initial={{ opacity: 0 }}
-      animate={isInView ? { opacity: globalProgress } : { opacity: 0 }}
+      animate={isInView ? {} : { opacity: 0 }}
+      style={isInView ? { opacity: globalProgress } : undefined}
       transition={{ duration: 0.8, delay }}
     >
       {/* Floating Cosmic Dust Layer */}
@@ -184,7 +185,8 @@ export function CosmicContentBlock({
         >
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: globalProgress, y: 0 } : { opacity: 0, y: 30 }}
+            animate={isInView ? { y: 0 } : { opacity: 0, y: 30 }}
+            style={isInView ? { opacity: globalProgress } : undefined}
             transition={{ duration: 0.6, delay: delay + 0.2 }}
           >
             <h2 className="text-3xl md:text-5xl font-display font-bold text-white mb-4">
@@ -203,7 +205,8 @@ export function CosmicContentBlock({
                 key={i}
                 className="text-white/80 text-lg leading-relaxed"
                 initial={{ opacity: 0, y: 20 }}
-                animate={isInView ? { opacity: globalProgress, y: 0 } : { opacity: 0, y: 20 }}
+                animate={isInView ? { y: 0 } : { opacity: 0, y: 20 }}
+                style={isInView ? { opacity: globalProgress } : undefined}
                 transition={{ duration: 0.6, delay: delay + 0.4 + i * 0.1 }}
               >
                 {paragraph}
@@ -219,7 +222,8 @@ export function CosmicContentBlock({
             style={{ y: imageY }}
             data-content-image
             initial={{ opacity: 0, scale: 0.9 }}
-            animate={isInView ? { opacity: globalProgress, scale: 1 } : { opacity: 0, scale: 0.9 }}
+            animate={isInView ? { scale: 1 } : { opacity: 0, scale: 0.9 }}
+            style={isInView ? { opacity: globalProgress } : undefined}
             transition={{ duration: 0.8, delay: delay + 0.3 }}
           >
             <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden border border-gold/20">
@@ -253,7 +257,8 @@ export function CosmicContentBlock({
             style={{ y: imageY }}
             data-content-image
             initial={{ opacity: 0, scale: 0.95 }}
-            animate={isInView ? { opacity: globalProgress, scale: 1 } : { opacity: 0, scale: 0.95 }}
+            animate={isInView ? { scale: 1 } : { opacity: 0, scale: 0.95 }}
+            style={isInView ? { opacity: globalProgress } : undefined}
             transition={{ duration: 0.8, delay: delay + 0.5 }}
           >
             <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden border border-gold/20">

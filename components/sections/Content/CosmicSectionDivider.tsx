@@ -79,7 +79,8 @@ export function CosmicSectionDivider({ className = '' }: CosmicSectionDividerPro
       data-section-id={sectionId}
       className={`relative py-16 flex items-center justify-center ${className}`}
       initial={{ opacity: 0 }}
-      animate={isInView ? { opacity: globalProgress } : { opacity: 0 }}
+      animate={isInView ? {} : { opacity: 0 }}
+      style={isInView ? { opacity: globalProgress } : undefined}
       transition={{ duration: 1 }}
     >
       {/* Mandala Ring (rotates 0.05°/sec = 7200s full rotation) */}

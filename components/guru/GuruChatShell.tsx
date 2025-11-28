@@ -971,7 +971,8 @@ export function GuruChatShell() {
         <motion.div
           className="grid grid-cols-1 lg:grid-cols-3 gap-8"
           initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: globalProgress, y: 0 }}
+          animate={{ y: 0 }}
+          style={{ opacity: globalProgress }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
         >
           {/* Left Side: Message Stream */}
