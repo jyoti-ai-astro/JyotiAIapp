@@ -5,20 +5,31 @@
  * Phase 3 — Section 23: PAGES PHASE 8 (F23) - Extended with orchestrator
  * 
  * Manages global progress for fade-in/out effects with motion orchestrator integration
+ * Uses Zustand store to share state across all components and prevent infinite loops
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { gsap } from 'gsap';
+import { useGlobalProgressStore } from '@/store/global-progress-store';
 
 export function useGlobalProgress() {
   const pathname = usePathname();
-  const [globalProgress, setGlobalProgress] = useState(1.0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const { globalProgress, isTransitioning, setGlobalProgress, setIsTransitioning } = useGlobalProgressStore();
+  const prevPathnameRef = useRef<string | null>(null);
+  const isTransitioningRef = useRef(false);
 
   useEffect(() => {
+    // Prevent duplicate transitions
+    if (prevPathnameRef.current === pathname || isTransitioningRef.current) {
+      return;
+    }
+    
+    prevPathnameRef.current = pathname;
+    isTransitioningRef.current = true;
+    
     // Reset progress on route change
     setIsTransitioning(true);
     setGlobalProgress(0.0);
@@ -49,7 +60,12 @@ export function useGlobalProgress() {
             onComplete: () => {
               // Use requestAnimationFrame to batch state updates and prevent loops
               requestAnimationFrame(() => {
-                setGlobalProgress(1.0);
+                isTransitioningRef.current = false;
+                // Only update if not already at target value
+                const currentProgress = useGlobalProgressStore.getState().globalProgress;
+                if (currentProgress !== 1.0) {
+                  setGlobalProgress(1.0);
+                }
                 setIsTransitioning(false);
               });
             },
@@ -58,7 +74,12 @@ export function useGlobalProgress() {
       } else {
         // Use requestAnimationFrame to batch state updates and prevent loops
         requestAnimationFrame(() => {
-          setGlobalProgress(1.0);
+          isTransitioningRef.current = false;
+          // Only update if not already at target value
+          const currentProgress = useGlobalProgressStore.getState().globalProgress;
+          if (currentProgress !== 1.0) {
+            setGlobalProgress(1.0);
+          }
           setIsTransitioning(false);
         });
       }
