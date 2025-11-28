@@ -29,14 +29,14 @@ export function CosmicSectionDivider({ className = '' }: CosmicSectionDividerPro
   const { sectionRef, smoothedProgress, scrollDirection, scrollVelocity } = useSectionMotion({
     sectionId,
     onEnter: () => {
-      orchestrator.onSectionEnter(sectionId);
+      orchestrator?.onSectionEnter?.(sectionId);
     },
     onExit: () => {
-      orchestrator.onSectionExit(sectionId);
+      orchestrator?.onSectionExit?.(sectionId);
     },
     onProgress: (progress) => {
-      orchestrator.dividerReveal(progress);
-      orchestrator.scrollGlow(sectionId, progress);
+      orchestrator?.dividerReveal?.(progress);
+      orchestrator?.scrollGlow?.(sectionId, progress);
     },
   });
   

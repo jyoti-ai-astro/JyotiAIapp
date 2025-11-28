@@ -64,23 +64,23 @@ export function CosmicContentBlock({
   const { sectionRef, smoothedProgress, scrollDirection, scrollVelocity } = useSectionMotion({
     sectionId,
     onEnter: () => {
-      orchestrator.onSectionEnter(sectionId);
+      orchestrator?.onSectionEnter?.(sectionId);
       // Emit scene event for content enter (Phase 12 - F27)
-      orchestrator.emitSceneEvent('content-enter', { sectionId });
+      orchestrator?.emitSceneEvent?.('content-enter', { sectionId });
       // Trigger blessing wave for About page divinity section (Phase 13 - F28)
       if (sectionId.includes('divinity') || sectionId.includes('about')) {
-        orchestrator.triggerBlessingWave(0.5);
+        orchestrator?.triggerBlessingWave?.(0.5);
       }
     },
     onExit: () => {
-      orchestrator.onSectionExit(sectionId);
+      orchestrator?.onSectionExit?.(sectionId);
       // Emit scene event for content exit (Phase 12 - F27)
-      orchestrator.emitSceneEvent('content-exit', { sectionId });
+      orchestrator?.emitSceneEvent?.('content-exit', { sectionId });
     },
     onProgress: (progress) => {
-      orchestrator.contentFade(progress, sectionId);
-      orchestrator.scrollParallax(sectionId, progress);
-      orchestrator.scrollReveal(sectionId, progress);
+      orchestrator?.contentFade?.(progress, sectionId);
+      orchestrator?.scrollParallax?.(sectionId, progress);
+      orchestrator?.scrollReveal?.(sectionId, progress);
     },
   });
   
