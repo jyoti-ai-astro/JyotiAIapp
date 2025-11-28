@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { useEffect, useRef, useState, Fragment, useCallback } from 'react';
+import React, { useEffect, useRef, useState, Fragment, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
@@ -56,6 +56,9 @@ const CompatibilityTimeline = dynamic(() => import('./CompatibilityTimeline').th
 export function GuruChatShell() {
   const { globalProgress } = useGlobalProgress();
   const { orchestrator } = useMotionOrchestrator();
+  
+  // Memoize style object to prevent infinite re-renders
+  const gridStyle = useMemo(() => ({ opacity: globalProgress }), [globalProgress]);
   const { context } = useGuruContext();
   const shellRef = useRef<HTMLDivElement>(null);
   const messageStreamRef = useRef<HTMLDivElement>(null);
@@ -257,14 +260,14 @@ export function GuruChatShell() {
   const { sectionRef, smoothedProgress } = useSectionMotion({
     sectionId,
     onEnter: () => {
-      orchestrator.onSectionEnter(sectionId);
+      orchestrator?.onSectionEnter?.(sectionId);
     },
     onExit: () => {
-      orchestrator.onSectionExit(sectionId);
+      orchestrator?.onSectionExit?.(sectionId);
     },
     onProgress: (progress) => {
-      orchestrator.scrollParallax(sectionId, progress);
-      orchestrator.scrollReveal(sectionId, progress);
+      orchestrator?.scrollParallax?.(sectionId, progress);
+      orchestrator?.scrollReveal?.(sectionId, progress);
     },
   });
   
@@ -277,7 +280,7 @@ export function GuruChatShell() {
   
   // Trigger blessing wave on mount (Phase 13 - F28)
   useEffect(() => {
-    orchestrator.triggerBlessingWave(0.4);
+    orchestrator?.triggerBlessingWave?.(0.4);
   }, [orchestrator]);
   
   // Auto-scroll to latest message
@@ -972,7 +975,7 @@ export function GuruChatShell() {
           className="grid grid-cols-1 lg:grid-cols-3 gap-8"
           initial={{ opacity: 0, y: 30 }}
           animate={{ y: 0 }}
-          style={{ opacity: globalProgress }}
+          style={gridStyle}
           transition={{ duration: 0.8, ease: 'easeOut' }}
         >
           {/* Left Side: Message Stream */}

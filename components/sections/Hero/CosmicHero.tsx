@@ -8,7 +8,7 @@
 
 'use client';
 
-import React, { useEffect, useRef, useState, Suspense } from 'react';
+import React, { useEffect, useRef, useState, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useGlobalProgress } from '@/hooks/use-global-progress';
@@ -240,6 +240,13 @@ export function CosmicHero({
   };
 
   const styles = variantStyles[variant];
+
+  // Memoize style objects to prevent infinite re-renders
+  const contentStyle = useMemo(() => ({ opacity: globalProgress }), [globalProgress]);
+  const subtitleStyle = useMemo(() => ({ opacity: globalProgress }), [globalProgress]);
+  const titleStyle = useMemo(() => ({ opacity: globalProgress }), [globalProgress]);
+  const descriptionStyle = useMemo(() => ({ opacity: globalProgress }), [globalProgress]);
+  const ctaStyle = useMemo(() => ({ opacity: globalProgress }), [globalProgress]);
 
   // Variant-specific decorative elements
   const renderDecoration = () => {
@@ -657,7 +664,7 @@ export function CosmicHero({
         className="relative z-10 text-center space-y-8 max-w-5xl mx-auto"
         initial={{ opacity: 0, y: 30 }}
         animate={{ y: 0 }}
-        style={{ opacity: globalProgress }}
+        style={contentStyle}
         transition={{ duration: 0.8, ease: 'easeOut' }}
       >
         {subtitle && (
@@ -666,7 +673,7 @@ export function CosmicHero({
             className={styles.subtitle}
             initial={{ opacity: 0, y: 20 }}
             animate={{ y: 0 }}
-            style={{ opacity: globalProgress }}
+            style={subtitleStyle}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             {subtitle}
@@ -678,7 +685,7 @@ export function CosmicHero({
           className={styles.title}
           initial={{ opacity: 0, y: 30 }}
           animate={{ y: 0 }}
-          style={{ opacity: globalProgress }}
+          style={titleStyle}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
           {title}
@@ -690,7 +697,7 @@ export function CosmicHero({
             className={styles.description}
             initial={{ opacity: 0, y: 20 }}
             animate={{ y: 0 }}
-            style={{ opacity: globalProgress }}
+            style={descriptionStyle}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
             {description}
@@ -703,7 +710,7 @@ export function CosmicHero({
             className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ y: 0 }}
-            style={{ opacity: globalProgress }}
+            style={ctaStyle}
             transition={{ duration: 0.6, delay: 0.7 }}
           >
             {primaryCTA && (

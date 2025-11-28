@@ -47,14 +47,20 @@ export function useGlobalProgress() {
             duration: 0.6,
             ease: 'power2.out',
             onComplete: () => {
-              setGlobalProgress(1.0);
-              setIsTransitioning(false);
+              // Use requestAnimationFrame to batch state updates and prevent loops
+              requestAnimationFrame(() => {
+                setGlobalProgress(1.0);
+                setIsTransitioning(false);
+              });
             },
           }
         );
       } else {
-        setGlobalProgress(1.0);
-        setIsTransitioning(false);
+        // Use requestAnimationFrame to batch state updates and prevent loops
+        requestAnimationFrame(() => {
+          setGlobalProgress(1.0);
+          setIsTransitioning(false);
+        });
       }
     }, 300);
 

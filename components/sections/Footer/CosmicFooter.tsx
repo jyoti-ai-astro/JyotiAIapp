@@ -37,21 +37,21 @@ export function CosmicFooter({ intensity = 1.0, className = '' }: CosmicFooterPr
   const { sectionRef, smoothedProgress, scrollDirection, scrollVelocity } = useSectionMotion({
     sectionId,
     onEnter: () => {
-      orchestrator.onSectionEnter(sectionId);
+      orchestrator?.onSectionEnter?.(sectionId);
     },
     onExit: () => {
-      orchestrator.onSectionExit(sectionId);
+      orchestrator?.onSectionExit?.(sectionId);
       // Emit scene event for footer exit (Phase 12 - F27)
-      orchestrator.emitSceneEvent('footer-exit');
+      orchestrator?.emitSceneEvent?.('footer-exit');
     },
     onProgress: (progress) => {
       // Footer shimmer activates on scroll end (high progress)
       if (progress > 0.8) {
-        orchestrator.footerShimmer(progress);
+        orchestrator?.footerShimmer?.(progress);
         // Emit scene event for footer enter (Phase 12 - F27)
-        orchestrator.emitSceneEvent('footer-enter');
+        orchestrator?.emitSceneEvent?.('footer-enter');
       }
-      orchestrator.scrollGlow(sectionId, progress);
+      orchestrator?.scrollGlow?.(sectionId, progress);
     },
   });
   
