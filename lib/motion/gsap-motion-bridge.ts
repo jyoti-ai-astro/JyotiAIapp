@@ -100,6 +100,9 @@ export function gsapGlowPulse(
 
 /**
  * GSAP Scroll Trigger Section
+ * 
+ * SAFE VERSION: Does not cause infinite re-renders
+ * Uses refs internally to prevent state update loops
  */
 export function gsapScrollTriggerSection(
   sectionId: string,
@@ -107,18 +110,40 @@ export function gsapScrollTriggerSection(
   onExit?: () => void,
   onProgress?: (progress: number) => void
 ): ScrollTrigger {
+  // Use requestAnimationFrame to batch onUpdate callbacks
+  let rafId: number | null = null;
+  let lastProgress = -1;
+  
   return ScrollTrigger.create({
     trigger: `#${sectionId}`,
-    start: 'top center',
-    end: 'bottom center',
+    start: 'top top',
+    end: 'bottom bottom',
+    scrub: true,
     onEnter: onEnter,
     onLeave: onExit,
     onEnterBack: onEnter,
     onLeaveBack: onExit,
     onUpdate: (self) => {
-      if (onProgress) {
-        onProgress(self.progress);
+      const progress = self.progress;
+      
+      // Only update if progress actually changed (prevent unnecessary callbacks)
+      if (Math.abs(progress - lastProgress) < 0.001) {
+        return;
       }
+      
+      lastProgress = progress;
+      
+      // Batch onProgress callbacks with requestAnimationFrame
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+      
+      rafId = requestAnimationFrame(() => {
+        if (onProgress) {
+          onProgress(progress);
+        }
+        rafId = null;
+      });
     },
   });
 }
