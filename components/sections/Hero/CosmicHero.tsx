@@ -8,7 +8,7 @@
 
 'use client';
 
-import React, { useEffect, useRef, useState, Suspense, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useGlobalProgress } from '@/hooks/use-global-progress';
@@ -17,10 +17,6 @@ import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
 import { gsapHeroReveal, scrollParallaxY } from '@/lib/motion/gsap-motion-bridge';
 import { useSectionMotion } from '@/hooks/motion/useSectionMotion';
 import { useScrollMotion } from '@/hooks/motion/useScrollMotion';
-import { Canvas } from '@react-three/fiber';
-import { NebulaShader } from '@/components/cosmic/NebulaShader';
-import { ParticleField } from '@/components/cosmic/ParticleField';
-import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
 
 export interface CosmicHeroProps {
   /** Hero title */
@@ -606,29 +602,134 @@ export function CosmicHero({
     }
   };
 
+  // For home variant, render a simple SaaS-style hero without R3F
+  if (variant === 'home') {
+    return (
+      <section
+        id="hero"
+        data-section-id="hero"
+        ref={heroRef}
+        className={`relative py-24 md:py-32 ${styles.container} ${className}`}
+        style={{
+          opacity: globalProgress,
+        }}
+      >
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+            {/* Left: Text + CTA */}
+            <motion.div
+              className="relative z-10 space-y-6"
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            >
+              <motion.h1
+                ref={titleRef}
+                className="text-5xl md:text-6xl lg:text-7xl font-display font-bold text-white leading-tight"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+              >
+                {title}
+              </motion.h1>
+              
+              {subtitle && (
+                <motion.p
+                  ref={subtitleRef}
+                  className="text-xl md:text-2xl text-white/80 leading-relaxed"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                >
+                  {subtitle}
+                </motion.p>
+              )}
+              
+              {(primaryCTA || secondaryCTA) && (
+                <motion.div
+                  ref={ctaRef}
+                  className="flex flex-col sm:flex-row gap-4 pt-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.6 }}
+                >
+                  {primaryCTA && (
+                    <Link href={primaryCTA.href}>
+                      <Button
+                        size="lg"
+                        className="bg-gold text-cosmic hover:bg-gold-light px-8 py-6 text-lg font-heading"
+                      >
+                        {primaryCTA.label}
+                      </Button>
+                    </Link>
+                  )}
+                  {secondaryCTA && (
+                    <Link href={secondaryCTA.href}>
+                      <Button
+                        size="lg"
+                        variant="ghost"
+                        className="border border-white/30 text-white hover:bg-white/10 px-8 py-6 text-lg font-heading"
+                      >
+                        {secondaryCTA.label}
+                      </Button>
+                    </Link>
+                  )}
+                </motion.div>
+              )}
+            </motion.div>
+
+            {/* Right: Decorative gradient circle (CSS only, no R3F) */}
+            <motion.div
+              className="relative hidden lg:flex items-center justify-center"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, delay: 0.3 }}
+            >
+              <div className="relative w-full max-w-md aspect-square">
+                {/* Decorative gradient circle */}
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-gradient-to-br from-gold/40 via-purple/30 to-cyan/40 blur-3xl opacity-70"
+                  animate={{
+                    scale: [1, 1.1, 1],
+                    opacity: [0.7, 0.8, 0.7],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+                {/* Inner glow */}
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-gradient-to-br from-gold/20 via-purple/15 to-cyan/20 blur-2xl"
+                  animate={{
+                    rotate: [0, 360],
+                  }}
+                  transition={{
+                    duration: 20,
+                    repeat: Infinity,
+                    ease: 'linear',
+                  }}
+                />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // For other variants, keep the original layout
   return (
     <section
       id="hero"
       data-section-id="hero"
       ref={heroRef}
-      className={`relative min-h-screen flex items-center justify-center px-4 ${styles.container} ${className}`}
+      className={`relative py-24 md:py-32 flex items-center justify-center px-4 ${styles.container} ${className}`}
       style={{
         opacity: globalProgress,
       }}
     >
-      {/* R3F Background Canvas */}
-      {variant === 'home' && (
-        <div className="absolute inset-0 z-0">
-          <Canvas camera={{ position: [0, 0, 1], fov: 75 }}>
-            <Suspense fallback={null}>
-              <NebulaShader intensity={1.0} />
-              <ParticleField count={3000} intensity={1.0} />
-              <RotatingMandala speed={0.1} intensity={1.0} />
-            </Suspense>
-          </Canvas>
-        </div>
-      )}
-
       {/* Decorative background elements */}
       <div className={styles.decoration}>
         {renderDecoration()}
@@ -727,8 +828,8 @@ export function CosmicHero({
               <Link href={secondaryCTA.href}>
                 <Button
                   size="lg"
-                  variant="outline"
-                  className="border-white/30 text-white hover:bg-white/10 px-8 py-6 text-lg font-heading"
+                  variant="ghost"
+                  className="border border-white/30 text-white hover:bg-white/10 px-8 py-6 text-lg font-heading"
                 >
                   {secondaryCTA.label}
                 </Button>

@@ -28,7 +28,7 @@ export function Header({ className = '' }: HeaderProps) {
     { href: '/features', label: 'Features' },
     { href: '/pricing', label: 'Pricing' },
     { href: '/modules', label: 'Modules' },
-    { href: '/company/blog', label: 'Blog' },
+    { href: '/blog', label: 'Blog' },
     { href: '/company/contact', label: 'Contact' },
   ];
 

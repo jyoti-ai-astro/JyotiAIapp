@@ -22,8 +22,6 @@ import { AstrologicalWheel3D } from "@/components/sections/AstrologicalWheel/Ast
 
 import { RoadmapTimeline } from "@/components/sections/Roadmap/RoadmapTimeline";
 
-import { CosmicFooter } from "@/components/sections/Footer/CosmicFooter";
-
 export default function HomePage() {
 
   return (
@@ -36,26 +34,25 @@ export default function HomePage() {
 
       {/* Foreground content */}
 
-      <div className="relative z-10 flex flex-col gap-16 md:gap-24">
+      <div className="relative z-10">
 
-        <section className="pt-24 md:pt-32">
+        {/* Hero Section */}
+        <CosmicHero
+          variant="home"
+          title="Your Personal Spiritual OS"
+          subtitle="Astrology, Numerology, Aura, Palmistry and AI Guru — unified into one intelligent platform."
+          primaryCTA={{
+            label: 'Start Your Reading',
+            href: '/login',
+          }}
+          secondaryCTA={{
+            label: 'View Plans',
+            href: '/pricing',
+          }}
+        />
 
-          <CosmicHero
-            variant="home"
-            title="Your Destiny, Decoded by AI + Ancient Wisdom"
-            subtitle="Astrology • Numerology • Aura • Palmistry • Remedies • Predictions"
-            description="Experience the perfect fusion of ancient Indian spiritual sciences and cutting-edge AI technology. Get personalized insights, predictions, and guidance tailored to your unique cosmic blueprint."
-            primaryCTA={{
-              label: 'Start Free Reading',
-              href: '/login',
-            }}
-            secondaryCTA={{
-              label: 'Explore Features',
-              href: '/features',
-            }}
-          />
-
-        </section>
+        {/* Other Sections */}
+        <div className="flex flex-col gap-12 md:gap-16">
 
         <section id="features">
 
@@ -97,11 +94,7 @@ export default function HomePage() {
 
         </section>
 
-        <footer>
-
-          <CosmicFooter />
-
-        </footer>
+        </div>
 
       </div>
 
