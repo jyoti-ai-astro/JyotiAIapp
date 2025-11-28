@@ -183,7 +183,7 @@ export function CosmicFeatures({
   // Variant-specific styling
   const variantStyles = {
     home: {
-      container: 'py-20',
+      container: 'pt-16 md:pt-20 pb-20',
       grid: 'grid-cols-1 md:grid-cols-2 gap-8',
     },
     cosmos: {

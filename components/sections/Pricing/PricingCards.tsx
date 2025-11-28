@@ -3,7 +3,7 @@
  * 
  * Batch 1 - Core Landing & Marketing
  * 
- * Three pricing cards: Free, Standard, Premium with levitation effect and glow on hover
+ * Three pricing cards: Starter, Advanced, Supreme with levitation effect and glow on hover
  */
 
 'use client';
@@ -30,54 +30,49 @@ interface PricingTier {
 
 const pricingTiers: PricingTier[] = [
   {
-    id: 'free',
-    name: 'Free',
-    price: '$0',
-    description: 'Perfect for exploring Jyoti.ai',
+    id: 'starter',
+    name: 'Starter',
+    price: '₹499',
+    description: 'Perfect for exploring core Jyoti features',
     features: [
       'Basic Kundali Chart',
       'Daily Horoscope',
-      'AI Guru (5 questions/day)',
       'Basic Numerology',
-      'Community Support',
+      'AI Guru – up to 5 questions/day',
     ],
     cta: 'Get Started',
-    href: '/signup',
+    href: '/login',
   },
   {
-    id: 'standard',
-    name: 'Standard',
-    price: '$9.99',
+    id: 'advanced',
+    name: 'Advanced',
+    price: '₹999',
     description: 'For serious spiritual seekers',
     features: [
-      'Everything in Free',
+      'Everything in Starter',
       'Full Kundali Analysis',
-      'AI Guru (Unlimited)',
       'Palmistry & Face Reading',
       'Aura Scan',
       '12-Month Predictions',
-      'Email Support',
     ],
-    cta: 'Choose Standard',
-    href: '/signup?plan=standard',
+    cta: 'Upgrade to Advanced',
+    href: '/login',
   },
   {
-    id: 'premium',
-    name: 'Premium',
-    price: '$19.99',
-    description: 'Complete spiritual guidance',
+    id: 'supreme',
+    name: 'Supreme',
+    price: '₹1,999',
+    description: 'Complete spiritual operating system',
     features: [
-      'Everything in Standard',
-      'Advanced Reports (PDF)',
+      'Everything in Advanced',
       'Career & Business Engine',
       'Pregnancy Insights',
       'Compatibility Analysis',
-      'Ritual & Mantra Generator',
+      'Advanced Reports (PDF)',
       'Priority Support',
-      'Early Access to Features',
     ],
-    cta: 'Go Premium',
-    href: '/signup?plan=premium',
+    cta: 'Go Supreme',
+    href: '/login',
     isPremium: true,
   },
 ];
@@ -101,7 +96,7 @@ export function PricingCards() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="text-4xl md:text-6xl font-display font-bold text-white">
-            Choose Your Path
+            Pricing Plans
           </h2>
           <p className="text-xl md:text-2xl text-gold font-heading">
             Flexible pricing for every spiritual journey
@@ -143,9 +138,7 @@ export function PricingCards() {
                     <span className="text-5xl font-display font-bold text-white">
                       {tier.price}
                     </span>
-                    {tier.price !== '$0' && (
-                      <span className="text-white/60">/month</span>
-                    )}
+                    <span className="text-white/60">/month</span>
                   </div>
                   <CardDescription className="text-white/70">
                     {tier.description}
