@@ -1,6 +1,18 @@
 /**
  * Firebase Admin SDK initialization
- * This file should only be used on the server-side
+ * 
+ * ⚠️ SERVER-SIDE ONLY ⚠️
+ * This file must ONLY be imported in:
+ * - API routes (app/api/**/*.ts)
+ * - Server components
+ * - Server-side utilities (lib/services, lib/workers, etc.)
+ * 
+ * NEVER import this in:
+ * - Client components ('use client')
+ * - Hooks
+ * - Components
+ * - Cosmos/Postfx scenes
+ * - Utils that might be used client-side
  */
 
 // Phase 31 - F46: Use validated environment variables
