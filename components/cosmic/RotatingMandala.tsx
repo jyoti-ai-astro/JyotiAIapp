@@ -17,7 +17,7 @@ interface RotatingMandalaProps {
   intensity?: number;
 }
 
-export function RotatingMandala({ speed = 0.1, intensity = 1.0 }: RotatingMandalaProps) {
+export const RotatingMandala = React.memo(function RotatingMandala({ speed = 0.1, intensity = 1.0 }: RotatingMandalaProps) {
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame(() => {
@@ -91,5 +91,5 @@ export function RotatingMandala({ speed = 0.1, intensity = 1.0 }: RotatingMandal
       }, [intensity])}
     </group>
   );
-}
+});
 

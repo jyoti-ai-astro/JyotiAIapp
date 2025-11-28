@@ -5,17 +5,16 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
-import { CosmicAura } from '@/components/aura/CosmicAura'
+import { useAuraScan } from '@/lib/hooks/useAuraScan'
+import { CosmicAura } from '@/components/aura/CosmicAura';
+import { AuraScanner } from '@/components/engines/AuraScanner';
 
 export default function AuraPage() {
   const router = useRouter()
   const { user } = useUserStore()
-  const [uploading, setUploading] = useState(false)
-  const [analyzing, setAnalyzing] = useState(false)
+  const { analysis, loading: analyzing, error, scan } = useAuraScan()
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [analysis, setAnalysis] = useState<any>(null)
 
   const handleFileSelect = (file: File | null) => {
     if (!file) return
@@ -43,55 +42,11 @@ export default function AuraPage() {
   }
 
   const handleUpload = async () => {
-    if (!imageFile) {
+    if (!imageFile || !imagePreview) {
       alert('Please select an image')
       return
     }
-
-    setUploading(true)
-
-    try {
-      // Upload image
-      const formData = new FormData()
-      formData.append('image', imageFile)
-
-      const uploadResponse = await fetch('/api/aura/upload', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      })
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload image')
-      }
-
-      const uploadData = await uploadResponse.json()
-      setImageUrl(uploadData.imageUrl)
-
-      // Analyze aura
-      setAnalyzing(true)
-      const analyzeResponse = await fetch('/api/aura/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          imageUrl: uploadData.imageUrl,
-        }),
-      })
-
-      if (!analyzeResponse.ok) {
-        throw new Error('Failed to analyze aura')
-      }
-
-      const analyzeData = await analyzeResponse.json()
-      setAnalysis(analyzeData.analysis)
-    } catch (error: any) {
-      console.error('Aura error:', error)
-      alert(error.message || 'Failed to process image')
-    } finally {
-      setUploading(false)
-      setAnalyzing(false)
-    }
+    await scan(imagePreview)
   }
 
   useEffect(() => {
@@ -105,15 +60,15 @@ export default function AuraPage() {
   }
 
   return (
-    <CosmicAura
-      imageFile={imageFile}
-      imagePreview={imagePreview}
-      onFileSelect={handleFileSelect}
-      onUpload={handleUpload}
-      uploading={uploading}
-      analyzing={analyzing}
-      analysis={analysis}
-    />
+            <CosmicAura
+              imageFile={imageFile}
+              imagePreview={imagePreview}
+              onFileSelect={handleFileSelect}
+              onUpload={handleUpload}
+              uploading={false}
+              analyzing={analyzing}
+              analysis={analysis}
+            />
   )
 }
 

@@ -5,20 +5,17 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
+import { usePalmistry } from '@/lib/hooks/usePalmistry'
 import { CosmicPalmistry } from '@/components/palmistry/CosmicPalmistry'
 
 export default function PalmistryPage() {
   const router = useRouter()
   const { user } = useUserStore()
-  const [uploading, setUploading] = useState(false)
-  const [analyzing, setAnalyzing] = useState(false)
+  const { analysis, loading: analyzing, error, analyze } = usePalmistry()
   const [leftPalmFile, setLeftPalmFile] = useState<File | null>(null)
   const [rightPalmFile, setRightPalmFile] = useState<File | null>(null)
   const [leftPalmPreview, setLeftPalmPreview] = useState<string | null>(null)
   const [rightPalmPreview, setRightPalmPreview] = useState<string | null>(null)
-  const [leftPalmUrl, setLeftPalmUrl] = useState<string | null>(null)
-  const [rightPalmUrl, setRightPalmUrl] = useState<string | null>(null)
-  const [analysis, setAnalysis] = useState<any>(null)
 
   const handleFileSelect = (file: File | null, side: 'left' | 'right') => {
     if (!file) return
@@ -55,58 +52,11 @@ export default function PalmistryPage() {
   }
 
   const handleUpload = async () => {
-    if (!leftPalmFile || !rightPalmFile) {
+    if (!leftPalmFile || !rightPalmFile || !leftPalmPreview || !rightPalmPreview) {
       alert('Please select both left and right palm images')
       return
     }
-
-    setUploading(true)
-
-    try {
-      // Upload images
-      const formData = new FormData()
-      formData.append('leftPalm', leftPalmFile)
-      formData.append('rightPalm', rightPalmFile)
-
-      const uploadResponse = await fetch('/api/palmistry/upload', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      })
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload images')
-      }
-
-      const uploadData = await uploadResponse.json()
-      setLeftPalmUrl(uploadData.leftPalmUrl)
-      setRightPalmUrl(uploadData.rightPalmUrl)
-
-      // Analyze palm
-      setAnalyzing(true)
-      const analyzeResponse = await fetch('/api/palmistry/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          leftPalmUrl: uploadData.leftPalmUrl,
-          rightPalmUrl: uploadData.rightPalmUrl,
-        }),
-      })
-
-      if (!analyzeResponse.ok) {
-        throw new Error('Failed to analyze palm')
-      }
-
-      const analyzeData = await analyzeResponse.json()
-      setAnalysis(analyzeData.analysis)
-    } catch (error: any) {
-      console.error('Palmistry error:', error)
-      alert(error.message || 'Failed to process palm images')
-    } finally {
-      setUploading(false)
-      setAnalyzing(false)
-    }
+    await analyze(leftPalmPreview, rightPalmPreview)
   }
 
   useEffect(() => {
@@ -126,10 +76,10 @@ export default function PalmistryPage() {
       leftPalmPreview={leftPalmPreview}
       rightPalmPreview={rightPalmPreview}
       onFileSelect={handleFileSelect}
-      onUpload={handleUpload}
-      uploading={uploading}
-      analyzing={analyzing}
-      analysis={analysis}
+              onUpload={handleUpload}
+              uploading={false}
+              analyzing={analyzing}
+              analysis={analysis}
     />
   )
 }

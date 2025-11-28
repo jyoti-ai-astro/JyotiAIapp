@@ -98,7 +98,7 @@ const fragmentShader = `
   }
 `;
 
-export function NebulaShader({ intensity = 1.0 }: { intensity?: number }) {
+export const NebulaShader = React.memo(function NebulaShader({ intensity = 1.0 }: { intensity?: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   const material = useMemo(() => {
@@ -132,5 +132,5 @@ export function NebulaShader({ intensity = 1.0 }: { intensity?: number }) {
   return (
     <mesh ref={meshRef} geometry={geometry} material={material} position={[0, 0, 0]} />
   );
-}
+});
 

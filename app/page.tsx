@@ -47,7 +47,7 @@ export default function HomePage() {
       <SoundscapeController />
 
       {/* Content */}
-      <div className="relative z-10">
+      <div className="relative z-10 min-h-screen">
         {/* Hero Section */}
         <CosmicHero
           variant="home"

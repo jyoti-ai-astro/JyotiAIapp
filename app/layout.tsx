@@ -8,28 +8,39 @@ import { MotionProvider } from '@/components/providers/MotionProvider'
 import { TransitionOverlay } from '@/components/global/TransitionOverlay'
 import { RouteTransitionHandler } from '@/components/global/RouteTransitionHandler'
 import { BlessingWaveOverlay } from '@/components/global/BlessingWaveOverlay'
+import { GlobalProviders } from '@/components/providers/GlobalProviders'
 
 const inter = Inter({ 
   subsets: ['latin'],
   variable: '--font-body',
+  display: 'swap',
+  preload: true,
 })
 
 const marcellus = Marcellus({
   weight: ['400'],
   subsets: ['latin'],
   variable: '--font-heading',
+  display: 'swap',
+  preload: true,
 })
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-display',
+  display: 'swap',
+  preload: true,
 })
 
-export const metadata: Metadata = {
-  title: 'Jyoti.ai - Your Spiritual Operating System',
-  description: 'AI-powered spiritual guidance combining astrology, palmistry, face reading, aura analysis, and more',
-  keywords: ['astrology', 'palmistry', 'spiritual', 'AI', 'kundali', 'numerology'],
-}
+import { generateMetadata as genMeta } from '@/lib/seo/metadata';
+
+export const metadata: Metadata = genMeta({
+  title: 'Home',
+  description: 'Your Destiny, Decoded by AI + Ancient Wisdom. Astrology • Numerology • Aura • Palmistry • Remedies • Predictions',
+  keywords: ['astrology', 'numerology', 'kundali', 'palmistry', 'aura', 'spiritual guidance', 'AI astrology'],
+  canonical: '/',
+  ogImage: '/og-home.jpg',
+});
 
 export default function RootLayout({
   children,
@@ -42,11 +53,13 @@ export default function RootLayout({
         <GlobalErrorBoundary>
           <MotionProvider>
             <AudioProvider>
-              <Background />
-              <RouteTransitionHandler />
-              <TransitionOverlay />
-              <BlessingWaveOverlay />
-              {children}
+              <GlobalProviders>
+                <Background />
+                <RouteTransitionHandler />
+                <TransitionOverlay />
+                <BlessingWaveOverlay />
+                {children}
+              </GlobalProviders>
             </AudioProvider>
           </MotionProvider>
         </GlobalErrorBoundary>

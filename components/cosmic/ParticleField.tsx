@@ -17,7 +17,7 @@ interface ParticleFieldProps {
   intensity?: number;
 }
 
-export function ParticleField({ count = 3000, intensity = 1.0 }: ParticleFieldProps) {
+export const ParticleField = React.memo(function ParticleField({ count = 3000, intensity = 1.0 }: ParticleFieldProps) {
   const pointsRef = useRef<THREE.Points>(null);
 
   const geometry = useMemo(() => {
@@ -79,5 +79,5 @@ export function ParticleField({ count = 3000, intensity = 1.0 }: ParticleFieldPr
   return (
     <points ref={pointsRef} geometry={geometry} material={pointsMaterial} />
   );
-}
+});
 

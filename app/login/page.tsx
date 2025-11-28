@@ -1,38 +1,64 @@
-'use client'
+/**
+ * Login Page
+ * 
+ * Batch 2 - Auth & Onboarding
+ * 
+ * Cosmic login screen with R3F nebula background
+ */
 
-export const dynamic = 'force-dynamic'
+'use client';
 
-import { useState } from 'react'
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
-import { auth } from '@/lib/firebase/config'
-import { Button } from '@/components/ui/button'
-import { useRouter } from 'next/navigation'
-import { useUserStore } from '@/store/user-store'
+export const dynamic = 'force-dynamic';
+
+import { useState } from 'react';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useRouter } from 'next/navigation';
+import { useUserStore } from '@/store/user-store';
+import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
+import { CosmicCursor } from '@/components/global/CosmicCursor';
+import { SoundscapeController } from '@/components/global/SoundscapeController';
+import { Canvas } from '@react-three/fiber';
+import { Suspense } from 'react';
+import { NebulaShader } from '@/components/cosmic/NebulaShader';
+import { ParticleField } from '@/components/cosmic/ParticleField';
+import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
+import { motion } from 'framer-motion';
+import { Mail, Sparkles } from 'lucide-react';
+import { LoginCard } from '@/components/auth/LoginCard';
+import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
+import Link from 'next/link';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  
+  // Redirect if already authenticated (client-side only)
+  const { isAuthenticated, isOnboarded } = useProtectedRoute({
+    requireAuth: false,
+    redirectIfAuthenticated: true,
+    redirectTo: '/dashboard',
+  });
 
   const handleGoogleLogin = async () => {
     try {
-      setLoading(true)
-      const provider = new GoogleAuthProvider()
-      const result = await signInWithPopup(auth, provider)
-      const idToken = await result.user.getIdToken()
+      setLoading(true);
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
 
-      // Send to backend to create session
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
-      })
+      });
 
       if (response.ok) {
-        const data = await response.json()
-        
-        // Update user store
-        const { setUser } = useUserStore.getState()
+        const data = await response.json();
+        const { setUser } = useUserStore.getState();
         setUser({
           uid: data.uid,
           name: result.user.displayName,
@@ -46,102 +72,86 @@ export default function LoginPage() {
           subscription: 'free',
           subscriptionExpiry: null,
           onboarded: data.onboarded || false,
-        })
+        });
 
-        // Redirect based on onboarding status
         if (data.onboarded) {
-          router.push('/dashboard')
+          router.push('/dashboard');
         } else {
-          router.push('/onboarding')
+          router.push('/onboarding');
         }
       } else {
-        throw new Error('Login failed')
+        throw new Error('Login failed');
       }
     } catch (error) {
-      console.error('Google login error:', error)
-      alert('Login failed. Please try again.')
+      console.error('Google login error:', error);
+      alert('Login failed. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleEmailLink = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
-      setLoading(true)
+      setLoading(true);
+      window.localStorage.setItem('emailForSignIn', email);
       
-      // Store email for callback
-      window.localStorage.setItem('emailForSignIn', email)
-      
-      // Call backend API to send magic link via ZeptoMail
       const response = await fetch('/api/auth/magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to send magic link')
+        throw new Error('Failed to send magic link');
       }
 
-      alert('Check your email for the login link!')
-      setEmail('') // Clear email field
+      router.push('/magic-link');
     } catch (error: any) {
-      console.error('Email link error:', error)
-      alert(error.message || 'Failed to send email link. Please try again.')
+      console.error('Email link error:', error);
+      alert(error.message || 'Failed to send email link. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const createRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const button = e.currentTarget;
+    const ripple = document.createElement('span');
+    const rect = button.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    
+    ripple.style.width = ripple.style.height = `${size}px`;
+    ripple.style.left = `${x}px`;
+    ripple.style.top = `${y}px`;
+    ripple.className = 'absolute rounded-full bg-gold/30 animate-ping pointer-events-none';
+    button.appendChild(ripple);
+    
+    setTimeout(() => ripple.remove(), 600);
+  };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cosmic via-mystic to-gold p-4">
-      <div className="w-full max-w-md space-y-8 rounded-lg bg-white/10 backdrop-blur-lg p-8 shadow-xl">
-        <div className="text-center">
-          <h1 className="text-4xl font-display font-bold text-white mb-2">Jyoti.ai</h1>
-          <p className="text-white/80">Sign in to your spiritual journey</p>
-        </div>
-
-        <div className="space-y-4">
-          <Button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full bg-white text-cosmic hover:bg-white/90"
-            size="lg"
-          >
-            Continue with Google
-          </Button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-white/20" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-transparent px-2 text-white/60">Or continue with email</span>
-            </div>
-          </div>
-
-          <form onSubmit={handleEmailLink} className="space-y-4">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              className="w-full rounded-md border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-gold"
-            />
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-mystic text-white hover:bg-mystic-light"
-              size="lg"
-            >
-              Send Magic Link
-            </Button>
-          </form>
-        </div>
+    <PageTransitionWrapper>
+      {/* R3F Background */}
+      <div className="fixed inset-0 z-0">
+        <Canvas camera={{ position: [0, 0, 1], fov: 75 }}>
+          <Suspense fallback={null}>
+            <NebulaShader intensity={1.0} />
+            <ParticleField count={3000} intensity={1.0} />
+            <RotatingMandala speed={0.1} intensity={0.5} />
+          </Suspense>
+        </Canvas>
       </div>
-    </div>
-  )
-}
 
+      <CosmicCursor />
+      <SoundscapeController />
+
+      {/* Content */}
+      <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
+        <LoginCard />
+      </div>
+    </PageTransitionWrapper>
+  );
+}

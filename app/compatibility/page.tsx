@@ -12,6 +12,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
+import { useCompatibility } from '@/lib/hooks/useCompatibility';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,14 +24,14 @@ import Link from 'next/link';
 export default function CompatibilityPage() {
   const router = useRouter();
   const { user } = useUserStore();
-  const [loading, setLoading] = useState(false);
+  const { analysis, loading, analyzeCompatibility } = useCompatibility();
   const [partnerData, setPartnerData] = useState({
     name: '',
     dob: '',
     tob: '',
     pob: '',
+    rashi: '',
   });
-  const [result, setResult] = useState<any>(null);
 
   useEffect(() => {
     if (!user) {
@@ -40,28 +41,27 @@ export default function CompatibilityPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
-    try {
-      const response = await fetch('/api/compatibility/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(partnerData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to analyze compatibility');
-      }
-
-      const data = await response.json();
-      setResult(data);
-    } catch (error: any) {
-      console.error('Compatibility error:', error);
-      alert(error.message || 'Failed to analyze compatibility');
-    } finally {
-      setLoading(false);
+    if (!user) {
+      router.push('/login');
+      return;
     }
+
+    const partner1: any = {
+      name: user.name || 'You',
+      dob: user.dob || '',
+      rashi: user.rashi || '',
+    };
+
+    const partner2 = {
+      name: partnerData.name,
+      dob: partnerData.dob,
+      tob: partnerData.tob,
+      pob: partnerData.pob,
+      rashi: partnerData.rashi,
+    };
+
+    await analyzeCompatibility(partner1, partner2);
   };
 
   if (!user) {
@@ -95,7 +95,7 @@ export default function CompatibilityPage() {
         </motion.div>
 
         {/* Partner Details Form */}
-        {!result && (
+        {!analysis && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -178,7 +178,7 @@ export default function CompatibilityPage() {
         )}
 
         {/* Results */}
-        {result && (
+        {analysis && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -195,38 +195,59 @@ export default function CompatibilityPage() {
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                   >
-                    {result.score || 86}/100
+                    {analysis.score.overall}/100
                   </motion.p>
-                  <div className="flex items-center justify-center gap-4 mt-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                     <div className="text-center">
-                      <p className="text-sm text-aura-cyan">Emotional Synergy</p>
+                      <p className="text-sm text-aura-cyan">Love</p>
                       <p className="text-xl font-semibold text-aura-green">
-                        {result.emotionalSynergy || 'Strong'}
+                        {analysis.score.love}%
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-aura-cyan">Marriage Timing</p>
+                      <p className="text-sm text-aura-cyan">Career</p>
                       <p className="text-xl font-semibold text-aura-blue">
-                        {result.marriageTiming || '2026-27'}
+                        {analysis.score.career}%
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-aura-cyan">Communication</p>
+                      <p className="text-xl font-semibold text-aura-violet">
+                        {analysis.score.communication}%
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-aura-cyan">Long-term</p>
+                      <p className="text-xl font-semibold text-aura-orange">
+                        {analysis.score.longTerm}%
                       </p>
                     </div>
                   </div>
+                  {analysis.marriageTiming && (
+                    <div className="mt-4 p-4 bg-gold/10 border border-gold/30 rounded-lg">
+                      <p className="text-sm text-gold font-semibold mb-2">Best Marriage Period</p>
+                      <p className="text-white">{analysis.marriageTiming.bestPeriod}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Risk Factors */}
-            {result.riskFactors && result.riskFactors.length > 0 && (
-              <Card className="cosmic-card border-aura-orange/30 bg-cosmic-indigo/10">
+            {/* Strengths */}
+            {analysis.strengths && analysis.strengths.length > 0 && (
+              <Card className="cosmic-card border-aura-green/30 bg-cosmic-indigo/10">
                 <CardHeader>
-                  <CardTitle className="text-aura-orange">Risk Factors</CardTitle>
+                  <CardTitle className="text-aura-green">Strengths</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {result.riskFactors.map((risk: string, i: number) => (
+                    {analysis.strengths.map((strength, i) => (
                       <li key={i} className="flex items-start gap-2 text-aura-cyan">
-                        <span className="text-aura-orange mt-1">•</span>
-                        <span>{risk}</span>
+                        <span className="text-aura-green mt-1">•</span>
+                        <div>
+                          <p className="font-semibold">{strength.area}</p>
+                          <p className="text-sm text-white/70">{strength.description}</p>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -234,8 +255,45 @@ export default function CompatibilityPage() {
               </Card>
             )}
 
+            {/* Risks */}
+            {analysis.risks && analysis.risks.length > 0 && (
+              <Card className="cosmic-card border-aura-orange/30 bg-cosmic-indigo/10">
+                <CardHeader>
+                  <CardTitle className="text-aura-orange">Risk Factors</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {analysis.risks.map((risk, i) => (
+                      <li key={i} className="flex items-start gap-2 text-aura-cyan">
+                        <span className="text-aura-orange mt-1">•</span>
+                        <div>
+                          <p className="font-semibold">{risk.area}</p>
+                          <p className="text-sm text-white/70">{risk.description}</p>
+                          {risk.remedy && (
+                            <p className="text-xs text-gold mt-1">Remedy: {risk.remedy}</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Summary */}
+            {analysis.summary && (
+              <Card className="cosmic-card border-cosmic-gold/30 bg-cosmic-indigo/10">
+                <CardHeader>
+                  <CardTitle className="text-cosmic-gold">Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-aura-cyan leading-relaxed">{analysis.summary}</p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Recommendations */}
-            {result.recommendations && result.recommendations.length > 0 && (
+            {analysis.recommendations && analysis.recommendations.length > 0 && (
               <Card className="cosmic-card border-aura-violet/30 bg-cosmic-indigo/10">
                 <CardHeader>
                   <CardTitle className="text-aura-violet flex items-center gap-2">
@@ -245,7 +303,7 @@ export default function CompatibilityPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {result.recommendations.map((rec: string, i: number) => (
+                    {analysis.recommendations.map((rec, i) => (
                       <li key={i} className="flex items-start gap-2 text-aura-cyan">
                         <span className="text-aura-violet mt-1">•</span>
                         <span>{rec}</span>
@@ -258,7 +316,9 @@ export default function CompatibilityPage() {
 
             <div className="flex justify-center">
               <Button
-                onClick={() => setResult(null)}
+                onClick={() => {
+                  setPartnerData({ name: '', dob: '', tob: '', pob: '', rashi: '' });
+                }}
                 className="cosmic-button border-aura-cyan/30 text-aura-cyan hover:bg-aura-cyan/10"
               >
                 Analyze Another Partner
