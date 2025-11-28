@@ -75,14 +75,14 @@ export function CosmicHero({
   const { sectionRef, smoothedProgress, scrollDirection, scrollVelocity } = useSectionMotion({
     sectionId,
     onEnter: () => {
-      orchestrator.onSectionEnter(sectionId);
+      orchestrator?.onSectionEnter?.(sectionId);
     },
     onExit: () => {
-      orchestrator.onSectionExit(sectionId);
+      orchestrator?.onSectionExit?.(sectionId);
     },
     onProgress: (progress) => {
-      orchestrator.scrollParallax(sectionId, progress);
-      orchestrator.scrollReveal(sectionId, progress);
+      orchestrator?.scrollParallax?.(sectionId, progress);
+      orchestrator?.scrollReveal?.(sectionId, progress);
     },
   });
   
