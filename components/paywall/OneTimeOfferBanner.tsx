@@ -7,7 +7,8 @@ import { Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface OneTimeOfferBannerProps {
-  feature: string
+  feature?: string
+  title?: string
   description?: string
   priceLabel?: string
   ctaLabel?: string
@@ -17,13 +18,15 @@ interface OneTimeOfferBannerProps {
 
 export function OneTimeOfferBanner({
   feature,
+  title,
   description,
   priceLabel = '₹199',
   ctaLabel,
   ctaHref = '/pay/199',
   className,
 }: OneTimeOfferBannerProps) {
-  const defaultDescription = description || `Unlock ${feature} instantly without a subscription.`
+  const displayTitle = title || `Unlock ${feature || 'Full Insights'}`
+  const defaultDescription = description || `Unlock ${feature || 'this feature'} instantly without a subscription.`
   const defaultCta = ctaLabel || `Unlock for ${priceLabel}`
 
   return (
@@ -38,7 +41,7 @@ export function OneTimeOfferBanner({
           <Sparkles className="w-3 h-3" />
           <span>One-Time Reading</span>
         </div>
-        <h3 className="text-lg md:text-xl font-heading text-gold mb-1">Unlock {feature}</h3>
+        <h3 className="text-lg md:text-xl font-heading text-gold mb-1">{displayTitle}</h3>
         <p className="text-sm md:text-base text-white/70">{defaultDescription}</p>
       </div>
       <div className="flex flex-col items-start md:items-end gap-2">

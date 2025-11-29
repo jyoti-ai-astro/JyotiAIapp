@@ -215,6 +215,20 @@
   .cosmic-card {
     @apply rounded-2xl border border-cosmic-indigo/20 bg-cosmic-navy/50 backdrop-blur-sm;
   }
+
+  /* Glass card for astro summary blocks */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md rounded-2xl border border-white/10;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Gold button for premium actions */
+  .gold-btn {
+    @apply bg-gold text-cosmic-navy font-semibold px-6 py-3 rounded-xl;
+    @apply hover:bg-gold/90 transition-all duration-300;
+    @apply shadow-[0_4px_15px_rgba(242,201,76,0.3)];
+    @apply hover:shadow-[0_6px_20px_rgba(242,201,76,0.4)];
+  }
   
   /* Breathing animations (meditative rhythm) */
   @keyframes breathe {

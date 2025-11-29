@@ -10,7 +10,10 @@ import { Button } from '@/components/ui/button'
 import { KundaliWheel3D } from '@/components/organisms/kundali-wheel-3d'
 import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
+import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
+import { decrementTicket } from '@/lib/access/ticket-access'
 import Link from 'next/link'
+import type { AstroContext } from '@/lib/engines/astro-types'
 
 interface KundaliData {
   meta: {
@@ -44,6 +47,7 @@ export default function KundaliPage() {
   const [loading, setLoading] = useState(true)
   const [kundali, setKundali] = useState<KundaliData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [astro, setAstro] = useState<AstroContext | null>(null)
 
   useEffect(() => {
     if (!user) {
@@ -52,7 +56,23 @@ export default function KundaliPage() {
     }
 
     fetchKundali()
+    fetchAstroContext()
   }, [user, router])
+
+  const fetchAstroContext = async () => {
+    if (!user?.uid) return
+    try {
+      const response = await fetch('/api/astro/context', {
+        credentials: 'include',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAstro(data.astro)
+      }
+    } catch (err) {
+      console.error('Error fetching astro context:', err)
+    }
+  }
 
   const fetchKundali = async () => {
     try {
@@ -131,14 +151,27 @@ export default function KundaliPage() {
       <CosmicBackground />
       
       <div className="container mx-auto p-6 space-y-6 relative z-10">
-        {/* One-Time Offer Banner */}
-        <OneTimeOfferBanner
-          feature="Kundali Report (Basic)"
-          description="Get a detailed basic Kundali PDF generated from your birth details — without any subscription."
-          priceLabel="₹199"
-          ctaLabel="Buy Kundali Report for ₹199"
-          ctaHref="/pay/199"
-        />
+        {/* Context Panel */}
+        <div className="mb-8">
+          <OneTimeOfferBanner
+            title="Unlock Full Insights"
+            description="This module uses your birth chart & predictions powered by Guru Brain."
+            priceLabel="₹199"
+            ctaLabel="Unlock Now"
+            ctaHref="/pay/199"
+          />
+        </div>
+
+        {/* Astro Summary Block */}
+        {astro && (
+          <div className="glass-card p-6 mb-10 rounded-2xl border border-gold/20">
+            <h3 className="text-gold font-heading text-xl mb-2">Astro Summary</h3>
+            <p className="text-white/80 text-sm">Sun Sign: {astro.coreChart?.sunSign || 'N/A'}</p>
+            <p className="text-white/80 text-sm">Moon Sign: {astro.coreChart?.moonSign || 'N/A'}</p>
+            <p className="text-white/80 text-sm">Ascendant: {astro.coreChart?.ascendantSign || 'N/A'}</p>
+            <p className="text-white/80 text-sm mt-4">Next Major Dasha: {astro.dasha?.currentMahadasha?.planet || 'N/A'}</p>
+          </div>
+        )}
 
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -355,6 +388,18 @@ export default function KundaliPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Ask Guru With Context Button */}
+      {astro && (
+        <div className="mt-8 text-center">
+          <Button
+            onClick={() => router.push(`/guru?context=${encodeURIComponent(JSON.stringify(astro))}`)}
+            className="gold-btn"
+          >
+            Ask Guru With My Birth Context
+          </Button>
+        </div>
       )}
       </div>
     </div>

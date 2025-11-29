@@ -38,33 +38,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
 
-    // Define ticket mapping
-    const ticketMap: Record<string, { ai_questions?: number; kundali_basic?: number }> = {
-      '99': { ai_questions: 1 },
-      '199': { ai_questions: 3, kundali_basic: 1 },
-    }
-
-    const ticketsToAdd = ticketMap[String(productId)]
-    if (!ticketsToAdd) {
-      return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 })
-    }
+    // Get order details to determine what was purchased
+    const orderRef = adminDb
+      .collection('payments')
+      .doc(uid)
+      .collection('one_time_orders')
+      .doc(order_id)
+    const orderSnap = await orderRef.get()
+    const orderData = orderSnap.exists ? orderSnap.data() : {}
+    const planName = (orderData?.productId || String(productId)).toLowerCase()
 
     // Get user document
     const userRef = adminDb.collection('users').doc(uid)
     const userSnap = await userRef.get()
     const currentUserData = userSnap.exists ? userSnap.data() : {}
-    const currentTickets = currentUserData?.tickets || {}
 
-    // Merge tickets (add to existing, don't replace)
-    const updatedTickets = {
-      ai_questions: (currentTickets.ai_questions || 0) + (ticketsToAdd.ai_questions || 0),
-      kundali_basic: (currentTickets.kundali_basic || 0) + (ticketsToAdd.kundali_basic || 0),
+    // Fulfillment Logic: Quick/Deep packs add tickets, subscriptions update subscription
+    const updates: any = {}
+
+    if (planName.includes('99') || planName.includes('quick')) {
+      // Quick Pack: Add 1 Ticket
+      const currentTickets = currentUserData?.tickets || 0
+      updates.tickets = (currentTickets || 0) + 1
+    } else if (planName.includes('199') || planName.includes('deep')) {
+      // Deep Pack: Add 3 Tickets
+      const currentTickets = currentUserData?.tickets || 0
+      updates.tickets = (currentTickets || 0) + 3
+    } else if (['starter', 'advanced', 'supreme'].some((p) => planName.includes(p))) {
+      // Subscription Plans
+      const cleanPlan = ['starter', 'advanced', 'supreme'].find((p) => planName.includes(p))
+      if (cleanPlan) {
+        updates.subscription = cleanPlan
+        updates.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // +30 Days
+      }
     }
 
-    // Update user document with tickets
+    // Update user document
     await userRef.set(
       {
-        tickets: updatedTickets,
+        ...updates,
         oneTimePurchases: adminDb.FieldValue.arrayUnion({
           productId: String(productId),
           paymentId: payment_id,
@@ -76,11 +88,6 @@ export async function POST(req: NextRequest) {
     )
 
     // Update order status
-    const orderRef = adminDb
-      .collection('payments')
-      .doc(uid)
-      .collection('one_time_orders')
-      .doc(order_id)
     await orderRef.update({
       paymentId: payment_id,
       signature: signature,
@@ -88,15 +95,7 @@ export async function POST(req: NextRequest) {
       completedAt: new Date(),
     })
 
-    return NextResponse.json({
-      success: true,
-      tickets: updatedTickets,
-      payment: {
-        orderId: order_id,
-        paymentId: payment_id,
-        status: 'completed',
-      },
-    })
+    return NextResponse.redirect(new URL('/thanks?payment=success', req.url))
   } catch (err: any) {
     console.error('One-time payment success error:', err)
     return NextResponse.json({ error: err.message || 'Failed to process payment' }, { status: 500 })

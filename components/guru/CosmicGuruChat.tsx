@@ -20,8 +20,12 @@ import Link from 'next/link'
 export const CosmicGuruChat = () => {
   const [input, setInput] = useState('')
   const [showPaywallModal, setShowPaywallModal] = useState(false)
+  const [showDebug, setShowDebug] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { user, decrementLocalTicket } = useUserStore()
+  
+  // Check if user is admin (simple check - can be enhanced)
+  const isAdmin = user?.email?.endsWith('@jyoti.ai') || user?.email?.includes('admin')
 
   // Use the existing hook for logic
   const { messages, sendMessage, loading, error, isTyping } = useGuruChat()
@@ -65,10 +69,10 @@ export const CosmicGuruChat = () => {
     setInput('') // Clear input immediately
 
     // Send message
-    const result = await sendMessage(message)
+    const success = await sendMessage(message)
 
     // Decrement ticket if message was sent successfully and user has tickets (not subscription)
-    if (result && !hasSubscription && remainingQuestions > 0) {
+    if (success && !hasSubscription && remainingQuestions > 0) {
       // Optimistically update local state
       decrementLocalTicket('ai_questions')
 
@@ -83,18 +87,30 @@ export const CosmicGuruChat = () => {
     }
   }
 
-  // Convert GuruMessage to ChatMessage format for display
+  // Convert messages to display format
   const displayMessages = messages.map((msg) => ({
     id: msg.id,
     role: msg.role === 'guru' ? 'assistant' : 'user',
     content: msg.content,
     timestamp: msg.timestamp,
+    metadata: msg.metadata,
   }))
 
   return (
     <>
       <GuruPaywallModal isOpen={showPaywallModal} onClose={() => setShowPaywallModal(false)} />
       <Card className="flex-1 flex flex-col bg-cosmic-indigo/30 backdrop-blur-xl border-white/10 overflow-hidden shadow-2xl relative">
+        {/* Admin Debug Toggle */}
+        {isAdmin && (
+          <div className="absolute top-2 right-2 z-50">
+            <button
+              onClick={() => setShowDebug(!showDebug)}
+              className="text-xs px-2 py-1 bg-black/50 text-white/60 hover:text-white rounded border border-white/10"
+            >
+              {showDebug ? 'Hide' : 'Show'} Debug
+            </button>
+          </div>
+        )}
       {/* Chat Messages Area */}
       <div
         ref={scrollRef}
@@ -142,6 +158,30 @@ export const CosmicGuruChat = () => {
 
                 {/* Message Content */}
                 <div className="whitespace-pre-wrap">{msg.content}</div>
+
+                {/* Badges for Astro/RAG usage */}
+                {msg.role === 'assistant' && msg.metadata && (
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {msg.metadata.usedAstroContext && (
+                      <span className="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30">
+                        ✨ Astro-aligned
+                      </span>
+                    )}
+                    {msg.metadata.usedRag && (
+                      <span className="text-[10px] px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-full border border-indigo-500/30">
+                        📜 Sacred texts
+                      </span>
+                    )}
+                    {/* Debug info for admin */}
+                    {showDebug && isAdmin && (
+                      <div className="w-full mt-2 p-2 bg-black/30 rounded text-[10px] text-white/50 border border-white/5">
+                        <div>Mode: {msg.metadata.mode || 'general'}</div>
+                        <div>Astro: {msg.metadata.usedAstroContext ? 'Yes' : 'No'}</div>
+                        <div>RAG: {msg.metadata.usedRag ? 'Yes' : 'No'}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Timestamp */}
                 <div className="text-[10px] opacity-40 mt-2 text-right">

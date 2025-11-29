@@ -8,7 +8,10 @@
 
 interface UserAccess {
   hasSubscription: boolean
-  tickets?: {
+  // New structure: simple number for AI questions
+  tickets?: number
+  // Legacy structure: object with ticket types
+  legacyTickets?: {
     ai_questions?: number
     kundali_basic?: number
   }
@@ -29,19 +32,21 @@ export function canAccessFeature(
   }
 
   // Check tickets based on feature
-  const tickets = user.tickets || {}
+  // Support both new structure (tickets as number) and legacy structure
+  const newTickets = typeof user.tickets === 'number' ? user.tickets : 0
+  const legacyTickets = user.legacyTickets || {}
 
   switch (feature) {
     case 'ai_question':
-      return (tickets.ai_questions || 0) > 0
+      return newTickets > 0 || (legacyTickets.ai_questions || 0) > 0
     case 'kundali_basic':
-      return (tickets.kundali_basic || 0) > 0
+      return (legacyTickets.kundali_basic || 0) > 0
     case 'compatibility':
     case 'career':
     case 'palmistry':
     case 'aura':
       // These require kundali_basic ticket or subscription
-      return (tickets.kundali_basic || 0) > 0 || user.hasSubscription
+      return (legacyTickets.kundali_basic || 0) > 0 || user.hasSubscription
     default:
       return false
   }
@@ -54,13 +59,16 @@ export function getRemainingTickets(
   user: UserAccess | null,
   feature: 'ai_question' | 'kundali_basic'
 ): number {
-  if (!user || !user.tickets) return 0
+  if (!user) return 0
 
   switch (feature) {
     case 'ai_question':
-      return Math.max(user.tickets.ai_questions || 0, 0)
+      // Support both new and legacy structures
+      const newTickets = typeof user.tickets === 'number' ? user.tickets : 0
+      const legacyTickets = user.legacyTickets?.ai_questions || 0
+      return Math.max(newTickets + legacyTickets, 0)
     case 'kundali_basic':
-      return Math.max(user.tickets.kundali_basic || 0, 0)
+      return Math.max(user.legacyTickets?.kundali_basic || 0, 0)
     default:
       return 0
   }
@@ -74,8 +82,10 @@ export function hasAnyAccess(user: UserAccess | null): boolean {
 
   if (user.hasSubscription) return true
 
-  const tickets = user.tickets || {}
-  return (tickets.ai_questions || 0) > 0 || (tickets.kundali_basic || 0) > 0
+  // Support both new and legacy structures
+  const newTickets = typeof user.tickets === 'number' ? user.tickets : 0
+  const legacyTickets = user.legacyTickets || {}
+  return newTickets > 0 || (legacyTickets.ai_questions || 0) > 0 || (legacyTickets.kundali_basic || 0) > 0
 }
 
 /**

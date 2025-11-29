@@ -5,6 +5,9 @@
  * Phase 28 — Section 43: SECURITY + VALIDATION LAYER (F43)
  * 
  * POST endpoint for AI Guru chat with streaming support
+ * 
+ * TODO: MEGA BUILD 1 - This route is deprecated in favor of /api/guru
+ * Consider migrating clients to the new unified endpoint or proxying to it
  */
 
 import { NextRequest, NextResponse } from 'next/server';

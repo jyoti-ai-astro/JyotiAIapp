@@ -24,7 +24,7 @@ import { Header } from '@/components/global/Header'   // ⭐ NEW
 
 import { FooterWrapper } from '@/components/global/FooterWrapper'
 
-import { FloatingChatBubble } from '@/components/global/FloatingChatBubble'
+import { GuruChatWidget } from '@/components/guru/GuruChatWidget'
 
 const inter = Inter({ 
 
@@ -135,8 +135,8 @@ export default function RootLayout({
                 {/* ⭐ GLOBAL FOOTER */}
 
                 <FooterWrapper />
-                {/* ⭐ FLOATING CHAT BUBBLE */}
-                <FloatingChatBubble />
+                {/* ⭐ GLOBAL GURU CHAT WIDGET (Replaces FloatingChatBubble) */}
+                <GuruChatWidget />
               </GlobalProviders>
 
             </AudioProvider>

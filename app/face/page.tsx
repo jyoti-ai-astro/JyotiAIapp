@@ -25,6 +25,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UploadCloud, Camera, Sparkles, User } from 'lucide-react';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
+import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
+import { decrementTicket } from '@/lib/access/ticket-access';
+import type { AstroContext } from '@/lib/engines/astro-types';
 import Link from 'next/link';
 
 export default function FacePage() {
@@ -33,12 +36,30 @@ export default function FacePage() {
   const { analysis, loading: analyzing, error, analyze } = useFaceReading();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [astro, setAstro] = useState<AstroContext | null>(null);
 
   useEffect(() => {
     if (!user) {
       router.push('/login');
+    } else {
+      fetchAstroContext();
     }
   }, [user, router]);
+
+  const fetchAstroContext = async () => {
+    if (!user?.uid) return;
+    try {
+      const response = await fetch('/api/astro/context', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAstro(data.astro);
+      }
+    } catch (err) {
+      console.error('Error fetching astro context:', err);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,13 +87,16 @@ export default function FacePage() {
     if (!imageFile || !imagePreview) return;
 
     // Check access before analyzing
-    const { checkFeatureAccess } = await import('@/lib/access/checkFeatureAccess');
-    const access = await checkFeatureAccess('palmistry'); // Face reading uses same ticket as palmistry
+    const access = await checkFeatureAccess(user, 'face');
     if (!access.allowed) {
-      if (access.redirectTo) {
-        router.push(access.redirectTo);
+      if (access.redirect || access.redirectTo) {
+        router.push(access.redirect || access.redirectTo || '/pay/199');
       }
       return;
+    }
+
+    if (access.decrementTicket) {
+      await decrementTicket('kundali_basic');
     }
 
     await analyze(imagePreview);
@@ -105,14 +129,27 @@ export default function FacePage() {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto space-y-8"
         >
-          {/* One-Time Offer Banner */}
-          <OneTimeOfferBanner
-            feature="Face Reading Analysis"
-            description="Get AI-powered face reading with personality insights — included in Deep Insights."
-            priceLabel="₹199"
-            ctaLabel="Get Face Reading for ₹199"
-            ctaHref="/pay/199"
-          />
+          {/* Context Panel */}
+          <div className="mb-8">
+            <OneTimeOfferBanner
+              title="Unlock Full Insights"
+              description="This module uses your birth chart & predictions powered by Guru Brain."
+              priceLabel="₹199"
+              ctaLabel="Unlock Now"
+              ctaHref="/pay/199"
+            />
+          </div>
+
+          {/* Astro Summary Block */}
+          {astro && (
+            <div className="glass-card p-6 mb-10 rounded-2xl border border-gold/20">
+              <h3 className="text-gold font-heading text-xl mb-2">Astro Summary</h3>
+              <p className="text-white/80 text-sm">Sun Sign: {astro.coreChart?.sunSign || 'N/A'}</p>
+              <p className="text-white/80 text-sm">Moon Sign: {astro.coreChart?.moonSign || 'N/A'}</p>
+              <p className="text-white/80 text-sm">Ascendant: {astro.coreChart?.ascendantSign || 'N/A'}</p>
+              <p className="text-white/80 text-sm mt-4">Next Major Dasha: {astro.dasha?.currentMahadasha?.planet || 'N/A'}</p>
+            </div>
+          )}
 
           <div className="text-center">
             <User className="mx-auto h-16 w-16 text-gold mb-4" />
@@ -164,6 +201,18 @@ export default function FacePage() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Ask Guru With Context Button */}
+          {astro && (
+            <div className="text-center mb-4">
+              <Button
+                onClick={() => router.push(`/guru?context=${encodeURIComponent(JSON.stringify(astro))}`)}
+                className="gold-btn"
+              >
+                Ask Guru With My Birth Context
+              </Button>
+            </div>
+          )}
 
           <div className="text-center">
             <Link href="/dashboard">

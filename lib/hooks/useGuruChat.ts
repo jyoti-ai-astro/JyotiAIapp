@@ -1,92 +1,156 @@
-/**
- * Guru Chat Hook
- * 
- * Hook for GuruChatEngine with session management
- */
+'use client'
 
-'use client';
+import { useState, useCallback, useEffect } from 'react'
+import { useUserStore } from '@/store/user-store'
 
-import { useState, useCallback, useEffect } from 'react';
-import { guruEngine, type GuruMessage, type GuruSession } from '@/lib/engines/guru-engine';
-import { useUserStore } from '@/store/user-store';
-import { useEngineResultsStore } from '@/store/engine-results-store';
-
-export function useGuruChat(sessionId?: string) {
-  const { user } = useUserStore();
-  const engineResults = useEngineResultsStore((state) => state.results);
-  const [session, setSession] = useState<GuruSession | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
-
-  // Initialize or get session
-  useEffect(() => {
-    if (!user) return;
-    
-    const currentSessionId = sessionId || `session-${user.uid}`;
-    const existingSession = guruEngine.getSession(currentSessionId);
-    
-    if (existingSession) {
-      setSession(existingSession);
-    } else {
-      const newSession = guruEngine.createSession(currentSessionId);
-      setSession(newSession);
-    }
-  }, [user, sessionId]);
-
-  // Inject engine results for context
-  useEffect(() => {
-    if (session) {
-      guruEngine.injectEngineResults(session.id, engineResults);
-    }
-  }, [session, engineResults]);
-
-  const sendMessage = useCallback(async (message: string): Promise<GuruMessage | null> => {
-    if (!session || !message.trim()) return null;
-
-    try {
-      setLoading(true);
-      setIsTyping(true);
-      setError(null);
-
-      // Simulate typing delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const response = await guruEngine.sendMessage(session.id, message);
-      
-      // Update session
-      const updatedSession = guruEngine.getSession(session.id);
-      if (updatedSession) {
-        setSession(updatedSession);
-      }
-
-      return response;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to send message');
-      setError(error);
-      return null;
-    } finally {
-      setLoading(false);
-      setIsTyping(false);
-    }
-  }, [session]);
-
-  const clearSession = useCallback(() => {
-    if (session) {
-      guruEngine.clearSession(session.id);
-      const newSession = guruEngine.createSession(session.id);
-      setSession(newSession);
-    }
-  }, [session]);
-
-  return {
-    session,
-    messages: session?.messages || [],
-    loading,
-    error,
-    isTyping,
-    sendMessage,
-    clearSession,
-  };
+export interface GuruMessage {
+  id?: string
+  role: 'user' | 'guru'
+  content: string
+  timestamp?: number
 }
 
+export function useGuruChat(sessionId?: string) {
+  const { user } = useUserStore()
+  const [messages, setMessages] = useState<GuruMessage[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+  const [isTyping, setIsTyping] = useState(false)
+
+  // Load history on mount (from localStorage for now)
+  useEffect(() => {
+    async function loadHistory() {
+      if (!sessionId) return
+
+      try {
+        const stored = localStorage.getItem(`guru-history-${sessionId}`)
+        if (stored) {
+          try {
+            const history = JSON.parse(stored)
+            const chatMessages: GuruMessage[] = history.map((msg: any, idx: number) => ({
+              id: `msg-${idx}-${msg.role}`,
+              role: msg.role === 'assistant' ? 'guru' : 'user',
+              content: msg.content,
+              timestamp: msg.timestamp || Date.now(),
+            }))
+            setMessages(chatMessages)
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      } catch (err) {
+        console.error('Error loading history:', err)
+      }
+    }
+
+    loadHistory()
+  }, [sessionId])
+
+  const sendMessage = useCallback(
+    async (content: string): Promise<boolean> => {
+      if (!content.trim() || isLoading) return false
+
+      // 1. Optimistic Update
+      const userMsg: GuruMessage = {
+        id: `msg-${Date.now()}-user`,
+        role: 'user',
+        content,
+        timestamp: Date.now(),
+      }
+      setMessages((prev) => [...prev, userMsg])
+      setIsLoading(true)
+      setIsTyping(true)
+      setError(null)
+
+      try {
+        // 2. Call the API (Server-Side Logic happens here)
+        const res = await fetch('/api/guru/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            message: content,
+            contextType: 'general', // Optional context hint
+          }),
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to connect to the cosmos.')
+        }
+
+        // 3. Add Guru Response
+        const guruMsg: GuruMessage = {
+          id: `msg-${Date.now()}-guru`,
+          role: 'guru',
+          content: data.response || data.answer || data.message || 'I apologize, but I could not generate a response.',
+          timestamp: Date.now(),
+        }
+
+        setMessages((prev) => [...prev, guruMsg])
+
+        // Save to localStorage for persistence
+        if (sessionId) {
+          try {
+            const history = [
+              ...messages.map((m) => ({
+                role: m.role === 'guru' ? 'assistant' : 'user',
+                content: m.content,
+                timestamp: m.timestamp || Date.now(),
+              })),
+              {
+                role: 'user',
+                content,
+                timestamp: Date.now(),
+              },
+              {
+                role: 'assistant',
+                content: guruMsg.content,
+                timestamp: Date.now(),
+              },
+            ]
+            localStorage.setItem(`guru-history-${sessionId}`, JSON.stringify(history.slice(-20)))
+          } catch {
+            // Ignore localStorage errors
+          }
+        }
+
+        return true
+      } catch (err: any) {
+        console.error('Guru Chat Error:', err)
+        const error = err instanceof Error ? err : new Error('Failed to send message')
+        setError(error)
+        // Keep user message so they can retry
+        return false
+      } finally {
+        setIsLoading(false)
+        setIsTyping(false)
+      }
+    },
+    [messages, isLoading, sessionId]
+  )
+
+  const clearError = useCallback(() => {
+    setError(null)
+  }, [])
+
+  const clearSession = useCallback(() => {
+    setMessages([])
+    setError(null)
+    if (sessionId) {
+      localStorage.removeItem(`guru-history-${sessionId}`)
+    }
+  }, [sessionId])
+
+  return {
+    messages,
+    sendMessage,
+    isLoading,
+    loading: isLoading, // Alias for backward compatibility
+    error,
+    isTyping,
+    clearError,
+    clearSession,
+  }
+}
