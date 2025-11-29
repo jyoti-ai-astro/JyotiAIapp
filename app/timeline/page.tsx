@@ -26,6 +26,7 @@ import { ErrorBoundary } from '@/components/global/ErrorBoundary';
 import { Calendar, Sparkles, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { MonthDetailModal } from '@/components/timeline/MonthDetailModal';
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
 import React from 'react';
 
 export default function TimelinePage() {
@@ -51,6 +52,16 @@ export default function TimelinePage() {
       <CosmicCursor />
       <SoundscapeController />
       <div className="relative z-10 min-h-screen p-4 md:p-8">
+        {/* One-Time Offer Banner */}
+        <div className="mb-8">
+          <OneTimeOfferBanner
+            feature="12-Month Predictions Timeline"
+            description="Get detailed monthly predictions for the next 12 months — included in Deep Insights."
+            priceLabel="₹199"
+            ctaLabel="Get Timeline Predictions for ₹199"
+            ctaHref="/pay/199"
+          />
+        </div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

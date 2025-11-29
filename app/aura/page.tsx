@@ -6,8 +6,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
 import { useAuraScan } from '@/lib/hooks/useAuraScan'
-import { CosmicAura } from '@/components/aura/CosmicAura';
-import { AuraScanner } from '@/components/engines/AuraScanner';
+import { CosmicAura } from '@/components/aura/CosmicAura'
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 
 export default function AuraPage() {
   const router = useRouter()
@@ -60,15 +60,24 @@ export default function AuraPage() {
   }
 
   return (
-            <CosmicAura
-              imageFile={imageFile}
-              imagePreview={imagePreview}
-              onFileSelect={handleFileSelect}
-              onUpload={handleUpload}
-              uploading={false}
-              analyzing={analyzing}
-              analysis={analysis}
-            />
+    <div className="space-y-6">
+      <OneTimeOfferBanner
+        feature="Aura Scan"
+        description="Get AI-powered aura color analysis and chakra balance reading — included in Deep Insights."
+        priceLabel="₹199"
+        ctaLabel="Get Aura Scan for ₹199"
+        ctaHref="/pay/199"
+      />
+      <CosmicAura
+        imageFile={imageFile}
+        imagePreview={imagePreview}
+        onFileSelect={handleFileSelect}
+        onUpload={handleUpload}
+        uploading={false}
+        analyzing={analyzing}
+        analysis={analysis}
+      />
+    </div>
   )
 }
 

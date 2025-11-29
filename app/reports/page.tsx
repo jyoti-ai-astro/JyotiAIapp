@@ -2,20 +2,27 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useUserStore } from '@/store/user-store'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { motion } from 'framer-motion'
+import { FileText, Download, Sparkles, Lock, RefreshCw, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
+import { useUserStore } from '@/store/user-store'
+import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
 interface Report {
   reportId: string
   type: string
   title: string
-  pdfUrl: string
-  generatedAt: string
+  pdfUrl?: string
+  generatedAt?: string
   createdAt: string
+  status?: 'ready' | 'locked' | 'generating'
+  image?: string
 }
 
 export default function ReportsPage() {
@@ -24,9 +31,6 @@ export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
-  const [reportType, setReportType] = useState<'basic' | 'premium'>('basic')
-  const [includePalmistry, setIncludePalmistry] = useState(false)
-  const [includeAura, setIncludeAura] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -46,7 +50,12 @@ export default function ReportsPage() {
 
       if (response.ok) {
         const result = await response.json()
-        setReports(result.reports || [])
+        const formattedReports = (result.reports || []).map((report: any) => ({
+          ...report,
+          status: report.pdfUrl ? 'ready' : 'locked',
+          type: report.type === 'premium' ? 'Premium' : 'Standard',
+        }))
+        setReports(formattedReports)
       }
     } catch (error) {
       console.error('Load reports error:', error)
@@ -55,7 +64,7 @@ export default function ReportsPage() {
     }
   }
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (type: 'comprehensive' | 'basic' | 'premium' = 'comprehensive') => {
     setGenerating(true)
 
     try {
@@ -64,18 +73,17 @@ export default function ReportsPage() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          type: reportType,
-          includePalmistry,
-          includeAura,
+          type: type === 'comprehensive' ? 'premium' : type,
+          includePalmistry: false,
+          includeAura: false,
         }),
       })
 
       if (response.status === 402) {
-        // Payment required
         const error = await response.json()
         if (error.requiresPayment) {
           alert('Premium subscription required. Please proceed to payment.')
-          // Redirect to payment or show payment modal
+          router.push('/pricing')
           return
         }
       }
@@ -96,129 +104,254 @@ export default function ReportsPage() {
     }
   }
 
+  const handleUnlock = (report: Report) => {
+    // Redirect to payment or show payment modal
+    router.push('/pricing')
+  }
+
   if (!user) {
     return null
   }
 
+  // Mock data for empty state (remove in production if not needed)
+  const displayReports = reports.length
+    ? reports
+    : loading
+      ? []
+      : [
+          {
+            id: '1',
+            reportId: '1',
+            title: 'Detailed Kundali Analysis',
+            type: 'Premium',
+            date: new Date().toISOString().split('T')[0],
+            status: 'ready' as const,
+            image: '/content/astro-1.png',
+            createdAt: new Date().toISOString(),
+          },
+          {
+            id: '2',
+            reportId: '2',
+            title: '2024 Career Forecast',
+            type: 'Standard',
+            date: new Date().toISOString().split('T')[0],
+            status: 'ready' as const,
+            image: '/content/astro-2.png',
+            createdAt: new Date().toISOString(),
+          },
+          {
+            id: '3',
+            reportId: '3',
+            title: 'Relationship Compatibility',
+            type: 'Premium',
+            date: new Date().toISOString().split('T')[0],
+            status: 'locked' as const,
+            image: '/content/astro-3.png',
+            createdAt: new Date().toISOString(),
+          },
+        ]
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-display font-bold">Your Reports</h1>
-        <Link href="/dashboard">
-          <Button variant="outline">Back to Dashboard</Button>
-        </Link>
-      </div>
+    <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
+      {/* Background Layer */}
+      <CosmicBackground />
 
-      {/* Generate Report Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate New Report</CardTitle>
-          <CardDescription>Create a personalized astrological report</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium">Report Type</label>
-            <div className="flex gap-4">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="reportType"
-                  value="basic"
-                  checked={reportType === 'basic'}
-                  onChange={() => setReportType('basic')}
-                />
-                <span>Basic (Free)</span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="reportType"
-                  value="premium"
-                  checked={reportType === 'premium'}
-                  onChange={() => setReportType('premium')}
-                />
-                <span>Premium (Paid)</span>
-              </label>
-            </div>
+      <div className="relative z-10 container mx-auto px-6 py-24 space-y-12">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-4 max-w-3xl mx-auto"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cosmic-purple/20 border border-cosmic-purple/40 text-gold text-sm mb-4">
+            <Sparkles className="w-4 h-4" />
+            <span>Sacred Knowledge Vault</span>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium">Include Additional Analysis</label>
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includePalmistry}
-                  onChange={(e) => setIncludePalmistry(e.target.checked)}
-                />
-                <span>Include Palmistry Analysis</span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={includeAura}
-                  onChange={(e) => setIncludeAura(e.target.checked)}
-                />
-                <span>Include Aura Reading</span>
-              </label>
-            </div>
+          <h1 className="text-4xl md:text-6xl font-display font-bold bg-gradient-to-r from-white via-gold to-white bg-clip-text text-transparent">
+            Your Cosmic Reports
+          </h1>
+          <p className="text-lg text-white/60 font-light">
+            Download detailed PDF analysis of your destiny, karma, and life path.
+          </p>
+        </motion.div>
+
+        {/* Reports Grid */}
+        {loading ? (
+          <div className="text-center py-12">
+            <RefreshCw className="w-8 h-8 text-gold animate-spin mx-auto mb-4" />
+            <p className="text-white/60">Loading your cosmic reports...</p>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {displayReports.map((report, index) => {
+              const reportDate = report.generatedAt || report.createdAt || report.date
+              const formattedDate = reportDate
+                ? new Date(reportDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })
+                : 'Unknown date'
 
-          <Button onClick={handleGenerate} disabled={generating} className="w-full">
-            {generating ? 'Generating Report...' : 'Generate Report'}
-          </Button>
-        </CardContent>
-      </Card>
+              return (
+                <motion.div
+                  key={report.reportId || report.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="group relative overflow-hidden bg-cosmic-indigo/40 border-white/10 hover:border-gold/30 transition-all duration-500 h-full backdrop-blur-xl">
+                    {/* Hover Glow Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-cosmic-purple/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-      {/* Reports List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Reports</CardTitle>
-          <CardDescription>View and download your generated reports</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading reports...</p>
-            </div>
-          ) : reports.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No reports yet. Generate your first report above.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {reports.map((report) => (
-                <div key={report.reportId} className="border rounded-lg p-4 flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{report.title}</h3>
-                      {report.type === 'premium' && (
-                        <span className="text-xs bg-gold/20 text-gold px-2 py-1 rounded">Premium</span>
-                      )}
+                    {/* Report Image / Preview */}
+                    <div className="relative h-48 w-full bg-cosmic-navy/50 overflow-hidden">
+                      {/* Fallback pattern if no image */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-cosmic-purple/20 via-cosmic-indigo/30 to-cosmic-navy/50 opacity-60 group-hover:scale-105 transition-transform duration-700" />
+
+                      <div className="absolute top-4 right-4">
+                        <Badge
+                          variant={report.type === 'Premium' ? 'premium' : 'default'}
+                          className={cn(
+                            'backdrop-blur-md border-0',
+                            report.type === 'Premium'
+                              ? 'bg-gold/20 text-gold'
+                              : 'bg-blue-500/20 text-blue-200'
+                          )}
+                        >
+                          {report.type}
+                        </Badge>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Generated on {new Date(report.generatedAt || report.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <a href={report.pdfUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm">
-                        View
-                      </Button>
-                    </a>
-                    <a href={report.pdfUrl} download>
-                      <Button variant="outline" size="sm">
-                        Download
-                      </Button>
-                    </a>
-                  </div>
+
+                    {/* Content */}
+                    <div className="p-6 space-y-6 relative z-10">
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-start">
+                          <h3 className="text-xl font-display font-semibold text-white group-hover:text-gold transition-colors">
+                            {report.title}
+                          </h3>
+                          {report.status === 'locked' ? (
+                            <Lock className="w-5 h-5 text-white/40" />
+                          ) : (
+                            <FileText className="w-5 h-5 text-aura-cyan" />
+                          )}
+                        </div>
+                        <p className="text-sm text-white/50">Generated on {formattedDate}</p>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 pt-2">
+                        {report.status === 'locked' ? (
+                          <Button
+                            onClick={() => handleUnlock(report)}
+                            className="w-full bg-gradient-to-r from-gold/80 to-gold text-cosmic-navy font-semibold hover:brightness-110"
+                          >
+                            Unlock Report
+                          </Button>
+                        ) : (
+                          <>
+                            {report.pdfUrl ? (
+                              <>
+                                <Link href={`/reports/${report.reportId}`} className="flex-1">
+                                  <Button
+                                    variant="outline"
+                                    className="w-full border-white/10 hover:bg-white/5 text-white"
+                                  >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View
+                                  </Button>
+                                </Link>
+                                <a href={report.pdfUrl} download className="flex-1">
+                                  <Button className="w-full bg-cosmic-purple/80 hover:bg-cosmic-purple text-white">
+                                    <Download className="w-4 h-4 mr-2" />
+                                    PDF
+                                  </Button>
+                                </a>
+                              </>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                className="w-full border-white/10 hover:bg-white/5 text-white"
+                                disabled
+                              >
+                                Processing...
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              )
+            })}
+
+            {/* "Generate New" Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: displayReports.length * 0.1 }}
+              className="h-full"
+            >
+              <button
+                onClick={() => handleGenerate('comprehensive')}
+                disabled={generating}
+                className="w-full h-full min-h-[300px] border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-4 hover:border-gold/40 hover:bg-white/5 transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  {generating ? (
+                    <RefreshCw className="w-8 h-8 text-gold animate-spin" />
+                  ) : (
+                    <Sparkles className="w-8 h-8 text-gold" />
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-white group-hover:text-gold">
+                    Generate New Report
+                  </h3>
+                  <p className="text-sm text-white/50">Detailed Life & Destiny Analysis</p>
+                </div>
+              </button>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && reports.length === 0 && displayReports.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <Sparkles className="w-16 h-16 text-gold/40 mx-auto mb-4" />
+            <h3 className="text-2xl font-display font-semibold text-white mb-2">
+              No Reports Yet
+            </h3>
+            <p className="text-white/60 mb-6">
+              Generate your first cosmic report to unlock insights into your destiny.
+            </p>
+            <Button
+              onClick={() => handleGenerate('comprehensive')}
+              disabled={generating}
+              className="bg-gradient-to-r from-gold/80 to-gold text-cosmic-navy font-semibold hover:brightness-110"
+            >
+              {generating ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate First Report
+                </>
+              )}
+            </Button>
+          </motion.div>
+        )}
+      </div>
     </div>
   )
 }
-

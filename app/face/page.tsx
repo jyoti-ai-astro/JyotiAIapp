@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UploadCloud, Camera, Sparkles, User } from 'lucide-react';
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
 import Link from 'next/link';
 
 export default function FacePage() {
@@ -63,7 +64,29 @@ export default function FacePage() {
 
   const handleUpload = async () => {
     if (!imageFile || !imagePreview) return;
+
+    // Check access before analyzing
+    const { checkFeatureAccess } = await import('@/lib/access/checkFeatureAccess');
+    const access = await checkFeatureAccess('palmistry'); // Face reading uses same ticket as palmistry
+    if (!access.allowed) {
+      if (access.redirectTo) {
+        router.push(access.redirectTo);
+      }
+      return;
+    }
+
     await analyze(imagePreview);
+
+    // Decrement ticket if not subscription
+    const hasSubscription =
+      user?.subscription === 'pro' &&
+      user?.subscriptionExpiry &&
+      new Date(user.subscriptionExpiry) > new Date();
+
+    if (!hasSubscription && user?.tickets?.kundali_basic && user.tickets.kundali_basic > 0) {
+      const { decrementTicket } = await import('@/lib/access/ticket-access');
+      await decrementTicket('kundali_basic');
+    }
   };
 
   if (!user) {
@@ -82,6 +105,15 @@ export default function FacePage() {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto space-y-8"
         >
+          {/* One-Time Offer Banner */}
+          <OneTimeOfferBanner
+            feature="Face Reading Analysis"
+            description="Get AI-powered face reading with personality insights — included in Deep Insights."
+            priceLabel="₹199"
+            ctaLabel="Get Face Reading for ₹199"
+            ctaHref="/pay/199"
+          />
+
           <div className="text-center">
             <User className="mx-auto h-16 w-16 text-gold mb-4" />
             <h1 className="text-4xl font-display font-bold text-gold">Face Reading</h1>

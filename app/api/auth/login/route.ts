@@ -31,6 +31,17 @@ export async function POST(request: NextRequest) {
     const userRef = adminDb.collection('users').doc(uid)
     const userSnap = await userRef.get()
 
+    // Get user's custom claims to check admin status
+    let isAdmin = false
+    try {
+      const userRecord = await adminAuth.getUser(uid)
+      isAdmin = userRecord.customClaims?.admin === true || false
+    } catch (error) {
+      // If getUser fails, check userData
+      const userData = userSnap.exists ? userSnap.data() : null
+      isAdmin = userData?.role === 'admin' || false
+    }
+
     if (!userSnap.exists) {
       // Create new user profile
       await userRef.set({
@@ -62,10 +73,13 @@ export async function POST(request: NextRequest) {
       expiresIn,
     })
 
+    const userData = userSnap.exists ? userSnap.data() : null
+
     const response = NextResponse.json({
       success: true,
       uid,
-      onboarded: userSnap.exists ? (userSnap.data()?.onboarded || false) : false,
+      onboarded: userSnap.exists ? (userData?.onboarded || false) : false,
+      isAdmin: isAdmin || false,
     })
 
     // Set secure HTTP-only cookie

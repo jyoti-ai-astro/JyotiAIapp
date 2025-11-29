@@ -64,7 +64,12 @@ export const SignupCard: React.FC<SignupCardProps> = ({ onSuccess }) => {
           onboarded: false,
         });
 
-        router.push('/onboarding');
+        // Redirect admin users to admin dashboard
+        if (data.isAdmin) {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/onboarding');
+        }
         onSuccess?.();
       } else {
         throw new Error('Signup failed');
@@ -108,7 +113,12 @@ export const SignupCard: React.FC<SignupCardProps> = ({ onSuccess }) => {
           onboarded: false,
         });
 
-        router.push('/onboarding');
+        // Redirect admin users to admin dashboard
+        if (data.isAdmin) {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/onboarding');
+        }
         onSuccess?.();
       } else {
         throw new Error('Signup failed');

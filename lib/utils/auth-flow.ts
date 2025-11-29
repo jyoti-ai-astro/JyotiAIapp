@@ -33,7 +33,13 @@ export function useAuthFlow() {
     }
   };
 
-  const handleLoginSuccess = (onboarded: boolean) => {
+  const handleLoginSuccess = (onboarded: boolean, isAdmin?: boolean) => {
+    // Redirect admin users to admin dashboard
+    if (isAdmin) {
+      router.push('/admin/dashboard');
+      return;
+    }
+    
     if (onboarded) {
       router.push('/dashboard');
     } else {

@@ -43,6 +43,8 @@ Jyoti.ai is not just an astrology app—it's a complete Spiritual Operating Syst
 ### Payments
 - **Provider**: Razorpay
 - **Models**: One-time payments + Subscriptions
+- **One-Time Products**: ₹99 (Quick Readings), ₹199 (Deep Insights)
+- **Ticket System**: AI questions, Kundali basic reports
 
 ## 🚀 Getting Started
 
@@ -157,8 +159,36 @@ All authentication flows through Firebase Auth with secure session cookies.
 ## 💳 Payments
 
 The app uses Razorpay for:
-- One-time report purchases (₹99 - ₹899)
-- Subscription plans (₹299/month, ₹2,499/year, ₹6,999/lifetime)
+- **One-time purchases**: ₹99 (Quick Readings), ₹199 (Deep Insights)
+- **Subscription plans**: ₹499/month (Starter), ₹999/month (Advanced), ₹1,999/month (Supreme)
+
+### One-Time Payment System
+
+#### Products:
+- **₹99 — Quick Readings**: 
+  - Daily Horoscope (7 days)
+  - Name Correction / Name Numerology
+  - One AI Guru Question
+  - Lucky Number & Color
+
+- **₹199 — Deep Insights**:
+  - Kundali Report (Basic)
+  - Relationship Compatibility (Lite)
+  - Career Reading (Lite)
+  - 3 AI Guru Questions
+
+#### Ticket System:
+- `ai_questions`: Number of AI Guru questions available
+- `kundali_basic`: Number of basic Kundali reports available
+
+#### API Endpoints:
+- `POST /api/pay/create-one-time-order` - Creates Razorpay order
+- `POST /api/pay/success-one-time` - Verifies payment and grants tickets
+
+#### Access Control:
+Users can access features if they have:
+- Active subscription, OR
+- Valid tickets (tickets are decremented after use)
 
 ## 🔔 Notifications
 

@@ -13,6 +13,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { Upload, Camera, Sparkles, Hand } from 'lucide-react';
+import { useUserStore } from '@/store/user-store';
+import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
+import { decrementTicket } from '@/lib/access/ticket-access';
+import { useRouter } from 'next/navigation';
 
 interface CosmicPalmistryProps {
   leftPalmFile: File | null;
@@ -37,6 +41,33 @@ export const CosmicPalmistry: React.FC<CosmicPalmistryProps> = ({
   analyzing,
   analysis,
 }) => {
+  const { user } = useUserStore();
+  const router = useRouter();
+
+  const handleAnalyze = async () => {
+    // Check access before analyzing
+    const access = await checkFeatureAccess('palmistry');
+    if (!access.allowed) {
+      if (access.redirectTo) {
+        router.push(access.redirectTo);
+      }
+      return;
+    }
+
+    // If user has tickets (not subscription), decrement after successful analysis
+    const hasSubscription =
+      user?.subscription === 'pro' &&
+      user?.subscriptionExpiry &&
+      new Date(user.subscriptionExpiry) > new Date();
+
+    // Call the original onUpload handler
+    await onUpload();
+
+    // Decrement ticket if not subscription (ticket will be decremented after successful API response)
+    if (!hasSubscription && user?.tickets?.kundali_basic && user.tickets.kundali_basic > 0) {
+      await decrementTicket('kundali_basic');
+    }
+  };
   return (
     <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
       <CosmicBackground />
@@ -196,7 +227,7 @@ export const CosmicPalmistry: React.FC<CosmicPalmistryProps> = ({
           className="flex justify-center"
         >
           <Button
-            onClick={onUpload}
+            onClick={handleAnalyze}
             disabled={!leftPalmFile || !rightPalmFile || uploading || analyzing}
             className="cosmic-button hover-glow bg-gradient-to-r from-cosmic-purple to-aura-cyan text-white px-12 py-6 text-lg"
           >

@@ -32,6 +32,8 @@
 - ✅ `/api/palmistry/analyze` - Palm analysis
 - ✅ `/api/numerology/calculate` - Numerology calculation
 - ✅ `/api/guru/chat` - AI Guru chat
+- ✅ `/api/pay/create-one-time-order` - Create one-time payment order
+- ✅ `/api/pay/success-one-time` - Verify one-time payment and grant tickets
 
 ### 5. UI Components
 - ✅ Button component (ShadCN)
@@ -43,6 +45,12 @@
 - ✅ Landing page (`/`)
 - ✅ Login page (`/login`)
 - ✅ Dashboard page (`/dashboard`)
+- ✅ Pricing page (`/pricing`) - Monthly subscriptions + One-time readings
+- ✅ Payment checkout (`/pay/[productId]`) - One-time payment flow
+- ✅ Reports page (`/reports`) - Document center with PDF previews
+- ✅ Rituals page (`/rituals`) - AI-powered Vedic ritual generator
+- ✅ Calendar page (`/calendar`) - Astrological calendar with daily insights
+- ✅ Guru chat (`/guru`) - AI Spiritual Guru chat interface
 
 ### 7. Configuration
 - ✅ TypeScript configuration
@@ -109,11 +117,12 @@
 - [ ] Energy level indicators
 
 ### Phase 8: Reports Engine
-- [ ] PDF generation setup
-- [ ] Report templates
-- [ ] Payment locking logic
-- [ ] Razorpay integration
-- [ ] Email delivery system
+- ✅ PDF generation setup
+- ✅ Report templates
+- ✅ Payment locking logic
+- ✅ Razorpay integration (subscriptions + one-time payments)
+- ✅ Email delivery system
+- ✅ One-time payment system with ticket-based access
 
 ### Phase 9: Notifications
 - [ ] Firebase Cloud Messaging setup

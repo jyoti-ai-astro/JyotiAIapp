@@ -13,6 +13,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { Upload, Camera, Zap, Sparkles } from 'lucide-react';
+import { useUserStore } from '@/store/user-store';
+import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
+import { decrementTicket } from '@/lib/access/ticket-access';
+import { useRouter } from 'next/navigation';
 
 interface CosmicAuraProps {
   imageFile: File | null;
@@ -152,11 +156,38 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
   analyzing,
   analysis,
 }) => {
+  const { user } = useUserStore();
+  const router = useRouter();
   const [energyLevels, setEnergyLevels] = useState({
     mental: 72,
     emotional: 65,
     spiritual: 89,
   });
+
+  const handleScan = async () => {
+    // Check access before scanning
+    const access = await checkFeatureAccess('aura');
+    if (!access.allowed) {
+      if (access.redirectTo) {
+        router.push(access.redirectTo);
+      }
+      return;
+    }
+
+    // If user has tickets (not subscription), decrement after successful scan
+    const hasSubscription =
+      user?.subscription === 'pro' &&
+      user?.subscriptionExpiry &&
+      new Date(user.subscriptionExpiry) > new Date();
+
+    // Call the original onUpload handler
+    await onUpload();
+
+    // Decrement ticket if not subscription
+    if (!hasSubscription && user?.tickets?.kundali_basic && user.tickets.kundali_basic > 0) {
+      await decrementTicket('kundali_basic');
+    }
+  };
 
   useEffect(() => {
     if (analysis) {
@@ -231,7 +262,7 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
                   />
                 </label>
                 <Button
-                  onClick={onUpload}
+                  onClick={handleScan}
                   disabled={!imageFile || uploading || analyzing}
                   className="cosmic-button w-full hover-glow bg-gradient-to-r from-cosmic-purple to-aura-cyan text-white"
                 >

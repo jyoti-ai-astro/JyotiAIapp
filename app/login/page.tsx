@@ -74,7 +74,10 @@ export default function LoginPage() {
           onboarded: data.onboarded || false,
         });
 
-        if (data.onboarded) {
+        // Redirect admin users to admin dashboard
+        if (data.isAdmin) {
+          router.push('/admin/dashboard');
+        } else if (data.onboarded) {
           router.push('/dashboard');
         } else {
           router.push('/onboarding');

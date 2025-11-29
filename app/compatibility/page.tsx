@@ -20,6 +20,7 @@ import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { motion } from 'framer-motion';
 import { Heart, Sparkles, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
 
 export default function CompatibilityPage() {
   const router = useRouter();
@@ -47,6 +48,16 @@ export default function CompatibilityPage() {
       return;
     }
 
+    // Check access before analyzing
+    const { checkFeatureAccess } = await import('@/lib/access/checkFeatureAccess');
+    const access = await checkFeatureAccess('compatibility');
+    if (!access.allowed) {
+      if (access.redirectTo) {
+        router.push(access.redirectTo);
+      }
+      return;
+    }
+
     const partner1: any = {
       name: user.name || 'You',
       dob: user.dob || '',
@@ -62,6 +73,17 @@ export default function CompatibilityPage() {
     };
 
     await analyzeCompatibility(partner1, partner2);
+
+    // Decrement ticket if not subscription
+    const hasSubscription =
+      user.subscription === 'pro' &&
+      user.subscriptionExpiry &&
+      new Date(user.subscriptionExpiry) > new Date();
+
+    if (!hasSubscription && user.tickets?.kundali_basic && user.tickets.kundali_basic > 0) {
+      const { decrementTicket } = await import('@/lib/access/ticket-access');
+      await decrementTicket('kundali_basic');
+    }
   };
 
   if (!user) {
@@ -73,6 +95,15 @@ export default function CompatibilityPage() {
       <CosmicBackground />
       
       <div className="container mx-auto p-6 space-y-8 relative z-10">
+        {/* One-Time Offer Banner */}
+        <OneTimeOfferBanner
+          feature="Relationship Compatibility (Lite)"
+          description="Get instant compatibility analysis between you and your partner — included in Deep Insights."
+          priceLabel="₹199"
+          ctaLabel="Get Compatibility Report for ₹199"
+          ctaHref="/pay/199"
+        />
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

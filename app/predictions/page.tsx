@@ -27,6 +27,7 @@ import { ErrorBoundary } from '@/components/global/ErrorBoundary';
 import { Sparkles, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { PredictionDetailModal } from '@/components/predictions/PredictionDetailModal';
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
 
 export default function PredictionsPage() {
   const router = useRouter();
@@ -57,6 +58,15 @@ export default function PredictionsPage() {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto space-y-8"
         >
+          {/* One-Time Offer Banner */}
+          <OneTimeOfferBanner
+            feature="Daily Horoscope Pack"
+            description="Get 7 days of personalized daily horoscopes included in Quick Readings."
+            priceLabel="₹99"
+            ctaLabel="Get Horoscope Pack for ₹99"
+            ctaHref="/pay/99"
+          />
+
           <div className="text-center">
             <Sparkles className="mx-auto h-16 w-16 text-gold mb-4" />
             <h1 className="text-4xl font-display font-bold text-gold">Predictions</h1>

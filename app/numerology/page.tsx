@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
 import { CosmicNumerology } from '@/components/numerology/CosmicNumerology'
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 import type { NumerologyProfile } from '@/lib/engines/numerology/calculator'
 
 export default function NumerologyPage() {
@@ -96,13 +97,22 @@ export default function NumerologyPage() {
   }
 
   return (
-    <CosmicNumerology
-      formData={formData}
-      setFormData={setFormData}
-      onSubmit={handleSubmit}
-      calculating={calculating}
-      profile={profile}
-    />
+    <div className="space-y-6">
+      <OneTimeOfferBanner
+        feature="Name Correction & Numerology"
+        description="One-time name analysis and vibration correction recommendation based on your DOB and destiny number."
+        priceLabel="₹99"
+        ctaLabel="Fix My Name for ₹99"
+        ctaHref="/pay/99"
+      />
+      <CosmicNumerology
+        formData={formData}
+        setFormData={setFormData}
+        onSubmit={handleSubmit}
+        calculating={calculating}
+        profile={profile}
+      />
+    </div>
   )
 }
 

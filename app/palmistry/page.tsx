@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
 import { usePalmistry } from '@/lib/hooks/usePalmistry'
 import { CosmicPalmistry } from '@/components/palmistry/CosmicPalmistry'
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 
 export default function PalmistryPage() {
   const router = useRouter()
@@ -70,17 +71,26 @@ export default function PalmistryPage() {
   }
 
   return (
-    <CosmicPalmistry
-      leftPalmFile={leftPalmFile}
-      rightPalmFile={rightPalmFile}
-      leftPalmPreview={leftPalmPreview}
-      rightPalmPreview={rightPalmPreview}
-      onFileSelect={handleFileSelect}
-              onUpload={handleUpload}
-              uploading={false}
-              analyzing={analyzing}
-              analysis={analysis}
-    />
+    <div className="space-y-6">
+      <OneTimeOfferBanner
+        feature="Palmistry Analysis"
+        description="Get AI-powered palmistry reading with detailed line analysis and predictions — included in Deep Insights."
+        priceLabel="₹199"
+        ctaLabel="Get Palmistry Report for ₹199"
+        ctaHref="/pay/199"
+      />
+      <CosmicPalmistry
+        leftPalmFile={leftPalmFile}
+        rightPalmFile={rightPalmFile}
+        leftPalmPreview={leftPalmPreview}
+        rightPalmPreview={rightPalmPreview}
+        onFileSelect={handleFileSelect}
+        onUpload={handleUpload}
+        uploading={false}
+        analyzing={analyzing}
+        analysis={analysis}
+      />
+    </div>
   )
 }
 

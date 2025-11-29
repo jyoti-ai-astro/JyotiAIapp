@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { KundaliWheel3D } from '@/components/organisms/kundali-wheel-3d'
 import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 import Link from 'next/link'
 
 interface KundaliData {
@@ -130,6 +131,15 @@ export default function KundaliPage() {
       <CosmicBackground />
       
       <div className="container mx-auto p-6 space-y-6 relative z-10">
+        {/* One-Time Offer Banner */}
+        <OneTimeOfferBanner
+          feature="Kundali Report (Basic)"
+          description="Get a detailed basic Kundali PDF generated from your birth details — without any subscription."
+          priceLabel="₹199"
+          ctaLabel="Buy Kundali Report for ₹199"
+          ctaHref="/pay/199"
+        />
+
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-4xl font-display font-bold text-cosmic-gold">Your Kundali</h1>

@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { motion } from 'framer-motion';
 import { Briefcase, TrendingUp, Sparkles, Lightbulb } from 'lucide-react';
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
 import Link from 'next/link';
 
 export default function CareerPage() {
@@ -56,6 +57,17 @@ export default function CareerPage() {
     setLoading(true);
 
     try {
+      // Check access before analyzing
+      const { checkFeatureAccess } = await import('@/lib/access/checkFeatureAccess');
+      const access = await checkFeatureAccess('career');
+      if (!access.allowed) {
+        if (access.redirectTo) {
+          router.push(access.redirectTo);
+        }
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/business/compatibility', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -72,6 +84,17 @@ export default function CareerPage() {
 
       const data = await response.json();
       setBusinessResult(data.compatibility);
+
+      // Decrement ticket if not subscription
+      const hasSubscription =
+        user?.subscription === 'pro' &&
+        user?.subscriptionExpiry &&
+        new Date(user.subscriptionExpiry) > new Date();
+
+      if (!hasSubscription && user?.tickets?.kundali_basic && user.tickets.kundali_basic > 0) {
+        const { decrementTicket } = await import('@/lib/access/ticket-access');
+        await decrementTicket('kundali_basic');
+      }
     } catch (error: any) {
       console.error('Business compatibility error:', error);
       alert(error.message || 'Failed to analyze business compatibility');
@@ -89,6 +112,15 @@ export default function CareerPage() {
       <CosmicBackground />
       
       <div className="container mx-auto p-6 space-y-8 relative z-10">
+        {/* One-Time Offer Banner */}
+        <OneTimeOfferBanner
+          feature="Career Reading (Lite)"
+          description="Get instant career guidance and job compatibility analysis — included in Deep Insights."
+          priceLabel="₹199"
+          ctaLabel="Get Career Reading for ₹199"
+          ctaHref="/pay/199"
+        />
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

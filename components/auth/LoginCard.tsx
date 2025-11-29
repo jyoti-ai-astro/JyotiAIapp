@@ -61,7 +61,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess }) => {
           onboarded: data.onboarded || false,
         });
 
-        handleLoginSuccess(data.onboarded || false);
+        handleLoginSuccess(data.onboarded || false, data.isAdmin || false);
         onSuccess?.();
       } else {
         throw new Error('Login failed');

@@ -24,6 +24,8 @@ import { Header } from '@/components/global/Header'   // ⭐ NEW
 
 import { FooterWrapper } from '@/components/global/FooterWrapper'
 
+import { FloatingChatBubble } from '@/components/global/FloatingChatBubble'
+
 const inter = Inter({ 
 
   subsets: ['latin'],
@@ -133,7 +135,8 @@ export default function RootLayout({
                 {/* ⭐ GLOBAL FOOTER */}
 
                 <FooterWrapper />
-
+                {/* ⭐ FLOATING CHAT BUBBLE */}
+                <FloatingChatBubble />
               </GlobalProviders>
 
             </AudioProvider>
