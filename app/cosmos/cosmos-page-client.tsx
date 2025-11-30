@@ -11,7 +11,7 @@ import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { CosmicHero } from '@/components/sections/Hero/CosmicHero';
 import { CosmicFeatures } from '@/components/sections/Features/CosmicFeatures';
 import { CosmicCTA } from '@/components/sections/CTA/CosmicCTA';
-import { FooterWrapper } from '@/components/global/FooterWrapper';
+// Footer removed - using global FooterWrapper from app/layout.tsx
 import { CosmicContentSection } from '@/components/sections/Content/CosmicContentSection';
 import { cosmosPageContent } from '@/components/sections/Content/content-data';
 
@@ -58,7 +58,7 @@ export function CosmosPageClient() {
         {/* CTA Section */}
         <CosmicCTA variant="cosmos" />
         {/* Footer Section */}
-        <FooterWrapper />
+        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
     </>
   );

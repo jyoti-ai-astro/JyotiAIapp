@@ -9,7 +9,7 @@
 import { GalaxySceneWrapper } from '@/components/global/GalaxySceneWrapper';
 import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { CosmicHero } from '@/components/sections/Hero/CosmicHero';
-import { FooterWrapper } from '@/components/global/FooterWrapper';
+// Footer removed - using global FooterWrapper from app/layout.tsx
 
 export function BlogPageClient() {
   const { globalProgress } = useGlobalProgress();
@@ -32,7 +32,7 @@ export function BlogPageClient() {
           </div>
         </section>
         
-        <FooterWrapper />
+        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
     </>
   );

@@ -21,7 +21,7 @@ import { NebulaShader } from '@/components/cosmic/NebulaShader';
 import { ParticleField } from '@/components/cosmic/ParticleField';
 import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
 import { CosmicFeatures } from '@/components/sections/Features/CosmicFeatures';
-import { CosmicFooter } from '@/components/sections/Footer/CosmicFooter';
+// Footer removed - using global FooterWrapper from app/layout.tsx
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Sparkles, Star, Zap, Heart, Brain, Eye } from 'lucide-react';
@@ -180,7 +180,7 @@ export default function FeaturesPage() {
 
       {/* Footer */}
       <div className="relative z-10">
-        <CosmicFooter />
+        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
 
       {/* Structured Data */}

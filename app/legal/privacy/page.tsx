@@ -14,7 +14,7 @@ import React from 'react';
 import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
 import { CosmicCursor } from '@/components/global/CosmicCursor';
 import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { CosmicFooter } from '@/components/sections/Footer/CosmicFooter';
+// Footer removed - using global FooterWrapper from app/layout.tsx from '@/components/sections/Footer/CosmicFooter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function PrivacyPage() {
@@ -118,7 +118,7 @@ export default function PrivacyPage() {
           </Card>
         </div>
 
-        <CosmicFooter />
+        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
     </PageTransitionWrapper>
   );

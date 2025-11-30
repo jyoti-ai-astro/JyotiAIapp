@@ -314,11 +314,15 @@ export const CosmicGuruChat = () => {
                     variant="outline"
                     onClick={() => {
                       reconnect()
+                      // Clear error state and allow retry
+                      setStatus('idle')
+                      setErrorCode(undefined)
+                      setErrorMessage(undefined)
                       inputRef.current?.focus()
                     }}
                     className="text-xs"
                   >
-                    Reconnect
+                    Retry
                   </Button>
                 )}
               </div>

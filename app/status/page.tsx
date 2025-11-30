@@ -20,7 +20,7 @@ import { Suspense } from 'react';
 import { NebulaShader } from '@/components/cosmic/NebulaShader';
 import { ParticleField } from '@/components/cosmic/ParticleField';
 import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
-import { CosmicFooter } from '@/components/sections/Footer/CosmicFooter';
+// Footer removed - using global FooterWrapper from app/layout.tsx
 import { Sparkles, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -148,7 +148,7 @@ export default function StatusPage() {
 
       {/* Footer */}
       <div className="relative z-10">
-        <CosmicFooter />
+        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
     </PageTransitionWrapper>
   );

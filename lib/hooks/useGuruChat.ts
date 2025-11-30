@@ -248,6 +248,13 @@ export function useGuruChat(sessionId?: string) {
     setErrorCode(undefined)
     setErrorMessage(undefined)
     setError(null)
+    setIsLoading(false)
+    setIsTyping(false)
+    // Cancel any pending requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
   }, [])
 
   const clearSession = useCallback(() => {

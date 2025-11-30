@@ -21,7 +21,7 @@ import { NebulaShader } from '@/components/cosmic/NebulaShader';
 import { ParticleField } from '@/components/cosmic/ParticleField';
 import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
 import { PricingCards } from '@/components/sections/Pricing/PricingCards';
-import { CosmicFooter } from '@/components/sections/Footer/CosmicFooter';
+// Footer removed - using global FooterWrapper from app/layout.tsx
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Sparkles, Check } from 'lucide-react';
@@ -101,7 +101,7 @@ export default function PricingPage() {
 
       {/* Footer */}
       <div className="relative z-10">
-        <CosmicFooter />
+        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
     </PageTransitionWrapper>
   );

@@ -13,7 +13,7 @@ import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { CosmicHero } from '@/components/sections/Hero/CosmicHero';
 import { CosmicFeatures } from '@/components/sections/Features/CosmicFeatures';
 import { CosmicCTA } from '@/components/sections/CTA/CosmicCTA';
-import { FooterWrapper } from '@/components/global/FooterWrapper';
+// Footer removed - using global FooterWrapper from app/layout.tsx
 import { GuruChatShell } from '@/components/guru/GuruChatShell';
 import { GuruContextProvider } from '@/components/guru/GuruContextProvider';
 
@@ -124,8 +124,7 @@ export function GuruPageClient() {
         {/* CTA Section */}
         <CosmicCTA variant="guru" />
         
-        {/* Footer Section */}
-        <FooterWrapper />
+        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
     </>
   );

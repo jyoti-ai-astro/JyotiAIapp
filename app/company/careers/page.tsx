@@ -20,7 +20,7 @@ import { Suspense } from 'react';
 import { NebulaShader } from '@/components/cosmic/NebulaShader';
 import { ParticleField } from '@/components/cosmic/ParticleField';
 import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
-import { CosmicFooter } from '@/components/sections/Footer/CosmicFooter';
+// Footer removed - using global FooterWrapper from app/layout.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Briefcase } from 'lucide-react';
@@ -137,7 +137,7 @@ export default function CareersPage() {
         ))}
       </div>
 
-      <CosmicFooter />
+      {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
     </PageTransitionWrapper>
   );
 }

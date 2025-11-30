@@ -12,7 +12,7 @@ import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { CosmicHero } from '@/components/sections/Hero/CosmicHero';
 import { CosmicFeatures, FeatureModule } from '@/components/sections/Features/CosmicFeatures';
 import { CosmicCTA } from '@/components/sections/CTA/CosmicCTA';
-import { FooterWrapper } from '@/components/global/FooterWrapper';
+// Footer removed - using global FooterWrapper from app/layout.tsx
 import { CosmicContentSection } from '@/components/sections/Content/CosmicContentSection';
 import { premiumPageContent } from '@/components/sections/Content/content-data';
 import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
@@ -158,7 +158,7 @@ export function PremiumPageClient() {
         {/* CTA Section - Gold Premium Glow */}
         <CosmicCTA variant="premium" />
         {/* Footer Section */}
-        <FooterWrapper />
+        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
     </>
   );
