@@ -11,14 +11,36 @@ export interface FormattedGuruAnswer {
   title?: string
   body: string
   bullets?: string[]
-  badges?: Array<{ label: string; type: 'astro' | 'rag' | 'info' }>
+  badges?: Array<{ label: string; type: 'astro' | 'rag' | 'info' | 'mode' }>
+  mode?: string // Super Phase B - Include mode label
 }
 
 /**
  * Format Guru response for UI display
  */
 export function formatGuruAnswerForUI(response: GuruResponse): FormattedGuruAnswer {
-  const badges: Array<{ label: string; type: 'astro' | 'rag' | 'info' }> = []
+  const badges: Array<{ label: string; type: 'astro' | 'rag' | 'info' | 'mode' }> = []
+
+  // Super Phase B - Add mode badge
+  if (response.mode) {
+    const modeLabels: Record<string, string> = {
+      CareerGuide: 'Career Guide',
+      RelationshipGuide: 'Relationship Guide',
+      RemedySpecialist: 'Remedy Specialist',
+      TimelineExplainer: 'Timeline Explainer',
+      GeneralSeer: 'General Seer',
+      kundali: 'Kundali Expert',
+      numerology: 'Numerology Expert',
+      predictions: 'Predictions',
+      remedies: 'Remedies',
+      business: 'Business',
+      career: 'Career',
+      compatibility: 'Compatibility',
+      general: 'General',
+    }
+    const modeLabel = modeLabels[response.mode] || response.mode
+    badges.push({ label: `Mode: ${modeLabel}`, type: 'mode' })
+  }
 
   if (response.usedAstroContext) {
     badges.push({ label: 'Astro-aligned', type: 'astro' })
@@ -44,6 +66,7 @@ export function formatGuruAnswerForUI(response: GuruResponse): FormattedGuruAnsw
     body,
     bullets: bullets.length > 0 ? bullets : undefined,
     badges: badges.length > 0 ? badges : undefined,
+    mode: response.mode, // Super Phase B - Include mode
   }
 }
 

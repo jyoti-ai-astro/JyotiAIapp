@@ -654,61 +654,93 @@ export function CosmicHero({
                   transition={{ duration: 0.6, delay: 0.6 }}
                 >
                   {primaryCTA && (
-                    <Link href={primaryCTA.href}>
-                      <Button
-                        size="lg"
-                        className="bg-gold text-cosmic hover:bg-gold-light px-8 py-6 text-lg font-heading"
-                      >
-                        {primaryCTA.label}
-                      </Button>
+                    <Link href={primaryCTA.href} className="gold-btn">
+                      {primaryCTA.label}
                     </Link>
                   )}
                   {secondaryCTA && (
-                    <Link href={secondaryCTA.href}>
-                      <Button
-                        size="lg"
-                        variant="ghost"
-                        className="border border-white/30 text-white hover:bg-white/10 px-8 py-6 text-lg font-heading"
-                      >
-                        {secondaryCTA.label}
-                      </Button>
+                    <Link href={secondaryCTA.href} className="gold-btn-outline">
+                      {secondaryCTA.label}
                     </Link>
                   )}
                 </motion.div>
               )}
+              
+              {/* Trust bar */}
+              <motion.p
+                className="text-xs text-slate-400 mt-4 flex items-center gap-2 flex-wrap"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+              >
+                <span>Powered by AI + Vedic Astrology</span>
+                <span>·</span>
+                <span>No free tier</span>
+                <span>·</span>
+                <span>Built for serious seekers</span>
+              </motion.p>
             </motion.div>
 
-            {/* Right: Decorative gradient circle (CSS only, no R3F) */}
+            {/* Right: Orbital Mandala Visual (CSS + Framer Motion, no R3F) */}
             <motion.div
               className="relative hidden lg:flex items-center justify-center"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1, delay: 0.3 }}
             >
-              <div className="relative w-full max-w-md aspect-square">
-                {/* Decorative gradient circle */}
+              <div className="relative w-full aspect-square max-w-lg mx-auto">
+                {/* Big circular gradient blob */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cosmic-purple via-cosmic-indigo to-cosmic-gold opacity-70 blur-3xl" />
+                
+                {/* Rotating orbital rings */}
                 <motion.div
-                  className="absolute inset-0 rounded-full bg-gradient-to-br from-gold/40 via-purple/30 to-cyan/40 blur-3xl opacity-70"
+                  className="absolute inset-[18%] rounded-full border border-gold/20"
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 40, ease: 'linear' }}
+                />
+                <motion.div
+                  className="absolute inset-[32%] rounded-full border border-cyan-400/30"
+                  animate={{ rotate: -360 }}
+                  transition={{ repeat: Infinity, duration: 55, ease: 'linear' }}
+                />
+                
+                {/* Floating planet dots */}
+                {[...Array(6)].map((_, i) => {
+                  const angle = (i * 60) * (Math.PI / 180)
+                  const radius = 35
+                  return (
+                    <motion.div
+                      key={i}
+                      className="absolute w-3 h-3 rounded-full bg-gold/60"
+                      style={{
+                        left: `calc(50% + ${Math.cos(angle) * radius}% - 6px)`,
+                        top: `calc(50% + ${Math.sin(angle) * radius}% - 6px)`,
+                      }}
+                      animate={{
+                        x: [0, Math.cos(angle + Math.PI / 6) * 5, 0],
+                        y: [0, Math.sin(angle + Math.PI / 6) * 5, 0],
+                        scale: [1, 1.2, 1],
+                      }}
+                      transition={{
+                        duration: 3 + i * 0.5,
+                        repeat: Infinity,
+                        delay: i * 0.3,
+                      }}
+                    />
+                  )
+                })}
+                
+                {/* Inner mandala glow */}
+                <motion.div
+                  className="absolute inset-[45%] rounded-full bg-gradient-to-br from-gold/30 via-purple/20 to-cyan/30 blur-xl"
                   animate={{
                     scale: [1, 1.1, 1],
-                    opacity: [0.7, 0.8, 0.7],
+                    opacity: [0.5, 0.7, 0.5],
                   }}
                   transition={{
                     duration: 4,
                     repeat: Infinity,
                     ease: 'easeInOut',
-                  }}
-                />
-                {/* Inner glow */}
-                <motion.div
-                  className="absolute inset-0 rounded-full bg-gradient-to-br from-gold/20 via-purple/15 to-cyan/20 blur-2xl"
-                  animate={{
-                    rotate: [0, 360],
-                  }}
-                  transition={{
-                    duration: 20,
-                    repeat: Infinity,
-                    ease: 'linear',
                   }}
                 />
               </div>

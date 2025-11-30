@@ -22,13 +22,24 @@ export const CosmicGuruChat = () => {
   const [showPaywallModal, setShowPaywallModal] = useState(false)
   const [showDebug, setShowDebug] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null) // Super Phase C
   const { user, decrementLocalTicket } = useUserStore()
   
   // Check if user is admin (simple check - can be enhanced)
   const isAdmin = user?.email?.endsWith('@jyoti.ai') || user?.email?.includes('admin')
 
-  // Use the existing hook for logic
-  const { messages, sendMessage, loading, error, isTyping } = useGuruChat()
+  // Use the existing hook for logic (Super Phase C - Enhanced)
+  const {
+    messages,
+    sendMessage,
+    loading,
+    error,
+    isTyping,
+    status,
+    errorCode,
+    errorMessage,
+    reconnect,
+  } = useGuruChat()
 
   // Check if user has access
   const hasSubscription = user?.subscription === 'pro' && user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date()
@@ -99,7 +110,7 @@ export const CosmicGuruChat = () => {
   return (
     <>
       <GuruPaywallModal isOpen={showPaywallModal} onClose={() => setShowPaywallModal(false)} />
-      <Card className="flex-1 flex flex-col bg-cosmic-indigo/30 backdrop-blur-xl border-white/10 overflow-hidden shadow-2xl relative">
+      <Card className="glass-card flex-1 flex flex-col overflow-hidden relative">
         {/* Admin Debug Toggle */}
         {isAdmin && (
           <div className="absolute top-2 right-2 z-50">
@@ -114,7 +125,7 @@ export const CosmicGuruChat = () => {
       {/* Chat Messages Area */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+        className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth custom-scrollbar"
       >
         {/* Welcome Message if empty */}
         {displayMessages.length === 0 && (
@@ -159,25 +170,70 @@ export const CosmicGuruChat = () => {
                 {/* Message Content */}
                 <div className="whitespace-pre-wrap">{msg.content}</div>
 
-                {/* Badges for Astro/RAG usage */}
+                {/* Badges for Astro/RAG usage and Mode - Super Phase C */}
                 {msg.role === 'assistant' && msg.metadata && (
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    {msg.metadata.usedAstroContext && (
-                      <span className="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30">
-                        ✨ Astro-aligned
-                      </span>
+                  <div className="space-y-2 mt-2">
+                    <div className="flex gap-2 flex-wrap">
+                      {/* Super Phase B - Mode badge */}
+                      {msg.metadata.mode && (
+                        <span className="text-[10px] px-2 py-0.5 bg-gold/20 text-gold rounded-full border border-gold/30">
+                          Mode: {msg.metadata.mode === 'CareerGuide' ? 'Career Guide' :
+                                 msg.metadata.mode === 'RelationshipGuide' ? 'Relationship Guide' :
+                                 msg.metadata.mode === 'RemedySpecialist' ? 'Remedy Specialist' :
+                                 msg.metadata.mode === 'TimelineExplainer' ? 'Timeline Explainer' :
+                                 msg.metadata.mode === 'GeneralSeer' ? 'General Seer' :
+                                 msg.metadata.mode}
+                        </span>
+                      )}
+                      {msg.metadata.usedAstroContext && (
+                        <span className="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30">
+                          ✨ Astro-aligned
+                        </span>
+                      )}
+                      {/* Super Phase C - Knowledge Vault badge */}
+                      {msg.metadata.usedRag ? (
+                        <span className="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-300 rounded-full border border-green-500/30">
+                          📚 Knowledge Vault: ON
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-0.5 bg-gray-500/20 text-gray-300 rounded-full border border-gray-500/30">
+                          📚 Knowledge Vault: OFF (pure intuition mode)
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Super Phase C - Sources Panel (Collapsible) */}
+                    {msg.metadata.ragChunks && msg.metadata.ragChunks.length > 0 && (
+                      <details className="mt-2 text-xs">
+                        <summary className="cursor-pointer text-gold/80 hover:text-gold">
+                          📖 View Sources ({msg.metadata.ragChunks.length})
+                        </summary>
+                        <div className="mt-2 space-y-2 pl-4 border-l border-gold/20">
+                          {msg.metadata.ragChunks.map((chunk, idx) => (
+                            <div key={idx} className="bg-white/5 p-2 rounded border border-white/10">
+                              {chunk.title && (
+                                <div className="font-semibold text-gold mb-1">{chunk.title}</div>
+                              )}
+                              <p className="text-white/70 text-[10px] line-clamp-2">{chunk.snippet}</p>
+                              {chunk.source && (
+                                <div className="text-white/50 text-[9px] mt-1">Source: {chunk.source}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
                     )}
-                    {msg.metadata.usedRag && (
-                      <span className="text-[10px] px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-full border border-indigo-500/30">
-                        📜 Sacred texts
-                      </span>
-                    )}
-                    {/* Debug info for admin */}
+
+                    {/* Debug info for admin - Super Phase C */}
                     {showDebug && isAdmin && (
                       <div className="w-full mt-2 p-2 bg-black/30 rounded text-[10px] text-white/50 border border-white/5">
                         <div>Mode: {msg.metadata.mode || 'general'}</div>
                         <div>Astro: {msg.metadata.usedAstroContext ? 'Yes' : 'No'}</div>
                         <div>RAG: {msg.metadata.usedRag ? 'Yes' : 'No'}</div>
+                        <div>Status: {msg.metadata.status || 'ok'}</div>
+                        {msg.metadata.ragChunks && (
+                          <div>RAG Chunks: {msg.metadata.ragChunks.length}</div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -200,27 +256,85 @@ export const CosmicGuruChat = () => {
         {/* Loading / Typing Indicator */}
         {(isTyping || loading) && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start w-full">
-            <div className="bg-white/5 rounded-2xl rounded-bl-none p-4 border border-white/5 flex gap-1 items-center">
-              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" />
+            <div                 className="bg-white/5 rounded-2xl rounded-bl-none p-4 border border-white/5 flex gap-1 items-center">
+              <motion.span 
+                className="w-2 h-2 bg-gold rounded-full" 
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
+              />
+              <motion.span 
+                className="w-2 h-2 bg-gold rounded-full" 
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+              />
+              <motion.span 
+                className="w-2 h-2 bg-gold rounded-full" 
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: 0.8 }}
+              />
             </div>
           </motion.div>
         )}
 
-        {/* Error State */}
-        {error && (
+        {/* Error State - Super Phase C */}
+        {status === 'error' && errorCode && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-center w-full mb-4"
+          >
+            <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-sm px-4 py-3 rounded-lg flex flex-col gap-2 max-w-md">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                <span className="font-semibold">
+                  {errorCode === 'UNAUTHENTICATED'
+                    ? 'Please log in again'
+                    : errorCode === 'GURU_TIMEOUT'
+                    ? 'The Guru is overloaded'
+                    : errorCode === 'RAG_UNAVAILABLE'
+                    ? 'Knowledge vault is temporarily offline'
+                    : errorCode === 'NETWORK'
+                    ? 'Network error'
+                    : 'Something went wrong'}
+                </span>
+              </div>
+              {errorMessage && (
+                <p className="text-xs text-red-300/80">{errorMessage}</p>
+              )}
+              <div className="flex gap-2 mt-1">
+                {errorCode === 'UNAUTHENTICATED' ? (
+                  <Link href="/login">
+                    <Button size="sm" variant="outline" className="text-xs">
+                      Go to Login
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      reconnect()
+                      inputRef.current?.focus()
+                    }}
+                    className="text-xs"
+                  >
+                    Reconnect
+                  </Button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Degraded Mode Notice - Super Phase C */}
+        {status !== 'error' && messages.some((m) => m.metadata?.status === 'degraded') && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex justify-center w-full"
+            className="flex justify-center w-full mb-4"
           >
-            <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-xs px-4 py-2 rounded-full flex items-center gap-2">
-              <AlertCircle className="w-3 h-3" />
-              <span>{error.message || 'The cosmic connection was interrupted.'}</span>
-              <button onClick={() => window.location.reload()} className="hover:text-white underline ml-1">
-                Retry
-              </button>
+            <div className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-200 text-xs px-4 py-2 rounded-lg">
+              Knowledge vault is temporarily offline; basic guidance is still available.
             </div>
           </motion.div>
         )}
@@ -269,17 +383,18 @@ export const CosmicGuruChat = () => {
             )}
             <form onSubmit={handleSend} className="flex gap-2 relative">
               <Input
+                ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about your destiny..."
-                disabled={loading || isTyping}
-                className="bg-white/5 border-white/10 focus:ring-purple-500/50 focus:border-purple-500/50 pr-12 h-12 text-base text-white placeholder:text-white/40"
+                placeholder="Ask your spiritual question..."
+                disabled={loading || isTyping || status === 'error'}
+                className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-gold/50 transition-colors pr-12 h-12 text-base"
               />
               <Button
                 type="submit"
                 disabled={!input.trim() || loading || isTyping}
                 size="icon"
-                className="absolute right-1 top-1 h-10 w-10 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="gold-btn absolute right-1 top-1 h-10 w-10 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading || isTyping ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />

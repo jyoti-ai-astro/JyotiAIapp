@@ -38,10 +38,10 @@ export function PricingComparisonTable() {
         </p>
       </motion.div>
 
-      <div className="overflow-x-auto">
+      <div className="glass-card p-4 md:p-6 overflow-x-auto">
         <div className="min-w-[800px]">
           <table className="w-full border-collapse">
-            <thead>
+            <thead className="sticky top-0 bg-white/5 backdrop-blur-sm">
               <tr className="border-b border-white/10">
                 <th className="text-left p-4 text-white/80 font-heading">Feature</th>
                 <th className="text-center p-4 text-gold font-heading">Starter</th>
@@ -59,7 +59,10 @@ export function PricingComparisonTable() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.05 }}
-                  className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                  className={cn(
+                    'border-b border-white/5 hover:bg-white/5 transition-colors',
+                    index % 2 === 1 && 'bg-white/5/10'
+                  )}
                 >
                   <td className="p-4 text-white/90">{feature.name}</td>
                   <td className="p-4 text-center">

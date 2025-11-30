@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
 import { CosmicDashboard } from '@/components/dashboard/CosmicDashboard'
 import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
+import type { AstroContext } from '@/lib/engines/astro-types'
 
 interface DashboardData {
   user: {
@@ -59,6 +60,7 @@ export default function DashboardPage() {
   const [transits, setTransits] = useState<any[]>([])
   const [festival, setFestival] = useState<any>(null)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [astro, setAstro] = useState<AstroContext | null>(null) // Super Phase B
 
   useEffect(() => {
     // Check if user is logged in
@@ -79,7 +81,23 @@ export default function DashboardPage() {
     fetchTransits()
     fetchFestival()
     fetchUnreadCount()
+    fetchAstroContext() // Super Phase B
   }, [user, router])
+
+  const fetchAstroContext = async () => {
+    if (!user?.uid) return
+    try {
+      const response = await fetch('/api/astro/context', {
+        credentials: 'include',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAstro(data.astro)
+      }
+    } catch (err) {
+      console.error('Error fetching astro context:', err)
+    }
+  }
 
   const fetchDashboardData = async () => {
     try {
@@ -204,9 +222,52 @@ export default function DashboardPage() {
   } : undefined;
 
   return (
-    <>
+    <div className="cosmic-page">
       {/* Subtle R3F Cosmic Background */}
       <CosmicBackground />
+      
+      {/* Super Phase B - Insights Section */}
+      {astro && (
+        <div className="fixed top-20 right-4 z-30 max-w-sm space-y-3">
+          {/* Insight 1: Next Major Dasha */}
+          {astro.dasha?.currentMahadasha && (
+            <div className="glass-card p-4 rounded-xl border border-gold/20">
+              <h4 className="text-gold font-heading text-sm mb-1">Next Major Dasha</h4>
+              <p className="text-white/80 text-xs">
+                {astro.dasha.currentMahadasha.planet} Period
+              </p>
+              {astro.dasha.currentMahadasha.theme && (
+                <p className="text-white/60 text-xs mt-1">{astro.dasha.currentMahadasha.theme}</p>
+              )}
+            </div>
+          )}
+
+          {/* Insight 2: Strongest Life Theme */}
+          {astro.lifeThemes && astro.lifeThemes.length > 0 && (
+            <div className="glass-card p-4 rounded-xl border border-gold/20">
+              <h4 className="text-gold font-heading text-sm mb-1">Strongest Life Theme</h4>
+              <p className="text-white/80 text-xs capitalize">{astro.lifeThemes[0].area}</p>
+              <p className="text-white/60 text-xs mt-1">{astro.lifeThemes[0].summary}</p>
+              <div className="mt-2 w-full bg-white/10 rounded-full h-1.5">
+                <div 
+                  className="bg-gold h-1.5 rounded-full" 
+                  style={{ width: `${astro.lifeThemes[0].confidence}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Insight 3: Warning/Watch Area */}
+          {astro.riskFlags && astro.riskFlags.length > 0 && (
+            <div className="glass-card p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/5">
+              <h4 className="text-yellow-400 font-heading text-sm mb-1">Watch Area</h4>
+              <p className="text-white/80 text-xs">
+                Be mindful of {astro.riskFlags[0].replace('_', ' ')} this month
+              </p>
+            </div>
+          )}
+        </div>
+      )}
       
       {/* Cosmic Dashboard */}
       <CosmicDashboard
@@ -215,7 +276,7 @@ export default function DashboardPage() {
         error={error}
         onRetry={fetchDashboardData}
       />
-    </>
+    </div>
   )
 }
 

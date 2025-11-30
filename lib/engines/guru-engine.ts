@@ -6,8 +6,7 @@
  */
 
 import { getCachedAstroContext } from './astro-context-builder'
-import { buildGuruContext, deriveGuruModeFromQuestion, type GuruMode } from '@/lib/guru/guru-context'
-import { retrieveRelevantDocuments } from '@/lib/rag/rag-service'
+import { buildGuruContext, deriveGuruMode, type GuruMode } from '@/lib/guru/guru-context'
 import type { AstroContext } from './astro-types'
 
 /**
@@ -20,7 +19,7 @@ export interface GuruMessage {
 }
 
 /**
- * Guru response interface
+ * Guru response interface (legacy - kept for backward compatibility)
  */
 export interface GuruResponse {
   answer: string
@@ -28,10 +27,39 @@ export interface GuruResponse {
   usedRag?: boolean
   suggestions?: string[]
   followUps?: string[]
+  mode?: GuruMode // Super Phase B - Include mode in response
+}
+
+/**
+ * Guru RAG chunk interface
+ */
+export interface GuruRagChunk {
+  id?: string
+  title?: string
+  snippet: string
+  source?: string
+  score?: number
+}
+
+/**
+ * Guru Brain Result - Super Phase C
+ */
+export type GuruBrainResult = {
+  status: 'ok' | 'degraded' | 'error'
+  answer?: string
+  mode: string
+  usedAstroContext: boolean
+  usedRag: boolean
+  ragChunks?: GuruRagChunk[]
+  suggestions?: string[]
+  followUps?: string[]
+  errorCode?: string
+  errorMessage?: string
 }
 
 /**
  * Run Guru Brain - Main orchestrator function
+ * Super Phase C - Returns structured result with status
  */
 export async function runGuruBrain(params: {
   userId: string | null
@@ -39,56 +67,93 @@ export async function runGuruBrain(params: {
   mode?: GuruMode
   userName?: string
   gender?: string
-}): Promise<GuruResponse> {
-  const { userId, messages, mode, userName, gender } = params
+  pageSlug?: string
+  useRag?: boolean // Super Phase C - Allow disabling RAG
+  signal?: AbortSignal // Super Phase C - Support cancellation
+}): Promise<GuruBrainResult> {
+  const { userId, messages, mode, userName, gender, pageSlug, useRag = true, signal } = params
 
   // Get last user message
   const lastUserMessage = messages.filter((m) => m.role === 'user').slice(-1)[0]
   if (!lastUserMessage) {
     return {
+      status: 'ok',
       answer: 'Namaste. How may I guide you on your spiritual journey today?',
+      mode: 'GeneralSeer',
       usedAstroContext: false,
       usedRag: false,
     }
   }
 
   const userQuestion = lastUserMessage.content
-
-  // 1. Load AstroContext if userId present
+  let status: 'ok' | 'degraded' | 'error' = 'ok'
+  let usedAstroContext = false
+  let usedRag = false
   let astroContext: AstroContext | null = null
+  let astroSummary = ''
+  let ragChunks: GuruRagChunk[] = []
+  let ragContext = ''
+
+  // 1. Load AstroContext if userId present (graceful degradation)
   if (userId) {
     try {
       astroContext = await getCachedAstroContext(userId)
+      if (astroContext) {
+        usedAstroContext = true
+        astroSummary = buildGuruContext({ userId, astroContext, userName, gender })
+      }
     } catch (error) {
-      console.error('Error loading astro context:', error)
+      console.error('Error loading astro context (degrading gracefully):', error)
+      // Continue without astro context
+      status = 'degraded'
     }
   }
 
-  // 2. Derive mode from question if not provided
-  const derivedMode = mode || deriveGuruModeFromQuestion(userQuestion)
+  // 2. Derive mode from question, astro context, and page if not provided
+  const derivedMode = mode || deriveGuruMode({ question: userQuestion, astroContext, pageSlug })
 
   // 3. Build Guru System Prompt
-  const astroSummary = astroContext ? buildGuruContext({ userId, astroContext, userName, gender }) : ''
-  
   const systemPrompt = buildGuruSystemPrompt({
     astroSummary,
     mode: derivedMode,
     userName,
   })
 
-  // 4. Get RAG context (3-5 relevant spiritual knowledge chunks)
-  let ragContext = ''
-  let usedRag = false
-  try {
-    const ragResult = await getGuruRagContext(userQuestion, derivedMode)
-    if (ragResult.documents.length > 0) {
-      ragContext = ragResult.documents
-        .map((doc) => `[${doc.title}]: ${doc.content}`)
-        .join('\n\n')
-      usedRag = true
+  // 4. Get RAG context (graceful degradation)
+  if (useRag) {
+    try {
+      // Build short astro summary for RAG query enhancement
+      const astroSummaryForRag = astroContext
+        ? buildShortAstroSummary(astroContext)
+        : undefined
+
+      const ragResult = await getGuruRagContext({
+        mode: derivedMode,
+        question: userQuestion,
+        astroContextSummary: astroSummaryForRag,
+        topK: 5,
+        signal,
+      })
+
+      if (ragResult.chunks.length > 0) {
+        ragChunks = ragResult.chunks
+        ragContext = ragResult.chunks
+          .map((chunk) => {
+            const title = chunk.title ? `[${chunk.title}]` : '[Knowledge]'
+            return `${title}: ${chunk.snippet}${chunk.source ? ` (Source: ${chunk.source})` : ''}`
+          })
+          .join('\n\n')
+        usedRag = true
+      }
+
+      if (ragResult.degraded) {
+        status = status === 'ok' ? 'degraded' : status
+      }
+    } catch (error) {
+      console.error('Error retrieving RAG context (degrading gracefully):', error)
+      // Continue without RAG
+      status = status === 'ok' ? 'degraded' : status
     }
-  } catch (error) {
-    console.error('Error retrieving RAG context:', error)
   }
 
   // 5. Build final LLM call payload
@@ -110,13 +175,25 @@ export async function runGuruBrain(params: {
     })
   }
 
-  // 6. Call LLM (OpenAI / Gemini)
+  // 6. Call LLM (OpenAI / Gemini) - critical, must succeed
   let answer = ''
   try {
-    answer = await callLLM(messagesForLLM)
-  } catch (error) {
+    answer = await callLLM(messagesForLLM, signal)
+    if (!answer || answer.trim().length === 0) {
+      throw new Error('Empty response from LLM')
+    }
+  } catch (error: any) {
     console.error('Error calling LLM:', error)
-    answer = 'I apologize, but I encountered an error. Please try again in a moment. The cosmic energies are realigning.'
+    // If LLM fails, we must return an error
+    return {
+      status: 'error',
+      answer: 'I apologize, but I encountered an error. Please try again in a moment. The cosmic energies are realigning.',
+      mode: derivedMode,
+      usedAstroContext,
+      usedRag,
+      errorCode: 'LLM_ERROR',
+      errorMessage: 'Failed to generate response',
+    }
   }
 
   // 7. Extract suggestions and follow-ups
@@ -124,12 +201,37 @@ export async function runGuruBrain(params: {
   const followUps = generateFollowUps(derivedMode, astroContext)
 
   return {
+    status,
     answer,
-    usedAstroContext: !!astroContext,
+    mode: derivedMode,
+    usedAstroContext,
     usedRag,
+    ragChunks: ragChunks.length > 0 ? ragChunks : undefined,
     suggestions: suggestions.length > 0 ? suggestions : undefined,
     followUps: followUps.length > 0 ? followUps : undefined,
   }
+}
+
+/**
+ * Build short astro summary for RAG query enhancement
+ */
+function buildShortAstroSummary(astroContext: AstroContext): string {
+  const parts: string[] = []
+  
+  if (astroContext.coreChart) {
+    parts.push(`Sun: ${astroContext.coreChart.sunSign}, Moon: ${astroContext.coreChart.moonSign}, Ascendant: ${astroContext.coreChart.ascendantSign}`)
+  }
+  
+  if (astroContext.dasha?.currentMahadasha) {
+    parts.push(`Current Dasha: ${astroContext.dasha.currentMahadasha.planet}`)
+  }
+  
+  if (astroContext.lifeThemes && astroContext.lifeThemes.length > 0) {
+    const topTheme = astroContext.lifeThemes[0]
+    parts.push(`Focus: ${topTheme.area}`)
+  }
+  
+  return parts.join('. ')
 }
 
 /**
@@ -173,51 +275,67 @@ Respond naturally and helpfully, incorporating the astrological context when rel
 }
 
 /**
- * Get RAG context for Guru
+ * Get RAG context for Guru (Super Phase C - New abstraction)
  */
-async function getGuruRagContext(query: string, mode?: GuruMode): Promise<{
-  documents: Array<{ id: string; title: string; category: string; content: string; score: number }>
-  query: string
-  totalResults: number
-}> {
-  // Map mode to category filter
-  const categoryMap: Record<GuruMode, string> = {
-    general: 'astrology',
-    kundali: 'astrology',
-    numerology: 'numerology',
-    predictions: 'astrology',
-    remedies: 'remedies',
-    business: 'astrology',
-    career: 'astrology',
-    compatibility: 'astrology',
+async function getGuruRagContext(params: {
+  mode: GuruMode
+  question: string
+  astroContextSummary?: string
+  topK?: number
+  signal?: AbortSignal
+}): Promise<{ chunks: GuruRagChunk[]; degraded: boolean }> {
+  // Import the new RAG function
+  const { getGuruRagContext: getRagContext } = await import('@/lib/rag/index')
+  
+  // Map GuruMode to GuruRagMode
+  const modeMap: Record<GuruMode, string> = {
+    general: 'general',
+    kundali: 'general',
+    numerology: 'general',
+    predictions: 'general',
+    remedies: 'remedy',
+    business: 'general',
+    career: 'career',
+    compatibility: 'relationship',
+    CareerGuide: 'career',
+    RelationshipGuide: 'relationship',
+    RemedySpecialist: 'remedy',
+    TimelineExplainer: 'general',
+    GeneralSeer: 'general',
   }
 
-  const categoryFilter = mode ? categoryMap[mode] : undefined
+  const ragMode = (modeMap[params.mode] || 'general') as any
 
   try {
-    return await retrieveRelevantDocuments(query, 5, categoryFilter)
+    return await getRagContext({
+      mode: ragMode,
+      question: params.question,
+      astroContextSummary: params.astroContextSummary,
+      topK: params.topK || 5,
+      signal: params.signal,
+    })
   } catch (error) {
     console.error('Error in RAG retrieval:', error)
-    return {
-      documents: [],
-      query,
-      totalResults: 0,
-    }
+    return { chunks: [], degraded: true }
   }
 }
 
 /**
  * Call LLM (OpenAI or Gemini)
+ * Super Phase C - Support AbortSignal
  */
-async function callLLM(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>): Promise<string> {
+async function callLLM(
+  messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
+  signal?: AbortSignal
+): Promise<string> {
   const provider = process.env.AI_PROVIDER || 'openai'
   const openaiApiKey = process.env.OPENAI_API_KEY
   const geminiApiKey = process.env.GEMINI_API_KEY
 
   if (provider === 'gemini' && geminiApiKey) {
-    return callGemini(messages, geminiApiKey)
+    return callGemini(messages, geminiApiKey, signal)
   } else if (openaiApiKey) {
-    return callOpenAI(messages, openaiApiKey)
+    return callOpenAI(messages, openaiApiKey, signal)
   } else {
     throw new Error('No AI provider configured')
   }
@@ -228,7 +346,8 @@ async function callLLM(messages: Array<{ role: 'user' | 'assistant' | 'system'; 
  */
 async function callOpenAI(
   messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
-  apiKey: string
+  apiKey: string,
+  signal?: AbortSignal
 ): Promise<string> {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -245,6 +364,7 @@ async function callOpenAI(
       temperature: 0.7,
       max_tokens: 1000,
     }),
+    signal,
   })
 
   if (!response.ok) {
@@ -261,7 +381,8 @@ async function callOpenAI(
  */
 async function callGemini(
   messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
-  apiKey: string
+  apiKey: string,
+  signal?: AbortSignal
 ): Promise<string> {
   // Convert messages to Gemini format
   const contents = messages
@@ -287,6 +408,7 @@ async function callGemini(
         maxOutputTokens: 1000,
       },
     }),
+    signal,
   })
 
   if (!response.ok) {
@@ -338,13 +460,28 @@ function generateFollowUps(mode: GuruMode, astroContext: AstroContext | null): s
       }
       break
     case 'career':
+    case 'CareerGuide':
       followUps.push('What career path aligns with my chart?', 'When is a good time to change jobs?')
+      if (astroContext?.lifeThemes?.[0]?.area === 'career') {
+        followUps.push('What does my current dasha say about my career?')
+      }
       break
     case 'love':
+    case 'RelationshipGuide':
       followUps.push('When will I find love?', 'What are my relationship strengths?')
+      if (astroContext?.lifeThemes?.[0]?.area === 'love') {
+        followUps.push('How does my chart influence my relationships?')
+      }
       break
     case 'remedies':
+    case 'RemedySpecialist':
       followUps.push('What mantras should I chant?', 'Which gemstones are beneficial for me?')
+      break
+    case 'TimelineExplainer':
+      followUps.push('What are the key events coming up?', 'When should I make important decisions?')
+      if (astroContext?.dashaTimeline && astroContext.dashaTimeline.length > 0) {
+        followUps.push(`Tell me about my ${astroContext.dashaTimeline[0].planet} period`)
+      }
       break
     default:
       followUps.push('Tell me about my spiritual path', 'What should I focus on right now?')

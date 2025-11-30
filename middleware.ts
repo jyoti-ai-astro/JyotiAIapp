@@ -20,8 +20,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (isAdminRoute && !sessionCookie) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // Admin routes require admin_session cookie (not regular session)
+  if (isAdminRoute) {
+    const adminSessionCookie = request.cookies.get('admin_session')?.value
+    if (!adminSessionCookie) {
+      // Allow /admin/login to pass through
+      if (pathname === '/admin/login') {
+        return NextResponse.next()
+      }
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
   }
 
   return NextResponse.next()

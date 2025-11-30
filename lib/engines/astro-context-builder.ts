@@ -18,6 +18,9 @@ import type {
   PlanetPosition,
   HouseData,
   DashaPeriod,
+  AstroDashaPeriod,
+  AstroTransitEvent,
+  AstroLifeTheme,
 } from './astro-types'
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
@@ -269,6 +272,29 @@ export async function buildAstroContext(
   const personalityTags = derivePersonalityTags(coreChart)
   const riskFlags = deriveRiskFlags(coreChart, predictions)
 
+  // Super Phase B - Compute enhanced fields
+  let dashaTimeline: AstroDashaPeriod[] = []
+  let transitEvents: AstroTransitEvent[] = []
+  let lifeThemes: AstroLifeTheme[] = []
+
+  try {
+    dashaTimeline = computeDashaTimeline(kundali, dasha)
+  } catch (error) {
+    console.error('Error computing dasha timeline:', error)
+  }
+
+  try {
+    transitEvents = computeTransitEvents(coreChart, timelineEvents)
+  } catch (error) {
+    console.error('Error computing transit events:', error)
+  }
+
+  try {
+    lifeThemes = deriveLifeThemes(coreChart, dasha, predictions)
+  } catch (error) {
+    console.error('Error deriving life themes:', error)
+  }
+
   const context: AstroContext = {
     birthData,
     coreChart,
@@ -277,6 +303,10 @@ export async function buildAstroContext(
     personalityTags,
     riskFlags,
     cachedAt: new Date().toISOString(),
+    // Super Phase B - Enhanced fields
+    dashaTimeline: dashaTimeline.length > 0 ? dashaTimeline : undefined,
+    transitEvents: transitEvents.length > 0 ? transitEvents : undefined,
+    lifeThemes: lifeThemes.length > 0 ? lifeThemes : undefined,
   }
 
   // Cache in Firestore
@@ -287,6 +317,165 @@ export async function buildAstroContext(
   })
 
   return context
+}
+
+/**
+ * Compute top 3 dasha/transit events for the next 6 months
+ */
+function computeDashaTimeline(kundali: KundaliData, dasha: AstroDashaSummary): AstroDashaPeriod[] {
+  const periods: AstroDashaPeriod[] = []
+  const now = new Date()
+  const sixMonthsFromNow = new Date(now.getTime() + 6 * 30 * 24 * 60 * 60 * 1000)
+
+  // Add current mahadasha
+  if (dasha.currentMahadasha) {
+    const startDate = new Date(dasha.currentMahadasha.startDate)
+    const endDate = new Date(dasha.currentMahadasha.endDate)
+    if (endDate > now && startDate <= sixMonthsFromNow) {
+      periods.push({
+        planet: dasha.currentMahadasha.planet,
+        start: dasha.currentMahadasha.startDate,
+        end: dasha.currentMahadasha.endDate,
+        strength: 8, // High strength for mahadasha
+        notes: `Major life period of ${dasha.currentMahadasha.planet} influence`,
+      })
+    }
+  }
+
+  // Add current antardasha
+  if (dasha.currentAntardasha) {
+    const startDate = new Date(dasha.currentAntardasha.startDate)
+    const endDate = new Date(dasha.currentAntardasha.endDate)
+    if (endDate > now && startDate <= sixMonthsFromNow) {
+      periods.push({
+        planet: dasha.currentAntardasha.planet,
+        start: dasha.currentAntardasha.startDate,
+        end: dasha.currentAntardasha.endDate,
+        strength: 6, // Medium-high strength for antardasha
+        notes: `Sub-period of ${dasha.currentAntardasha.planet} within ${dasha.currentMahadasha.planet}`,
+      })
+    }
+  }
+
+  // Add next 3 events
+  for (const event of dasha.next3Events) {
+    const startDate = new Date(event.from)
+    if (startDate <= sixMonthsFromNow && startDate > now) {
+      periods.push({
+        planet: event.planet,
+        start: event.from,
+        end: event.to,
+        strength: 5, // Medium strength for upcoming events
+        notes: event.theme,
+      })
+    }
+  }
+
+  // Sort by start date and return top 3
+  return periods.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).slice(0, 3)
+}
+
+/**
+ * Compute upcoming transit events with strong intensity
+ */
+function computeTransitEvents(chart: AstroChartCore, timeline: AstroTimelineEvent[]): AstroTransitEvent[] {
+  const events: AstroTransitEvent[] = []
+  const now = new Date()
+  const sixMonthsFromNow = new Date(now.getTime() + 6 * 30 * 24 * 60 * 60 * 1000)
+
+  // Extract transit events from timeline (intensity >= 4)
+  for (const event of timeline) {
+    if (event.intensity >= 4) {
+      const startDate = new Date(event.dateRange.from)
+      if (startDate <= sixMonthsFromNow && startDate > now) {
+        // Map focus area to house (simplified mapping)
+        const houseMap: Record<string, number> = {
+          career: 10,
+          love: 7,
+          health: 6,
+          finance: 2,
+          spiritual: 9,
+        }
+
+        events.push({
+          planet: 'Jupiter', // Default - would need actual transit calculation
+          house: houseMap[event.focusArea] || 1,
+          start: event.dateRange.from,
+          end: event.dateRange.end,
+          theme: event.summary,
+          intensity: event.intensity,
+        })
+      }
+    }
+  }
+
+  // Sort by start date and return top 5
+  return events.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).slice(0, 5)
+}
+
+/**
+ * Derive 3-5 life themes with confidence scores
+ */
+function deriveLifeThemes(chart: AstroChartCore, dasha: AstroDashaSummary, predictions: DailyPrediction): AstroLifeTheme[] {
+  const themes: AstroLifeTheme[] = []
+
+  // Analyze chart positions
+  const sunHouse = chart.planets.find((p) => p.planet === 'Sun')?.house
+  const moonHouse = chart.planets.find((p) => p.planet === 'Moon')?.house
+  const jupiterHouse = chart.planets.find((p) => p.planet === 'Jupiter')?.house
+  const venusHouse = chart.planets.find((p) => p.planet === 'Venus')?.house
+
+  // Career theme (10th house focus)
+  if (sunHouse === 10 || jupiterHouse === 10 || dasha.currentMahadasha.planet === 'Sun' || dasha.currentMahadasha.planet === 'Jupiter') {
+    const careerPred = predictions.predictions.find((p) => p.category === 'career')
+    themes.push({
+      area: 'career',
+      confidence: careerPred ? careerPred.score : 75,
+      summary: 'Strong career focus indicated by planetary positions and current dasha',
+    })
+  }
+
+  // Love/Relationship theme (7th house focus)
+  if (venusHouse === 7 || moonHouse === 7 || dasha.currentMahadasha.planet === 'Venus') {
+    const lovePred = predictions.predictions.find((p) => p.category === 'love')
+    themes.push({
+      area: 'love',
+      confidence: lovePred ? lovePred.score : 70,
+      summary: 'Relationship harmony and growth period',
+    })
+  }
+
+  // Health theme (6th house focus)
+  if (moonHouse === 6 || chart.planets.some((p) => p.planet === 'Saturn' && p.house === 6)) {
+    const healthPred = predictions.predictions.find((p) => p.category === 'health')
+    themes.push({
+      area: 'health',
+      confidence: healthPred ? healthPred.score : 65,
+      summary: 'Wellness focus and preventive care recommended',
+    })
+  }
+
+  // Money theme (2nd house focus)
+  if (jupiterHouse === 2 || venusHouse === 2 || dasha.currentMahadasha.planet === 'Jupiter') {
+    const moneyPred = predictions.predictions.find((p) => p.category === 'money')
+    themes.push({
+      area: 'money',
+      confidence: moneyPred ? moneyPred.score : 70,
+      summary: 'Financial stability and growth opportunities',
+    })
+  }
+
+  // Family theme (4th house focus)
+  if (moonHouse === 4 || sunHouse === 4) {
+    themes.push({
+      area: 'family',
+      confidence: 68,
+      summary: 'Family harmony and domestic focus',
+    })
+  }
+
+  // Sort by confidence and return top 5
+  return themes.sort((a, b) => b.confidence - a.confidence).slice(0, 5)
 }
 
 /**

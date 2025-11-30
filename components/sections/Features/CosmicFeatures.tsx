@@ -211,25 +211,27 @@ export function CosmicFeatures({
       ref={sectionRef}
       id="features"
       data-section-id="features"
-      className={`relative ${styles.container}`}
+      className="cosmic-section"
     >
-      {/* Section Header */}
-      <motion.div
-        className="text-center space-y-4 mb-16 px-4"
-        initial={{ opacity: 0, y: 30 }}
-        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-        transition={{ duration: 0.8 }}
-      >
-        {subtitle && (
-          <p className="text-xl md:text-2xl text-gold font-heading">{subtitle}</p>
-        )}
-        <h2 className="text-4xl md:text-6xl font-display font-bold text-white">
-          {title}
-        </h2>
-      </motion.div>
-      
-      {/* Features Grid */}
-      <div className={`container mx-auto px-4 grid ${styles.grid}`}>
+      <div className="cosmic-section-inner">
+        {/* Section Header */}
+        <motion.div
+          className="text-center space-y-4 mb-16"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
+          {subtitle && (
+            <p className="cosmic-subheading">{subtitle}</p>
+          )}
+          <h2 className="cosmic-heading text-white">
+            {title}
+          </h2>
+        </motion.div>
+        
+        {/* Features Grid */}
+        <div className={`grid ${styles.grid}`}>
         {displayFeatures.map((feature, index) => {
           // Convert FeatureModule to FeatureCardData
           const cardData: FeatureCardData = {
@@ -253,6 +255,7 @@ export function CosmicFeatures({
             />
           );
         })}
+        </div>
       </div>
     </section>
   );

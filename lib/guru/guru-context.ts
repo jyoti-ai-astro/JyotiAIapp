@@ -7,7 +7,20 @@
 
 import type { AstroContext, AstroBirthData } from '@/lib/engines/astro-types'
 
-export type GuruMode = 'general' | 'kundali' | 'numerology' | 'predictions' | 'remedies' | 'business' | 'career' | 'compatibility'
+export type GuruMode = 
+  | 'general' 
+  | 'kundali' 
+  | 'numerology' 
+  | 'predictions' 
+  | 'remedies' 
+  | 'business' 
+  | 'career' 
+  | 'compatibility'
+  | 'CareerGuide'
+  | 'RelationshipGuide'
+  | 'RemedySpecialist'
+  | 'TimelineExplainer'
+  | 'GeneralSeer'
 
 /**
  * Build a short context summary for Guru system prompt
@@ -68,10 +81,30 @@ export function buildGuruContext(params: {
 }
 
 /**
- * Derive Guru mode from user question
+ * Derive Guru mode from user question, astro context, and page
  */
-export function deriveGuruModeFromQuestion(message: string): GuruMode {
-  const lower = message.toLowerCase()
+export function deriveGuruMode(params: {
+  question: string
+  astroContext?: AstroContext | null
+  pageSlug?: string
+}): GuruMode {
+  const { question, astroContext, pageSlug } = params
+  const lower = question.toLowerCase()
+
+  // Check page context first
+  if (pageSlug) {
+    if (pageSlug.includes('career')) return 'CareerGuide'
+    if (pageSlug.includes('compatibility') || pageSlug.includes('love')) return 'RelationshipGuide'
+    if (pageSlug.includes('remedy')) return 'RemedySpecialist'
+    if (pageSlug.includes('timeline')) return 'TimelineExplainer'
+  }
+
+  // Check astro context life themes
+  if (astroContext?.lifeThemes && astroContext.lifeThemes.length > 0) {
+    const topTheme = astroContext.lifeThemes[0]
+    if (topTheme.area === 'career' && topTheme.confidence >= 70) return 'CareerGuide'
+    if (topTheme.area === 'love' && topTheme.confidence >= 70) return 'RelationshipGuide'
+  }
 
   // Check for specific keywords
   if (lower.match(/\b(kundali|chart|birth chart|horoscope|rashi|nakshatra|planets?|houses?)\b/)) {
@@ -82,26 +115,33 @@ export function deriveGuruModeFromQuestion(message: string): GuruMode {
     return 'numerology'
   }
 
-  if (lower.match(/\b(prediction|forecast|future|what will|what's going to|upcoming)\b/)) {
-    return 'predictions'
+  if (lower.match(/\b(prediction|forecast|future|what will|what's going to|upcoming|timeline|when will)\b/)) {
+    return 'TimelineExplainer'
   }
 
   if (lower.match(/\b(remedy|solution|problem|fix|help with|mantra|gemstone|ritual)\b/)) {
-    return 'remedies'
+    return 'RemedySpecialist'
   }
 
   if (lower.match(/\b(business|startup|venture|entrepreneur|company)\b/)) {
     return 'business'
   }
 
-  if (lower.match(/\b(career|job|work|profession|occupation|salary|promotion)\b/)) {
-    return 'career'
+  if (lower.match(/\b(career|job|work|profession|occupation|salary|promotion|workplace)\b/)) {
+    return 'CareerGuide'
   }
 
-  if (lower.match(/\b(compatibility|partner|marriage|relationship|love|match)\b/)) {
-    return 'compatibility'
+  if (lower.match(/\b(compatibility|partner|marriage|relationship|love|match|romance)\b/)) {
+    return 'RelationshipGuide'
   }
 
-  return 'general'
+  return 'GeneralSeer'
+}
+
+/**
+ * Derive Guru mode from user question (legacy function for backward compatibility)
+ */
+export function deriveGuruModeFromQuestion(message: string): GuruMode {
+  return deriveGuruMode({ question: message })
 }
 

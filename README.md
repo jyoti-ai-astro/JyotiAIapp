@@ -35,8 +35,11 @@ Jyoti.ai is not just an astrology app—it's a complete Spiritual Operating Syst
 - **Background Jobs**: Cloudflare Workers
 
 ### AI & ML
-- **LLM**: OpenAI GPT-5.1 / Google Gemini
-- **RAG**: Pinecone Vector Database
+- **LLM**: OpenAI GPT-4 / Google Gemini
+- **RAG**: Pinecone Vector Database (Super Phase C - Production-grade Global RAG Engine)
+  - Mode-aware knowledge retrieval
+  - Graceful degradation
+  - Ingestion script for knowledge documents
 - **Vision**: OpenAI Vision / Gemini Vision
 - **Astrology**: Swiss Ephemeris
 
@@ -82,6 +85,46 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 🎨 Design System
+
+### Cosmic Gold Theme
+
+Jyoti.ai uses a "Cosmic Gold" design system with consistent utility classes:
+
+#### Base Classes
+- **`.cosmic-page`** — Base page background with radial gradient overlays (purple, cyan, gold)
+- **`.cosmic-section`** — Consistent section spacing (`py-16 md:py-24`)
+- **`.cosmic-section-inner`** — Inner container with responsive padding
+
+#### Components
+- **`.glass-card`** — Glassmorphism card with backdrop blur, border, and shadow
+- **`.gold-btn`** — Premium gold button with gradient background and hover lift effect
+- **`.gold-btn-outline`** — Outline variant for secondary actions
+
+#### Typography
+- **`.cosmic-heading`** — Main headings (`text-3xl md:text-4xl lg:text-5xl`)
+- **`.cosmic-subheading`** — Section labels with gold accent and uppercase tracking
+
+#### Utilities
+- **`.custom-scrollbar`** — Gradient scrollbar styling (gold to purple)
+
+### Usage Example
+
+```tsx
+<div className="cosmic-page">
+  <div className="cosmic-section">
+    <div className="cosmic-section-inner">
+      <p className="cosmic-subheading">Modules</p>
+      <h1 className="cosmic-heading">Kundali Engine</h1>
+      <div className="glass-card p-6">
+        {/* Content */}
+      </div>
+      <button className="gold-btn">Download Report</button>
+    </div>
+  </div>
+</div>
+```
 
 ## 📁 Project Structure
 
@@ -150,8 +193,39 @@ All authentication flows through Firebase Auth with secure session cookies.
 - Destiny Number
 - Name analysis
 
-### 6. AI Guru
-- RAG-powered responses
+### 6. AI Guru (Super Phase C - Enhanced)
+- **Stability**: Comprehensive error handling, timeouts, graceful degradation
+- **RAG Engine**: Production-grade Pinecone integration with mode-aware retrieval
+- **Error Handling**: Clear error states (UNAUTHENTICATED, GURU_TIMEOUT, RAG_UNAVAILABLE, etc.)
+- **RAG Indicators**: Knowledge Vault badges and sources panel in UI
+- **Ingestion**: Script for ingesting knowledge documents (`scripts/guru-rag-ingest.ts`)
+
+### 7. Prediction Engine V2 (Mega Build 2)
+- **12-Month Predictions**: Structured predictions for career, love, money, health, spiritual
+- **Astro Signals**: Planetary influence indicators with strength ratings
+- **RAG Integration**: Light mode RAG support for knowledge enrichment
+- **Safety Guidelines**: Prohibits exact death/medical/financial predictions
+- **API**: `/api/predictions` endpoint with authentication and timeouts
+- **UI**: Structured sections with opportunities, cautions, recommended actions
+
+### 8. Timeline Engine V2 (Mega Build 2)
+- **12-Month Timeline**: Month-by-month events with themes, intensity, focus areas
+- **Astro Signals**: Per-month planetary influences
+- **RAG Integration**: Light mode RAG support for timeline enrichment
+- **Safety Guidelines**: Same safety guardrails as Prediction Engine
+- **API**: `/api/timeline` endpoint with authentication and timeouts
+- **UI**: Vertical timeline with "Ask Guru" CTAs per month
+
+### 9. Report Engine + PDF Generator (Mega Build 3)
+- **PDF Generation**: React-PDF based system with cosmic dark theme
+- **Three Report Types**:
+  - Full Kundali Report (birth chart analysis)
+  - 12-Month Predictions Report (structured forecasts)
+  - 12-Month Timeline Report (month-by-month journey)
+- **API**: `/api/report/generate` with authentication and email support
+- **Email Delivery**: Optional ZeptoMail integration for PDF attachments
+- **Frontend**: Download buttons on `/kundali`, `/predictions`, `/timeline`, and `/reports` dashboard
+- **Integration**: Uses AstroContext, PredictionEngineV2, TimelineEngineV2
 - Contextual memory
 - Multi-source reasoning
 - Spiritual guidance

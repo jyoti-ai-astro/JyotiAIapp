@@ -19,15 +19,6 @@ import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { Canvas } from '@react-three/fiber';
-import { Suspense } from 'react';
-import { NebulaShader } from '@/components/cosmic/NebulaShader';
-import { ParticleField } from '@/components/cosmic/ParticleField';
-import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
-import { motion } from 'framer-motion';
-import { Mail, Lock, Sparkles } from 'lucide-react';
 import { SignupCard } from '@/components/auth/SignupCard';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
 import Link from 'next/link';
@@ -151,23 +142,16 @@ export default function SignupPage() {
 
   return (
     <PageTransitionWrapper>
-      {/* R3F Background */}
-      <div className="fixed inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 1], fov: 75 }}>
-          <Suspense fallback={null}>
-            <NebulaShader intensity={1.0} />
-            <ParticleField count={3000} intensity={1.0} />
-            <RotatingMandala speed={0.1} intensity={0.5} />
-          </Suspense>
-        </Canvas>
-      </div>
-
-      <CosmicCursor />
-      <SoundscapeController />
-
-      {/* Content */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
-        <SignupCard />
+      <div className="cosmic-page flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <SignupCard />
+          <p className="mt-4 text-center text-xs text-slate-400">
+            By continuing, you agree to our{' '}
+            <Link href="/terms" className="text-gold hover:underline">Terms</Link>
+            {' '}and{' '}
+            <Link href="/privacy" className="text-gold hover:underline">Privacy Policy</Link>.
+          </p>
+        </div>
       </div>
     </PageTransitionWrapper>
   );

@@ -69,6 +69,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { href: '/admin/dashboard', label: 'Dashboard' },
     { href: '/admin/users', label: 'Users' },
+    { href: '/admin/tickets', label: 'Tickets' },
+    { href: '/admin/one-time-purchases', label: 'One-Time Purchases' },
     { href: '/admin/reports', label: 'Reports' },
     { href: '/admin/payments', label: 'Payments' },
     { href: '/admin/guru', label: 'AI Guru' },
@@ -81,9 +83,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ]
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen cosmic-page">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-muted/40 p-4">
+      <aside className="w-64 border-r border-white/10 bg-[#020617]/90 p-4">
         <div className="mb-6">
           <h2 className="text-xl font-bold">Jyoti.ai Admin</h2>
           <p className="text-sm text-muted-foreground">{admin.role}</p>
@@ -98,8 +100,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={item.href}
                 className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
                   isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-muted'
+                    ? 'bg-gold/15 text-gold border-l-2 border-l-gold'
+                    : 'hover:bg-white/5 text-white/70'
                 }`}
               >
                 {item.label}
@@ -117,15 +119,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        <div className="border-b bg-background p-4">
+        <div className="border-b border-white/10 bg-[#020617]/90 p-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Admin Panel</h1>
-            <div className="text-sm text-muted-foreground">
+            <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
+            <div className="text-sm text-white/70">
               {admin.name} ({admin.email})
             </div>
           </div>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="cosmic-section-inner p-6">{children}</div>
       </main>
     </div>
   )

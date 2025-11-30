@@ -50,47 +50,51 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cosmic via-mystic to-gold p-6">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-display">Jyoti.ai Admin</CardTitle>
-          <CardDescription>Sign in to access the admin panel</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@jyoti.ai"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            {error && (
-              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                {error}
+    <div className="cosmic-page flex min-h-screen items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <Card className="glass-card p-6 sm:p-8">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-display text-white">Jyoti.ai Admin</CardTitle>
+            <CardDescription className="text-white/70">Sign in to access the admin panel</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-white/90">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@jyoti.ai"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="rounded-xl border border-white/10 bg-white/5 text-white placeholder-white/40 focus:border-gold/60 focus:shadow-[0_0_0_1px_rgba(242,201,76,0.5)]"
+                  required
+                />
               </div>
-            )}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-white/90">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="rounded-xl border border-white/10 bg-white/5 text-white placeholder-white/40 focus:border-gold/60 focus:shadow-[0_0_0_1px_rgba(242,201,76,0.5)]"
+                  required
+                />
+              </div>
+              {error && (
+                <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+              <Button type="submit" className="gold-btn w-full" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

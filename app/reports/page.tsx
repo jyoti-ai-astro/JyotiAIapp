@@ -7,10 +7,12 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { FileText, Download, Sparkles, Lock, RefreshCw, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
 import { useUserStore } from '@/store/user-store'
+import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
+import { decrementTicket } from '@/lib/access/ticket-access'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -64,37 +66,63 @@ export default function ReportsPage() {
     }
   }
 
-  const handleGenerate = async (type: 'comprehensive' | 'basic' | 'premium' = 'comprehensive') => {
+  const handleGenerate = async (type: 'kundali' | 'predictions' | 'timeline') => {
     setGenerating(true)
 
     try {
-      const response = await fetch('/api/reports/generate', {
+      // Check feature access
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      const featureMap: Record<string, 'kundali' | 'predictions'> = {
+        kundali: 'kundali',
+        predictions: 'predictions',
+        timeline: 'predictions',
+      }
+
+      const feature = featureMap[type]
+      const accessCheck = await checkFeatureAccess(user, feature)
+
+      if (!accessCheck.allowed) {
+        if (accessCheck.redirectTo) {
+          router.push(accessCheck.redirectTo)
+        }
+        return
+      }
+
+      const response = await fetch('/api/report/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          type: type === 'comprehensive' ? 'premium' : type,
-          includePalmistry: false,
-          includeAura: false,
+          type,
+          sendEmail: false,
         }),
       })
 
-      if (response.status === 402) {
-        const error = await response.json()
-        if (error.requiresPayment) {
-          alert('Premium subscription required. Please proceed to payment.')
-          router.push('/pricing')
-          return
-        }
-      }
-
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to generate report')
+        throw new Error(error.message || 'Failed to generate report')
       }
 
-      const result = await response.json()
-      alert('Report generated successfully!')
+      // Download PDF
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${type}-report-${new Date().toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      // Decrement ticket if needed
+      if (accessCheck.decrementTicket) {
+        await decrementTicket(user.uid, feature === 'kundali' ? 'kundali_basic' : 'ai_question')
+      }
+
       loadReports()
     } catch (error: any) {
       console.error('Generate report error:', error)
@@ -175,6 +203,105 @@ export default function ReportsPage() {
             Download detailed PDF analysis of your destiny, karma, and life path.
           </p>
         </motion.div>
+
+        {/* Mega Build 3 - Report Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          {/* Kundali Report Card */}
+          <Card className="bg-cosmic-indigo/40 border-white/10 hover:border-gold/30 transition-all backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle className="text-gold">Full Kundali Report</CardTitle>
+              <CardDescription className="text-white/60">
+                Complete birth chart analysis with planetary positions, dasha periods, and life themes
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Badge className="mb-4 bg-gold/20 text-gold border-gold/50">
+                Included in Supreme Plan
+              </Badge>
+              <Button
+                onClick={() => handleGenerate('kundali')}
+                disabled={generating}
+                className="w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+              >
+                {generating ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Generate PDF
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Predictions Report Card */}
+          <Card className="bg-cosmic-indigo/40 border-white/10 hover:border-gold/30 transition-all backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle className="text-gold">12-Month Predictions</CardTitle>
+              <CardDescription className="text-white/60">
+                Detailed forecasts for career, love, money, health, and spiritual growth
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Badge className="mb-4 bg-gold/20 text-gold border-gold/50">
+                Paid · ₹199
+              </Badge>
+              <Button
+                onClick={() => handleGenerate('predictions')}
+                disabled={generating}
+                className="w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+              >
+                {generating ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Generate PDF
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Timeline Report Card */}
+          <Card className="bg-cosmic-indigo/40 border-white/10 hover:border-gold/30 transition-all backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle className="text-gold">12-Month Timeline</CardTitle>
+              <CardDescription className="text-white/60">
+                Month-by-month cosmic journey with themes, intensity, and focus areas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Badge className="mb-4 bg-gold/20 text-gold border-gold/50">
+                Paid · ₹199
+              </Badge>
+              <Button
+                onClick={() => handleGenerate('timeline')}
+                disabled={generating}
+                className="w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+              >
+                {generating ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Generate PDF
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Reports Grid */}
         {loading ? (

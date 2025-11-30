@@ -123,22 +123,19 @@ export function PricingCards() {
     <section
       ref={sectionRef}
       id="pricing"
-      className="relative py-20 md:py-32"
+      className="cosmic-section"
     >
-      <div className="container mx-auto px-4">
+      <div className="cosmic-section-inner">
         {/* Section Header */}
         <motion.div
           className="text-center space-y-4 mb-16"
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{ duration: 0.8 }}
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
         >
-          <h2 className="text-4xl md:text-6xl font-display font-bold text-white">
-            Pricing Plans
-          </h2>
-          <p className="text-xl md:text-2xl text-gold font-heading">
-            Flexible pricing for every spiritual journey
-          </p>
+          <p className="cosmic-subheading">Pricing Plans</p>
+          <h2 className="cosmic-heading">Flexible pricing for every spiritual journey</h2>
         </motion.div>
 
         {/* Pricing Cards Grid */}
@@ -154,10 +151,8 @@ export function PricingCards() {
             >
               <Card
                 className={cn(
-                  'bg-cosmic-indigo/80 backdrop-blur-sm border text-white h-full transition-all duration-300',
-                  tier.isPremium
-                    ? 'border-gold/50 shadow-[0_0_30px_rgba(242,201,76,0.3)]'
-                    : 'border-cosmic-purple/30 hover:border-cosmic-purple/50'
+                  'glass-card text-white h-full transition-all duration-300',
+                  tier.isPremium && 'border-gold/80 shadow-[0_0_50px_rgba(242,201,76,0.4)] scale-[1.02]'
                 )}
               >
                 {(tier.isPremium || tier.badge) && (
@@ -180,10 +175,10 @@ export function PricingCards() {
                     {tier.name}
                   </CardTitle>
                   <div className="flex items-baseline justify-center gap-2 mb-4">
-                    <span className="text-5xl font-display font-bold text-white">
+                    <span className="text-2xl md:text-3xl font-heading font-bold text-white">
                       {tier.price}
                     </span>
-                    <span className="text-white/60">
+                    <span className="text-white/60 text-sm">
                       {tier.period === 'one-time' ? '/one-time' : '/month'}
                     </span>
                   </div>
@@ -200,17 +195,8 @@ export function PricingCards() {
                       </li>
                     ))}
                   </ul>
-                  <Link href={tier.href} className="block">
-                    <Button
-                      className={cn(
-                        'w-full text-lg py-6',
-                        tier.isPremium
-                          ? 'bg-gold text-cosmic-navy hover:bg-gold-light'
-                          : 'bg-cosmic-purple/50 text-white hover:bg-cosmic-purple/70'
-                      )}
-                    >
-                      {tier.cta}
-                    </Button>
+                  <Link href={tier.href} className={tier.isPremium ? 'gold-btn block w-full text-center' : 'gold-btn-outline block w-full text-center'}>
+                    {tier.cta}
                   </Link>
                 </CardContent>
               </Card>
@@ -219,15 +205,16 @@ export function PricingCards() {
         </div>
 
         {/* One-Time Readings Section */}
-        <section className="mt-16 md:mt-20">
+        <div className="mt-16 md:mt-20 pt-16 border-t border-white/10">
           <motion.div
             className="text-center mb-8"
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
+            <p className="cosmic-subheading mb-2">One-Time Readings</p>
             <h2 className="text-2xl md:text-3xl font-heading text-gold mb-3">
-              One-Time Readings (No Subscription Needed)
+              No Subscription Needed
             </h2>
             <p className="mt-3 text-sm md:text-base text-white/70 max-w-2xl mx-auto">
               Perfect for quick questions, first-time users, or gifting a single powerful reading.
@@ -244,14 +231,7 @@ export function PricingCards() {
                 whileHover={{ y: -10 }}
                 className="relative"
               >
-                <Card
-                  className={cn(
-                    'bg-cosmic-indigo/80 backdrop-blur-sm border text-white h-full transition-all duration-300',
-                    plan.badge === 'Most Popular'
-                      ? 'border-gold/50 shadow-[0_0_30px_rgba(242,201,76,0.3)]'
-                      : 'border-cosmic-purple/30 hover:border-cosmic-purple/50'
-                  )}
-                >
+                <Card className="glass-card text-white h-full transition-all duration-300">
                   {plan.badge && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                       <Badge
@@ -290,24 +270,15 @@ export function PricingCards() {
                         </li>
                       ))}
                     </ul>
-                    <Link href={plan.href} className="block">
-                      <Button
-                        className={cn(
-                          'w-full text-lg py-6',
-                          plan.badge === 'Most Popular'
-                            ? 'bg-gold text-cosmic-navy hover:bg-gold-light'
-                            : 'bg-cosmic-purple/50 text-white hover:bg-cosmic-purple/70'
-                        )}
-                      >
-                        {plan.cta}
-                      </Button>
+                    <Link href={plan.href} className="gold-btn block w-full text-center py-6">
+                      {plan.cta}
                     </Link>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
           </div>
-        </section>
+        </div>
 
         {/* Pricing Comparison Table */}
         <PricingComparisonTable />

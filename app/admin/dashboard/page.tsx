@@ -34,6 +34,18 @@ interface DashboardStats {
     cron: string
     aiProvider: string
   }
+  overview?: {
+    totalUsers: number
+    activeSubscriptions: number
+    totalOneTimePurchases: number
+    oneTimeRevenueINR: number
+    totalTicketsAiQuestions: number
+    totalTicketsKundali: number
+    guruQuestionsToday: number
+    predictionsGeneratedToday: number
+    timelineGeneratedToday: number
+    lastUpdated: string
+  }
 }
 
 export default function AdminDashboardPage() {
@@ -46,11 +58,21 @@ export default function AdminDashboardPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/dashboard/stats')
-      const data = await response.json()
+      // Fetch both old stats and new overview metrics
+      const [statsResponse, overviewResponse] = await Promise.all([
+        fetch('/api/admin/dashboard/stats'),
+        fetch('/api/admin/overview'),
+      ])
 
-      if (data.success) {
-        setStats(data.stats)
+      const statsData = await statsResponse.json()
+      const overviewData = await overviewResponse.json()
+
+      if (statsData.success && overviewData.success) {
+        // Merge stats with overview metrics
+        setStats({
+          ...statsData.stats,
+          overview: overviewData.metrics,
+        })
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error)
@@ -79,7 +101,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold">Admin Command Center</h1>
         <p className="text-muted-foreground">Overview of system statistics and health</p>
       </div>
 
@@ -162,6 +184,57 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
+      {/* Mega Build 4 - Enhanced Metrics */}
+      {stats.overview && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">One-Time Revenue</CardTitle>
+              <CardDescription>Total from purchases</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">₹{stats.overview.oneTimeRevenueINR.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.overview.totalOneTimePurchases} purchases
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">AI Question Tickets</CardTitle>
+              <CardDescription>In circulation</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.overview.totalTicketsAiQuestions.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Kundali Tickets</CardTitle>
+              <CardDescription>In circulation</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.overview.totalTicketsKundali.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Predictions Today</CardTitle>
+              <CardDescription>Generated reports</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.overview.predictionsGeneratedToday}</div>
+              <p className="text-xs text-muted-foreground">
+                Timeline: {stats.overview.timelineGeneratedToday}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* System Health */}
       <Card>
         <CardHeader>
@@ -177,9 +250,9 @@ export default function AdminDashboardPage() {
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium">Workers</p>
-              <p className={`text-lg font-bold ${stats.system.workers === 'healthy' ? 'text-green-600' : 'text-red-600'}`}>
-                {stats.system.workers}
+              <p className="text-sm font-medium">Guru RAG</p>
+              <p className={`text-lg font-bold ${process.env.GURU_RAG_ENABLED === 'true' ? 'text-green-600' : 'text-yellow-600'}`}>
+                {process.env.GURU_RAG_ENABLED === 'true' ? 'Enabled' : 'Disabled'}
               </p>
             </div>
             <div>

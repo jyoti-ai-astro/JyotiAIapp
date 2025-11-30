@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
@@ -17,10 +18,12 @@ interface Log {
   id: string
   message: string
   level?: string
+  category?: string
   timestamp: any
   userId?: string
   endpoint?: string
   error?: any
+  metadata?: any
 }
 
 export default function LogsPage() {
@@ -124,26 +127,52 @@ export default function LogsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div>Loading...</div>
+            <div className="text-center py-8">Loading logs...</div>
           ) : logs.length === 0 ? (
-            <div>No logs found</div>
+            <div className="text-center py-8 text-muted-foreground">No logs found</div>
           ) : (
             <div className="space-y-2 max-h-[600px] overflow-y-auto">
               {logs.map((log) => (
                 <div key={log.id} className="rounded-lg border p-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {log.level && (
+                          <Badge
+                            variant={
+                              log.level === 'error' ? 'destructive' :
+                              log.level === 'warn' ? 'secondary' :
+                              'outline'
+                            }
+                          >
+                            {log.level.toUpperCase()}
+                          </Badge>
+                        )}
+                        {log.category && (
+                          <Badge variant="outline">{log.category}</Badge>
+                        )}
+                      </div>
                       <p className="text-sm font-medium">{log.message}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {log.timestamp?.toDate?.()?.toLocaleString() || 'N/A'}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {log.timestamp?.toDate?.()?.toLocaleString() || log.timestamp || 'N/A'}
                         {log.userId && ` | User: ${log.userId}`}
                         {log.endpoint && ` | Endpoint: ${log.endpoint}`}
-                        {log.level && ` | Level: ${log.level}`}
                       </p>
                       {log.error && (
-                        <pre className="mt-2 overflow-auto rounded bg-muted p-2 text-xs">
-                          {JSON.stringify(log.error, null, 2)}
-                        </pre>
+                        <details className="mt-2">
+                          <summary className="text-xs cursor-pointer text-muted-foreground">View Error Details</summary>
+                          <pre className="mt-2 overflow-auto rounded bg-muted p-2 text-xs">
+                            {JSON.stringify(log.error, null, 2)}
+                          </pre>
+                        </details>
+                      )}
+                      {log.metadata && (
+                        <details className="mt-2">
+                          <summary className="text-xs cursor-pointer text-muted-foreground">View Metadata</summary>
+                          <pre className="mt-2 overflow-auto rounded bg-muted p-2 text-xs">
+                            {JSON.stringify(log.metadata, null, 2)}
+                          </pre>
+                        </details>
                       )}
                     </div>
                   </div>

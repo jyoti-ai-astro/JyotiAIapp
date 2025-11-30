@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/user-store'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Download, RefreshCw } from 'lucide-react'
 import { KundaliWheel3D } from '@/components/organisms/kundali-wheel-3d'
 import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
@@ -48,6 +49,9 @@ export default function KundaliPage() {
   const [kundali, setKundali] = useState<KundaliData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [astro, setAstro] = useState<AstroContext | null>(null)
+  
+  // Mega Build 3 - Download report state
+  const [downloadingReport, setDownloadingReport] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -96,6 +100,62 @@ export default function KundaliPage() {
       setError(err.message || 'Failed to load kundali')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Mega Build 3 - Download PDF Report
+  const handleDownloadReport = async () => {
+    if (!user) return
+
+    // Check feature access
+    const accessCheck = await checkFeatureAccess(user, 'kundali')
+    if (!accessCheck.allowed) {
+      if (accessCheck.redirectTo) {
+        router.push(accessCheck.redirectTo)
+      }
+      return
+    }
+
+    setDownloadingReport(true)
+
+    try {
+      const response = await fetch('/api/report/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          type: 'kundali',
+          sendEmail: false,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || 'Failed to generate report')
+      }
+
+      // Download PDF
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Kundali-Report-${new Date().toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      // Decrement ticket if needed
+      if (accessCheck.decrementTicket) {
+        await decrementTicket(user.uid, 'kundali_basic')
+      }
+    } catch (err: any) {
+      console.error('Error downloading report:', err)
+      alert(err.message || 'Failed to download report. Please try again.')
+    } finally {
+      setDownloadingReport(false)
     }
   }
 
@@ -389,6 +449,35 @@ export default function KundaliPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Mega Build 3 - Download Report Section */}
+      <Card className="cosmic-card border-gold/30 bg-cosmic-indigo/10 mt-8">
+        <CardHeader>
+          <CardTitle className="text-gold">Download Full PDF Report</CardTitle>
+          <CardDescription className="text-aura-cyan">
+            Get a comprehensive Kundali report as a PDF document
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleDownloadReport}
+            disabled={downloadingReport}
+            className="w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+          >
+            {downloadingReport ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Generating PDF...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Download Kundali PDF
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Ask Guru With Context Button */}
       {astro && (

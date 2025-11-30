@@ -155,7 +155,7 @@ export const SignupCard: React.FC<SignupCardProps> = ({ onSuccess }) => {
       transition={{ duration: 0.5 }}
       className="w-full max-w-md"
     >
-      <div className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 rounded-2xl p-8 shadow-[0_0_30px_rgba(110,45,235,0.3)]">
+      <div className="glass-card p-6 sm:p-8">
         <div className="text-center mb-8">
           <motion.div
             animate={{ rotate: [0, 360] }}
@@ -175,7 +175,7 @@ export const SignupCard: React.FC<SignupCardProps> = ({ onSuccess }) => {
               handleGoogleSignup();
             }}
             disabled={loading}
-            className="w-full bg-white text-cosmic-navy hover:bg-white/90 relative overflow-hidden"
+            className="gold-btn-outline w-full relative overflow-hidden"
             size="lg"
           >
             Continue with Google
@@ -199,7 +199,7 @@ export const SignupCard: React.FC<SignupCardProps> = ({ onSuccess }) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:ring-2 focus:ring-gold"
+                className="rounded-xl border border-white/10 bg-white/5 text-white placeholder-white/40 focus:border-gold/60 focus:shadow-[0_0_0_1px_rgba(242,201,76,0.5)]"
               />
             </div>
             <div>
@@ -213,7 +213,7 @@ export const SignupCard: React.FC<SignupCardProps> = ({ onSuccess }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
-                  className="w-full pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:ring-2 focus:ring-gold"
+                  className="w-full pl-10 rounded-xl border border-white/10 bg-white/5 text-white placeholder-white/40 focus:border-gold/60 focus:shadow-[0_0_0_1px_rgba(242,201,76,0.5)]"
                 />
               </div>
             </div>
@@ -229,7 +229,7 @@ export const SignupCard: React.FC<SignupCardProps> = ({ onSuccess }) => {
                   placeholder="Create a password"
                   required
                   minLength={6}
-                  className="w-full pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:ring-2 focus:ring-gold"
+                  className="w-full pl-10 rounded-xl border border-white/10 bg-white/5 text-white placeholder-white/40 focus:border-gold/60 focus:shadow-[0_0_0_1px_rgba(242,201,76,0.5)]"
                 />
               </div>
             </div>
@@ -237,7 +237,7 @@ export const SignupCard: React.FC<SignupCardProps> = ({ onSuccess }) => {
               type="submit"
               onClick={createRipple}
               disabled={loading}
-              className="w-full bg-cosmic-purple/50 text-white hover:bg-cosmic-purple/70 relative overflow-hidden"
+              className="gold-btn w-full relative overflow-hidden"
               size="lg"
             >
               {loading ? 'Creating Account...' : 'Create Account'}

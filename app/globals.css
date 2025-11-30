@@ -216,18 +216,65 @@
     @apply rounded-2xl border border-cosmic-indigo/20 bg-cosmic-navy/50 backdrop-blur-sm;
   }
 
+  /* Cosmic Page - Base background with gradient overlays */
+  .cosmic-page {
+    @apply min-h-screen bg-[#020617] text-slate-100;
+    background-image:
+      radial-gradient(circle at 0% 0%, rgba(110, 45, 235, 0.22), transparent 55%),
+      radial-gradient(circle at 100% 0%, rgba(23, 232, 246, 0.16), transparent 55%),
+      radial-gradient(circle at 50% 100%, rgba(242, 201, 76, 0.18), transparent 60%);
+    background-attachment: fixed;
+  }
+
   /* Glass card for astro summary blocks */
   .glass-card {
-    @apply bg-white/5 backdrop-blur-md rounded-2xl border border-white/10;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    @apply relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
   }
 
   /* Gold button for premium actions */
   .gold-btn {
-    @apply bg-gold text-cosmic-navy font-semibold px-6 py-3 rounded-xl;
-    @apply hover:bg-gold/90 transition-all duration-300;
-    @apply shadow-[0_4px_15px_rgba(242,201,76,0.3)];
-    @apply hover:shadow-[0_6px_20px_rgba(242,201,76,0.4)];
+    @apply inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold text-slate-950;
+    background-image: linear-gradient(135deg, #f2c94c, #f7e38b);
+    box-shadow:
+      0 0 0 1px rgba(113, 63, 18, 0.2),
+      0 18px 35px rgba(0, 0, 0, 0.8);
+    transition: all 0.3s ease;
+  }
+
+  .gold-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 1px rgba(113, 63, 18, 0.3),
+      0 22px 40px rgba(0, 0, 0, 0.9);
+  }
+
+  .gold-btn-outline {
+    @apply inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold text-gold border border-gold/60 bg-gold/5;
+    transition: all 0.3s ease;
+  }
+
+  .gold-btn-outline:hover {
+    @apply bg-gold/10 border-gold/80;
+    transform: translateY(-1px);
+  }
+
+  /* Cosmic section spacing */
+  .cosmic-section {
+    @apply relative py-16 md:py-24;
+  }
+
+  .cosmic-section-inner {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Cosmic typography */
+  .cosmic-heading {
+    @apply text-3xl md:text-4xl lg:text-5xl font-heading tracking-tight;
+  }
+
+  .cosmic-subheading {
+    @apply text-sm font-semibold uppercase tracking-[0.25em] text-gold/80;
   }
   
   /* Breathing animations (meditative rhythm) */
@@ -277,6 +324,24 @@
   
   .particle-drift {
     animation: particle-drift 20s ease-in-out infinite;
+  }
+
+  /* Custom scrollbar for cosmic theme */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(242, 201, 76, 0.3), rgba(110, 45, 235, 0.3));
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(242, 201, 76, 0.5), rgba(110, 45, 235, 0.5));
   }
 }
 

@@ -24,13 +24,14 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SkeletonCard } from '@/components/ui/skeleton';
 import { ErrorBoundary } from '@/components/global/ErrorBoundary';
-import { Sparkles, RefreshCw } from 'lucide-react';
+import { Sparkles, RefreshCw, Download } from 'lucide-react';
 import Link from 'next/link';
 import { PredictionDetailModal } from '@/components/predictions/PredictionDetailModal';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
 import { decrementTicket } from '@/lib/access/ticket-access';
 import type { AstroContext } from '@/lib/engines/astro-types';
+import type { PredictionEngineResult } from '@/lib/engines/prediction-engine-v2';
 
 export default function PredictionsPage() {
   const router = useRouter();
@@ -39,6 +40,14 @@ export default function PredictionsPage() {
   const [selectedPrediction, setSelectedPrediction] = React.useState<any>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [astro, setAstro] = React.useState<AstroContext | null>(null);
+  
+  // Mega Build 2 - 12-month predictions state
+  const [predictionResult, setPredictionResult] = React.useState<PredictionEngineResult | null>(null);
+  const [predictionLoading, setPredictionLoading] = React.useState(false);
+  const [predictionError, setPredictionError] = React.useState<string | null>(null);
+  
+  // Mega Build 3 - Download report state
+  const [downloadingReport, setDownloadingReport] = React.useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -60,6 +69,108 @@ export default function PredictionsPage() {
       }
     } catch (err) {
       console.error('Error fetching astro context:', err);
+    }
+  };
+
+  // Mega Build 2 - Generate 12-month predictions
+  const handleGeneratePredictions = async () => {
+    if (!user) return;
+
+    // Check feature access
+    const accessCheck = await checkFeatureAccess(user, 'predictions');
+    if (!accessCheck.allowed) {
+      if (accessCheck.redirectTo) {
+        router.push(accessCheck.redirectTo);
+      }
+      return;
+    }
+
+    setPredictionLoading(true);
+    setPredictionError(null);
+
+    try {
+      const response = await fetch('/api/predictions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to generate predictions');
+      }
+
+      const data = await response.json();
+      setPredictionResult(data.data);
+
+      // Decrement ticket if needed
+      if (accessCheck.decrementTicket) {
+        await decrementTicket(user.uid, 'ai_question');
+      }
+    } catch (err: any) {
+      console.error('Error generating predictions:', err);
+      setPredictionError(err.message || 'Failed to generate predictions. Please try again.');
+    } finally {
+      setPredictionLoading(false);
+    }
+  };
+
+  // Mega Build 3 - Download PDF Report
+  const handleDownloadReport = async () => {
+    if (!user) return;
+
+    // Check feature access
+    const accessCheck = await checkFeatureAccess(user, 'predictions');
+    if (!accessCheck.allowed) {
+      if (accessCheck.redirectTo) {
+        router.push(accessCheck.redirectTo);
+      }
+      return;
+    }
+
+    setDownloadingReport(true);
+
+    try {
+      const response = await fetch('/api/report/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          type: 'predictions',
+          sendEmail: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to generate report');
+      }
+
+      // Download PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `12-Month-Predictions-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      // Decrement ticket if needed
+      if (accessCheck.decrementTicket) {
+        await decrementTicket(user.uid, 'ai_question');
+      }
+    } catch (err: any) {
+      console.error('Error downloading report:', err);
+      alert(err.message || 'Failed to download report. Please try again.');
+    } finally {
+      setDownloadingReport(false);
     }
   };
 
@@ -105,21 +216,177 @@ export default function PredictionsPage() {
             <Sparkles className="mx-auto h-16 w-16 text-gold mb-4" />
             <h1 className="text-4xl font-display font-bold text-gold">Predictions</h1>
             <p className="text-white/70 mt-2">Your astrological predictions</p>
+            
+            {/* Mega Build 2 - 12-Month Predictions Button */}
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="mt-4"
+              className="mt-4 mb-6"
+            >
+              <Button
+                onClick={handleGeneratePredictions}
+                className="bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+                disabled={predictionLoading}
+              >
+                <Sparkles className={`h-4 w-4 mr-2 ${predictionLoading ? 'animate-spin' : ''}`} />
+                {predictionLoading ? 'Generating Predictions...' : 'Generate 12-Month Predictions'}
+              </Button>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="mt-2"
             >
               <Button
                 onClick={() => refetch()}
-                className="bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+                variant="ghost"
+                className="border border-gold/30 text-gold/80 hover:bg-gold/10"
                 disabled={loading}
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Refresh Predictions
+                Refresh Daily/Weekly/Monthly
               </Button>
             </motion.div>
           </div>
+
+          {/* Mega Build 2 - 12-Month Predictions Results */}
+          {predictionError && (
+            <Card className="bg-red-500/10 border border-red-500/30 text-white mb-6">
+              <CardContent className="pt-6">
+                <p className="text-red-400">{predictionError}</p>
+                <Button
+                  onClick={handleGeneratePredictions}
+                  variant="ghost"
+                  className="mt-4 text-red-400 hover:text-red-300"
+                >
+                  Try Again
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {predictionResult && (
+            <div className="mb-8 space-y-6">
+              {/* Overview */}
+              <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white">
+                <CardHeader>
+                  <CardTitle className="text-gold">12-Month Predictions Overview</CardTitle>
+                  {predictionResult.status === 'degraded' && (
+                    <CardDescription className="text-yellow-400">
+                      Predictions generated with limited context
+                    </CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <p className="text-white/80">{predictionResult.overview}</p>
+                </CardContent>
+              </Card>
+
+              {/* Sections */}
+              {predictionResult.sections.map((section) => (
+                <Card
+                  key={section.id}
+                  className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white"
+                >
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-gold capitalize">{section.title}</CardTitle>
+                      {section.score && (
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-gold/20 text-gold border border-gold/50">
+                          Intensity: {section.score}/10
+                        </span>
+                      )}
+                    </div>
+                    {section.timeframe && (
+                      <CardDescription className="text-white/60">{section.timeframe}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-white/80">{section.summary}</p>
+
+                    {section.opportunities.length > 0 && (
+                      <div>
+                        <h4 className="text-gold text-sm font-semibold mb-2">Opportunities</h4>
+                        <ul className="space-y-1">
+                          {section.opportunities.map((opp, i) => (
+                            <li key={i} className="text-sm text-white/70 flex items-start gap-2">
+                              <span className="text-green-400 mt-1">•</span>
+                              <span>{opp}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {section.cautions.length > 0 && (
+                      <div>
+                        <h4 className="text-yellow-400 text-sm font-semibold mb-2">Cautions</h4>
+                        <ul className="space-y-1">
+                          {section.cautions.map((caution, i) => (
+                            <li key={i} className="text-sm text-white/70 flex items-start gap-2">
+                              <span className="text-yellow-400 mt-1">•</span>
+                              <span>{caution}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {section.recommendedActions.length > 0 && (
+                      <div>
+                        <h4 className="text-gold text-sm font-semibold mb-2">Recommended Actions</h4>
+                        <ul className="space-y-1">
+                          {section.recommendedActions.map((action, i) => (
+                            <li key={i} className="text-sm text-white/70 flex items-start gap-2">
+                              <span className="text-gold mt-1">•</span>
+                              <span>{action}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+
+              {/* Astro Signals */}
+              {predictionResult.astroSignals.length > 0 && (
+                <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white">
+                  <CardHeader>
+                    <CardTitle className="text-gold">Astrological Signals</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {predictionResult.astroSignals.map((signal, i) => (
+                        <div
+                          key={i}
+                          className="px-3 py-2 bg-white/5 rounded-lg border border-white/10 rounded-lg"
+                        >
+                          <p className="text-sm font-semibold text-gold">{signal.label}</p>
+                          <p className="text-xs text-white/70 mt-1">{signal.description}</p>
+                          {signal.strength && (
+                            <span className="text-xs text-white/60 mt-1 block">
+                              Strength: {signal.strength}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Disclaimers */}
+              {predictionResult.disclaimers.length > 0 && (
+                <div className="text-xs text-white/50 space-y-1">
+                  {predictionResult.disclaimers.map((disclaimer, i) => (
+                    <p key={i}>{disclaimer}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <Tabs defaultValue="daily" className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-white/10">
@@ -416,6 +683,35 @@ export default function PredictionsPage() {
               )}
             </TabsContent>
           </Tabs>
+
+          {/* Mega Build 3 - Download Report Section */}
+          <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white mt-8">
+            <CardHeader>
+              <CardTitle className="text-gold">Download Full PDF Report</CardTitle>
+              <CardDescription className="text-white/70">
+                Get a comprehensive 12-month predictions report as a PDF document
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={handleDownloadReport}
+                disabled={downloadingReport}
+                className="w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+              >
+                {downloadingReport ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download 12-Month Predictions PDF
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
 
           <div className="text-center space-y-4">
             {astro && (
