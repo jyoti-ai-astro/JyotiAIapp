@@ -9,42 +9,52 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import AnimatedShaderHero from '@/components/ui/animated-shader-hero';
+import { UpgradeBanner } from '@/components/ui/upgrade-banner';
 import { CosmicGuruChat } from '@/components/guru/CosmicGuruChat';
 
 export function GuruPageClient() {
+  const router = useRouter();
+
   const scrollToChat = () => {
-    const el = document.getElementById('guru-chat');
+    const el = document.getElementById('guru-console');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <div className="cosmic-page min-h-screen">
+    <div className="cosmic-page min-h-screen flex flex-col">
       <AnimatedShaderHero
         trustBadge={{
-          text: 'Powered by Guru Brain + Astro Engine',
-          icons: ['✨', '🪐'],
+          text: 'Powered by JyotiAI · AstroContext · Pinecone RAG',
+          icons: ['✨', '🪐', '📡'],
         }}
         headline={{
-          line1: 'Ask the Cosmic Guru',
-          line2: 'Astrology Answers. In Seconds.',
+          line1: 'Ask The Cosmic Guru',
+          line2: 'Guidance from Your Birth Stars',
         }}
-        subtitle="Powered by your birth chart, dasha and a trained Vedic Knowledge Vault — Guru decodes your life questions in real time."
+        subtitle="Your personal Astro engine, Guru Brain and Knowledge Vault — fused into one cosmic console. Ask anything about life, career, money, love or destiny."
         buttons={{
           primary: {
-            text: 'Start Asking',
+            text: 'Open Guru Console',
             onClick: scrollToChat,
           },
           secondary: {
-            text: 'View Plans',
-            onClick: () => (window.location.href = '/pricing'),
+            text: 'View Prediction Engine',
+            onClick: () => router.push('/predictions'),
           },
         }}
       />
 
-      <section id="guru-chat" className="relative z-20 -mt-32 md:-mt-40 pb-24">
-        <CosmicGuruChat />
-      </section>
+      <div className="container mx-auto px-4 pb-16 space-y-6" id="guru-console">
+        <UpgradeBanner
+          className="mt-4 mb-2 flex justify-center"
+          onClick={() => router.push('/pricing')}
+        />
+        <section id="guru-chat" className="relative z-20">
+          <CosmicGuruChat />
+        </section>
+      </div>
     </div>
   );
 }

@@ -3,35 +3,26 @@
  * 
  * Batch 2 - Auth & Onboarding
  * 
- * Cosmic signup screen with R3F nebula background
+ * Cosmic signup screen with SignInPage component and shader background
  */
 
 'use client';
 
-export const dynamic = 'force-dynamic';
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { SignupCard } from '@/components/auth/SignupCard';
+import { SignInPage } from '@/components/auth/SignInPage';
+import { LoginShaderBackground } from '@/components/ui/login-shader-background';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
-import Link from 'next/link';
 
 export default function SignupPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   
   // Redirect if already authenticated (client-side only)
-  const { isAuthenticated, isOnboarded } = useProtectedRoute({
+  useProtectedRoute({
     requireAuth: false,
     redirectIfAuthenticated: true,
     redirectTo: '/dashboard',
@@ -80,8 +71,12 @@ export default function SignupPage() {
     }
   };
 
-  const handleEmailSignup = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     try {
       setLoading(true);
       const result = await createUserWithEmailAndPassword(auth, email, password);
@@ -98,7 +93,7 @@ export default function SignupPage() {
         const { setUser } = useUserStore.getState();
         setUser({
           uid: data.uid,
-          name: name || result.user.email?.split('@')[0] || 'User',
+          name: result.user.email?.split('@')[0] || 'User',
           email: result.user.email,
           photo: null,
           dob: null,
@@ -123,37 +118,29 @@ export default function SignupPage() {
     }
   };
 
-  const createRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const button = e.currentTarget;
-    const ripple = document.createElement('span');
-    const rect = button.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    
-    ripple.style.width = ripple.style.height = `${size}px`;
-    ripple.style.left = `${x}px`;
-    ripple.style.top = `${y}px`;
-    ripple.className = 'absolute rounded-full bg-gold/30 animate-ping pointer-events-none';
-    button.appendChild(ripple);
-    
-    setTimeout(() => ripple.remove(), 600);
-  };
-
   return (
-    <PageTransitionWrapper>
-      <div className="cosmic-page flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md">
-          <SignupCard />
-          <p className="mt-4 text-center text-xs text-slate-400">
-            By continuing, you agree to our{' '}
-            <Link href="/terms" className="text-gold hover:underline">Terms</Link>
-            {' '}and{' '}
-            <Link href="/privacy" className="text-gold hover:underline">Privacy Policy</Link>.
-          </p>
-        </div>
+    <>
+      <LoginShaderBackground />
+      <div className="relative z-10">
+        <SignInPage
+          title={
+            <span className="font-light tracking-tight text-zinc-100">
+              Create your <span className="font-semibold">JyotiAI</span> account
+            </span>
+          }
+          description="Create your account and unlock your personalized cosmic dashboard."
+          heroImageSrc="/images/jyotai-signup-hero.jpg"
+          onSignIn={handleSignIn}
+          onGoogleSignIn={handleGoogleSignup}
+          onResetPassword={() => {
+            router.push('/login');
+          }}
+          onCreateAccount={() => {
+            // No-op or navigate to /login
+          }}
+        />
       </div>
-    </PageTransitionWrapper>
+    </>
   );
 }
 
