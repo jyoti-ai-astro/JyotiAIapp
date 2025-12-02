@@ -3,6 +3,8 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase/config'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Upload Palm Images
  * Part B - Section 4: Milestone 4 - Step 2

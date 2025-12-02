@@ -15,6 +15,8 @@ import { sanitizeMessage } from '@/lib/security/xss-protection'
 import { rateLimitConfig } from '@/lib/security/validation-schemas'
 import { fetchUserTickets, consumeTickets, splitSubscriptionAndTickets } from '@/lib/payments/ticket-service'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Timeout helper for promises
  */

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/firebase/admin'
 import { sendMagicLink } from '@/lib/email/email-service'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Magic Link Authentication
  * Part B - Section 2: Authentication + Magic Link

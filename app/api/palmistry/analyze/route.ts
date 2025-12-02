@@ -4,6 +4,8 @@ import { analyzePalm } from '@/lib/engines/palmistry/palm-analysis'
 import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket-service'
 import type { FeatureKey } from '@/lib/payments/feature-access'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Analyze Palm Images
  * Part B - Section 3: Palmistry Engine

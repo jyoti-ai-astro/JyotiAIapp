@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { analyzeLocation } from '@/lib/engines/location/astro-location'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Analyze Location
  * Milestone 8 - Step 7

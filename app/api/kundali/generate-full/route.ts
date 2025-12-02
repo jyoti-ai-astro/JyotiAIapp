@@ -5,6 +5,8 @@ import type { BirthDetails } from '@/lib/engines/kundali/swisseph-wrapper'
 import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket-service'
 import type { FeatureKey } from '@/lib/payments/feature-access'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Generate Full Kundali
  * Part B - Section 4: Step 8

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { storeKnowledgeDocument } from '@/lib/rag/rag-service'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Knowledge Ingestion API
  * Part B - Section 5: RAG Engine

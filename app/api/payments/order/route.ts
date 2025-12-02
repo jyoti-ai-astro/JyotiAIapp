@@ -4,6 +4,8 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import Razorpay from 'razorpay'
 import { envVars } from '@/lib/env/env.mjs'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Create Razorpay Order
  * Part B - Section 7: Payments

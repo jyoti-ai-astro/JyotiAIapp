@@ -4,6 +4,8 @@ import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket
 import type { FeatureKey } from '@/lib/payments/feature-access'
 import { analyzeCompatibility } from '@/lib/engines/relationship/compatibility-engine'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Analyze Relationship Compatibility
  * Milestone 8 - Step 6

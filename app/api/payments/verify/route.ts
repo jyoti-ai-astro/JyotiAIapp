@@ -5,6 +5,8 @@ import crypto from 'crypto'
 import { sendPaymentReceipt } from '@/lib/email/email-service'
 import { envVars } from '@/lib/env/env.mjs'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Verify Razorpay Payment
  * Part B - Section 7: Payments

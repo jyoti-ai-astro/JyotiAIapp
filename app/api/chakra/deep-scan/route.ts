@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { performDeepScan } from '@/lib/engines/chakra/chakra-deep-scan'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Perform Deep Chakra + Aura Scan
  * Milestone 8 - Step 8

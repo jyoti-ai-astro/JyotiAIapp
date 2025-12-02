@@ -6,6 +6,8 @@ import { normalizeData } from '@/lib/engines/reports/data-collector'
 import { rateLimit, getRateLimitHeaders } from '@/lib/middleware/rate-limit'
 import { createErrorResponse } from '@/lib/utils/error-handler'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Guru Chat API
  * Part B - Section 5: AI Guru

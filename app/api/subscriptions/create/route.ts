@@ -13,6 +13,8 @@ import { envVars } from '@/lib/env/env.mjs'
 import { getSubscriptionPlanById, getRazorpayPlanIdForSubscription } from '@/lib/pricing/plans'
 import { logEvent } from '@/lib/logging/log-event'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     // Phase LZ3: Payments kill switch

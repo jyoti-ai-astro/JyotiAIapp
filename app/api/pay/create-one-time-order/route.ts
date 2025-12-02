@@ -5,6 +5,8 @@ import { envVars } from '@/lib/env/env.mjs'
 import { getOneTimeProduct, isValidOneTimeProduct } from '@/lib/pricing/plans'
 import { logEvent } from '@/lib/logging/log-event'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     // Phase LZ3: Payments kill switch

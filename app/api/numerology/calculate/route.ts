@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { NumerologyCalculator } from '@/lib/engines/numerology/calculator'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Calculate Numerology
  * Part B - Section 4: Milestone 4 - Step 1
