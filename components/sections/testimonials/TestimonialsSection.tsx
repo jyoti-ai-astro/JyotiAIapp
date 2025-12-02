@@ -79,3 +79,9 @@ export function TestimonialsSection({
     </section>
   );
 }
+
+export type TestimonialItem = {
+  author: TestimonialAuthor;
+  text: string;
+  href?: string;
+};
