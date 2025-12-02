@@ -18,6 +18,8 @@ import { adminDb } from '@/lib/firebase/admin'
 import { envVars } from '@/lib/env/env.mjs'
 import { logEvent } from '@/lib/logging/log-event'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
