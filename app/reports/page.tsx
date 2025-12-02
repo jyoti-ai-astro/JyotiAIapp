@@ -9,12 +9,12 @@ import { FileText, Download, Sparkles, Lock, RefreshCw, Eye } from 'lucide-react
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
 import { useUserStore } from '@/store/user-store'
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
 import { decrementTicket } from '@/lib/access/ticket-access'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 
 interface Report {
   reportId: string
@@ -180,11 +180,10 @@ export default function ReportsPage() {
         ]
 
   return (
-    <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
-      {/* Background Layer */}
-      <CosmicBackground />
-
-      <div className="relative z-10 container mx-auto px-6 py-24 space-y-12">
+    <DashboardPageShell
+      title="Your Cosmic Reports"
+      subtitle="Download detailed PDF analysis of your destiny, karma, and life path"
+    >
         {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -446,7 +445,7 @@ export default function ReportsPage() {
         )}
 
         {/* Empty State */}
-        {!loading && reports.length === 0 && displayReports.length === 0 && (
+        {!loading && reports.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -478,7 +477,6 @@ export default function ReportsPage() {
             </Button>
           </motion.div>
         )}
-      </div>
-    </div>
+    </DashboardPageShell>
   )
 }

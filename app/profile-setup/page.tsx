@@ -14,17 +14,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { motion } from 'framer-motion';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { Canvas } from '@react-three/fiber';
-import { Suspense } from 'react';
-import { NebulaShader } from '@/components/cosmic/NebulaShader';
-import { ParticleField } from '@/components/cosmic/ParticleField';
-import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
 import { ProfileSetupForm } from '@/components/auth/ProfileSetupForm';
 import { useAuthFlow } from '@/lib/utils/auth-flow';
 import { User, Calendar, MapPin } from 'lucide-react';
+import MarketingPageShell from '@/src/ui/layout/MarketingPageShell';
 
 export default function ProfileSetupPage() {
   const router = useRouter();
@@ -100,36 +93,19 @@ export default function ProfileSetupPage() {
   }
 
   return (
-    <PageTransitionWrapper>
-      {/* R3F Background */}
-      <div className="fixed inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 1], fov: 75 }}>
-          <Suspense fallback={null}>
-            <NebulaShader intensity={1.0} />
-            <ParticleField count={3000} intensity={1.0} />
-            <RotatingMandala speed={0.1} intensity={0.5} />
-          </Suspense>
-        </Canvas>
-      </div>
-
-      <CosmicCursor />
-      <SoundscapeController />
-
-      {/* Content */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
+    <MarketingPageShell
+      eyebrow="Account Setup"
+      title="Complete your profile"
+      description="Tell us about yourself to unlock personalized cosmic insights"
+    >
+      <div className="flex items-center justify-center min-h-[60vh]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          {/* Glassmorphism Card */}
-          <div className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 rounded-2xl p-8 shadow-[0_0_30px_rgba(110,45,235,0.3)]">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-display font-bold text-white mb-2">Profile Setup</h1>
-              <p className="text-white/80">Tell us about yourself</p>
-            </div>
-
+          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm p-8 shadow-[0_8px_32px_rgba(255,213,122,0.15)]">
             <ProfileSetupForm
               onSubmit={handleSubmit}
               loading={loading}
@@ -138,7 +114,7 @@ export default function ProfileSetupPage() {
           </div>
         </motion.div>
       </div>
-    </PageTransitionWrapper>
+    </MarketingPageShell>
   );
 }
 

@@ -14,11 +14,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { usePregnancy } from '@/lib/hooks/usePregnancy';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { motion } from 'framer-motion';
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SkeletonCard } from '@/components/ui/skeleton';
@@ -42,22 +39,10 @@ export default function PregnancyPage() {
   }
 
   return (
-    <PageTransitionWrapper>
-      <CosmicBackground />
-      <CosmicCursor />
-      <SoundscapeController />
-      <div className="relative z-10 min-h-screen p-4 md:p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto space-y-8"
-        >
-          <div className="text-center">
-            <Baby className="mx-auto h-16 w-16 text-gold mb-4" />
-            <h1 className="text-4xl font-display font-bold text-gold">Pregnancy Insights</h1>
-            <p className="text-white/70 mt-2">Astrological guidance for pregnancy and conception</p>
-          </div>
+    <DashboardPageShell
+      title="Pregnancy Insights"
+      subtitle="Astrological guidance for pregnancy and conception"
+    >
 
           {loading && !insights ? (
             <SkeletonCard />
@@ -125,9 +110,7 @@ export default function PregnancyPage() {
               </Button>
             </Link>
           </div>
-        </motion.div>
-      </div>
-    </PageTransitionWrapper>
+    </DashboardPageShell>
   );
 }
 

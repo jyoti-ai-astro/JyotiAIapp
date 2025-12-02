@@ -12,18 +12,10 @@ export const dynamic = 'force-dynamic';
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { Canvas } from '@react-three/fiber';
-import { Suspense } from 'react';
-import { NebulaShader } from '@/components/cosmic/NebulaShader';
-import { ParticleField } from '@/components/cosmic/ParticleField';
-import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
-// Footer removed - using global FooterWrapper from app/layout.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Download, Image, FileText } from 'lucide-react';
+import { Download, Image, FileText } from 'lucide-react';
+import CompanyPageShell from '@/src/ui/layout/CompanyPageShell';
 
 export default function PressKitPage() {
   const assets = [
@@ -58,43 +50,33 @@ export default function PressKitPage() {
   ];
 
   return (
-    <PageTransitionWrapper>
-      {/* R3F Background */}
-      <div className="fixed inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 1], fov: 75 }}>
-          <Suspense fallback={null}>
-            <NebulaShader intensity={1.0} />
-            <ParticleField count={3000} intensity={1.0} />
-            <RotatingMandala speed={0.1} intensity={0.8} />
-          </Suspense>
-        </Canvas>
-      </div>
-
-      <CosmicCursor />
-      <SoundscapeController />
-
-      {/* Hero Section */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center space-y-6 px-4"
-        >
-          <motion.div
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-            className="inline-block mb-4"
-          >
-            <Sparkles className="h-20 w-20 text-gold mx-auto" />
-          </motion.div>
-          <h1 className="text-6xl md:text-8xl font-display font-bold text-white">Press Kit</h1>
-          <p className="text-2xl md:text-3xl text-gold font-heading">Brand Assets & Resources</p>
-        </motion.div>
+    <CompanyPageShell
+      eyebrow="Press Kit"
+      title={
+        <>
+          Assets & facts about{' '}
+          <span className="bg-gradient-to-r from-[#FFD57A] to-[#FFB347] bg-clip-text text-transparent">
+            JyotiAI
+          </span>
+        </>
+      }
+      description="Download logos, brand guidelines, and press resources"
+    >
+      {/* Boilerplate Description */}
+      <div className="mb-12">
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm p-8">
+          <h2 className="text-2xl font-heading font-bold text-white mb-4">About JyotiAI</h2>
+          <p className="text-white/70 leading-relaxed">
+            JyotiAI is a spiritual guidance platform that combines ancient Vedic astrology, numerology, and
+            palmistry with cutting-edge AI technology. We make personalized astrological insights accessible
+            to everyone, helping millions discover their true purpose and navigate life's challenges with
+            confidence.
+          </p>
+        </div>
       </div>
 
       {/* Assets Grid */}
-      <div className="relative z-10 container mx-auto px-4 py-20 space-y-6">
+      <div className="space-y-6">
         {assets.map((asset, index) => (
           <motion.div
             key={index}
@@ -143,9 +125,7 @@ export default function PressKitPage() {
           </motion.div>
         ))}
       </div>
-
-      {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
-    </PageTransitionWrapper>
+    </CompanyPageShell>
   );
 }
 

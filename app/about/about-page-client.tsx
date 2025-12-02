@@ -6,22 +6,16 @@
 
 'use client';
 
-import { GalaxySceneWrapper } from '@/components/global/GalaxySceneWrapper';
-import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { CosmicHero } from '@/components/sections/Hero/CosmicHero';
-import { CosmicFeatures, FeatureModule } from '@/components/sections/Features/CosmicFeatures';
+import { CosmicFeatures } from '@/components/sections/Features/CosmicFeatures';
 import { CosmicCTA } from '@/components/sections/CTA/CosmicCTA';
 // Footer removed - using global FooterWrapper from app/layout.tsx
 import { CosmicContentSection } from '@/components/sections/Content/CosmicContentSection';
 import { aboutPageContent } from '@/components/sections/Content/content-data';
 
 export function AboutPageClient() {
-  const { globalProgress } = useGlobalProgress();
-
   return (
-    <>
-      <GalaxySceneWrapper intensity={0.6} globalFade={globalProgress} />
-      <div 
+    <div 
         className="relative z-10 min-h-screen" 
         data-page-enter
         data-page-exit
@@ -61,6 +55,5 @@ export function AboutPageClient() {
         {/* Footer Section */}
         {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
-    </>
   );
 }

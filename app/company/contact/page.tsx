@@ -12,21 +12,14 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { Canvas } from '@react-three/fiber';
-import { Suspense } from 'react';
-import { NebulaShader } from '@/components/cosmic/NebulaShader';
-import { ParticleField } from '@/components/cosmic/ParticleField';
-import { RotatingMandala } from '@/components/cosmic/RotatingMandala';
-// Footer removed - using global FooterWrapper from app/layout.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Mail, Send } from 'lucide-react';
+import { Mail, Send } from 'lucide-react';
+import CompanyPageShell from '@/src/ui/layout/CompanyPageShell';
+import { IndiaCustomersWidget } from '@/components/sections/marketing/IndiaCustomersWidget';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -48,48 +41,40 @@ export default function ContactPage() {
   };
 
   return (
-    <PageTransitionWrapper>
-      {/* R3F Background */}
-      <div className="fixed inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 1], fov: 75 }}>
-          <Suspense fallback={null}>
-            <NebulaShader intensity={1.0} />
-            <ParticleField count={3000} intensity={1.0} />
-            <RotatingMandala speed={0.1} intensity={0.8} />
-          </Suspense>
-        </Canvas>
-      </div>
+    <CompanyPageShell
+      eyebrow="Contact"
+      title="Reach the JyotiAI team"
+      description="We'd love to hear from you. Fill out the form below and we'll get back to you as soon as possible."
+    >
+      <div className="grid md:grid-cols-2 gap-12">
+        {/* Left: Contact Info */}
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-heading font-bold text-white mb-4">Get in Touch</h2>
+            <p className="text-white/70 leading-relaxed">
+              Have questions about JyotiAI? Want to share feedback? Or need support? We're here to help.
+            </p>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-[#FFD57A] mb-2">Email</h3>
+              <p className="text-white/70">support@jyoti.ai</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-[#FFD57A] mb-2">Support Hours</h3>
+              <p className="text-white/70">24/7 AI-powered support</p>
+            </div>
+          </div>
+          <div className="mt-8">
+            <IndiaCustomersWidget />
+          </div>
+        </div>
 
-      <CosmicCursor />
-      <SoundscapeController />
-
-      {/* Hero Section */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center space-y-6 px-4"
-        >
-          <motion.div
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-            className="inline-block mb-4"
-          >
-            <Mail className="h-20 w-20 text-gold mx-auto" />
-          </motion.div>
-          <h1 className="text-6xl md:text-8xl font-display font-bold text-white">Contact Us</h1>
-          <p className="text-2xl md:text-3xl text-gold font-heading">Get in Touch</p>
-        </motion.div>
-      </div>
-
-      {/* Contact Form */}
-      <div className="relative z-10 container mx-auto px-4 py-20">
+        {/* Right: Contact Form */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-2xl mx-auto"
         >
           <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white shadow-[0_0_30px_rgba(110,45,235,0.3)]">
             <CardHeader>
@@ -163,9 +148,7 @@ export default function ContactPage() {
           </Card>
         </motion.div>
       </div>
-
-      {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
-    </PageTransitionWrapper>
+    </CompanyPageShell>
   );
 }
 

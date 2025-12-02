@@ -7,9 +7,8 @@ import { ShieldCheck, Zap, Crown, Check, Loader2, AlertCircle, Sparkles } from '
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useUserStore } from '@/store/user-store'
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper'
 import Script from 'next/script'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 // Note: envVars is server-only, use NEXT_PUBLIC_RAZORPAY_KEY_ID directly
 
 declare global {
@@ -264,16 +263,18 @@ export default function PaymentPage() {
 
   if (!product || !user) {
     return (
-      <div className="min-h-screen bg-cosmic-navy text-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
+      <DashboardPageShell title="Loading..." subtitle="Please wait">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-[#FFD57A]" />
+        </div>
+      </DashboardPageShell>
     )
   }
 
   const IconComponent = product.icon === 'zap' ? Zap : Crown
 
   return (
-    <PageTransitionWrapper>
+    <>
       {/* Razorpay Script */}
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
@@ -281,8 +282,11 @@ export default function PaymentPage() {
         strategy="lazyOnload"
       />
 
-      <div className="min-h-screen bg-cosmic-navy text-white flex items-center justify-center p-4 relative overflow-hidden">
-        <CosmicBackground intensity={0.5} />
+      <DashboardPageShell
+        title={product.name}
+        subtitle={product.type === 'subscription' ? 'Monthly subscription' : 'One-time payment'}
+      >
+        <div className="flex items-center justify-center min-h-[60vh]">
 
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -348,7 +352,8 @@ export default function PaymentPage() {
             </div>
           </Card>
         </motion.div>
-      </div>
-    </PageTransitionWrapper>
+        </div>
+      </DashboardPageShell>
+    </>
   )
 }

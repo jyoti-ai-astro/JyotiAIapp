@@ -6,18 +6,12 @@
 
 'use client';
 
-import { GalaxySceneWrapper } from '@/components/global/GalaxySceneWrapper';
-import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { CosmicHero } from '@/components/sections/Hero/CosmicHero';
 // Footer removed - using global FooterWrapper from app/layout.tsx
 
 export function BlogPageClient() {
-  const { globalProgress } = useGlobalProgress();
-
   return (
-    <>
-      <GalaxySceneWrapper intensity={0.6} globalFade={globalProgress} />
-      <div className="relative z-10 min-h-screen">
+    <div className="relative z-10 min-h-screen">
         <CosmicHero
           variant="global"
           title="Spiritual Knowledge Base"
@@ -34,6 +28,5 @@ export function BlogPageClient() {
         
         {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
-    </>
   );
 }

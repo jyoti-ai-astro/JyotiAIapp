@@ -8,22 +8,11 @@ import { GlobalErrorBoundary } from '@/components/error-boundaries/GlobalErrorBo
 
 import { AudioProvider } from '@/providers/audio-provider'
 
-import { Background } from '@/components/global/Background'
-
+import { GlobalShaderBackground } from '@/src/ui/background/GlobalShaderBackground'
+import { Header } from '@/src/ui/layout/Header'
+import { Footer } from '@/src/ui/layout/Footer'
 import { MotionProvider } from '@/components/providers/MotionProvider'
-
-import { TransitionOverlay } from '@/components/global/TransitionOverlay'
-
-import { RouteTransitionHandler } from '@/components/global/RouteTransitionHandler'
-
-import { BlessingWaveOverlay } from '@/components/global/BlessingWaveOverlay'
-
 import { GlobalProviders } from '@/components/providers/GlobalProviders'
-
-import { Header } from '@/components/global/Header'   // ⭐ NEW
-
-import { FooterWrapper } from '@/components/global/FooterWrapper'
-
 import { GuruChatWidget } from '@/components/guru/GuruChatWidget'
 
 const inter = Inter({ 
@@ -95,9 +84,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
 
       <body
-
-        className={`${inter.variable} ${marcellus.variable} ${playfair.variable} font-body antialiased`}
-
+        className={`${inter.variable} ${marcellus.variable} ${playfair.variable} font-body antialiased bg-[#05050A] text-white overflow-x-hidden`}
       >
 
         <GlobalErrorBoundary>
@@ -107,35 +94,21 @@ export default function RootLayout({
             <AudioProvider>
 
               <GlobalProviders>
+                {/* GLOBAL SHADER BACKGROUND */}
+                <GlobalShaderBackground />
 
-                
-
-                {/* GLOBAL OVERLAYS */}
-
-                <Background />
-
-                <RouteTransitionHandler />
-
-                <TransitionOverlay />
-
-                <BlessingWaveOverlay />
-
-                {/* ⭐ GLOBAL HEADER (NOW ACTIVE) */}
-
+                {/* GLOBAL HEADER */}
                 <Header />
 
                 {/* PAGE CONTENT */}
-
                 <main className="relative z-10 pt-20 md:pt-24">
-
                   {children}
-
                 </main>
 
-                {/* ⭐ GLOBAL FOOTER */}
+                {/* GLOBAL FOOTER */}
+                <Footer />
 
-                <FooterWrapper />
-                {/* ⭐ GLOBAL GURU CHAT WIDGET (Replaces FloatingChatBubble) */}
+                {/* GLOBAL GURU CHAT WIDGET */}
                 <GuruChatWidget />
               </GlobalProviders>
 

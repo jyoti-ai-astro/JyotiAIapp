@@ -14,12 +14,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { useKundali } from '@/lib/hooks/useKundali';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { PlanetsView, PlanetData } from '@/components/planets/PlanetsView';
 import { motion } from 'framer-motion';
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SkeletonCard } from '@/components/ui/skeleton';
@@ -54,68 +51,42 @@ export default function PlanetsPage() {
 
   if (loading && !kundali) {
     return (
-      <PageTransitionWrapper>
-        <CosmicBackground />
-        <CosmicCursor />
-        <SoundscapeController />
-        <div className="relative z-10 flex min-h-screen items-center justify-center">
+      <DashboardPageShell title="Loading Planets..." subtitle="Please wait while we fetch your planetary positions">
+        <div className="flex items-center justify-center py-20">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
           >
-            <Sparkles className="h-12 w-12 text-gold" />
+            <Sparkles className="h-12 w-12 text-[#FFD57A]" />
           </motion.div>
         </div>
-      </PageTransitionWrapper>
+      </DashboardPageShell>
     );
   }
 
   if (kundaliError) {
     return (
-      <PageTransitionWrapper>
-        <CosmicBackground />
-        <CosmicCursor />
-        <SoundscapeController />
-        <div className="relative z-10 container mx-auto p-6">
-          <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardContent className="pt-6 text-center space-y-4">
-              <p className="text-destructive">{kundaliError.message}</p>
-              <div className="flex gap-4 justify-center">
-                <Button onClick={refetch} className="spiritual-gradient">Retry</Button>
-                <Link href="/dashboard">
-                  <Button variant="outline">Back to Dashboard</Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </PageTransitionWrapper>
+      <DashboardPageShell title="Error Loading Planets" subtitle="We couldn&apos;t load your planetary positions">
+        <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
+          <CardContent className="pt-6 text-center space-y-4">
+            <p className="text-red-400">{kundaliError.message}</p>
+            <div className="flex gap-4 justify-center">
+              <Button onClick={refetch} className="bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#05050A]">Retry</Button>
+              <Link href="/dashboard">
+                <Button variant="outline">Back to Dashboard</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </DashboardPageShell>
     );
   }
 
   return (
-    <PageTransitionWrapper>
-      <CosmicBackground />
-      <CosmicCursor />
-      <SoundscapeController />
-      <div className="relative z-10 min-h-screen p-4 md:p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="container mx-auto space-y-6"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-display font-bold text-gold">Planets</h1>
-              <p className="text-white/70 mt-2">Planetary positions in your birth chart</p>
-            </div>
-            <Link href="/dashboard">
-              <Button variant="outline" className="border-cosmic-purple/50 text-white/80 hover:bg-cosmic-purple/20">
-                Back to Dashboard
-              </Button>
-            </Link>
-          </div>
+    <DashboardPageShell
+      title="Planets"
+      subtitle="Planetary positions in your birth chart"
+    >
 
               {planets.length > 0 ? (
                 <ErrorBoundary>
@@ -124,9 +95,7 @@ export default function PlanetsPage() {
               ) : (
                 <SkeletonCard />
               )}
-        </motion.div>
-      </div>
-    </PageTransitionWrapper>
+    </DashboardPageShell>
   );
 }
 

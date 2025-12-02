@@ -14,11 +14,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { usePredictions } from '@/lib/hooks/usePredictions';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { motion } from 'framer-motion';
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -179,11 +176,10 @@ export default function PredictionsPage() {
   }
 
   return (
-    <PageTransitionWrapper>
-      <CosmicBackground />
-      <CosmicCursor />
-      <SoundscapeController />
-      <div className="relative z-10 min-h-screen p-4 md:p-8">
+    <DashboardPageShell
+      title="Your Predictions"
+      subtitle="Daily, weekly, monthly, and 12-month astrological predictions"
+    >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -404,6 +400,16 @@ export default function PredictionsPage() {
             <TabsContent value="daily">
               {loading && !daily ? (
                 <SkeletonCard />
+              ) : !loading && !daily ? (
+                <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
+                  <CardContent className="pt-12 pb-12 text-center space-y-4">
+                    <Sparkles className="w-16 h-16 text-[#FFD57A]/40 mx-auto" />
+                    <h3 className="text-2xl font-display font-semibold text-white">No Daily Predictions Yet</h3>
+                    <p className="text-white/60 max-w-md mx-auto">
+                      Your daily cosmic insights will appear here once generated. Click "Refresh Daily/Weekly/Monthly" to load them.
+                    </p>
+                  </CardContent>
+                </Card>
               ) : daily ? (
                 <ErrorBoundary>
                   <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white">
@@ -492,6 +498,16 @@ export default function PredictionsPage() {
             <TabsContent value="weekly">
               {loading && !weekly ? (
                 <SkeletonCard />
+              ) : !loading && !weekly ? (
+                <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
+                  <CardContent className="pt-12 pb-12 text-center space-y-4">
+                    <Sparkles className="w-16 h-16 text-[#FFD57A]/40 mx-auto" />
+                    <h3 className="text-2xl font-display font-semibold text-white">No Weekly Predictions Yet</h3>
+                    <p className="text-white/60 max-w-md mx-auto">
+                      Your weekly cosmic insights will appear here once generated. Click "Refresh Daily/Weekly/Monthly" to load them.
+                    </p>
+                  </CardContent>
+                </Card>
               ) : weekly ? (
                 <ErrorBoundary>
                   <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white">
@@ -589,6 +605,16 @@ export default function PredictionsPage() {
             <TabsContent value="monthly">
               {loading && !monthly ? (
                 <SkeletonCard />
+              ) : !loading && !monthly ? (
+                <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
+                  <CardContent className="pt-12 pb-12 text-center space-y-4">
+                    <Sparkles className="w-16 h-16 text-[#FFD57A]/40 mx-auto" />
+                    <h3 className="text-2xl font-display font-semibold text-white">No Monthly Predictions Yet</h3>
+                    <p className="text-white/60 max-w-md mx-auto">
+                      Your monthly cosmic insights will appear here once generated. Click "Refresh Daily/Weekly/Monthly" to load them.
+                    </p>
+                  </CardContent>
+                </Card>
               ) : monthly ? (
                 <ErrorBoundary>
                   <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white">
@@ -729,17 +755,16 @@ export default function PredictionsPage() {
             </Link>
           </div>
         </motion.div>
-      </div>
 
-      <PredictionDetailModal
-        prediction={selectedPrediction}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedPrediction(null);
-        }}
-      />
-    </PageTransitionWrapper>
+        <PredictionDetailModal
+          prediction={selectedPrediction}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedPrediction(null);
+          }}
+        />
+    </DashboardPageShell>
   );
 }
 

@@ -3,7 +3,7 @@
  * 
  * Batch 2 - Auth & Onboarding
  * 
- * Cosmic login screen with SignInPage component and shader background
+ * Cosmic login screen with Super Cosmic UI
  */
 
 'use client';
@@ -13,9 +13,8 @@ import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
-import { SignInPage } from '@/components/auth/SignInPage';
-import { LoginShaderBackground } from '@/components/ui/login-shader-background';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
+import AuthLayout from '@/src/ui/sections/auth/AuthLayout';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -86,7 +85,6 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      // TODO: Implement email/password login via API
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,27 +108,16 @@ export default function LoginPage() {
   };
 
   return (
-    <>
-      <LoginShaderBackground />
-      <div className="relative z-10">
-        <SignInPage
-          title={
-            <span className="font-light tracking-tight text-zinc-100">
-              Welcome back to <span className="font-semibold">JyotiAI</span>
-            </span>
-          }
-          description="Sign in to access your saved charts, predictions, and spiritual dashboard."
-          heroImageSrc="/images/jyotai-login-hero.jpg"
-          onSignIn={handleSignIn}
-          onGoogleSignIn={handleGoogleLogin}
-          onResetPassword={() => {
-            router.push('/reset-password');
-          }}
-          onCreateAccount={() => {
-            router.push('/signup');
-          }}
-        />
-      </div>
-    </>
+    <AuthLayout
+      mode="login"
+      onSubmit={handleSignIn}
+      onGoogleSignIn={handleGoogleLogin}
+      onResetPassword={() => {
+        router.push('/reset-password');
+      }}
+      onCreateAccount={() => {
+        router.push('/signup');
+      }}
+    />
   );
 }

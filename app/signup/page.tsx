@@ -3,7 +3,7 @@
  * 
  * Batch 2 - Auth & Onboarding
  * 
- * Cosmic signup screen with SignInPage component and shader background
+ * Cosmic signup screen with Super Cosmic UI
  */
 
 'use client';
@@ -13,9 +13,8 @@ import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword } f
 import { auth } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
-import { SignInPage } from '@/components/auth/SignInPage';
-import { LoginShaderBackground } from '@/components/ui/login-shader-background';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
+import AuthLayout from '@/src/ui/sections/auth/AuthLayout';
 
 export default function SignupPage() {
   const [loading, setLoading] = useState(false);
@@ -119,28 +118,15 @@ export default function SignupPage() {
   };
 
   return (
-    <>
-      <LoginShaderBackground />
-      <div className="relative z-10">
-        <SignInPage
-          title={
-            <span className="font-light tracking-tight text-zinc-100">
-              Create your <span className="font-semibold">JyotiAI</span> account
-            </span>
-          }
-          description="Create your account and unlock your personalized cosmic dashboard."
-          heroImageSrc="/images/jyotai-signup-hero.jpg"
-          onSignIn={handleSignIn}
-          onGoogleSignIn={handleGoogleSignup}
-          onResetPassword={() => {
-            router.push('/login');
-          }}
-          onCreateAccount={() => {
-            // No-op or navigate to /login
-          }}
-        />
-      </div>
-    </>
+    <AuthLayout
+      mode="signup"
+      onSubmit={handleSignIn}
+      onGoogleSignIn={handleGoogleSignup}
+      onResetPassword={() => {
+        router.push('/login');
+      }}
+      onCreateAccount={undefined}
+    />
   );
 }
 

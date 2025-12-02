@@ -6,8 +6,6 @@
 
 'use client';
 
-import { GalaxySceneWrapper } from '@/components/global/GalaxySceneWrapper';
-import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { CosmicHero } from '@/components/sections/Hero/CosmicHero';
 import { CosmicFeatures, FeatureModule } from '@/components/sections/Features/CosmicFeatures';
 import { CosmicCTA } from '@/components/sections/CTA/CosmicCTA';
@@ -16,15 +14,8 @@ import { CosmicContentSection } from '@/components/sections/Content/CosmicConten
 import { astroPageContent } from '@/components/sections/Content/content-data';
 
 export function AstroPageClient() {
-  const { globalProgress } = useGlobalProgress();
-
   return (
-    <>
-      {/* Galaxy Scene Background */}
-      <GalaxySceneWrapper intensity={0.8} globalFade={globalProgress} />
-      
-      {/* Page Content */}
-      <div 
+    <div 
         className="relative z-10 min-h-screen" 
         data-page-enter
         data-page-exit
@@ -93,7 +84,6 @@ export function AstroPageClient() {
         {/* Footer Section */}
         {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
-    </>
   );
 }
 

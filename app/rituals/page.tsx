@@ -9,9 +9,9 @@ import { Sparkles, Flame, Music, Scroll, ArrowRight, CheckCircle2 } from 'lucide
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
 import { useUserStore } from '@/store/user-store'
 import type { Ritual } from '@/lib/engines/ritual/ai-ritual-engine'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 
 export default function RitualsPage() {
   const router = useRouter()
@@ -79,10 +79,10 @@ export default function RitualsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
-      <CosmicBackground />
-
-      <div className="relative z-10 container mx-auto px-6 py-24 max-w-4xl">
+    <DashboardPageShell
+      title="Vedic Ritual Engine"
+      subtitle="Describe your current life challenge. Our AI, trained on ancient scriptures, will generate a precise remedial ritual (Puja) for you."
+    >
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -294,8 +294,26 @@ export default function RitualsPage() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
+
+        {/* Empty State - No Ritual Generated Yet */}
+        {!loading && !ritual && !error && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-12"
+          >
+            <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
+              <CardContent className="pt-12 pb-12 text-center space-y-4">
+                <Flame className="w-16 h-16 text-[#FFD57A]/40 mx-auto" />
+                <h3 className="text-2xl font-display font-semibold text-white">No Ritual Generated Yet</h3>
+                <p className="text-white/60 max-w-md mx-auto">
+                  Describe your current life challenge above, and our AI will generate a precise Vedic ritual (Puja) tailored to your needs.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+    </DashboardPageShell>
   )
 }
 

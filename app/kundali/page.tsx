@@ -9,12 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Download, RefreshCw } from 'lucide-react'
 import { KundaliWheel3D } from '@/components/organisms/kundali-wheel-3d'
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
 import { decrementTicket } from '@/lib/access/ticket-access'
 import Link from 'next/link'
 import type { AstroContext } from '@/lib/engines/astro-types'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 
 interface KundaliData {
   meta: {
@@ -206,11 +206,11 @@ export default function KundaliPage() {
   const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
-      {/* Subtle cosmic background */}
-      <CosmicBackground />
-      
-      <div className="container mx-auto p-6 space-y-6 relative z-10">
+    <DashboardPageShell
+      title="Your Kundali"
+      subtitle="Complete birth chart with planetary positions, houses, and aspects"
+    >
+      <div className="space-y-6">
         {/* Context Panel */}
         <div className="mb-8">
           <OneTimeOfferBanner
@@ -491,7 +491,7 @@ export default function KundaliPage() {
         </div>
       )}
       </div>
-    </div>
+    </DashboardPageShell>
   )
 }
 

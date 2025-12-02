@@ -13,11 +13,8 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { motion } from 'framer-motion';
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,22 +64,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <PageTransitionWrapper>
-      <CosmicBackground />
-      <CosmicCursor />
-      <SoundscapeController />
-      <div className="relative z-10 min-h-screen p-4 md:p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto space-y-8"
-        >
-          <div className="text-center">
-            <Settings className="mx-auto h-16 w-16 text-gold mb-4" />
-            <h1 className="text-4xl font-display font-bold text-gold">Settings</h1>
-            <p className="text-white/70 mt-2">Manage your preferences</p>
-          </div>
+    <DashboardPageShell
+      title="Settings"
+      subtitle="Manage your preferences and account settings"
+    >
 
           <SettingsPanel
             initialSettings={settings}
@@ -100,9 +85,7 @@ export default function SettingsPage() {
               </Button>
             </Link>
           </div>
-        </motion.div>
-      </div>
-    </PageTransitionWrapper>
+    </DashboardPageShell>
   );
 }
 

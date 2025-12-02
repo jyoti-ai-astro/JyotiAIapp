@@ -7,8 +7,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { GalaxySceneWrapper } from '@/components/global/GalaxySceneWrapper';
-import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { CosmicHero } from '@/components/sections/Hero/CosmicHero';
 import { CosmicFeatures, FeatureModule } from '@/components/sections/Features/CosmicFeatures';
 import { CosmicCTA } from '@/components/sections/CTA/CosmicCTA';
@@ -18,7 +16,6 @@ import { premiumPageContent } from '@/components/sections/Content/content-data';
 import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
 
 export function PremiumPageClient() {
-  const { globalProgress } = useGlobalProgress();
   const { orchestrator } = useMotionOrchestrator();
   
   // Emit premium boost event on page enter (Phase 12 - F27)
@@ -27,9 +24,7 @@ export function PremiumPageClient() {
   }, [orchestrator]);
 
   return (
-    <>
-      <GalaxySceneWrapper intensity={0.7} globalFade={globalProgress} />
-      <div 
+    <div 
         className="relative z-10 min-h-screen" 
         data-page-enter
         data-page-exit
@@ -160,6 +155,5 @@ export function PremiumPageClient() {
         {/* Footer Section */}
         {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
-    </>
   );
 }

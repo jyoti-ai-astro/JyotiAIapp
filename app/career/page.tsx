@@ -15,8 +15,8 @@ import { useUserStore } from '@/store/user-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { motion } from 'framer-motion';
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Briefcase, TrendingUp, Sparkles, Lightbulb } from 'lucide-react';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
@@ -131,10 +131,10 @@ export default function CareerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
-      <CosmicBackground />
-      
-      <div className="container mx-auto p-6 space-y-8 relative z-10">
+    <DashboardPageShell
+      title="Career Destiny"
+      subtitle="Discover your ideal career path and business opportunities based on your cosmic blueprint"
+    >
         {/* Context Panel */}
         <div className="mb-8">
           <OneTimeOfferBanner
@@ -335,8 +335,7 @@ export default function CareerPage() {
             </Button>
           </Link>
         </div>
-      </div>
-    </div>
+    </DashboardPageShell>
   );
 }
 

@@ -14,11 +14,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { useTimeline } from '@/lib/hooks/useTimeline';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { motion } from 'framer-motion';
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SkeletonCard } from '@/components/ui/skeleton';
@@ -179,11 +176,10 @@ export default function TimelinePage() {
   }
 
   return (
-    <PageTransitionWrapper>
-      <CosmicBackground />
-      <CosmicCursor />
-      <SoundscapeController />
-      <div className="relative z-10 min-h-screen p-4 md:p-8">
+    <DashboardPageShell
+      title="Timeline of Your Life Events"
+      subtitle="12-month astrological timeline with themes, intensity, and focus areas"
+    >
         {/* Context Panel */}
         <div className="mb-8">
           <OneTimeOfferBanner
@@ -577,6 +573,33 @@ export default function TimelinePage() {
                     })}
                   </div>
                 </ErrorBoundary>
+              ) : !loading && timeline.length === 0 ? (
+                <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
+                  <CardContent className="pt-12 pb-12 text-center space-y-4">
+                    <Calendar className="w-16 h-16 text-[#FFD57A]/40 mx-auto" />
+                    <h3 className="text-2xl font-display font-semibold text-white">No Timeline Yet</h3>
+                    <p className="text-white/60 max-w-md mx-auto">
+                      Your cosmic timeline will appear here once generated. Click "Generate 12-Month Timeline" to create your personalized astrological journey.
+                    </p>
+                    <Button
+                      onClick={handleGenerateTimeline}
+                      disabled={timelineLoading}
+                      className="mt-4 bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#05050A]"
+                    >
+                      {timelineLoading ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Calendar className="h-4 w-4 mr-2" />
+                          Generate Timeline
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
               ) : (
                 <SkeletonCard />
               )}
@@ -630,17 +653,16 @@ export default function TimelinePage() {
             </Link>
           </div>
         </motion.div>
-      </div>
 
-      <MonthDetailModal
-        month={selectedMonth}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedMonth(null);
-        }}
-      />
-    </PageTransitionWrapper>
+        <MonthDetailModal
+          month={selectedMonth}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedMonth(null);
+          }}
+        />
+    </DashboardPageShell>
   );
 }
 

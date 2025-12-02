@@ -5,9 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { CheckCircle2, Sparkles, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground'
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper'
 import Link from 'next/link'
+import MarketingPageShell from '@/src/ui/layout/MarketingPageShell'
 
 export default function ThanksPage() {
   const router = useRouter()
@@ -24,17 +23,25 @@ export default function ThanksPage() {
   }, [router])
 
   return (
-    <PageTransitionWrapper>
-      <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
-        <CosmicBackground intensity={0.6} />
-
-        <div className="relative z-10 container mx-auto px-4 py-24 flex items-center justify-center min-h-screen">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-2xl mx-auto text-center space-y-8"
-          >
+    <MarketingPageShell
+      eyebrow="Payment Complete"
+      title={
+        <>
+          Payment{' '}
+          <span className="bg-gradient-to-r from-[#FFD57A] to-[#FFB347] bg-clip-text text-transparent">
+            Successful!
+          </span>
+        </>
+      }
+      description="Your access has been activated. You can now use your purchased features."
+    >
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-2xl mx-auto text-center space-y-8"
+        >
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -44,14 +51,6 @@ export default function ThanksPage() {
               <CheckCircle2 className="w-12 h-12 text-gold" />
             </motion.div>
 
-            <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-gold via-white to-gold">
-                Payment Successful!
-              </h1>
-              <p className="text-xl text-white/70">
-                Your access has been activated. You can now use your purchased features.
-              </p>
-            </div>
 
             {paymentSuccess && (
               <motion.div
@@ -92,8 +91,7 @@ export default function ThanksPage() {
             </p>
           </motion.div>
         </div>
-      </div>
-    </PageTransitionWrapper>
+    </MarketingPageShell>
   )
 }
 

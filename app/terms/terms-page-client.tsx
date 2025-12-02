@@ -6,18 +6,12 @@
 
 'use client';
 
-import { GalaxySceneWrapper } from '@/components/global/GalaxySceneWrapper';
-import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { CosmicHero } from '@/components/sections/Hero/CosmicHero';
 // Footer removed - using global FooterWrapper from app/layout.tsx
 
 export function TermsPageClient() {
-  const { globalProgress } = useGlobalProgress();
-
   return (
-    <>
-      <GalaxySceneWrapper intensity={0.5} globalFade={globalProgress} />
-      <div className="relative z-10 min-h-screen">
+    <div className="relative z-10 min-h-screen">
         {/* Hero Section */}
         <CosmicHero
           variant="legal"
@@ -41,6 +35,5 @@ export function TermsPageClient() {
         {/* Footer Section */}
         {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
       </div>
-    </>
   );
 }

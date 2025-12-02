@@ -13,11 +13,8 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { motion } from 'framer-motion';
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CreditCard, Sparkles } from 'lucide-react';
@@ -60,63 +57,47 @@ export default function PaymentsPage() {
   }
 
   return (
-    <PageTransitionWrapper>
-      <CosmicBackground />
-      <CosmicCursor />
-      <SoundscapeController />
-      <div className="relative z-10 min-h-screen p-4 md:p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto space-y-8"
-        >
-          <div className="text-center">
-            <CreditCard className="mx-auto h-16 w-16 text-gold mb-4" />
-            <h1 className="text-4xl font-display font-bold text-gold">Payments</h1>
-            <p className="text-white/70 mt-2">Manage your subscription and payments</p>
-          </div>
+    <DashboardPageShell
+      title="Payments"
+      subtitle="Manage your subscription and payments"
+    >
 
-          <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white shadow-cosmic-glow">
-            <CardHeader>
-              <CardTitle className="text-2xl font-display text-aura-cyan">Current Subscription</CardTitle>
-              <CardDescription className="text-white/70">Your active subscription plan</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-white/80">Plan:</span>
-                <span className="text-gold font-semibold capitalize">{subscription?.plan || 'Free'}</span>
-              </div>
-              {subscription?.expiry && (
+          {loading ? (
+            <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
+              <CardContent className="pt-12 pb-12 text-center">
+                <Sparkles className="w-8 h-8 text-[#FFD57A] animate-spin mx-auto mb-4" />
+                <p className="text-white/60">Loading subscription details...</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-2xl font-display text-[#FFD57A]">Current Subscription</CardTitle>
+                <CardDescription className="text-white/70">Your active subscription plan</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-white/80">Expires:</span>
-                  <span className="text-white/80">
-                    {new Date(subscription.expiry).toLocaleDateString()}
-                  </span>
+                  <span className="text-white/80">Plan:</span>
+                  <span className="text-[#FFD57A] font-semibold capitalize">{subscription?.plan || 'Free'}</span>
                 </div>
-              )}
-              <Button
-                className="w-full spiritual-gradient relative overflow-hidden"
-                onClick={(e) => {
-                  const button = e.currentTarget;
-                  const ripple = document.createElement('span');
-                  const rect = button.getBoundingClientRect();
-                  const size = Math.max(rect.width, rect.height);
-                  const x = e.clientX - rect.left - size / 2;
-                  const y = e.clientY - rect.top - size / 2;
-                  ripple.style.width = ripple.style.height = `${size}px`;
-                  ripple.style.left = `${x}px`;
-                  ripple.style.top = `${y}px`;
-                  ripple.className = 'absolute rounded-full bg-gold/30 animate-ping pointer-events-none';
-                  button.appendChild(ripple);
-                  setTimeout(() => ripple.remove(), 600);
-                }}
-              >
-                <Sparkles className="inline-block mr-2 h-4 w-4" />
-                Upgrade Plan
-              </Button>
-            </CardContent>
-          </Card>
+                {subscription?.expiry && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/80">Expires:</span>
+                    <span className="text-white/80">
+                      {new Date(subscription.expiry).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+                <Button
+                  onClick={() => router.push('/pricing')}
+                  className="w-full bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#05050A] font-semibold hover:opacity-90 transition-opacity"
+                >
+                  <Sparkles className="inline-block mr-2 h-4 w-4" />
+                  Upgrade Plan
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="text-center">
             <Link href="/dashboard">
@@ -125,9 +106,7 @@ export default function PaymentsPage() {
               </Button>
             </Link>
           </div>
-        </motion.div>
-      </div>
-    </PageTransitionWrapper>
+    </DashboardPageShell>
   );
 }
 

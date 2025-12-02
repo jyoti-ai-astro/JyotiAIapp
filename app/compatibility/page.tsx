@@ -16,8 +16,8 @@ import { useCompatibility } from '@/lib/hooks/useCompatibility';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { motion } from 'framer-motion';
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Heart, Sparkles, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
@@ -115,10 +115,10 @@ export default function CompatibilityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
-      <CosmicBackground />
-      
-      <div className="container mx-auto p-6 space-y-8 relative z-10">
+    <DashboardPageShell
+      title="Compatibility Analysis"
+      subtitle="Check relationship compatibility and marriage timing with your partner"
+    >
         {/* Context Panel */}
         <div className="mb-8">
           <OneTimeOfferBanner
@@ -415,8 +415,7 @@ export default function CompatibilityPage() {
             </Button>
           </Link>
         </div>
-      </div>
-    </div>
+    </DashboardPageShell>
   );
 }
 

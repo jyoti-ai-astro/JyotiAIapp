@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .page-container {
+    max-width: 1350px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

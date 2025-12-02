@@ -14,11 +14,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { useFaceReading } from '@/lib/hooks/useFaceReading';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { motion } from 'framer-motion';
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,17 +115,10 @@ export default function FacePage() {
   }
 
   return (
-    <PageTransitionWrapper>
-      <CosmicBackground />
-      <CosmicCursor />
-      <SoundscapeController />
-      <div className="relative z-10 min-h-screen p-4 md:p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto space-y-8"
-        >
+    <DashboardPageShell
+      title="Face Reading"
+      subtitle="Discover your personality through AI-powered face analysis"
+    >
           {/* Context Panel */}
           <div className="mb-8">
             <OneTimeOfferBanner
@@ -221,9 +211,7 @@ export default function FacePage() {
               </Button>
             </Link>
           </div>
-        </motion.div>
-      </div>
-    </PageTransitionWrapper>
+    </DashboardPageShell>
   );
 }
 
