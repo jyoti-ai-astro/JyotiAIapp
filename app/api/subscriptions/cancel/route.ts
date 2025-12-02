@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Razorpay from 'razorpay'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { envVars } from '@/lib/env/env.mjs'
+import { logEvent } from '@/lib/logging/log-event'
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,12 +102,24 @@ export async function POST(request: NextRequest) {
       { merge: true }
     )
 
+    // Phase Z3: Log subscription cancellation
+    await logEvent('subscription.cancelled', {
+      razorpaySubscriptionId,
+      cancelledAt: new Date().toISOString(),
+    }, uid)
+
     return NextResponse.json({
       success: true,
       status: 'cancelled',
     })
   } catch (error: any) {
     console.error('Cancel subscription error:', error)
+    // Phase Z3: Log error
+    await logEvent('api.error', {
+      endpoint: '/api/subscriptions/cancel',
+      error: error.message || 'Unknown error',
+      stack: error.stack,
+    })
     return NextResponse.json(
       { error: error.message || 'Failed to cancel subscription' },
       { status: 500 }

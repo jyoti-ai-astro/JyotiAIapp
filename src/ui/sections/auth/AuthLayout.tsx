@@ -8,6 +8,8 @@ interface AuthLayoutProps {
   mode: 'login' | 'signup';
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   onGoogleSignIn?: () => void;
+  onFacebookSignIn?: () => void;
+  onMagicLink?: (email: string) => void;
   onResetPassword?: () => void;
   onCreateAccount?: () => void;
   error?: string | null;
@@ -18,6 +20,8 @@ export default function AuthLayout({
   mode,
   onSubmit,
   onGoogleSignIn,
+  onFacebookSignIn,
+  onMagicLink,
   onResetPassword,
   onCreateAccount,
   error,
@@ -77,11 +81,32 @@ export default function AuthLayout({
               setLoading(false);
             }
           }}
+          onFacebookSignIn={async () => {
+            setLoading(true);
+            try {
+              await onFacebookSignIn?.();
+            } catch (error) {
+              // Error handling is done in the page component
+            } finally {
+              setLoading(false);
+            }
+          }}
+          onMagicLink={async (email: string) => {
+            setLoading(true);
+            try {
+              await onMagicLink?.(email);
+            } catch (error) {
+              // Error handling is done in the page component
+            } finally {
+              setLoading(false);
+            }
+          }}
           onResetPassword={onResetPassword}
           onCreateAccount={onCreateAccount}
           loading={loading}
           error={error}
           onClearError={onClearError}
+          mode={mode}
         />
         {error && (
           <div className="mt-4 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">

@@ -9,7 +9,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
@@ -28,10 +28,9 @@ export default function SignupPage() {
     redirectTo: '/dashboard',
   });
 
-  const handleGoogleSignup = async () => {
+  const handleSocialSignup = async (provider: GoogleAuthProvider | FacebookAuthProvider, providerName: string) => {
     try {
       setLoading(true);
-      const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
 
@@ -65,8 +64,47 @@ export default function SignupPage() {
         throw new Error(errorData.error || 'Signup failed');
       }
     } catch (error: any) {
-      console.error('Google signup error:', error);
-      setError(error.message || 'Signup failed. Please try again.');
+      console.error(`${providerName} signup error:`, error);
+      setError(error.message || `${providerName} signup failed. Please try again.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    const provider = new GoogleAuthProvider();
+    await handleSocialSignup(provider, 'Google');
+  };
+
+  const handleFacebookSignup = async () => {
+    const provider = new FacebookAuthProvider();
+    await handleSocialSignup(provider, 'Facebook');
+  };
+
+  const handleMagicLink = async (email: string) => {
+    try {
+      setLoading(true);
+      // Store email in localStorage for callback
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('emailForSignIn', email);
+      }
+
+      const response = await fetch('/api/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        // Redirect to magic link confirmation page
+        router.push('/magic-link');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send magic link');
+      }
+    } catch (error: any) {
+      console.error('Magic link error:', error);
+      setError(error.message || 'Failed to send magic link. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -136,6 +174,8 @@ export default function SignupPage() {
       mode="signup"
       onSubmit={handleSignIn}
       onGoogleSignIn={handleGoogleSignup}
+      onFacebookSignIn={handleFacebookSignup}
+      onMagicLink={handleMagicLink}
       onResetPassword={() => {
         router.push('/login');
       }}

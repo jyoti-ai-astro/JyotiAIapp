@@ -74,6 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/one-time-purchases', label: 'One-Time Purchases' },
     { href: '/admin/reports', label: 'Reports' },
     { href: '/admin/payments', label: 'Payments' },
+    { href: '/admin/monitoring', label: 'Monitoring' },
     { href: '/admin/guru', label: 'AI Guru' },
     { href: '/admin/knowledge', label: 'Knowledge Base' },
     { href: '/admin/content', label: 'Content' },

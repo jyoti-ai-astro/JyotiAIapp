@@ -3,15 +3,17 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sparkles, Crown } from 'lucide-react';
+import { Sparkles, Crown, Zap } from 'lucide-react';
 import { fadeUp, staggerChildren } from '@/src/ui/theme/global-motion';
 import { GradientButton } from '@/components/ui/gradient-button';
-import { getAllSubscriptionPlans } from '@/lib/pricing/plans';
+import { getAllSubscriptionPlans, getAllOneTimeProducts } from '@/lib/pricing/plans';
 
 export default function HomePricingTeaser() {
   const subscriptionPlans = getAllSubscriptionPlans();
+  const oneTimeProducts = getAllOneTimeProducts();
   const starterPlan = subscriptionPlans.find(p => p.id === 'starter');
   const supremePlan = subscriptionPlans.find(p => p.id === 'supreme');
+  const quickReading = oneTimeProducts.find(p => p.id === 'quick_99');
 
   return (
     <motion.div
@@ -34,7 +36,7 @@ export default function HomePricingTeaser() {
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {starterPlan && (
           <motion.div
             variants={fadeUp}
@@ -101,6 +103,43 @@ export default function HomePricingTeaser() {
                 <span className="text-2xl font-bold text-[#FFD57A]">{supremePlan.priceLabel}</span>
                 <span className="text-sm text-white/60">{supremePlan.period}</span>
               </div>
+            </div>
+          </motion.div>
+        )}
+
+        {quickReading && (
+          <motion.div
+            variants={fadeUp}
+            className="relative rounded-2xl border border-[#FFD57A]/20 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm p-8 hover:border-[#FFD57A]/50 transition-all duration-300"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-[#FFD57A]/20 border border-[#FFD57A]/30">
+                  <Zap className="w-6 h-6 text-[#FFD57A]" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-[#FFD57A]/70">
+                    One-Time
+                  </p>
+                  <p className="text-sm font-semibold text-white">
+                    {quickReading.name}
+                  </p>
+                </div>
+              </div>
+
+              <h3 className="text-2xl font-bold text-white">{quickReading.name}</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                {quickReading.description}
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-[#FFD57A]">₹{quickReading.amountInINR}</span>
+                <span className="text-sm text-white/60">one-time</span>
+              </div>
+              <Link href={`/pay/${quickReading.productId}`}>
+                <button className="w-full mt-4 rounded-xl bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#0A0F1F] font-semibold py-3 hover:scale-[1.02] transition-transform">
+                  Get {quickReading.name}
+                </button>
+              </Link>
             </div>
           </motion.div>
         )}

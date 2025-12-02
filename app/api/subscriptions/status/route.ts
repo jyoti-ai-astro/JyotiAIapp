@@ -26,9 +26,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
     }
 
-    // Check if refresh is requested
+    // Check if refresh/force sync is requested
     const { searchParams } = new URL(request.url)
-    const refresh = searchParams.get('refresh') === 'true'
+    const refresh = searchParams.get('refresh') === 'true' || searchParams.get('forceSync') === 'true'
 
     // Get subscription from Firestore
     const subscriptionRef = adminDb
@@ -40,8 +40,13 @@ export async function GET(request: NextRequest) {
     const subscriptionSnap = await subscriptionRef.get()
     const subscriptionData = subscriptionSnap.exists ? subscriptionSnap.data() : null
 
-    // If refresh is requested and we have a Razorpay subscription ID, fetch from Razorpay
-    if (refresh && subscriptionData?.razorpaySubscriptionId) {
+    // Phase Z1: Auto-sync if last sync > 12 hours or if refresh/forceSync is requested
+    const lastSyncedAt = subscriptionData?.lastSyncedAt?.toDate?.() || subscriptionData?.lastSyncedAt
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
+    const shouldSync = refresh || (subscriptionData?.razorpaySubscriptionId && (!lastSyncedAt || new Date(lastSyncedAt) < twelveHoursAgo))
+
+    // If should sync and we have a Razorpay subscription ID, fetch from Razorpay
+    if (shouldSync && subscriptionData?.razorpaySubscriptionId) {
       const razorpayKeyId = envVars.razorpay.keyId
       const razorpayKeySecret = envVars.razorpay.keySecret
 
@@ -64,6 +69,7 @@ export async function GET(request: NextRequest) {
               ...subscriptionData,
               status: razorpaySubscription.status,
               active: isActive,
+              lastSyncedAt: new Date(), // Phase Z1: Track last sync time
               updatedAt: new Date(),
             },
             { merge: true }
@@ -79,11 +85,19 @@ export async function GET(request: NextRequest) {
                 razorpaySubscriptionId: subscriptionData.razorpaySubscriptionId,
                 status: razorpaySubscription.status,
                 active: isActive,
+                lastSyncedAt: new Date(), // Phase Z1: Track last sync time
               },
               updatedAt: new Date(),
             },
             { merge: true }
           )
+
+          // Phase Z3: Log successful sync
+          await logEvent('subscription.synced', {
+            razorpaySubscriptionId: subscriptionData.razorpaySubscriptionId,
+            status: razorpaySubscription.status,
+            isActive,
+          }, uid)
 
           return NextResponse.json({
             active: isActive,
@@ -94,6 +108,13 @@ export async function GET(request: NextRequest) {
           })
         } catch (error: any) {
           console.error('Error refreshing subscription from Razorpay:', error)
+          // Phase Z3: Log sync error
+          await logEvent('api.error', {
+            endpoint: '/api/subscriptions/status',
+            action: 'sync',
+            error: error.message || 'Unknown error',
+            razorpaySubscriptionId: subscriptionData?.razorpaySubscriptionId,
+          }, uid)
           // Fall through to return Firestore data
         }
       }

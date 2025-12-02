@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import Razorpay from 'razorpay'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { envVars } from '@/lib/env/env.mjs'
-
 import { getOneTimeProduct, isValidOneTimeProduct } from '@/lib/pricing/plans'
+import { logEvent } from '@/lib/logging/log-event'
 
 export async function POST(req: NextRequest) {
   try {
@@ -79,6 +79,14 @@ export async function POST(req: NextRequest) {
         status: 'created',
         createdAt: new Date(),
       })
+
+      // Phase Z3: Log order creation
+      await logEvent('payment.order_created', {
+        orderId: order.id,
+        productId: String(productId),
+        amount: product.amountInINR,
+        currency: order.currency,
+      }, uid)
     }
 
     return NextResponse.json({
@@ -93,6 +101,12 @@ export async function POST(req: NextRequest) {
     })
   } catch (err: any) {
     console.error('Create one-time order error:', err)
+    // Phase Z3: Log error
+    await logEvent('api.error', {
+      endpoint: '/api/pay/create-one-time-order',
+      error: err.message || 'Unknown error',
+      stack: err.stack,
+    })
     return NextResponse.json({ error: err.message || 'Failed to create order' }, { status: 500 })
   }
 }

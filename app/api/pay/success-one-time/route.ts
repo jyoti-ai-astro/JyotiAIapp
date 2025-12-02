@@ -3,6 +3,7 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import crypto from 'crypto'
 import { envVars } from '@/lib/env/env.mjs'
 import { getOneTimeProduct } from '@/lib/pricing/plans'
+import { logEvent } from '@/lib/logging/log-event'
 
 export async function POST(req: NextRequest) {
   try {
@@ -115,9 +116,24 @@ export async function POST(req: NextRequest) {
       completedAt: new Date(),
     })
 
+    // Phase Z3: Log successful payment
+    await logEvent('payment.success', {
+      orderId: order_id,
+      paymentId: payment_id,
+      productId: String(productId),
+      amount: product.amountInINR,
+      tickets: product.tickets,
+    }, uid)
+
     return NextResponse.redirect(new URL('/thanks?payment=success', req.url))
   } catch (err: any) {
     console.error('One-time payment success error:', err)
+    // Phase Z3: Log error
+    await logEvent('api.error', {
+      endpoint: '/api/pay/success-one-time',
+      error: err.message || 'Unknown error',
+      stack: err.stack,
+    })
     return NextResponse.json({ error: err.message || 'Failed to process payment' }, { status: 500 })
   }
 }

@@ -11,6 +11,7 @@ import Razorpay from 'razorpay'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { envVars } from '@/lib/env/env.mjs'
 import { getSubscriptionPlanById, getRazorpayPlanIdForSubscription } from '@/lib/pricing/plans'
+import { logEvent } from '@/lib/logging/log-event'
 
 export async function POST(request: NextRequest) {
   try {
@@ -118,11 +119,20 @@ export async function POST(request: NextRequest) {
             razorpaySubscriptionId: subscription.id,
             status: subscription.status,
             active: subscription.status === 'active' || subscription.status === 'authenticated',
+            lastSyncedAt: new Date(),
           },
           updatedAt: new Date(),
         },
         { merge: true }
       )
+
+      // Phase Z3: Log subscription creation
+      await logEvent('subscription.created', {
+        planId: plan.id,
+        subscriptionProductId: plan.subscriptionProductId,
+        razorpaySubscriptionId: subscription.id,
+        status: subscription.status,
+      }, uid)
     }
 
     return NextResponse.json({
@@ -132,6 +142,12 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Create subscription error:', error)
+    // Phase Z3: Log error
+    await logEvent('api.error', {
+      endpoint: '/api/subscriptions/create',
+      error: error.message || 'Unknown error',
+      stack: error.stack,
+    })
     return NextResponse.json(
       { error: error.message || 'Failed to create subscription' },
       { status: 500 }

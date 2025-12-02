@@ -902,3 +902,77 @@ await consumeFeatureTicket(uid, featureKey)
 
 ---
 
+## Phase Z — Production Validation & Monitoring
+
+**Status:** ✅ Complete
+
+### Step Z1 — Subscription Auto-Sync
+- Updated `/api/subscriptions/status` to support `?forceSync=true` parameter
+- Auto-syncs subscription status if last sync > 12 hours
+- Tracks `lastSyncedAt` timestamp in Firestore subscription documents
+- Logs sync events to `app_logs` collection
+
+### Step Z2 — Admin Monitoring Dashboard
+- Created `/admin/monitoring` page with real-time health metrics:
+  - Razorpay configuration status (keys, plan IDs, payments disabled flag)
+  - Subscription health (active, pending, cancelled, expired counts)
+  - Recent payment failures (last 20 events)
+  - Recent webhook events (last 20 events)
+- Added monitoring link to admin navigation sidebar
+- Created supporting API routes:
+  - `/api/admin/monitoring/health` — subscription health metrics
+  - `/api/admin/monitoring/payment-failures` — payment failure logs
+  - `/api/admin/monitoring/webhook-events` — webhook event logs
+
+### Step Z3 — Firestore Logging System
+- Created `lib/logging/log-event.ts` with centralized event logging
+- Log event types:
+  - `subscription.created`, `subscription.activated`, `subscription.cancelled`, `subscription.expired`, `subscription.synced`
+  - `payment.success`, `payment.failed`, `payment.order_created`
+  - `webhook.received`, `webhook.verified`, `webhook.failed`
+  - `api.error`
+- Integrated logging into:
+  - `/api/subscriptions/create` — logs subscription creation
+  - `/api/subscriptions/cancel` — logs cancellation
+  - `/api/subscriptions/status` — logs sync events and errors
+  - `/api/pay/create-one-time-order` — logs order creation
+  - `/api/pay/success-one-time` — logs successful payments
+- All error catch blocks now log to `app_logs` collection
+
+### Step Z4 — Razorpay Webhook Integration
+- Created `/api/webhooks/razorpay/route.ts` webhook handler
+- Validates webhook signature using `RAZORPAY_WEBHOOK_SECRET`
+- Handles subscription lifecycle events:
+  - `subscription.pending` — sets status to pending
+  - `subscription.activated` — activates subscription
+  - `subscription.charged` — records successful charge
+  - `subscription.halted` — pauses subscription
+  - `subscription.completed` — marks as expired
+- Handles `payment.failed` events
+- Updates Firestore subscription status automatically
+- Logs all webhook events to `app_logs` collection
+
+### Step Z5 — Build Check + Docs
+- ✅ Build passes: `npm run build` successful
+- Updated `FULL_SYSTEM_REACTIVATION_SUMMARY.md` with Phase Z details
+
+**Files Created:**
+- `lib/logging/log-event.ts` — centralized event logging
+- `app/admin/monitoring/page.tsx` — admin monitoring dashboard
+- `app/api/admin/monitoring/health/route.ts` — subscription health API
+- `app/api/admin/monitoring/payment-failures/route.ts` — payment failures API
+- `app/api/admin/monitoring/webhook-events/route.ts` — webhook events API
+- `app/api/webhooks/razorpay/route.ts` — Razorpay webhook handler
+
+**Files Modified:**
+- `app/api/subscriptions/status/route.ts` — added auto-sync and logging
+- `app/api/subscriptions/create/route.ts` — added event logging
+- `app/api/subscriptions/cancel/route.ts` — added event logging
+- `app/api/pay/create-one-time-order/route.ts` — added event logging
+- `app/api/pay/success-one-time/route.ts` — added event logging
+- `app/admin/layout.tsx` — added monitoring link to navigation
+
+**Final Status:** Production monitoring, webhook integration, and event logging are complete. System is fully production-ready with comprehensive observability.
+
+---
+
