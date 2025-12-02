@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 export interface Testimonial {
@@ -19,6 +19,9 @@ interface SignInPageProps {
   onGoogleSignIn?: () => void;
   onResetPassword?: () => void;
   onCreateAccount?: () => void;
+  loading?: boolean;
+  error?: string | null;
+  onClearError?: () => void;
 }
 
 const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -63,11 +66,24 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   onGoogleSignIn,
   onResetPassword,
   onCreateAccount,
+  loading = false,
+  error,
+  onClearError,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Clear error when user starts typing
+  React.useEffect(() => {
+    if (error && onClearError) {
+      const timer = setTimeout(() => {
+        onClearError();
+      }, 5000); // Auto-dismiss after 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [error, onClearError]);
 
   return (
-    <div className="h-[100dvh] flex flex-col md:flex-row w-full bg-gradient-to-br from-black via-slate-950 to-indigo-950">
+    <div className="flex flex-col md:flex-row w-full">
       <section className="flex-1 flex items-center justify-center p-6 md:p-10">
         <div className="w-full max-w-md glass-card border border-white/10 bg-black/40 p-8 rounded-3xl shadow-2xl">
           <div className="flex flex-col gap-6">
@@ -146,9 +162,10 @@ export const SignInPage: React.FC<SignInPageProps> = ({
 
               <button
                 type="submit"
-                className="w-full gradient-button rounded-[11px] py-3 text-sm font-semibold"
+                disabled={loading}
+                className="w-full gradient-button rounded-[11px] py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign in
+                {loading ? 'Signing in...' : 'Sign in'}
               </button>
             </form>
 
@@ -162,7 +179,8 @@ export const SignInPage: React.FC<SignInPageProps> = ({
             <button
               type="button"
               onClick={onGoogleSignIn}
-              className="w-full flex items-center justify-center gap-3 border border-white/15 rounded-2xl py-3 hover:bg-white/5 transition-colors text-sm text-zinc-100"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 border border-white/15 rounded-2xl py-3 hover:bg-white/5 transition-colors text-sm text-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs">
                 G

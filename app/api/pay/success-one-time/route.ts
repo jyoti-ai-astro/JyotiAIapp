@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import crypto from 'crypto'
 import { envVars } from '@/lib/env/env.mjs'
+import { getOneTimeProduct } from '@/lib/pricing/plans'
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +29,10 @@ export async function POST(req: NextRequest) {
     // Verify Razorpay signature
     const razorpayKeySecret = envVars.razorpay.keySecret
     if (!razorpayKeySecret) {
-      return NextResponse.json({ error: 'Razorpay not configured' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'RAZORPAY_KEY_SECRET missing. Payment verification not configured.' },
+        { status: 500 }
+      )
     }
 
     const text = `${order_id}|${payment_id}`
@@ -46,43 +50,59 @@ export async function POST(req: NextRequest) {
       .doc(order_id)
     const orderSnap = await orderRef.get()
     const orderData = orderSnap.exists ? orderSnap.data() : {}
-    const planName = (orderData?.productId || String(productId)).toLowerCase()
+    const productIdStr = String(orderData?.productId || productId)
+
+    // Get one-time product from single source of truth
+    const product = getOneTimeProduct(productIdStr)
+    if (!product) {
+      return NextResponse.json({ error: 'Invalid product' }, { status: 400 })
+    }
 
     // Get user document
     const userRef = adminDb.collection('users').doc(uid)
     const userSnap = await userRef.get()
     const currentUserData = userSnap.exists ? userSnap.data() : {}
 
-    // Fulfillment Logic: Quick/Deep packs add tickets, subscriptions update subscription
+    // Fulfillment Logic based on product tickets
     const updates: any = {}
 
-    if (planName.includes('99') || planName.includes('quick')) {
-      // Quick Pack: Add 1 Ticket
+    // Add AI Guru tickets
+    if (product.tickets.aiQuestions) {
+      const currentAiGuruTickets = currentUserData?.aiGuruTickets || 0
+      updates.aiGuruTickets = currentAiGuruTickets + product.tickets.aiQuestions
+      
+      // Also update legacy tickets field for backward compatibility
       const currentTickets = currentUserData?.tickets || 0
-      updates.tickets = (currentTickets || 0) + 1
-    } else if (planName.includes('199') || planName.includes('deep')) {
-      // Deep Pack: Add 3 Tickets
-      const currentTickets = currentUserData?.tickets || 0
-      updates.tickets = (currentTickets || 0) + 3
-    } else if (['starter', 'advanced', 'supreme'].some((p) => planName.includes(p))) {
-      // Subscription Plans
-      const cleanPlan = ['starter', 'advanced', 'supreme'].find((p) => planName.includes(p))
-      if (cleanPlan) {
-        updates.subscription = cleanPlan
-        updates.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // +30 Days
-      }
+      updates.tickets = currentTickets + product.tickets.aiQuestions
+    }
+
+    // Add Kundali basic tickets
+    if (product.tickets.kundaliBasic) {
+      const currentKundaliTickets = currentUserData?.kundaliTickets || 0
+      updates.kundaliTickets = currentKundaliTickets + product.tickets.kundaliBasic
+    }
+
+    // Add prediction credits if specified
+    if (product.tickets.predictions) {
+      const currentPredictions = currentUserData?.lifetimePredictions || 0
+      updates.lifetimePredictions = currentPredictions + product.tickets.predictions
     }
 
     // Update user document
+    const oneTimePurchase = {
+      productId: String(productId),
+      productIdInternal: product.id,
+      paymentId: payment_id,
+      orderId: order_id,
+      date: new Date(),
+      tickets: product.tickets,
+      amount: product.amountInINR,
+    }
+    
     await userRef.set(
       {
         ...updates,
-        oneTimePurchases: adminDb.FieldValue.arrayUnion({
-          productId: String(productId),
-          paymentId: payment_id,
-          orderId: order_id,
-          date: new Date(),
-        }),
+        oneTimePurchases: adminDb.FieldValue.arrayUnion(oneTimePurchase),
       },
       { merge: true }
     )

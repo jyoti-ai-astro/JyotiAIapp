@@ -38,16 +38,56 @@ export default function PaymentsPage() {
   const fetchSubscription = async () => {
     try {
       setLoading(true);
-      // Placeholder - fetch from API
-      setTimeout(() => {
-        setSubscription({
-          plan: user?.subscription || 'free',
-          expiry: user?.subscriptionExpiry || null,
-        });
-        setLoading(false);
-      }, 1000);
+      const response = await fetch('/api/subscriptions/status', {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription');
+      }
+      
+      const data = await response.json();
+      setSubscription(data);
+      setLoading(false);
     } catch (error) {
       console.error('Fetch subscription error:', error);
+      setSubscription({
+        active: false,
+        planId: null,
+        productId: null,
+        razorpaySubscriptionId: null,
+        status: null,
+      });
+      setLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!confirm('Are you sure you want to cancel your subscription? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch('/api/subscriptions/cancel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to cancel subscription');
+      }
+
+      // Refresh subscription status
+      await fetchSubscription();
+    } catch (error: any) {
+      console.error('Cancel subscription error:', error);
+      alert(error.message || 'Failed to cancel subscription');
       setLoading(false);
     }
   };
@@ -76,25 +116,50 @@ export default function PaymentsPage() {
                 <CardDescription className="text-white/70">Your active subscription plan</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-white/80">Plan:</span>
-                  <span className="text-[#FFD57A] font-semibold capitalize">{subscription?.plan || 'Free'}</span>
-                </div>
-                {subscription?.expiry && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/80">Expires:</span>
-                    <span className="text-white/80">
-                      {new Date(subscription.expiry).toLocaleDateString()}
-                    </span>
-                  </div>
+                {subscription?.active ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/80">Plan:</span>
+                      <span className="text-[#FFD57A] font-semibold capitalize">
+                        {subscription.planId || 'Active'}
+                      </span>
+                    </div>
+                    {subscription.status && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/80">Status:</span>
+                        <span className="text-white/80 capitalize">{subscription.status}</span>
+                      </div>
+                    )}
+                    {subscription.razorpaySubscriptionId && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/80">Subscription ID:</span>
+                        <span className="text-white/60 text-sm font-mono">
+                          {subscription.razorpaySubscriptionId.substring(0, 12)}...
+                        </span>
+                      </div>
+                    )}
+                    <Button
+                      onClick={handleCancelSubscription}
+                      variant="destructive"
+                      className="w-full bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                    >
+                      Cancel Subscription
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-center py-4">
+                      <p className="text-white/60 mb-4">No active subscription</p>
+                      <Button
+                        onClick={() => router.push('/pricing')}
+                        className="w-full bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#05050A] font-semibold hover:opacity-90 transition-opacity"
+                      >
+                        <Sparkles className="inline-block mr-2 h-4 w-4" />
+                        View Plans
+                      </Button>
+                    </div>
+                  </>
                 )}
-                <Button
-                  onClick={() => router.push('/pricing')}
-                  className="w-full bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#05050A] font-semibold hover:opacity-90 transition-opacity"
-                >
-                  <Sparkles className="inline-block mr-2 h-4 w-4" />
-                  Upgrade Plan
-                </Button>
               </CardContent>
             </Card>
           )}

@@ -30,6 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     checkAdminSession()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const checkAdminSession = async () => {

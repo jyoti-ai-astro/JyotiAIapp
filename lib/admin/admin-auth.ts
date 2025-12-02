@@ -165,9 +165,28 @@ export async function verifyAdminSession(sessionCookie: string): Promise<AdminUs
   }
 
   try {
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
-    const admin = await getAdminUser(decodedClaims.uid)
-    return admin
+    // Try to verify as Firebase session cookie first
+    try {
+      const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
+      const admin = await getAdminUser(decodedClaims.uid)
+      return admin
+    } catch (firebaseError) {
+      // If Firebase session cookie verification fails, try our simplified session token
+      try {
+        const sessionPayload = JSON.parse(Buffer.from(sessionCookie, 'base64').toString())
+        
+        // Check expiration
+        if (sessionPayload.exp && sessionPayload.exp < Date.now()) {
+          return null
+        }
+        
+        const admin = await getAdminUser(sessionPayload.uid)
+        return admin
+      } catch (tokenError) {
+        console.error('Error verifying admin session token:', tokenError)
+        return null
+      }
+    }
   } catch (error) {
     console.error('Error verifying admin session:', error)
     return null

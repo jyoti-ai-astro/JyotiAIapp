@@ -2,61 +2,54 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { Sparkles, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Sparkles } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Card } from '@/components/ui/card'
+import { getOneTimeProduct } from '@/lib/pricing/plans'
 
 interface OneTimeOfferBannerProps {
-  feature?: string
-  title?: string
-  description?: string
-  priceLabel?: string
-  ctaLabel?: string
-  ctaHref?: string
+  feature: string
+  productId?: string
   className?: string
 }
 
-export function OneTimeOfferBanner({
-  feature,
-  title,
-  description,
-  priceLabel = '₹199',
-  ctaLabel,
-  ctaHref = '/pay/199',
-  className,
-}: OneTimeOfferBannerProps) {
-  const displayTitle = title || `Unlock ${feature || 'Full Insights'}`
-  const defaultDescription = description || `Unlock ${feature || 'this feature'} instantly without a subscription.`
-  const defaultCta = ctaLabel || `Unlock for ${priceLabel}`
+export function OneTimeOfferBanner({ feature, productId = '199', className = '' }: OneTimeOfferBannerProps) {
+  const product = getOneTimeProduct(productId)
+
+  if (!product) {
+    return null
+  }
 
   return (
-    <div
-      className={cn(
-        'mt-8 rounded-2xl border border-gold/30 bg-gradient-to-r from-gold/10 via-purple/20 to-cosmic-navy/80 p-4 md:p-6 shadow-lg shadow-black/40 flex flex-col md:flex-row md:items-center md:justify-between gap-4',
-        className
-      )}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={className}
     >
-      <div className="flex-1">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 border border-gold/40 text-xs uppercase tracking-wide text-gold mb-2">
-          <Sparkles className="w-3 h-3" />
-          <span>One-Time Reading</span>
+      <Card className="bg-gradient-to-r from-gold/10 via-gold/5 to-gold/10 border-gold/30 backdrop-blur-xl p-6">
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold to-gold/60 flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-black" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                Unlock {feature} instantly
+              </h3>
+              <p className="text-sm text-white/70">
+                No subscription needed • {product.bullets[0]}
+              </p>
+            </div>
+          </div>
+          <Link href={`/pay/${product.productId}`}>
+            <Button className="gold-btn whitespace-nowrap">
+              <Zap className="w-4 h-4 mr-2" />
+              Get {product.name} – ₹{product.amountInINR}
+            </Button>
+          </Link>
         </div>
-        <h3 className="text-lg md:text-xl font-heading text-gold mb-1">{displayTitle}</h3>
-        <p className="text-sm md:text-base text-white/70">{defaultDescription}</p>
-      </div>
-      <div className="flex flex-col items-start md:items-end gap-2">
-        <div className="text-right">
-          <span className="text-2xl font-heading text-gold">{priceLabel}</span>
-          <span className="ml-1 text-xs text-white/60">one-time</span>
-        </div>
-        <Link href={ctaHref}>
-          <Button className="bg-gold text-black hover:bg-gold/90 font-semibold">
-            {defaultCta}
-          </Button>
-        </Link>
-        <p className="text-[11px] text-white/50">No subscription required. Unlock instantly.</p>
-      </div>
-    </div>
+      </Card>
+    </motion.div>
   )
 }
-

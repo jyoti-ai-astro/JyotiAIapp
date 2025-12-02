@@ -1,211 +1,135 @@
 /**
- * Admin One-Time Purchases Page
+ * Admin: One-Time Purchases
  * 
- * Mega Build 4 - Admin Command Center
- * View and filter one-time purchases
+ * Pricing & Payments v3 - Phase I
+ * 
+ * View all one-time purchases across all users
  */
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { Loader2 } from 'lucide-react'
 
-interface Purchase {
-  id: string
-  userId: string
-  userEmail?: string
-  userName?: string
-  productId: number
-  amount: number
-  status: string
-  createdAt: string | null
-  paymentId: string | null
+interface OneTimePurchase {
+  email: string
+  productId: string
+  productName: string
+  paymentId: string
   orderId: string
-  planName: string | null
+  date: string
+  amount: number
 }
 
-export default function AdminOTPPage() {
-  const [purchases, setPurchases] = useState<Purchase[]>([])
+export default function OneTimePurchasesPage() {
+  const [purchases, setPurchases] = useState<OneTimePurchase[]>([])
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(false)
-  const [statusFilter, setStatusFilter] = useState('ALL')
-  const [productFilter, setProductFilter] = useState('ALL')
+  const [searchEmail, setSearchEmail] = useState('')
+  const [dateFilter, setDateFilter] = useState<'7' | '30' | 'all'>('all')
 
   useEffect(() => {
     fetchPurchases()
-  }, [page, statusFilter, productFilter])
+  }, [])
 
   const fetchPurchases = async () => {
-    setLoading(true)
     try {
-      const params = new URLSearchParams()
-      params.append('page', page.toString())
-      params.append('limit', '50')
-      if (statusFilter !== 'ALL') params.append('status', statusFilter)
-      if (productFilter !== 'ALL') params.append('product', productFilter)
-
-      const response = await fetch(`/api/admin/purchases/one-time?${params.toString()}`, {
+      const res = await fetch('/api/admin/one-time-purchases', {
         credentials: 'include',
       })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          setPurchases(data.purchases || [])
-          setHasMore(data.pagination?.hasMore || false)
-        }
+      if (res.ok) {
+        const data = await res.json()
+        setPurchases(data.purchases || [])
       }
     } catch (error) {
-      console.error('Failed to fetch purchases:', error)
+      console.error('Error fetching purchases:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'completed':
-      case 'success':
-        return 'default'
-      case 'failed':
-        return 'destructive'
-      case 'pending':
-        return 'secondary'
-      default:
-        return 'outline'
-    }
-  }
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">One-Time Purchases</h1>
-        <p className="text-muted-foreground">View and filter one-time purchase transactions</p>
-      </div>
-
-      {/* Filters */}
-      <Card>
+    <DashboardPageShell title="One-Time Purchases" subtitle="View all one-time reading purchases">
+      <Card className="bg-cosmic-indigo/60 backdrop-blur-xl border-white/10">
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Status</label>
-              <Select value={statusFilter} onValueChange={(value) => {
-                setStatusFilter(value)
-                setPage(1)
-              }}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All Statuses</SelectItem>
-                  <SelectItem value="success">Success</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Product</label>
-              <Select value={productFilter} onValueChange={(value) => {
-                setProductFilter(value)
-                setPage(1)
-              }}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All Products</SelectItem>
-                  <SelectItem value="99">₹99</SelectItem>
-                  <SelectItem value="199">₹199</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <CardTitle className="text-gold">One-Time Purchases</CardTitle>
+          <div className="flex gap-4 mt-4">
+            <input
+              type="text"
+              placeholder="Search by email..."
+              value={searchEmail}
+              onChange={(e) => setSearchEmail(e.target.value)}
+              className="bg-black/20 border border-white/10 rounded px-3 py-2 text-white text-sm flex-1 max-w-xs"
+            />
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value as '7' | '30' | 'all')}
+              className="bg-black/20 border border-white/10 rounded px-3 py-2 text-white text-sm"
+            >
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="all">All</option>
+            </select>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Purchases Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Purchases ({purchases.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">Loading purchases...</div>
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-gold" />
+            </div>
           ) : purchases.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No purchases found</div>
+            <p className="text-white/60 text-center py-10">No purchases found</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Date</th>
-                    <th className="text-left p-2">User</th>
-                    <th className="text-left p-2">Product</th>
-                    <th className="text-left p-2">Amount</th>
-                    <th className="text-left p-2">Status</th>
-                    <th className="text-left p-2">Payment ID</th>
-                    <th className="text-left p-2">Order ID</th>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left p-2 text-white/80">Email</th>
+                    <th className="text-left p-2 text-white/80">Product ID</th>
+                    <th className="text-left p-2 text-white/80">Product Name</th>
+                    <th className="text-left p-2 text-white/80">Amount</th>
+                    <th className="text-left p-2 text-white/80">Payment ID</th>
+                    <th className="text-left p-2 text-white/80">Date</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {purchases.map((purchase) => (
-                    <tr key={purchase.id} className="border-b hover:bg-muted/50">
-                      <td className="p-2 text-sm">
-                        {purchase.createdAt ? new Date(purchase.createdAt).toLocaleString() : 'N/A'}
+                  {purchases
+                    .filter((p) => {
+                      if (searchEmail && !p.email.toLowerCase().includes(searchEmail.toLowerCase())) {
+                        return false
+                      }
+                      if (dateFilter !== 'all') {
+                        const purchaseDate = new Date(p.date)
+                        const daysAgo = (Date.now() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24)
+                        if (dateFilter === '7' && daysAgo > 7) return false
+                        if (dateFilter === '30' && daysAgo > 30) return false
+                      }
+                      return true
+                    })
+                    .map((purchase, idx) => (
+                    <tr key={idx} className="border-b border-white/5">
+                      <td className="p-2 text-white/70">{purchase.email}</td>
+                      <td className="p-2 text-white/70 font-mono text-xs">{purchase.productId}</td>
+                      <td className="p-2 text-white/70">{purchase.productName}</td>
+                      <td className="p-2 text-white/70">₹{purchase.amount}</td>
+                      <td className="p-2 text-white/70 font-mono text-xs">{purchase.paymentId}</td>
+                      <td className="p-2 text-white/70">
+                        {new Date(purchase.date).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </td>
-                      <td className="p-2">
-                        <div>
-                          <div className="font-medium">{purchase.userName || 'N/A'}</div>
-                          <div className="text-sm text-muted-foreground">{purchase.userEmail || purchase.userId}</div>
-                        </div>
-                      </td>
-                      <td className="p-2">₹{purchase.productId}</td>
-                      <td className="p-2 font-medium">₹{purchase.amount}</td>
-                      <td className="p-2">
-                        <Badge variant={getStatusBadgeVariant(purchase.status)}>
-                          {purchase.status}
-                        </Badge>
-                      </td>
-                      <td className="p-2 text-sm font-mono">{purchase.paymentId || 'N/A'}</td>
-                      <td className="p-2 text-sm font-mono">{purchase.orderId}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-
-          {!loading && (
-            <div className="flex justify-between items-center mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">Page {page}</span>
-              <Button
-                variant="outline"
-                onClick={() => setPage(page + 1)}
-                disabled={!hasMore}
-              >
-                Next
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
-    </div>
+    </DashboardPageShell>
   )
 }

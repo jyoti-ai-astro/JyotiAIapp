@@ -43,20 +43,10 @@ export const CosmicGuruChat = () => {
 
   // Check if user has access
   const hasSubscription = user?.subscription === 'pro' && user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date()
-  const remainingQuestions = getRemainingTickets(
-    {
-      hasSubscription: !!hasSubscription,
-      tickets: user?.tickets,
-    },
-    'ai_question'
-  )
-  const canAskQuestion = canAccessFeature(
-    {
-      hasSubscription: !!hasSubscription,
-      tickets: user?.tickets,
-    },
-    'ai_question'
-  )
+  // Phase G: Use aiGuruTickets from new ticket system
+  const aiGuruTickets = user?.aiGuruTickets || 0
+  const remainingQuestions = hasSubscription ? Infinity : aiGuruTickets
+  const canAskQuestion = hasSubscription || aiGuruTickets > 0
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -82,17 +72,15 @@ export const CosmicGuruChat = () => {
     // Send message
     const success = await sendMessage(message)
 
-    // Decrement ticket if message was sent successfully and user has tickets (not subscription)
+    // Phase N: Optimistically decrement ticket count on client after successful send
     if (success && !hasSubscription && remainingQuestions > 0) {
       // Optimistically update local state
-      decrementLocalTicket('ai_questions')
-
-      // Decrement on server
-      const decrementResult = await decrementTicket('ai_questions')
-      if (decrementResult?.success && decrementResult.tickets) {
-        // Update user store with server response
-        useUserStore.getState().updateUser({
-          tickets: decrementResult.tickets,
+      const { user, updateUser } = useUserStore.getState()
+      if (user) {
+        updateUser({
+          ...user,
+          aiGuruTickets: Math.max(0, (user.aiGuruTickets || 0) - 1),
+          tickets: Math.max(0, (user.tickets || 0) - 1),
         })
       }
     }
@@ -283,50 +271,72 @@ export const CosmicGuruChat = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex justify-center w-full mb-4"
           >
-            <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-sm px-4 py-3 rounded-lg flex flex-col gap-2 max-w-md">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
-                <span className="font-semibold">
-                  {errorCode === 'UNAUTHENTICATED'
-                    ? 'Please log in again'
-                    : errorCode === 'GURU_TIMEOUT'
-                    ? 'The Guru is overloaded'
-                    : errorCode === 'RAG_UNAVAILABLE'
-                    ? 'Knowledge vault is temporarily offline'
-                    : errorCode === 'NETWORK'
-                    ? 'Network error'
-                    : 'Something went wrong'}
-                </span>
-              </div>
-              {errorMessage && (
-                <p className="text-xs text-red-300/80">{errorMessage}</p>
-              )}
-              <div className="flex gap-2 mt-1">
-                {errorCode === 'UNAUTHENTICATED' ? (
-                  <Link href="/login">
-                    <Button size="sm" variant="outline" className="text-xs">
-                      Go to Login
+            {errorCode === 'NO_TICKETS' ? (
+              <div className="bg-gold/10 border border-gold/30 text-gold text-sm px-4 py-3 rounded-lg flex flex-col gap-3 max-w-md w-full">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="font-semibold">You've used all your AI Guru credits</span>
+                </div>
+                <p className="text-white/70 text-xs">Unlock more for instant access:</p>
+                <div className="flex gap-2">
+                  <Link href="/pay/99" className="flex-1">
+                    <Button size="sm" className="w-full gold-btn text-xs">
+                      Ask 1 Question — ₹99
                     </Button>
                   </Link>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      reconnect()
-                      // Clear error state and allow retry
-                      setStatus('idle')
-                      setErrorCode(undefined)
-                      setErrorMessage(undefined)
-                      inputRef.current?.focus()
-                    }}
-                    className="text-xs"
-                  >
-                    Retry
-                  </Button>
-                )}
+                  <Link href="/pay/199" className="flex-1">
+                    <Button size="sm" className="w-full gold-btn text-xs">
+                      Ask 3 Questions — ₹199
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-sm px-4 py-3 rounded-lg flex flex-col gap-2 max-w-md">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="font-semibold">
+                    {errorCode === 'UNAUTHENTICATED'
+                      ? 'Please log in again'
+                      : errorCode === 'GURU_TIMEOUT'
+                      ? 'The Guru is overloaded'
+                      : errorCode === 'RAG_UNAVAILABLE'
+                      ? 'Knowledge vault is temporarily offline'
+                      : errorCode === 'NETWORK'
+                      ? 'Network error'
+                      : 'Something went wrong'}
+                  </span>
+                </div>
+                {errorMessage && (
+                  <p className="text-xs text-red-300/80">{errorMessage}</p>
+                )}
+                <div className="flex gap-2 mt-1">
+                  {errorCode === 'UNAUTHENTICATED' ? (
+                    <Link href="/login">
+                      <Button size="sm" variant="outline" className="text-xs">
+                        Go to Login
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        reconnect()
+                        // Clear error state and allow retry
+                        setStatus('idle')
+                        setErrorCode(undefined)
+                        setErrorMessage(undefined)
+                        inputRef.current?.focus()
+                      }}
+                      className="text-xs"
+                    >
+                      Retry
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -380,14 +390,19 @@ export const CosmicGuruChat = () => {
       <div className="p-4 bg-black/20 border-t border-white/5 relative z-20">
         {canAskQuestion && (
           <>
-            {remainingQuestions > 0 && !hasSubscription && (
+            {!hasSubscription && (
               <div className="mb-2 text-xs text-white/60 text-center">
-                {remainingQuestions} question{remainingQuestions !== 1 ? 's' : ''} remaining
+                {remainingQuestions > 0 ? (
+                  <>Credits left: {remainingQuestions}</>
+                ) : (
+                  <>No credits remaining</>
+                )}
               </div>
             )}
             <form onSubmit={handleSend} className="flex gap-2 relative">
               <Input
                 ref={inputRef}
+                disabled={!canAskQuestion || loading}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask your spiritual question..."

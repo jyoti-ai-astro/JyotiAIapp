@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { analyzeAura } from '@/lib/engines/aura/aura-analyzer'
+import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket-service'
+import type { FeatureKey } from '@/lib/payments/feature-access'
 
 /**
  * Analyze Aura
@@ -17,6 +19,20 @@ export async function POST(request: NextRequest) {
 
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
     const uid = decodedClaims.uid
+
+    // Phase S: Ticket enforcement
+    const featureKey: FeatureKey = 'aura'
+    try {
+      await ensureFeatureAccess(uid, featureKey)
+    } catch (err: any) {
+      if (err.code === 'NO_TICKETS') {
+        return NextResponse.json(
+          { error: 'NO_TICKETS', message: 'You have no credits left for this feature.' },
+          { status: 403 }
+        )
+      }
+      throw err
+    }
 
     const { imageUrl } = await request.json()
 
@@ -35,6 +51,13 @@ export async function POST(request: NextRequest) {
         analysis,
         createdAt: new Date(),
       })
+    }
+
+    // Phase S: Consume ticket after successful analysis
+    try {
+      await consumeFeatureTicket(uid, featureKey)
+    } catch (err: any) {
+      console.error('Ticket consumption error:', err)
     }
 
     return NextResponse.json({

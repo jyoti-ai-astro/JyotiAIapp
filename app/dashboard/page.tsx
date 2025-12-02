@@ -8,6 +8,7 @@ import { useUserStore } from '@/store/user-store'
 import { CosmicDashboard } from '@/components/dashboard/CosmicDashboard'
 import type { AstroContext } from '@/lib/engines/astro-types'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { CreditsOverview } from '@/components/dashboard/CreditsOverview'
 
 interface DashboardData {
   user: {
@@ -226,6 +227,11 @@ export default function DashboardPage() {
       title="Your Cosmic Dashboard"
       subtitle="All your charts, timelines, and predictions in one place."
     >
+      {/* Phase M: Credits Overview */}
+      <div className="mb-6">
+        <CreditsOverview />
+      </div>
+
       {/* Super Phase B - Insights Section */}
       {astro && (
         <div className="fixed top-20 right-4 z-30 max-w-sm space-y-3">

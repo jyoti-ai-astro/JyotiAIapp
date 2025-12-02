@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { generateFullKundali } from '@/lib/engines/kundali/generator'
 import type { BirthDetails } from '@/lib/engines/kundali/swisseph-wrapper'
+import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket-service'
+import type { FeatureKey } from '@/lib/payments/feature-access'
 
 /**
  * Generate Full Kundali
@@ -17,6 +19,20 @@ export async function POST(request: NextRequest) {
 
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
     const uid = decodedClaims.uid
+
+    // Phase S: Ticket enforcement
+    const featureKey: FeatureKey = 'kundali'
+    try {
+      await ensureFeatureAccess(uid, featureKey)
+    } catch (err: any) {
+      if (err.code === 'NO_TICKETS') {
+        return NextResponse.json(
+          { error: 'NO_TICKETS', message: 'You have no credits left for this feature.' },
+          { status: 403 }
+        )
+      }
+      throw err
+    }
 
     // Get user birth details
     if (!adminDb) {
@@ -95,6 +111,13 @@ export async function POST(request: NextRequest) {
         endDate: adminDb.Timestamp.fromDate(kundali.dasha.currentPratyantardasha.endDate),
       },
     })
+
+    // Phase S: Consume ticket after successful generation
+    try {
+      await consumeFeatureTicket(uid, featureKey)
+    } catch (err: any) {
+      console.error('Ticket consumption error:', err)
+    }
 
     return NextResponse.json({
       success: true,

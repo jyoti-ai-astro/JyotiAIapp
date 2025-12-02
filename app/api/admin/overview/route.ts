@@ -15,7 +15,10 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   return withAdminAuth(async (req, admin) => {
     if (!adminDb) {
-      return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'FIREBASE_ADMIN credentials missing. Firestore not initialized.' },
+        { status: 500 }
+      )
     }
 
     try {

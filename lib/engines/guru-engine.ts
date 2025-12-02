@@ -328,16 +328,18 @@ async function callLLM(
   messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
   signal?: AbortSignal
 ): Promise<string> {
-  const provider = process.env.AI_PROVIDER || 'openai'
-  const openaiApiKey = process.env.OPENAI_API_KEY
-  const geminiApiKey = process.env.GEMINI_API_KEY
+  // Use validated environment variables
+  const { envVars } = await import('@/lib/env/env.mjs')
+  const provider = envVars.ai.provider || 'openai'
+  const openaiApiKey = envVars.ai.openaiApiKey
+  const geminiApiKey = envVars.ai.geminiApiKey
 
   if (provider === 'gemini' && geminiApiKey) {
     return callGemini(messages, geminiApiKey, signal)
   } else if (openaiApiKey) {
     return callOpenAI(messages, openaiApiKey, signal)
   } else {
-    throw new Error('No AI provider configured')
+    throw new Error('No AI provider configured. Please set OPENAI_API_KEY or GEMINI_API_KEY in your environment variables.')
   }
 }
 

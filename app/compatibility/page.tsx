@@ -21,6 +21,8 @@ import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Heart, Sparkles, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
+import { useTicketAccess } from '@/lib/access/useTicketAccess';
+import { getFeatureAccess } from '@/lib/payments/feature-access';
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
 import { decrementTicket } from '@/lib/access/ticket-access';
 import type { AstroContext } from '@/lib/engines/astro-types';
@@ -28,6 +30,9 @@ import type { AstroContext } from '@/lib/engines/astro-types';
 export default function CompatibilityPage() {
   const router = useRouter();
   const { user } = useUserStore();
+  const featureKey = 'compatibility' as const;
+  const { hasAccess, hasSubscription, tickets, loading: ticketLoading, config } = useTicketAccess(featureKey);
+  const featureConfig = getFeatureAccess(featureKey);
   const { analysis, loading, analyzeCompatibility } = useCompatibility();
   const [partnerData, setPartnerData] = useState({
     name: '',
@@ -41,10 +46,10 @@ export default function CompatibilityPage() {
   useEffect(() => {
     if (!user) {
       router.push('/login');
-    } else {
+    } else if (hasAccess && !ticketLoading) {
       fetchAstroContext();
     }
-  }, [user, router]);
+  }, [user, router, hasAccess, ticketLoading]);
 
   const fetchAstroContext = async () => {
     if (!user?.uid) return;

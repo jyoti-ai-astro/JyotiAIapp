@@ -20,10 +20,18 @@ let db: Firestore
 let storage: FirebaseStorage
 
 if (typeof window !== 'undefined') {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
-  auth = getAuth(app)
-  db = getFirestore(app)
-  storage = getStorage(app)
+  try {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+    auth = getAuth(app)
+    db = getFirestore(app)
+    storage = getStorage(app)
+  } catch (error) {
+    console.error('Firebase initialization error:', error)
+    // In development, log warning but don't crash
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('⚠️ Firebase config may be missing. Check your environment variables.')
+    }
+  }
 }
 
 export { app, auth, db, storage }

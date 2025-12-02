@@ -22,10 +22,16 @@ import { SkeletonCard } from '@/components/ui/skeleton';
 import { ErrorBoundary } from '@/components/global/ErrorBoundary';
 import { Baby, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
+import { useTicketAccess } from '@/lib/access/useTicketAccess';
+import { getFeatureAccess } from '@/lib/payments/feature-access';
 
 export default function PregnancyPage() {
   const router = useRouter();
   const { user } = useUserStore();
+  const featureKey = 'pregnancy' as const;
+  const { hasAccess, hasSubscription, tickets, loading: ticketLoading, config } = useTicketAccess(featureKey);
+  const featureConfig = getFeatureAccess(featureKey);
   const { insights, loading, error, refetch } = usePregnancy();
 
   useEffect(() => {
@@ -36,6 +42,25 @@ export default function PregnancyPage() {
 
   if (!user) {
     return null;
+  }
+
+  // Phase R: Check ticket access
+  if (ticketLoading) {
+    return (
+      <DashboardPageShell title={featureConfig.label} subtitle="Loading...">
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+        </div>
+      </DashboardPageShell>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <DashboardPageShell title={featureConfig.label} subtitle="Unlock pregnancy insights">
+        <OneTimeOfferBanner feature={featureConfig.label} productId={featureConfig.defaultProductId} />
+      </DashboardPageShell>
+    );
   }
 
   return (

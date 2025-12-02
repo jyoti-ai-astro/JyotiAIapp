@@ -6,26 +6,13 @@ import { motion } from 'framer-motion';
 import { Sparkles, Crown } from 'lucide-react';
 import { fadeUp, staggerChildren } from '@/src/ui/theme/global-motion';
 import { GradientButton } from '@/components/ui/gradient-button';
-
-const plans = [
-  {
-    icon: Sparkles,
-    label: 'Free Explorer',
-    title: 'Start your journey',
-    description: '3 questions with The Guru, basic kundali insights, and limited predictions.',
-    badge: 'Free',
-  },
-  {
-    icon: Crown,
-    label: 'JyotiAI Premium',
-    title: 'Unlock everything',
-    description: 'Unlimited Guru chats, advanced predictions, priority queue, and detailed reports.',
-    badge: 'Premium',
-    featured: true,
-  },
-];
+import { getAllSubscriptionPlans } from '@/lib/pricing/plans';
 
 export default function HomePricingTeaser() {
+  const subscriptionPlans = getAllSubscriptionPlans();
+  const starterPlan = subscriptionPlans.find(p => p.id === 'starter');
+  const supremePlan = subscriptionPlans.find(p => p.id === 'supreme');
+
   return (
     <motion.div
       initial="hidden"
@@ -42,64 +29,81 @@ export default function HomePricingTeaser() {
           </span>
         </h2>
         <p className="text-lg text-white/60 max-w-2xl mx-auto">
-          Start free, upgrade anytime. No hidden fees, cancel whenever you want.
+          Monthly subscriptions starting at {starterPlan?.priceLabel}{starterPlan?.period}. 
+          Not ready for a subscription? Try a one-time Quick Reading from ₹99.
         </p>
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        {plans.map((plan, index) => {
-          const Icon = plan.icon;
-          return (
-            <motion.div
-              key={index}
-              variants={fadeUp}
-              className={`relative rounded-2xl border ${
-                plan.featured
-                  ? 'border-[#FFD57A]/40 bg-gradient-to-br from-[#0A0F1F]/90 to-[#1A2347]/80 shadow-[0_8px_32px_rgba(255,213,122,0.25)]'
-                  : 'border-[#FFD57A]/20 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60'
-              } backdrop-blur-sm p-8 hover:border-[#FFD57A]/50 transition-all duration-300`}
-            >
-              {plan.featured && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="px-3 py-1 rounded-full bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#0A0F1F] text-xs font-semibold">
-                    Most Popular
-                  </span>
+        {starterPlan && (
+          <motion.div
+            variants={fadeUp}
+            className="relative rounded-2xl border border-[#FFD57A]/20 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm p-8 hover:border-[#FFD57A]/50 transition-all duration-300"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-[#FFD57A]/20 border border-[#FFD57A]/30">
+                  <Sparkles className="w-6 h-6 text-[#FFD57A]" />
                 </div>
-              )}
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                      plan.featured
-                        ? 'bg-gradient-to-br from-[#FFD57A] to-[#FFB347]'
-                        : 'bg-[#FFD57A]/20 border border-[#FFD57A]/30'
-                    }`}
-                  >
-                    <Icon
-                      className={`w-6 h-6 ${
-                        plan.featured ? 'text-[#0A0F1F]' : 'text-[#FFD57A]'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-[#FFD57A]/70">
-                      {plan.label}
-                    </p>
-                    <p className="text-sm font-semibold text-white">
-                      {plan.badge}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-[#FFD57A]/70">
+                    {starterPlan.badge}
+                  </p>
+                  <p className="text-sm font-semibold text-white">
+                    {starterPlan.name}
+                  </p>
                 </div>
-
-                <h3 className="text-2xl font-bold text-white">{plan.title}</h3>
-                <p className="text-sm text-white/70 leading-relaxed">
-                  {plan.description}
-                </p>
               </div>
-            </motion.div>
-          );
-        })}
+
+              <h3 className="text-2xl font-bold text-white">{starterPlan.name}</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                {starterPlan.description}
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-[#FFD57A]">{starterPlan.priceLabel}</span>
+                <span className="text-sm text-white/60">{starterPlan.period}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {supremePlan && (
+          <motion.div
+            variants={fadeUp}
+            className="relative rounded-2xl border border-[#FFD57A]/40 bg-gradient-to-br from-[#0A0F1F]/90 to-[#1A2347]/80 shadow-[0_8px_32px_rgba(255,213,122,0.25)] backdrop-blur-sm p-8 hover:border-[#FFD57A]/50 transition-all duration-300"
+          >
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <span className="px-3 py-1 rounded-full bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#0A0F1F] text-xs font-semibold">
+                {supremePlan.badge}
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#FFD57A] to-[#FFB347]">
+                  <Crown className="w-6 h-6 text-[#0A0F1F]" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-[#FFD57A]/70">
+                    Complete OS
+                  </p>
+                  <p className="text-sm font-semibold text-white">
+                    {supremePlan.name}
+                  </p>
+                </div>
+              </div>
+
+              <h3 className="text-2xl font-bold text-white">{supremePlan.name}</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                {supremePlan.description}
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-[#FFD57A]">{supremePlan.priceLabel}</span>
+                <span className="text-sm text-white/60">{supremePlan.period}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <motion.div variants={fadeUp} className="text-center pt-4">
@@ -112,4 +116,3 @@ export default function HomePricingTeaser() {
     </motion.div>
   );
 }
-

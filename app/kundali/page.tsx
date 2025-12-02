@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Download, RefreshCw } from 'lucide-react'
 import { KundaliWheel3D } from '@/components/organisms/kundali-wheel-3d'
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
+import { useTicketAccess } from '@/lib/access/useTicketAccess'
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
 import { decrementTicket } from '@/lib/access/ticket-access'
 import Link from 'next/link'
@@ -45,6 +46,7 @@ interface KundaliData {
 export default function KundaliPage() {
   const router = useRouter()
   const { user } = useUserStore()
+  const { hasAccess, hasSubscription, tickets, loading: ticketLoading } = useTicketAccess('kundali')
   const [loading, setLoading] = useState(true)
   const [kundali, setKundali] = useState<KundaliData | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -157,6 +159,25 @@ export default function KundaliPage() {
     } finally {
       setDownloadingReport(false)
     }
+  }
+
+  // Phase L: Check ticket access
+  if (ticketLoading) {
+    return (
+      <DashboardPageShell title="Your Birth Chart" subtitle="Loading...">
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+        </div>
+      </DashboardPageShell>
+    )
+  }
+
+  if (!hasAccess) {
+    return (
+      <DashboardPageShell title="Your Birth Chart" subtitle="Unlock your cosmic blueprint">
+        <OneTimeOfferBanner feature="Kundali Reading" productId="199" />
+      </DashboardPageShell>
+    )
   }
 
   if (loading) {

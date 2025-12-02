@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/firebase/admin'
 import { getCachedAstroContext } from '@/lib/engines/astro-context-builder'
 import { runPredictionEngine } from '@/lib/engines/prediction-engine-v2'
+import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket-service'
+import type { FeatureKey } from '@/lib/payments/feature-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,6 +75,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Phase S: Ticket enforcement
+    const featureKey: FeatureKey = 'predictions'
+    try {
+      await ensureFeatureAccess(userId, featureKey)
+    } catch (err: any) {
+      if (err.code === 'NO_TICKETS') {
+        return NextResponse.json(
+          {
+            status: 'error',
+            code: 'NO_TICKETS',
+            message: 'You have no credits left for this feature.',
+          },
+          { status: 403 }
+        )
+      }
+      throw err
+    }
+
     // Parse request body
     let body: { question?: string | null } = {}
     try {
@@ -117,6 +137,13 @@ export async function POST(request: NextRequest) {
       )
 
       clearTimeout(timeoutId)
+
+      // Phase S: Consume ticket after successful generation
+      try {
+        await consumeFeatureTicket(userId, featureKey)
+      } catch (err: any) {
+        console.error('Ticket consumption error:', err)
+      }
 
       // Return result
       return NextResponse.json({

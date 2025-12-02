@@ -7,6 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Sparkles } from 'lucide-react';
 import { fadeIn, scaleIn } from '@/src/ui/theme/global-motion';
 
+// Get app environment for client-side display
+const appEnv = (process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || 'development') as 'development' | 'staging' | 'production';
+
 export function Header() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -111,8 +114,19 @@ export function Header() {
             })}
           </nav>
 
-          {/* CTA Button */}
+          {/* CTA Button + Environment Badge */}
           <div className="hidden md:flex items-center space-x-4">
+            {appEnv !== 'production' && (
+              <span
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                  appEnv === 'development'
+                    ? 'border-purple-500/40 bg-purple-500/10 text-purple-300'
+                    : 'border-blue-500/40 bg-blue-500/10 text-blue-300'
+                }`}
+              >
+                {appEnv.toUpperCase()} MODE
+              </span>
+            )}
             <Link href="/guru">
               <motion.button
                 className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#0A0F1F] font-semibold text-sm shadow-[0_4px_20px_rgba(255,213,122,0.25)] hover:shadow-[0_8px_32px_rgba(255,213,122,0.35)] transition-all duration-200"

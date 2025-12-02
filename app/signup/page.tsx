@@ -18,6 +18,7 @@ import AuthLayout from '@/src/ui/sections/auth/AuthLayout';
 
 export default function SignupPage() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   
   // Redirect if already authenticated (client-side only)
@@ -60,11 +61,12 @@ export default function SignupPage() {
 
         router.push('/onboarding');
       } else {
-        throw new Error('Signup failed');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Signup failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Google signup error:', error);
-      alert('Signup failed. Please try again.');
+      setError(error.message || 'Signup failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -111,7 +113,19 @@ export default function SignupPage() {
       }
     } catch (error: any) {
       console.error('Email signup error:', error);
-      alert(error.message || 'Signup failed. Please try again.');
+      let errorMessage = 'Signup failed. Please try again.';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please sign in instead.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please use at least 6 characters.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address. Please check and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -126,6 +140,8 @@ export default function SignupPage() {
         router.push('/login');
       }}
       onCreateAccount={undefined}
+      error={error}
+      onClearError={() => setError(null)}
     />
   );
 }

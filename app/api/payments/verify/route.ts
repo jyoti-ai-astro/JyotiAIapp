@@ -34,7 +34,10 @@ export async function POST(request: NextRequest) {
     // Phase 31 - F46: Verify signature with validated env vars
     const razorpayKeySecret = envVars.razorpay.keySecret
     if (!razorpayKeySecret) {
-      return NextResponse.json({ error: 'Razorpay not configured' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'RAZORPAY_KEY_SECRET missing. Payment verification not configured.' },
+        { status: 500 }
+      )
     }
 
     const text = `${razorpay_order_id}|${razorpay_payment_id}`

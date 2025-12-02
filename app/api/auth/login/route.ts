@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     // Verify ID token with Firebase Admin
     if (!adminAuth) {
       return NextResponse.json(
-        { error: 'Firebase Admin not initialized. Check environment variables.' },
+        { error: 'FIREBASE_ADMIN credentials missing. Firebase Admin not initialized. Check FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_PRIVATE_KEY, and FIREBASE_ADMIN_CLIENT_EMAIL environment variables.' },
         { status: 500 }
       )
     }
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     // Create or update user profile in Firestore
     if (!adminDb) {
       return NextResponse.json(
-        { error: 'Firestore not initialized' },
+        { error: 'FIREBASE_ADMIN credentials missing. Firestore not initialized.' },
         { status: 500 }
       )
     }

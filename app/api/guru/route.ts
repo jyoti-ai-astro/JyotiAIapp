@@ -13,6 +13,7 @@ import { saveGuruTurn } from '@/lib/guru/guru-session-store'
 import { rateLimit, getRateLimitHeaders } from '@/lib/middleware/rate-limit'
 import { sanitizeMessage } from '@/lib/security/xss-protection'
 import { rateLimitConfig } from '@/lib/security/validation-schemas'
+import { fetchUserTickets, consumeTickets, splitSubscriptionAndTickets } from '@/lib/payments/ticket-service'
 
 /**
  * Timeout helper for promises
@@ -76,7 +77,16 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { messages, mode, pageSlug } = body // Super Phase B - Add pageSlug
+    const { messages, mode, pageSlug, dryRun } = body // Super Phase B - Add pageSlug, Phase LZ2 - Add dryRun
+
+    // Phase LZ2: Dry run mode for smoke testing
+    if (dryRun === true) {
+      return NextResponse.json({
+        status: 'success',
+        ok: true,
+        message: 'Dry run mode - no actual processing performed',
+      })
+    }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: 'Messages array is required' }, { status: 400 })
@@ -100,6 +110,60 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       )
+    }
+
+    // Phase G: Check if user has tickets (if authenticated)
+    if (userId) {
+      try {
+        const accessInfo = await splitSubscriptionAndTickets(userId)
+        
+        // If no subscription, check for tickets
+        if (!accessInfo.hasSubscription) {
+          if (accessInfo.tickets.aiGuruTickets <= 0) {
+            return NextResponse.json(
+              {
+                status: 'error',
+                code: 'NO_TICKETS',
+                message: 'You have 0 AI Guru credits. Please purchase a one-time reading to continue.',
+              },
+              {
+                status: 403,
+                headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
+              }
+            )
+          }
+        }
+      } catch (ticketError: any) {
+        // If ticket check fails, log but don't block (graceful degradation)
+        console.error('Ticket check error:', ticketError)
+      }
+    }
+
+    // Phase G: Check if user has tickets (if authenticated)
+    if (userId) {
+      try {
+        const accessInfo = await splitSubscriptionAndTickets(userId)
+        
+        // If no subscription, check for tickets
+        if (!accessInfo.hasSubscription) {
+          if (accessInfo.tickets.aiGuruTickets <= 0) {
+            return NextResponse.json(
+              {
+                status: 'error',
+                code: 'NO_TICKETS',
+                message: 'You have 0 AI Guru credits. Please purchase a one-time reading to continue.',
+              },
+              {
+                status: 403,
+                headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
+              }
+            )
+          }
+        }
+      } catch (ticketError: any) {
+        // If ticket check fails, log but don't block (graceful degradation)
+        console.error('Ticket check error:', ticketError)
+      }
     }
 
     // Call Guru Brain with timeout (30 seconds)
@@ -136,17 +200,66 @@ export async function POST(request: NextRequest) {
 
       // Handle other errors from runGuruBrain
       console.error('Guru Brain error:', error)
+      
+      // Check for missing env vars
+      let errorCode = 'INTERNAL_ERROR'
+      let errorMessage = 'An error occurred while processing your request.'
+      
+      if (error.message?.includes('No AI provider configured')) {
+        errorCode = 'AI_PROVIDER_MISSING'
+        errorMessage = 'AI service is not configured. Please contact support.'
+      } else if (error.message?.includes('Pinecone') || error.message?.includes('RAG')) {
+        errorCode = 'RAG_UNAVAILABLE'
+        errorMessage = 'Knowledge base is temporarily unavailable. The Guru will still respond without enhanced context.'
+      }
+      
       return NextResponse.json(
         {
           status: 'error',
-          code: 'INTERNAL_ERROR',
-          message: 'An error occurred while processing your request.',
+          code: errorCode,
+          message: errorMessage,
         },
         {
           status: 500,
           headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
         }
       )
+    }
+
+    // Phase G: Consume ticket AFTER successful response (if authenticated and no subscription)
+    if (userId && result.status !== 'error' && result.status !== 'degraded') {
+      try {
+        const accessInfo = await splitSubscriptionAndTickets(userId)
+        
+        // Only consume ticket if user doesn't have subscription
+        if (!accessInfo.hasSubscription && accessInfo.tickets.aiGuruTickets > 0) {
+          const consumed = await consumeTickets(userId, { aiGuruTickets: 1 })
+          if (!consumed) {
+            console.warn('Failed to consume ticket for user:', userId)
+          }
+        }
+      } catch (ticketError: any) {
+        // Log but don't fail the request if ticket consumption fails
+        console.error('Ticket consumption error:', ticketError)
+      }
+    }
+
+    // Phase G: Consume ticket AFTER successful response (if authenticated and no subscription)
+    if (userId && result.status !== 'error' && result.status !== 'degraded') {
+      try {
+        const accessInfo = await splitSubscriptionAndTickets(userId)
+        
+        // Only consume ticket if user doesn't have subscription
+        if (!accessInfo.hasSubscription && accessInfo.tickets.aiGuruTickets > 0) {
+          const consumed = await consumeTickets(userId, { aiGuruTickets: 1 })
+          if (!consumed) {
+            console.warn('Failed to consume ticket for user:', userId)
+          }
+        }
+      } catch (ticketError: any) {
+        // Log but don't fail the request if ticket consumption fails
+        console.error('Ticket consumption error:', ticketError)
+      }
     }
 
     // Save turn to session store (non-blocking)

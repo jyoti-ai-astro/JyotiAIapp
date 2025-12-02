@@ -22,6 +22,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UploadCloud, Camera, Sparkles, User } from 'lucide-react';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
+import { useTicketAccess } from '@/lib/access/useTicketAccess';
+import { getFeatureAccess } from '@/lib/payments/feature-access';
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
 import { decrementTicket } from '@/lib/access/ticket-access';
 import type { AstroContext } from '@/lib/engines/astro-types';
@@ -30,6 +32,9 @@ import Link from 'next/link';
 export default function FacePage() {
   const router = useRouter();
   const { user } = useUserStore();
+  const featureKey = 'face' as const;
+  const { hasAccess, hasSubscription, tickets, loading: ticketLoading, config } = useTicketAccess(featureKey);
+  const featureConfig = getFeatureAccess(featureKey);
   const { analysis, loading: analyzing, error, analyze } = useFaceReading();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -38,10 +43,10 @@ export default function FacePage() {
   useEffect(() => {
     if (!user) {
       router.push('/login');
-    } else {
+    } else if (hasAccess && !ticketLoading) {
       fetchAstroContext();
     }
-  }, [user, router]);
+  }, [user, router, hasAccess, ticketLoading]);
 
   const fetchAstroContext = async () => {
     if (!user?.uid) return;

@@ -46,13 +46,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check Pinecone configuration
+    const { envVars } = await import('@/lib/env/env.mjs')
+    if (!envVars.pinecone.apiKey || !envVars.pinecone.indexName) {
+      return NextResponse.json(
+        { error: 'PINECONE_API_KEY or PINECONE_INDEX_NAME missing. RAG service not configured.' },
+        { status: 500 }
+      )
+    }
+
     // Store knowledge document
-    const docId = await storeKnowledgeDocument({
-      title,
-      content,
-      category,
-      tags: tags || [],
-    })
+    let docId: string
+    try {
+      docId = await storeKnowledgeDocument({
+        title,
+        content,
+        category,
+        tags: tags || [],
+      })
+    } catch (ragError: any) {
+      console.error('RAG storage error:', ragError)
+      return NextResponse.json(
+        { error: `RAG storage failed: ${ragError.message || 'Pinecone connection error'}` },
+        { status: 500 }
+      )
+    }
 
     // Store in Firestore
     const knowledgeRef = adminDb.collection('knowledge_base').doc(docId)

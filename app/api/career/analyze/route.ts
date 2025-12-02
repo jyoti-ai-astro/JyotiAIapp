@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
+import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket-service'
+import type { FeatureKey } from '@/lib/payments/feature-access'
 import { analyzeCareer } from '@/lib/engines/career/career-engine'
 
 export const dynamic = 'force-dynamic'
@@ -17,6 +19,20 @@ export async function GET(request: NextRequest) {
 
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
     const uid = decodedClaims.uid
+
+    // Phase S: Ticket enforcement
+    const featureKey: FeatureKey = 'career'
+    try {
+      await ensureFeatureAccess(uid, featureKey)
+    } catch (err: any) {
+      if (err.code === 'NO_TICKETS') {
+        return NextResponse.json(
+          { error: 'NO_TICKETS', message: 'You have no credits left for this feature.' },
+          { status: 403 }
+        )
+      }
+      throw err
+    }
 
     if (!adminDb) {
       return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
@@ -51,6 +67,13 @@ export async function GET(request: NextRequest) {
       },
       numerology
     )
+
+    // Phase S: Consume ticket after successful analysis
+    try {
+      await consumeFeatureTicket(uid, featureKey)
+    } catch (err: any) {
+      console.error('Ticket consumption error:', err)
+    }
 
     return NextResponse.json({
       success: true,

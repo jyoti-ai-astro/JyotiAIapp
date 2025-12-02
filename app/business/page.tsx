@@ -24,6 +24,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Briefcase, Sparkles } from 'lucide-react';
 import { BusinessEngine } from '@/components/engines/BusinessEngine';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
+import { useTicketAccess } from '@/lib/access/useTicketAccess';
+import { getFeatureAccess } from '@/lib/payments/feature-access';
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
 import { decrementTicket } from '@/lib/access/ticket-access';
 import type { AstroContext } from '@/lib/engines/astro-types';
@@ -32,6 +34,9 @@ import Link from 'next/link';
 export default function BusinessPage() {
   const router = useRouter();
   const { user } = useUserStore();
+  const featureKey = 'business' as const;
+  const { hasAccess, hasSubscription, tickets, loading: ticketLoading, config } = useTicketAccess(featureKey);
+  const featureConfig = getFeatureAccess(featureKey);
   const { analysis, loading, error, analyze } = useBusiness();
   const [businessIdea, setBusinessIdea] = useState('');
   const [astro, setAstro] = useState<AstroContext | null>(null);
@@ -39,10 +44,10 @@ export default function BusinessPage() {
   useEffect(() => {
     if (!user) {
       router.push('/login');
-    } else {
+    } else if (hasAccess && !ticketLoading) {
       fetchAstroContext();
     }
-  }, [user, router]);
+  }, [user, router, hasAccess, ticketLoading]);
 
   const fetchAstroContext = async () => {
     if (!user?.uid) return;

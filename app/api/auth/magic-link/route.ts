@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     if (!adminAuth) {
       return NextResponse.json(
-        { error: 'Firebase Admin not initialized' },
+        { error: 'FIREBASE_ADMIN credentials missing. Firebase Admin not initialized.' },
         { status: 500 }
       )
     }

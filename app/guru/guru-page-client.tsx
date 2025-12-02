@@ -11,18 +11,34 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { UpgradeBanner } from '@/components/ui/upgrade-banner';
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
 import { CosmicGuruChat } from '@/components/guru/CosmicGuruChat';
 import GuruHero from '@/src/ui/sections/guru/GuruHero';
 import GuruLayoutShell from '@/src/ui/sections/guru/GuruLayoutShell';
+import { useUserStore } from '@/store/user-store';
 
 export function GuruPageClient() {
   const router = useRouter();
+  const { user } = useUserStore();
+  
+  // Check if user has remaining Guru tickets
+  const aiGuruTickets = user?.aiGuruTickets || 0;
+  const hasNoTickets = aiGuruTickets === 0;
 
   return (
     <div className="relative">
       <section className="page-container pt-8 md:pt-16">
         <GuruHero />
       </section>
+
+      {hasNoTickets && (
+        <section className="page-container pt-6 md:pt-10">
+          <OneTimeOfferBanner 
+            feature="AI Guru questions"
+            productId="199"
+          />
+        </section>
+      )}
 
       <section className="page-container pt-6 md:pt-10">
         <UpgradeBanner
@@ -43,4 +59,3 @@ export function GuruPageClient() {
     </div>
   );
 }
-

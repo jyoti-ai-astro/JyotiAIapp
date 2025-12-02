@@ -19,6 +19,7 @@ import { motion } from 'framer-motion';
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Briefcase, TrendingUp, Sparkles, Lightbulb } from 'lucide-react';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
+import { useTicketAccess } from '@/lib/access/useTicketAccess';
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
 import { decrementTicket } from '@/lib/access/ticket-access';
 import type { AstroContext } from '@/lib/engines/astro-types';
@@ -27,6 +28,7 @@ import Link from 'next/link';
 export default function CareerPage() {
   const router = useRouter();
   const { user } = useUserStore();
+  const { hasAccess, hasSubscription, tickets, loading: ticketLoading } = useTicketAccess('career');
   const [loading, setLoading] = useState(false);
   const [careerData, setCareerData] = useState<any>(null);
   const [businessIdea, setBusinessIdea] = useState('');
@@ -36,11 +38,11 @@ export default function CareerPage() {
   useEffect(() => {
     if (!user) {
       router.push('/login');
-    } else {
+    } else if (hasAccess && !ticketLoading) {
       loadCareerData();
       fetchAstroContext();
     }
-  }, [user, router]);
+  }, [user, router, hasAccess, ticketLoading]);
 
   const fetchAstroContext = async () => {
     if (!user?.uid) return;
@@ -130,21 +132,30 @@ export default function CareerPage() {
     return null;
   }
 
+  // Phase L: Check ticket access
+  if (ticketLoading) {
+    return (
+      <DashboardPageShell title="Career Destiny" subtitle="Loading...">
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+        </div>
+      </DashboardPageShell>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <DashboardPageShell title="Career Destiny" subtitle="Discover your professional path">
+        <OneTimeOfferBanner feature="Career Insights" productId="299" />
+      </DashboardPageShell>
+    );
+  }
+
   return (
     <DashboardPageShell
       title="Career Destiny"
       subtitle="Discover your ideal career path and business opportunities based on your cosmic blueprint"
     >
-        {/* Context Panel */}
-        <div className="mb-8">
-          <OneTimeOfferBanner
-            title="Unlock Full Insights"
-            description="This module uses your birth chart & predictions powered by Guru Brain."
-            priceLabel="₹199"
-            ctaLabel="Unlock Now"
-            ctaHref="/pay/199"
-          />
-        </div>
 
         {/* Astro Summary Block */}
         {astro && (

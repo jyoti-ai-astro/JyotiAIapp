@@ -3,19 +3,18 @@ import Razorpay from 'razorpay'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { envVars } from '@/lib/env/env.mjs'
 
-const PRODUCTS: Record<string, { amount: number; description: string }> = {
-  99: {
-    amount: 99,
-    description: 'Quick Reading (1 question / name correction / daily horoscope)',
-  },
-  199: {
-    amount: 199,
-    description: 'Deep Insight (Basic Kundali / 3 AI Guru questions)',
-  },
-}
+import { getOneTimeProduct, isValidOneTimeProduct } from '@/lib/pricing/plans'
 
 export async function POST(req: NextRequest) {
   try {
+    // Phase LZ3: Payments kill switch
+    if (envVars.app.disablePayments) {
+      return NextResponse.json(
+        { error: 'Payments temporarily disabled' },
+        { status: 503 }
+      )
+    }
+
     // Verify session
     const sessionCookie = req.cookies.get('session')?.value
     if (!sessionCookie || !adminAuth) {
@@ -27,7 +26,13 @@ export async function POST(req: NextRequest) {
 
     const { productId } = await req.json()
 
-    if (!productId || !PRODUCTS[productId]) {
+    if (!productId) {
+      return NextResponse.json({ error: 'Product ID required' }, { status: 400 })
+    }
+
+    // Get one-time product from single source of truth
+    const product = getOneTimeProduct(String(productId))
+    if (!product || !isValidOneTimeProduct(String(productId))) {
       return NextResponse.json({ error: 'Invalid product' }, { status: 400 })
     }
 
@@ -35,7 +40,10 @@ export async function POST(req: NextRequest) {
     const razorpayKeySecret = envVars.razorpay.keySecret
 
     if (!razorpayKeyId || !razorpayKeySecret) {
-      return NextResponse.json({ error: 'Razorpay not configured' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET missing. Payment service not configured.' },
+        { status: 500 }
+      )
     }
 
     const razorpay = new Razorpay({
@@ -44,11 +52,12 @@ export async function POST(req: NextRequest) {
     })
 
     const order = await razorpay.orders.create({
-      amount: PRODUCTS[productId].amount * 100, // Convert to paise
+      amount: product.amountInINR * 100, // Convert to paise
       currency: 'INR',
       receipt: `one_time_${productId}_${Date.now()}_${uid}`,
       notes: {
         productId: String(productId),
+        productIdInternal: product.id,
         type: 'one_time',
         userId: uid,
       },
@@ -64,7 +73,9 @@ export async function POST(req: NextRequest) {
       await orderRef.set({
         orderId: order.id,
         productId: String(productId),
-        amount: PRODUCTS[productId].amount,
+        productIdInternal: product.id,
+        amount: product.amountInINR,
+        tickets: product.tickets,
         status: 'created',
         createdAt: new Date(),
       })
@@ -74,7 +85,11 @@ export async function POST(req: NextRequest) {
       id: order.id,
       amount: order.amount,
       currency: order.currency,
-      product: PRODUCTS[productId],
+      product: {
+        name: product.name,
+        amount: product.amountInINR,
+        description: product.description,
+      },
     })
   } catch (err: any) {
     console.error('Create one-time order error:', err)

@@ -3,6 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Public auth routes (always allow)
+  const publicAuthRoutes = ['/login', '/signup', '/reset-password', '/magic-link']
+  const isPublicAuthRoute = publicAuthRoutes.some((route) => pathname === route)
+
   // Protected routes that require authentication
   const protectedRoutes = ['/dashboard', '/onboarding', '/scan', '/insights', '/reports', '/guru', '/settings']
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
@@ -10,6 +14,11 @@ export function middleware(request: NextRequest) {
   // Admin routes
   const adminRoutes = ['/admin']
   const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route))
+
+  // Always allow public auth routes
+  if (isPublicAuthRoute) {
+    return NextResponse.next()
+  }
 
   // Check for session cookie (will be set by auth API)
   const sessionCookie = request.cookies.get('session')

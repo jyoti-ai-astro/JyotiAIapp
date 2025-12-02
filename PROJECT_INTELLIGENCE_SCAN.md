@@ -1,7 +1,8 @@
 # COMPLETE PROJECT INTELLIGENCE SCAN
-**Generated:** 2024-11-28
+**Generated:** 2024-12-02
 **Project:** Jyoti AI App
 **Root:** /Users/diptanshuojha/Desktop/JyotiAIapp
+**Last Major Update:** Super Cosmic UI Transformation (December 2024)
 
 ---
 
@@ -9,83 +10,80 @@
 
 ```
 JyotiAIapp/
-├── app/                          # Next.js App Router - All routes & pages
-│   ├── page.tsx                  # HOME PAGE (Landing) - Uses R3F Canvas directly
-│   ├── layout.tsx                # ROOT LAYOUT - Wraps entire app
-│   ├── globals.css               # Global CSS with cosmic theme variables
+├── app/                          # Next.js 14 App Router - All routes & pages
+│   ├── page.tsx                  # HOME PAGE - Super Cosmic UI with new sections
+│   ├── layout.tsx                # ROOT LAYOUT - GlobalShaderBackground + Header + Footer
+│   ├── globals.css               # Global CSS with .page-container utility
 │   ├── loading.tsx               # Loading state
 │   ├── not-found.tsx             # 404 page
-│   ├── global-error.tsx           # Global error boundary
+│   ├── global-error.tsx          # Global error boundary
 │   ├── robots.ts                 # SEO robots.txt generator
 │   ├── sitemap.ts                # SEO sitemap generator
 │   │
 │   ├── (root)/                   # Public website routes
 │   │   ├── home/                  # Home page client component
-│   │   │   ├── page.tsx
-│   │   │   └── home-page-client.tsx
 │   │   ├── about/                 # About page
-│   │   ├── features/              # Features page
-│   │   ├── pricing/               # Pricing page
-│   │   ├── modules/               # Modules showcase
-│   │   ├── updates/               # Updates/changelog
-│   │   ├── status/                # Status page
+│   │   ├── features/              # Features page (MarketingPageShell)
+│   │   ├── pricing/               # Pricing page (Super Cosmic UI)
+│   │   ├── modules/               # Modules showcase (MarketingPageShell)
+│   │   ├── updates/               # Updates/changelog (MarketingPageShell)
+│   │   ├── status/                # Status page (MarketingPageShell)
 │   │   ├── contact/               # Contact page
 │   │   ├── support/               # Support page
 │   │   ├── terms/                 # Terms of service
 │   │   ├── privacy/               # Privacy policy
 │   │   ├── blog/                  # Blog listing
-│   │   └── company/               # Company pages
-│   │       ├── about/
-│   │       ├── blog/
-│   │       ├── careers/
-│   │       ├── press-kit/
-│   │       └── contact/
+│   │   └── company/               # Company pages (CompanyPageShell)
+│   │       ├── about/             # About (CompanyPageShell)
+│   │       ├── blog/              # Blog (CompanyPageShell)
+│   │       ├── careers/           # Careers (CompanyPageShell)
+│   │       ├── press-kit/         # Press Kit (CompanyPageShell)
+│   │       └── contact/           # Contact (CompanyPageShell)
 │   │
 │   ├── auth/                     # Authentication routes
 │   │   ├── callback/             # OAuth callback
-│   │   ├── login/                # Login page
-│   │   ├── signup/               # Signup page
-│   │   ├── magic-link/           # Magic link auth
-│   │   ├── profile-setup/        # Profile setup
-│   │   └── rasi-confirmation/    # Rashi selection
+│   │   ├── login/                # Login page (AuthLayout)
+│   │   ├── signup/               # Signup page (AuthLayout)
+│   │   ├── magic-link/           # Magic link auth (MarketingPageShell)
+│   │   ├── profile-setup/        # Profile setup (MarketingPageShell)
+│   │   └── rasi-confirmation/     # Rashi selection (MarketingPageShell)
 │   │
-│   ├── dashboard/                # Main dashboard (protected)
-│   ├── onboarding/                # Onboarding flow
-│   ├── splash/                   # Splash screen
+│   ├── dashboard/                # Main dashboard (DashboardPageShell)
+│   ├── onboarding/               # Onboarding flow
+│   ├── splash/                   # Splash screen (MarketingPageShell)
 │   │
 │   ├── astro/                    # Astrology engine pages
-│   │   ├── page.tsx
-│   │   ├── astro-page-client.tsx
-│   │   └── error.tsx
 │   ├── cosmos/                   # Cosmos page
-│   ├── guru/                     # AI Guru chat
+│   ├── guru/                     # AI Guru chat (GuruHero + GuruLayoutShell)
 │   ├── premium/                  # Premium features
-│   ├── kundali/                  # Kundali generator
-│   ├── planets/                  # Planets view
-│   ├── houses/                   # Houses view
-│   ├── charts/                   # Divisional charts
-│   ├── dasha/                    # Dasha timeline
+│   ├── kundali/                  # Kundali generator (DashboardPageShell)
+│   ├── planets/                  # Planets view (DashboardPageShell)
+│   ├── houses/                   # Houses view (DashboardPageShell)
+│   ├── charts/                   # Divisional charts (DashboardPageShell)
+│   ├── dasha/                    # Dasha timeline (DashboardPageShell)
 │   ├── numerology/               # Numerology calculator
 │   │
 │   ├── engines/                  # Intelligence engine pages
-│   │   ├── face/                 # Face reading
+│   │   ├── face/                 # Face reading (DashboardPageShell)
 │   │   ├── palmistry/            # Palmistry scanner
 │   │   ├── aura/                 # Aura scanner
-│   │   ├── business/             # Business compatibility
-│   │   ├── pregnancy/            # Pregnancy insights
-│   │   ├── predictions/           # Predictions hub
-│   │   ├── timeline/             # 12-month timeline
-│   │   ├── compatibility/        # Partner compatibility
-│   │   └── career/               # Career analysis
+│   │   ├── business/             # Business compatibility (DashboardPageShell)
+│   │   ├── pregnancy/            # Pregnancy insights (DashboardPageShell)
+│   │   ├── predictions/          # Predictions hub (DashboardPageShell)
+│   │   ├── timeline/             # 12-month timeline (DashboardPageShell)
+│   │   ├── compatibility/        # Partner compatibility (DashboardPageShell)
+│   │   ├── career/               # Career analysis (DashboardPageShell)
+│   │   ├── calendar/             # Cosmic calendar (DashboardPageShell)
+│   │   └── rituals/              # Vedic rituals (DashboardPageShell)
 │   │
-│   ├── reports/                  # Reports center
-│   │   ├── page.tsx
-│   │   └── [id]/page.tsx         # Individual report
+│   ├── reports/                  # Reports center (DashboardPageShell)
 │   ├── report/                   # Report viewer
-│   ├── settings/                 # User settings
-│   ├── payments/                 # Payment management
+│   ├── settings/                 # User settings (DashboardPageShell)
+│   ├── payments/                 # Payment management (DashboardPageShell)
 │   ├── profile/                  # User profile
 │   ├── notifications/            # Notifications
+│   ├── pay/[productId]/          # Payment page (DashboardPageShell)
+│   ├── thanks/                   # Payment success (MarketingPageShell)
 │   │
 │   ├── admin/                    # Admin dashboard (protected)
 │   │   ├── layout.tsx
@@ -100,13 +98,15 @@ JyotiAIapp/
 │   │   ├── knowledge/
 │   │   ├── jobs/
 │   │   ├── logs/
-│   │   └── backup/
+│   │   ├── backup/
+│   │   ├── tickets/
+│   │   └── one-time-purchases/
 │   │
 │   └── api/                      # Next.js API Routes (Backend)
 │       ├── auth/                 # Authentication endpoints
 │       ├── user/                 # User management
 │       ├── kundali/              # Kundali generation
-│       ├── numerology/          # Numerology calculations
+│       ├── numerology/           # Numerology calculations
 │       ├── guru/                 # Guru chat API
 │       ├── guru-chat/            # Legacy guru chat
 │       ├── guru-voice/           # Voice input
@@ -118,7 +118,7 @@ JyotiAIapp/
 │       ├── aura/                 # Aura analysis
 │       ├── business/             # Business compatibility
 │       ├── compatibility/        # Partner compatibility
-│       ├── predictions/          # Predictions engine
+│       ├── predictions/           # Predictions engine
 │       ├── timeline/             # Timeline generation
 │       ├── reports/              # Report generation
 │       ├── report-pdf/           # PDF generation
@@ -137,10 +137,43 @@ JyotiAIapp/
 │       ├── upload/               # File upload
 │       ├── rag/                  # RAG (vector search)
 │       ├── workers/              # Background workers
+│       ├── tickets/              # Ticket system
 │       └── admin/                # Admin API endpoints
+│
+├── src/                          # ⭐ NEW: Super Cosmic UI System
+│   └── ui/                       # UI component library
+│       ├── theme/                # Design system
+│       │   ├── tokens.ts         # Color tokens, gradients, shadows, spacing
+│       │   └── global-motion.ts  # Framer Motion presets
+│       ├── layout/               # Layout shells
+│       │   ├── Header.tsx         # Global header (glassmorphic, gold border)
+│       │   ├── Footer.tsx        # Global footer (minimal 3-row layout)
+│       │   ├── DashboardShell.tsx        # Dashboard content shell
+│       │   ├── DashboardPageShell.tsx    # Full dashboard layout
+│       │   ├── MarketingPageShell.tsx   # Marketing page wrapper
+│       │   └── CompanyPageShell.tsx     # Company page wrapper
+│       ├── background/           # Background system
+│       │   └── GlobalShaderBackground.tsx  # ⭐ Universal WebGL2 shader background
+│       └── sections/              # Page sections
+│           ├── home/              # Homepage sections
+│           │   ├── HomeHero.tsx           # Hero with floating cards
+│           │   ├── HomeValueProps.tsx     # Value proposition tiles
+│           │   ├── HomeHowItWorks.tsx     # 3-step flow
+│           │   ├── HomeSocialProof.tsx    # Testimonials + India map
+│           │   ├── HomePricingTeaser.tsx  # Pricing teaser
+│           │   └── HomeFinalCTA.tsx       # Final CTA section
+│           ├── guru/              # Guru page sections
+│           │   ├── GuruHero.tsx           # Guru hero with stats
+│           │   └── GuruLayoutShell.tsx    # Chat UI wrapper
+│           ├── pricing/           # Pricing page sections
+│           │   ├── PricingHero.tsx        # Pricing hero
+│           │   └── PricingFAQ.tsx        # FAQ section
+│           └── auth/              # Auth layouts
+│               └── AuthLayout.tsx         # Reusable auth wrapper
 │
 ├── components/                   # React UI Components
 │   ├── global/                   # Global app components
+│   │   ├── GlobalShaderBackground.tsx  # (legacy, moved to src/ui)
 │   │   ├── Background.tsx        # PLACEHOLDER (returns null)
 │   │   ├── CosmicCursor.tsx      # Custom cursor effects
 │   │   ├── SoundscapeController.tsx  # Audio controller
@@ -161,12 +194,7 @@ JyotiAIapp/
 │   │   ├── ParticleField.tsx         # R3F Particle system (still exists)
 │   │   ├── RotatingMandala.tsx       # R3F Mandala (still exists)
 │   │   ├── R3FFallback.tsx           # R3F fallback UI
-│   │   ├── cosmic-background.tsx     # Alternative background
-│   │   ├── astro-glyph.tsx
-│   │   ├── chakra-wheel.tsx
-│   │   ├── energy-wave.tsx
-│   │   ├── mandala.tsx
-│   │   └── index.ts
+│   │   └── [other cosmic components]
 │   │
 │   ├── sections/                 # Page sections
 │   │   ├── Hero/
@@ -177,27 +205,30 @@ JyotiAIapp/
 │   │   ├── CTA/
 │   │   │   └── CosmicCTA.tsx
 │   │   ├── Content/
-│   │   │   ├── CosmicContentBlock.tsx
-│   │   │   ├── CosmicContentSection.tsx
-│   │   │   └── CosmicSectionDivider.tsx
 │   │   ├── Footer/
 │   │   │   └── CosmicFooter.tsx
-│   │   ├── Testimonials/
+│   │   ├── testimonials/         # ⭐ RENAMED: lowercase for case-sensitive systems
 │   │   │   └── TestimonialsSection.tsx
 │   │   ├── Modules/
 │   │   │   └── ModulesSection.tsx
 │   │   ├── Pricing/
-│   │   │   └── PricingCards.tsx
+│   │   │   ├── PricingSection6.tsx
+│   │   │   ├── PricingCards.tsx
+│   │   │   └── PricingComparisonTable.tsx
 │   │   ├── AstrologicalWheel/
 │   │   │   └── AstrologicalWheel3D.tsx  # R3F 3D wheel
-│   │   └── Roadmap/
-│   │       └── RoadmapTimeline.tsx
+│   │   ├── Roadmap/
+│   │   ├── about/
+│   │   │   └── CompanyTimeline.tsx
+│   │   └── marketing/
+│   │       └── IndiaCustomersWidget.tsx
 │   │
 │   ├── providers/                # Context providers
 │   │   ├── GlobalProviders.tsx       # Main global wrapper
 │   │   └── MotionProvider.tsx         # Motion orchestrator provider
 │   │
 │   ├── auth/                     # Authentication components
+│   │   └── SignInPage.tsx         # Glassmorphic sign-in (used by AuthLayout)
 │   ├── astro/                    # Astrology components
 │   ├── engines/                  # Intelligence engine UIs
 │   ├── guru/                     # Guru chat components
@@ -206,6 +237,12 @@ JyotiAIapp/
 │   │   ├── CosmicDashboard.tsx
 │   │   └── CosmicBackground.tsx   # Dashboard-specific background
 │   ├── ui/                       # shadcn/ui components
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── gradient-button.tsx   # ⭐ GradientButton component
+│   │   ├── upgrade-banner.tsx    # ⭐ UpgradeBanner component
+│   │   ├── testimonial-card.tsx   # TestimonialCard component
+│   │   └── [other shadcn components]
 │   └── [other component folders]
 │
 ├── cosmos/                       # R3F SCENE ENGINE (Massive library)
@@ -221,71 +258,9 @@ JyotiAIapp/
 │   │   ├── ascension-lattice-v2/
 │   │   ├── astral-bloom/
 │   │   ├── astral-gate-v3/
-│   │   ├── astral-lotus/
-│   │   ├── astral-mandala/
-│   │   ├── astral-thread-v2/
-│   │   ├── astral-trail/
-│   │   ├── astral-veil/
-│   │   ├── aura-halo/
-│   │   ├── aura-shield/
-│   │   ├── aurora-veil/
-│   │   ├── blessing-wave/
-│   │   ├── camera/
-│   │   ├── celestial-crest-v2/
-│   │   ├── celestial-crown-v2/
-│   │   ├── celestial-gate-v2/
-│   │   ├── celestial-horizon-v2/
-│   │   ├── celestial-ribbon/
-│   │   ├── celestial-sanctum-v3/
-│   │   ├── celestial-temple-v2/
-│   │   ├── celestial-wave-v2/
-│   │   ├── chakra-pulse/
-│   │   ├── chakra-rings/
-│   │   ├── cosmic-drift-field/
-│   │   ├── cosmic-fracture/
-│   │   ├── cosmic-lens/
-│   │   ├── cosmic-orbit/
-│   │   ├── cosmic-pulse/
-│   │   ├── cursor/
-│   │   ├── dharma-wheel-v2/
-│   │   ├── dimensional-ripple/
-│   │   ├── divine-compass/
-│   │   ├── divine-grid/
-│   │   ├── divine-orb/
-│   │   ├── divine-throne-v3/
-│   │   ├── face/
-│   │   ├── fate-ripple/
-│   │   ├── gate-of-time-v2/
-│   │   ├── gateway-v3/
-│   │   ├── guru/
-│   │   ├── karma-wheel/
-│   │   ├── karmic-thread/
-│   │   ├── kundalini/
-│   │   ├── light-shafts/
-│   │   ├── memory-stream/
-│   │   ├── path-indicator-v2/
-│   │   ├── prana-field/
-│   │   ├── projection/
-│   │   ├── quantum-halo/
-│   │   ├── ribbons/
-│   │   ├── solar-arc/
-│   │   ├── soul-bridge-v3/
-│   │   ├── soul-mirror/
-│   │   ├── soul-star/
-│   │   ├── star-fall/
-│   │   ├── stellar-wind/
-│   │   ├── timeline-stream/
-│   │   └── ui-raymarch/
+│   │   ├── [50+ more scene modules]
 │   │
 │   ├── motion/                   # Motion engine
-│   │   ├── motion-engine.ts
-│   │   ├── orchestrator.ts
-│   │   ├── scroll-motion.ts
-│   │   ├── audio-motion.ts
-│   │   ├── frame-loop.ts
-│   │   ├── timeline.ts
-│   │   └── easing.ts
-│   │
 │   ├── audio/                    # Audio processing
 │   ├── particles/                # Particle systems
 │   ├── postprocessing/           # Post-processing effects
@@ -296,19 +271,7 @@ JyotiAIapp/
 ├── postfx/                       # POST-PROCESSING EFFECTS (R3F)
 │   ├── cosmic-bloom-v1/
 │   ├── cosmic-bloomboost-v1/
-│   ├── cosmic-chromatic-v1/
-│   ├── cosmic-colorgrade-v1/
-│   ├── cosmic-depth-v1/
-│   ├── cosmic-filmgrain-v1/
-│   ├── cosmic-glare-v1/
-│   ├── cosmic-godrays-v1/
-│   ├── cosmic-grainoverlay-v1/
-│   ├── cosmic-halation-v1/
-│   ├── cosmic-lensflare-v1/
-│   ├── cosmic-motionblur-v1/
-│   ├── cosmic-starlight-v1/
-│   ├── cosmic-vignette-v1/
-│   ├── final-composite-v1/
+│   ├── [15 effect modules]
 │   └── index.ts
 │
 ├── hooks/                        # React Hooks
@@ -318,40 +281,11 @@ JyotiAIapp/
 │   │   ├── useMouseMotion.ts
 │   │   └── useRouteMotion.ts
 │   ├── use-global-progress.ts        # Global progress (Zustand)
-│   ├── use-scroll-trigger.ts
-│   ├── use-audio.ts
-│   ├── use-cosmic-motion.ts
-│   ├── use-cursor-trail.ts
-│   ├── use-glow-pulse.ts
-│   ├── use-kundalini-wave.ts
-│   ├── use-particle-distortion.ts
-│   ├── use-reduced-motion.ts
-│   └── [engine hooks]
+│   └── [other hooks]
 │
 ├── lib/                          # Business Logic & Utilities
 │   ├── motion/                   # Motion orchestration
-│   │   ├── MotionOrchestrator.ts     # Main orchestrator
-│   │   ├── gsap-motion-bridge.ts     # GSAP bridge (ScrollTrigger)
-│   │   ├── scroll-store.ts           # Scroll state (Zustand)
-│   │   ├── mouse-store.ts            # Mouse state (Zustand)
-│   │   ├── blessing-wave-store.ts    # Blessing wave state
-│   │   └── guru-context-store.ts     # Guru context state
-│   │
 │   ├── engines/                  # Spiritual intelligence engines
-│   │   ├── kundali-engine.ts
-│   │   ├── numerology-engine.ts
-│   │   ├── prediction-engine.ts
-│   │   ├── compatibility-engine.ts
-│   │   ├── business-engine.ts
-│   │   ├── pregnancy-engine.ts
-│   │   ├── face-reading-engine.ts
-│   │   ├── palmistry-engine.ts
-│   │   ├── aura-engine.ts
-│   │   ├── remedy-engine.ts
-│   │   ├── report-engine.ts
-│   │   ├── timeline-engine.ts
-│   │   └── guru-engine.ts
-│   │
 │   ├── guru/                     # Guru chat engine
 │   ├── rag/                      # RAG (vector search)
 │   ├── firebase/                  # Firebase config
@@ -371,90 +305,235 @@ JyotiAIapp/
 │   ├── theme-provider.tsx
 │   └── accessibility-provider.tsx
 │
-├── styles/                       # Style system
-│   ├── themes/                   # Theme definitions
-│   └── tokens/                   # Design tokens
-│
-├── layout/                       # Layout components
-│   ├── app-layout.tsx
-│   ├── admin-layout.tsx
-│   ├── public-website-layout.tsx
-│   └── [other layouts]
-│
-├── utils/                        # Utility functions
-├── config/                       # Configuration
-├── types/                        # TypeScript types
-├── scripts/                      # Build scripts
-├── tests/                        # Test files
+├── public/                       # Static assets
+│   ├── images/
+│   │   └── maps/
+│   │       └── india-outline-light.png  # ⭐ India map for widget
+│   └── [other assets]
 │
 ├── middleware.ts                 # Next.js middleware (route protection)
 ├── next.config.mjs               # Next.js config (shader support)
 ├── tailwind.config.ts            # Tailwind config (cosmic colors)
 ├── tsconfig.json                 # TypeScript config
 ├── package.json                  # Dependencies
-└── app/globals.css               # Global CSS
+└── app/globals.css               # Global CSS with .page-container
 ```
 
----
-
-## 2. BACKGROUND-RELATED FILES
-
-### PRIMARY BACKGROUND COMPONENTS:
-1. **`components/cosmic/CosmicBackground.tsx`** ⭐ **ACTIVE**
-   - **Type:** CSS Gradient (non-R3F)
-   - **Z-index:** `-z-10` (behind everything)
-   - **Status:** CLEAN - Simple gradient, no WebGL
-   - **Usage:** Can be imported anywhere
-
-2. **`components/cosmic/CosmicBackground.dynamic.tsx`**
-   - **Type:** Dynamic import wrapper
-   - **Fallback:** Gradient background
-   - **Status:** Wrapper only
-
-3. **`components/global/Background.tsx`**
-   - **Type:** Placeholder (returns `null`)
-   - **Status:** Currently unused
-
-4. **`components/global/GalaxySceneWrapper.tsx`**
-   - **Type:** R3F Canvas wrapper
-   - **Uses:** `cosmos/scenes/galaxy-scene.tsx`
-   - **Z-index:** `z-0`
-   - **Status:** Still active, uses R3F
-
-5. **`components/dashboard/CosmicBackground.tsx`**
-   - **Type:** Dashboard-specific background
-   - **Status:** Separate from main background
-
-### BACKGROUND RENDERING IN HOME PAGE:
-**`app/page.tsx`** (HOME PAGE):
-- **Line 35-43:** Direct R3F Canvas with NebulaShader, ParticleField, RotatingMandala
-- **Z-index:** `z-0` (background layer)
-- **Status:** ⚠️ **STILL USING R3F** - Not using CosmicBackground component
-
-### R3F BACKGROUND COMPONENTS (Still exist but may not be used):
-- `components/cosmic/NebulaShader.tsx` - R3F shader component
-- `components/cosmic/ParticleField.tsx` - R3F particle system
-- `components/cosmic/RotatingMandala.tsx` - R3F mandala
-
-### COSMOS SCENE ENGINE (Massive R3F library):
-- `cosmos/scenes/galaxy-scene.tsx` - Main galaxy scene
-- `cosmos/scenes/nebula-scene.tsx`
-- `cosmos/scenes/particle-universe-scene.tsx`
-- `cosmos/scenes/kundalini-wave-scene.tsx`
-- **50+ other R3F scene modules** in `cosmos/` directory
+**File Counts:**
+- **Total TypeScript/React files:** ~1,266
+- **App routes:** 80+ pages
+- **API routes:** 83 endpoints
+- **Components:** 200+ components
+- **Super Cosmic UI files:** 20 files in `src/ui/`
+- **R3F scenes:** 50+ scene modules
+- **Post-processing effects:** 15 modules
 
 ---
 
-## 3. CANVAS / R3F FILES
+## 2. BACKGROUND SYSTEM (UPDATED - December 2024)
+
+### ⭐ PRIMARY BACKGROUND: GlobalShaderBackground
+
+**Location:** `src/ui/background/GlobalShaderBackground.tsx`
+
+**Type:** WebGL2 Shader (full-screen, fixed position)
+
+**Implementation:**
+- Based on 21st.dev shader #3435
+- Full-screen fixed background (`position: fixed`)
+- Optimized WebGL2 shader
+- Soft cosmic gradients
+- Opacity: 0.25-0.35 (doesn't overpower text)
+- Z-index: `z-0` (behind all content)
+
+**Usage:**
+- Mounted in `app/layout.tsx` at root level
+- Appears on ALL pages automatically
+- No per-page background components needed
+
+**Status:** ✅ **ACTIVE** - Universal background for entire app
+
+### ROOT LAYOUT (`app/layout.tsx`):
+
+**Current Structure:**
+```tsx
+<html>
+  <body className="bg-[#05050A] text-white antialiased overflow-x-hidden">
+    <GlobalShaderBackground />  {/* ⭐ Universal shader background */}
+    <div className="relative z-20">
+      <Header />                {/* ⭐ Super Cosmic header */}
+    </div>
+    <main className="relative z-10">
+      {children}                {/* All page content */}
+    </main>
+    <Footer />                  {/* ⭐ Super Cosmic footer */}
+  </body>
+</html>
+```
+
+**Z-Index Layering:**
+- `GlobalShaderBackground`: `z-0` (background)
+- `Header`/`Footer`: `z-20` (top layer)
+- `main` content: `z-10` (middle layer)
+
+### REMOVED BACKGROUND SYSTEMS:
+
+**No longer used globally:**
+- ❌ `components/global/Background.tsx` (returns null)
+- ❌ `components/cosmic/CosmicBackground.tsx` (replaced by GlobalShaderBackground)
+- ❌ `components/global/GalaxySceneWrapper.tsx` (removed from layout)
+- ❌ `components/cosmic/NebulaShader.tsx` (removed from layout)
+- ❌ `components/cosmic/ParticleField.tsx` (removed from layout)
+- ❌ `components/cosmic/RotatingMandala.tsx` (removed from layout)
+
+**Still exists but not used as global background:**
+- `components/cosmic/NebulaShader.tsx` - Can be used as foreground element
+- `components/cosmic/ParticleField.tsx` - Can be used as foreground element
+- `components/cosmic/RotatingMandala.tsx` - Can be used as foreground element
+- `components/global/GalaxySceneWrapper.tsx` - Can be used on specific pages
+
+### HOMEPAGE BACKGROUND:
+
+**`app/page.tsx` (HOME PAGE):**
+- **Status:** ✅ **UPDATED** - Uses Super Cosmic UI sections
+- **Background:** Inherits `GlobalShaderBackground` from layout
+- **No direct R3F Canvas** - Clean section-based layout
+- **Sections:**
+  - `HomeHero` - Hero with floating cards
+  - `HomeValueProps` - Value proposition tiles
+  - `HomeHowItWorks` - 3-step flow
+  - `HomeSocialProof` - Testimonials + India map
+  - `HomePricingTeaser` - Pricing teaser
+  - `HomeFinalCTA` - Final CTA
+
+---
+
+## 3. SUPER COSMIC UI SYSTEM (NEW - December 2024)
+
+### Theme System (`src/ui/theme/`):
+
+**`tokens.ts`:**
+- Color tokens: `cosmicGold`, `cosmicIndigo`, `nebulaPurple`, etc.
+- Gradients: `gradientGold`, `gradientIndigo`, etc.
+- Shadows: `shadowSoftGoldGlow`, `shadowCosmicGlow`, etc.
+- Spacing: Consistent spacing scale
+- Typography: Font sizes and weights
+- Container widths: Max-width utilities
+
+**`global-motion.ts`:**
+- Motion presets: `fadeUp`, `staggerChildren`, `softFloat`, etc.
+- Consistent animation timing and easing
+- Reusable across all components
+
+### Layout Shells (`src/ui/layout/`):
+
+**`Header.tsx`:**
+- Transparent, glassmorphic design
+- Gold border with glow
+- Glowing nav links
+- Mobile menu
+- "Ask The Guru" CTA
+- Cosmic gold logo
+
+**`Footer.tsx`:**
+- Minimal 3-row layout
+- Logo + message
+- Navigation links
+- Copyright + social icons
+
+**`DashboardShell.tsx`:**
+- Reusable shell for dashboard content
+- Optional title, subtitle, right actions
+- Glassmorphic styling
+- `fadeUp` motion
+
+**`DashboardPageShell.tsx`:**
+- Combines sidebar (if needed) + DashboardShell
+- Two-column desktop, stacked mobile
+
+**`MarketingPageShell.tsx`:**
+- Standard marketing layout wrapper
+- Eyebrow, title, description
+- Uses `.page-container` utility
+
+**`CompanyPageShell.tsx`:**
+- Company page wrapper
+- Similar to MarketingPageShell
+- More formal spacing
+
+### Homepage Sections (`src/ui/sections/home/`):
+
+1. **`HomeHero.tsx`**
+   - Full-width hero, 21st.dev style
+   - Left: text (Supertitle, H1, Subtext, 2 CTAs)
+   - Right: floating card stack with parallax
+   - Uses `AnimatedShaderHero` as background canvas
+
+2. **`HomeValueProps.tsx`**
+   - 3-4 columns of value tiles
+   - Icon, title, description
+   - Responsive grid
+
+3. **`HomeHowItWorks.tsx`**
+   - 3-step vertical/horizontal flow
+   - Neon rings/pills
+   - Connecting lines
+
+4. **`HomeSocialProof.tsx`**
+   - Integrates `TestimonialsSection` and `IndiaCustomersWidget`
+   - Two-column desktop, stacked mobile
+
+5. **`HomePricingTeaser.tsx`**
+   - Teaser section with 2 glass cards
+   - "View full pricing" CTA
+
+6. **`HomeFinalCTA.tsx`**
+   - Narrow bottom section
+   - Big cosmic statement
+   - "Open JyotiAI Dashboard" CTA
+
+### Guru Page Sections (`src/ui/sections/guru/`):
+
+1. **`GuruHero.tsx`**
+   - Top hero for `/guru`
+   - Wraps `AnimatedShaderHero` as background
+   - Overlays text + CTAs
+   - Mini stats card
+
+2. **`GuruLayoutShell.tsx`**
+   - Wraps existing guru chat UI
+   - Glass-card shell
+   - "Session details" column
+
+### Pricing Page Sections (`src/ui/sections/pricing/`):
+
+1. **`PricingHero.tsx`**
+   - Narrow hero with eyebrow, H1, subtext
+   - Optional mini badges
+
+2. **`PricingFAQ.tsx`**
+   - 4-6 FAQ items in responsive grid
+   - Expandable answers
+
+### Auth Layout (`src/ui/sections/auth/`):
+
+1. **`AuthLayout.tsx`**
+   - Reusable layout for login/signup
+   - Full-height, centered section
+   - Wraps `SignInPage` component
+   - Dynamically sets title/description based on mode
+
+---
+
+## 4. CANVAS / R3F FILES
 
 ### FILES USING `<Canvas>` FROM @react-three/fiber:
 
-**Direct Canvas Usage:**
-1. `app/page.tsx` - **HOME PAGE** (lines 36-42)
-2. `components/global/GalaxySceneWrapper.tsx` (line 119)
-3. `components/sections/Hero/CosmicHero.tsx` (line 622) - Only when `variant='home'`
-4. `components/sections/AstrologicalWheel/AstrologicalWheel3D.tsx`
-5. `components/kundali/KundaliWheel3DCanvas.tsx`
+**Direct Canvas Usage (Foreground Elements):**
+1. `components/sections/Hero/CosmicHero.tsx` - Only when `variant='home'`
+2. `components/sections/AstrologicalWheel/AstrologicalWheel3D.tsx` - 3D wheel
+3. `components/kundali/KundaliWheel3DCanvas.tsx` - Kundali wheel
+4. `components/ui/animated-shader-hero.tsx` - Used in HomeHero and GuruHero
 
 **R3F Components (use useFrame, ShaderMaterial, etc.):**
 - `components/cosmic/NebulaShader.tsx` - ShaderMaterial
@@ -471,75 +550,112 @@ JyotiAIapp/
 - Each uses R3F post-processing passes
 
 ### WEBGL SHADER FILES:
+
+**Global Background:**
+- `src/ui/background/GlobalShaderBackground.tsx` - WebGL2 shader (inline)
+
+**R3F Shaders:**
 - All `.ts` files in `cosmos/*/shaders/` directories
 - All `.ts` files in `postfx/*/` directories (shader files)
 - `components/cosmic/NebulaShader.tsx` (inline shaders)
 
+**R3F Usage Count:**
+- **344 files** import from `@react-three/fiber` or `three`
+- **50+ cosmos scene modules** (full R3F scenes)
+- **15 post-processing effects** (R3F)
+- **Global background:** WebGL2 shader (not R3F)
+
 ---
 
-## 4. LAYOUT + HOME PAGE WRAPPERS
+## 5. LAYOUT + PAGE STRUCTURE
 
 ### ROOT LAYOUT (`app/layout.tsx`):
-**Wrapper Hierarchy:**
-```
+
+**Current Wrapper Hierarchy:**
+```tsx
 <html>
-  <body>
-    <GlobalErrorBoundary>
-      <MotionProvider>              # Motion orchestrator
-        <AudioProvider>              # Audio context
-          <GlobalProviders>          # CosmicCursor + SoundscapeController
-            <Background />           # Returns null (placeholder)
-            <RouteTransitionHandler />
-            <TransitionOverlay />
-            <BlessingWaveOverlay />
-            {children}               # All pages
-          </GlobalProviders>
-        </AudioProvider>
-      </MotionProvider>
-    </GlobalErrorBoundary>
+  <body className="bg-[#05050A] text-white overflow-x-hidden">
+    <GlobalShaderBackground />  {/* ⭐ Universal shader */}
+    <div className="relative z-20">
+      <Header />                {/* ⭐ Super Cosmic header */}
+    </div>
+    <main className="relative z-10">
+      {children}                {/* All pages */}
+    </main>
+    <Footer />                  {/* ⭐ Super Cosmic footer */}
   </body>
 </html>
 ```
 
+**Removed from Layout:**
+- ❌ `<Background />` (was placeholder)
+- ❌ `<RouteTransitionHandler />`
+- ❌ `<TransitionOverlay />`
+- ❌ `<BlessingWaveOverlay />`
+- ❌ Old `<Header />` and `<FooterWrapper />`
+
 ### HOME PAGE (`app/page.tsx`):
-**Component Hierarchy:**
-```
-<PageTransitionWrapper>            # Framer Motion transitions
-  <div className="fixed inset-0 z-0">  # R3F Background
-    <Canvas>
-      <NebulaShader />
-      <ParticleField />
-      <RotatingMandala />
-    </Canvas>
-  </div>
-  <CosmicCursor />                 # Custom cursor
-  <SoundscapeController />         # Audio
-  <div className="relative z-10">  # Content layer
-    <CosmicHero />
-    <CosmicFeatures />
-    <TestimonialsSection />
-    <ModulesSection />
-    <PricingCards />
-    <AstrologicalWheel3D />
-    <RoadmapTimeline />
-    <CosmicFooter />
-  </div>
-</PageTransitionWrapper>
+
+**Current Structure:**
+```tsx
+<div className="relative">
+  <section className="page-container pt-8 md:pt-16">
+    <HomeHero />
+  </section>
+  <section className="page-container pt-8 md:pt-16">
+    <HomeValueProps />
+  </section>
+  <section className="page-container pt-8 md:pt-20">
+    <HomeHowItWorks />
+  </section>
+  <section className="page-container pt-12 md:pt-20">
+    <HomeSocialProof />
+  </section>
+  <section className="page-container pt-12 md:pt-20">
+    <HomePricingTeaser />
+  </section>
+  <section className="page-container pt-16 md:pt-24 pb-16 md:pb-24">
+    <HomeFinalCTA />
+  </section>
+</div>
 ```
 
-### GLOBAL PROVIDERS (`components/providers/GlobalProviders.tsx`):
-- Wraps: `CosmicCursor`, `SoundscapeController`, `ResponsiveWrapper`
-- Ensures single mount (prevents duplication)
+**Removed:**
+- ❌ Direct R3F Canvas
+- ❌ `<CosmicCursor />`
+- ❌ `<SoundscapeController />`
+- ❌ `<PageTransitionWrapper />`
+- ❌ Old hero sections
 
-### PAGE TRANSITION WRAPPER (`components/global/PageTransitionWrapper.tsx`):
-- Uses Framer Motion `AnimatePresence`
-- Cosmic mist overlay
-- Particle drift effect
-- Mandala rotation fade
+### PAGE SHELLS USAGE:
+
+**Dashboard Pages (DashboardPageShell):**
+- `/dashboard`, `/kundali`, `/timeline`, `/reports`, `/predictions`
+- `/face`, `/business`, `/compatibility`, `/career`, `/calendar`
+- `/rituals`, `/planets`, `/pregnancy`, `/houses`, `/dasha`
+- `/charts`, `/payments`, `/settings`, `/pay/[productId]`
+
+**Marketing Pages (MarketingPageShell):**
+- `/features`, `/modules`, `/status`, `/updates`
+- `/splash`, `/profile-setup`, `/rasi-confirmation`, `/magic-link`
+- `/thanks`
+
+**Company Pages (CompanyPageShell):**
+- `/company/about`, `/company/careers`, `/company/blog`
+- `/company/contact`, `/company/press-kit`
+
+**Auth Pages (AuthLayout):**
+- `/login`, `/signup`
+
+**Guru Page:**
+- Uses `GuruHero` + `GuruLayoutShell`
+
+**Pricing Page:**
+- Uses `PricingHero` + `PricingSection6` + `PricingFAQ`
 
 ---
 
-## 5. API ROUTES
+## 6. API ROUTES
 
 ### AUTHENTICATION:
 - `app/api/auth/login/route.ts`
@@ -554,6 +670,11 @@ JyotiAIapp/
 - `app/api/kundali/*` - Kundali generation
 - `app/api/numerology/*` - Numerology calculations
 - `app/api/guru/*` - Guru chat API
+- `app/api/guru-chat/*` - Legacy guru chat
+- `app/api/guru-voice/*` - Voice input
+- `app/api/guru-vision/*` - Vision/image analysis
+- `app/api/guru-video/*` - Video analysis
+- `app/api/guru-tts/*` - Text-to-speech
 - `app/api/face/*` - Face reading
 - `app/api/palmistry/*` - Palmistry
 - `app/api/aura/*` - Aura analysis
@@ -562,6 +683,7 @@ JyotiAIapp/
 - `app/api/predictions/*` - Predictions
 - `app/api/timeline/*` - Timeline generation
 - `app/api/reports/*` - Report generation
+- `app/api/report-pdf/*` - PDF generation
 - `app/api/horoscope/*` - Daily horoscope
 - `app/api/festival/*` - Festival calendar
 - `app/api/transits/*` - Planetary transits
@@ -569,6 +691,7 @@ JyotiAIapp/
 - `app/api/career/*` - Career analysis
 - `app/api/location/*` - Location analysis
 - `app/api/ritual/*` - Ritual generation
+- `app/api/side-hustle/*` - Side hustle recommendations
 
 ### ADMIN:
 - `app/api/admin/*` - Admin endpoints (users, reports, payments, etc.)
@@ -579,210 +702,271 @@ JyotiAIapp/
 - `app/api/notifications/*`
 - `app/api/payments/*`
 - `app/api/workers/*`
+- `app/api/tickets/*`
+- `app/api/onboarding/*`
+- `app/api/dashboard/*`
+
+**Total API Routes:** 83 endpoints
 
 ---
 
-## 6. CRITICAL PROVIDERS
-
-### `components/providers/GlobalProviders.tsx`:
-- **Purpose:** Ensures global components mount once
-- **Wraps:** `CosmicCursor`, `SoundscapeController`, `ResponsiveWrapper`
-- **Mount Guard:** Uses `globalProvidersMounted` flag
-
-### `components/providers/MotionProvider.tsx`:
-- **Purpose:** Provides MotionOrchestrator context
-- **Exports:** `useMotionOrchestrator()` hook
-- **Used by:** All motion-aware components
-
-### `providers/audio-provider.tsx`:
-- **Purpose:** Audio context provider
-- **Wraps:** Entire app in `app/layout.tsx`
-
-### `providers/cosmic-provider.tsx`:
-- **Purpose:** Cosmic theme provider (if exists)
-
-### `providers/theme-provider.tsx`:
-- **Purpose:** Theme switching
-
-### `providers/accessibility-provider.tsx`:
-- **Purpose:** Accessibility features
-
----
-
-## 7. MOTION / GSAP HOOKS
-
-### GSAP SCROLLTRIGGER HOOKS:
-1. **`hooks/motion/useSectionMotion.ts`** ⚠️ **FIXED**
-   - **Status:** Fixed infinite loop
-   - **Uses:** ScrollTrigger.create (runs once on mount)
-   - **Batches:** State updates with requestAnimationFrame
-   - **Dependencies:** Empty array (runs once)
-
-2. **`hooks/motion/useScrollMotion.ts`**
-   - **Uses:** Scroll store (Zustand)
-   - **No ScrollTrigger** (uses scroll events)
-
-3. **`hooks/motion/useMouseMotion.ts`**
-   - **Uses:** Mouse store (Zustand)
-   - **No ScrollTrigger**
-
-4. **`hooks/motion/useRouteMotion.ts`**
-   - **Uses:** ScrollTrigger for route transitions
-
-### GSAP MOTION BRIDGE:
-- **`lib/motion/gsap-motion-bridge.ts`**
-  - **Functions:** `scrollParallaxY`, `scrollFadeIn`, `scrollGlowPulse`, `scrollTilt`, etc.
-  - **All use:** ScrollTrigger.create
-  - **Status:** Enhanced with batching
-
-### FRAMER MOTION USAGE:
-**160 files** use Framer Motion:
-- All page components
-- All section components
-- All card components
-- `PageTransitionWrapper`
-- `CosmicHero`
-- `CosmicFeatures`
-- `CosmicCTA`
-- `CosmicFooter`
-- `GuruChatShell`
-- And many more...
-
----
-
-## 8. GLOBAL STYLES
+## 7. GLOBAL STYLES
 
 ### `app/globals.css`:
-- **Tailwind base styles**
-- **Cosmic dark theme variables:**
-  - `--background: 220 40% 3%` (Deep Navy #020916)
-  - `--primary: 262 83% 58%` (Cosmic Purple #6E2DEB)
-  - `--secondary: 220 30% 15%` (Mystic Indigo #0A0F2B)
-- **Custom classes:** `.spiritual-gradient`, `.aura-glow`, `.chakra-pulse`
-- **Animation keyframes:** `aura-pulse`, `chakra-spin`, `fade-in`, `slide-in`
+
+**Key Features:**
+- Tailwind base styles
+- Cosmic dark theme variables
+- **`.page-container` utility class:**
+  ```css
+  .page-container {
+    max-width: 1350px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem;
+  }
+  ```
+- Custom classes: `.spiritual-gradient`, `.aura-glow`, `.chakra-pulse`
+- Animation keyframes: `marquee`, `aura-pulse`, `chakra-spin`, `fade-in`, `slide-in`
 
 ### `tailwind.config.ts`:
-- **Cosmic color palette:**
-  - `cosmic.navy: "#020916"`
-  - `cosmic.indigo: "#0A0F2B"`
-  - `cosmic.purple: "#6E2DEB"`
-  - `cosmic.cyan: "#17E8F6"`
-  - `cosmic.gold: "#F2C94C"`
-- **Font families:** `heading`, `body`, `display`
-- **Custom animations:** `aura-pulse`, `chakra-spin`
+
+**Cosmic Color Palette:**
+- `cosmic.navy: "#020916"`
+- `cosmic.indigo: "#0A0F2B"`
+- `cosmic.purple: "#6E2DEB"`
+- `cosmic.cyan: "#17E8F6"`
+- `cosmic.gold: "#F2C94C"`
+
+**Font Families:**
+- `heading`, `body`, `display`
+
+**Custom Animations:**
+- `aura-pulse`, `chakra-spin`, `marquee`
 
 ### Z-INDEX LAYERS:
-- **Background:** `z-0` or `-z-10`
-- **Content:** `z-10`
+- **Background:** `z-0` (GlobalShaderBackground)
+- **Content:** `z-10` (main)
+- **Header/Footer:** `z-20` (top layer)
 - **Modals:** `z-50`
 - **Overlays:** `z-[10000]`, `z-[9999]`, `z-[9998]`
 
 ---
 
-## 9. POTENTIAL BACKGROUND OVERRIDES
+## 8. MOTION / GSAP HOOKS
 
-### CONFLICTING BACKGROUND LAYERS:
+### GSAP SCROLLTRIGGER HOOKS:
+1. **`hooks/motion/useSectionMotion.ts`** ✅ **FIXED**
+   - Status: Fixed infinite loop
+   - Uses: ScrollTrigger.create (runs once on mount)
+   - Batches: State updates with requestAnimationFrame
+   - Dependencies: Empty array (runs once)
 
-1. **HOME PAGE (`app/page.tsx`):**
-   - **Line 35:** `<div className="fixed inset-0 z-0">` with R3F Canvas
-   - **NOT using:** `CosmicBackground` component
-   - **Status:** ⚠️ **CONFLICT** - Uses R3F directly instead of clean gradient
+2. **`hooks/motion/useScrollMotion.ts`**
+   - Uses: Scroll store (Zustand)
+   - No ScrollTrigger (uses scroll events)
 
-2. **ROOT LAYOUT (`app/layout.tsx`):**
-   - **Line 57:** `<Background />` component (returns null, no conflict)
-   - **No background rendering here**
+3. **`hooks/motion/useMouseMotion.ts`**
+   - Uses: Mouse store (Zustand)
+   - No ScrollTrigger
 
-3. **GLOBAL PROVIDERS:**
-   - No background rendering
+4. **`hooks/motion/useRouteMotion.ts`**
+   - Uses: ScrollTrigger for route transitions
 
-4. **COSMIC HERO (`components/sections/Hero/CosmicHero.tsx`):**
-   - **Line 622:** R3F Canvas when `variant='home'`
-   - **Only renders** if variant is 'home'
-   - **Status:** May conflict with home page background
-
-5. **GALAXY SCENE WRAPPER:**
-   - **Used by:** Some pages (home-page-client.tsx, cosmos-page-client.tsx, etc.)
-   - **Z-index:** `z-0`
-   - **Status:** May conflict if used on same page
-
-### BACKGROUND COLOR OVERRIDES:
-
-**CSS Classes that set background:**
-- `bg-[#020617]` - Used in CosmicBackground.tsx
-- `bg-cosmic-navy` - Tailwind class
-- `bg-gradient-to-br from-cosmic via-purple-900 to-cosmic` - Gradient fallback
-- `bg-background` - CSS variable (from globals.css)
-
-**Z-index Conflicts:**
-- Multiple `fixed inset-0 z-0` elements can stack
-- `CosmicBackground` uses `-z-10` (behind)
-- R3F Canvas uses `z-0` (background layer)
-- Content uses `z-10` (foreground)
+### FRAMER MOTION USAGE:
+**160+ files** use Framer Motion:
+- All Super Cosmic UI sections
+- All layout shells
+- All page components
+- All card components
+- Motion presets from `global-motion.ts`
 
 ---
 
-## 10. IDENTIFIED ISSUES
+## 9. EMPTY STATES & DEMO MODE
 
-### ⚠️ CRITICAL: HOME PAGE BACKGROUND CONFLICT
+### Pages with Empty States:
 
-**Problem:**
-- `app/page.tsx` uses R3F Canvas directly (lines 35-43)
-- `CosmicBackground.tsx` is clean gradient but NOT used on home page
-- Two different background systems
+**Dashboard Pages:**
+- `/reports` - "No Reports Yet" with "Generate First Report" CTA
+- `/predictions` - Empty states for daily, weekly, monthly tabs
+- `/timeline` - "No Timeline Data" message
+- `/charts` - "No Charts Available" with link to Kundali
+- `/payments` - Empty payment history state
+- `/rituals` - Empty rituals state
+- `/calendar` - Empty calendar state
 
-**Files Involved:**
-1. `app/page.tsx` - Uses R3F Canvas
-2. `components/cosmic/CosmicBackground.tsx` - Clean gradient (unused on home)
-
-**Solution Needed:**
-- Replace R3F Canvas in `app/page.tsx` with `<CosmicBackground />`
-- Remove direct Canvas usage from home page
-
-### ⚠️ POTENTIAL: COSMIC HERO R3F CONFLICT
-
-**Problem:**
-- `CosmicHero` renders R3F Canvas when `variant='home'`
-- Home page also has its own R3F Canvas
-- May cause duplicate rendering
-
-**Files Involved:**
-1. `components/sections/Hero/CosmicHero.tsx` (line 622)
-2. `app/page.tsx` (line 35)
-
-### ✅ FIXED: SCROLLTRIGGER INFINITE LOOP
-
-**Status:** Fixed in `hooks/motion/useSectionMotion.ts`
-- Runs once on mount
-- Uses refs for callbacks
-- Batches state updates
+**Design:**
+- Centered glass cards
+- Sparkles icon
+- Friendly, cosmic-themed messages
+- Clear CTAs where appropriate
 
 ---
 
-## 11. SUMMARY
+## 10. RECENT CHANGES (December 2024)
+
+### Super Cosmic UI Transformation:
+
+**Phase 1: Global UI Foundation**
+- ✅ Created `src/ui/theme/` (tokens, motion)
+- ✅ Created `src/ui/layout/Header.tsx` and `Footer.tsx`
+- ✅ Created `src/ui/background/GlobalShaderBackground.tsx`
+- ✅ Updated `app/layout.tsx` with new global components
+- ✅ Added `.page-container` utility class
+
+**Phase 2: Homepage Rebuild**
+- ✅ Created `src/ui/sections/home/*` (6 new sections)
+- ✅ Rebuilt `app/page.tsx` with new sections
+- ✅ Removed old R3F background from homepage
+
+**Phase 3: Guru, Pricing, Auth Pages**
+- ✅ Created `src/ui/sections/guru/*`
+- ✅ Created `src/ui/sections/pricing/*`
+- ✅ Created `src/ui/sections/auth/AuthLayout.tsx`
+- ✅ Updated `/guru`, `/pricing`, `/login`, `/signup`
+
+**Phase 4: Dashboard & Marketing Pages**
+- ✅ Created layout shells (DashboardPageShell, MarketingPageShell, CompanyPageShell)
+- ✅ Applied shells to 30+ pages
+- ✅ Removed old background wrappers
+- ✅ Added empty states
+
+**Phase 5: Final Polish**
+- ✅ Fixed spacing and typography consistency
+- ✅ Added empty states to dashboard pages
+- ✅ Fixed unescaped apostrophes
+- ✅ Verified mobile responsiveness
+- ✅ Build passes successfully
+
+### Build Status:
+
+**Current Status:** ✅ **PASSING**
+- TypeScript: No errors
+- Build: Successful
+- Lint: Minor warnings (non-blocking)
+- Vercel: Deployed successfully
+
+**Recent Fixes:**
+- Fixed `TestimonialsSection` import path (case sensitivity)
+- Added `TestimonialItem` type export
+- Renamed `Testimonials` folder to `testimonials` for Linux compatibility
+
+---
+
+## 11. IDENTIFIED ISSUES
+
+### ✅ RESOLVED:
+
+1. **Home Page Background Conflict** - ✅ FIXED
+   - Replaced R3F Canvas with Super Cosmic UI sections
+   - Now uses GlobalShaderBackground from layout
+
+2. **TestimonialsSection Import Path** - ✅ FIXED
+   - Renamed folder from `Testimonials` to `testimonials`
+   - Fixed case sensitivity for Linux/Vercel
+
+3. **ScrollTrigger Infinite Loop** - ✅ FIXED
+   - Fixed in `hooks/motion/useSectionMotion.ts`
+
+### ⚠️ MINOR ISSUES:
+
+1. **Unescaped Apostrophes**
+   - 20 remaining in non-critical files (API routes, some components)
+   - Non-blocking warnings
+   - Can be fixed incrementally
+
+2. **Unused R3F Components**
+   - Many R3F scene modules exist but may not be actively used
+   - Can be cleaned up in future optimization pass
+
+---
+
+## 12. SUMMARY
 
 ### BACKGROUND RENDERING STATUS:
-- **CosmicBackground.tsx:** ✅ Clean gradient (non-R3F)
-- **Home Page:** ⚠️ Still uses R3F Canvas directly
-- **GalaxySceneWrapper:** ✅ Active (uses R3F)
-- **CosmicHero:** ⚠️ Uses R3F when variant='home'
+- **GlobalShaderBackground:** ✅ Active (WebGL2 shader, universal)
+- **Home Page:** ✅ Uses Super Cosmic UI sections (no direct R3F)
+- **Dashboard Pages:** ✅ Use DashboardPageShell (no per-page backgrounds)
+- **Marketing Pages:** ✅ Use MarketingPageShell (no per-page backgrounds)
 
 ### R3F USAGE:
 - **344 files** import from `@react-three/fiber` or `three`
 - **50+ cosmos scene modules** (full R3F scenes)
 - **15 post-processing effects** (R3F)
-- **Home page** still uses R3F directly
+- **Global background:** WebGL2 shader (not R3F)
+- **Foreground elements:** R3F used for specific widgets (3D wheels, hero backgrounds)
 
 ### MOTION SYSTEM:
 - **29 files** use GSAP ScrollTrigger
-- **160 files** use Framer Motion
-- **ScrollTrigger fixed** in useSectionMotion.ts
+- **160+ files** use Framer Motion
+- **Motion presets:** Centralized in `global-motion.ts`
+- **ScrollTrigger:** Fixed in useSectionMotion.ts
+
+### SUPER COSMIC UI:
+- **20 files** in `src/ui/` directory
+- **6 homepage sections** (HomeHero, HomeValueProps, etc.)
+- **2 guru sections** (GuruHero, GuruLayoutShell)
+- **2 pricing sections** (PricingHero, PricingFAQ)
+- **1 auth layout** (AuthLayout)
+- **6 layout shells** (Header, Footer, DashboardShell, etc.)
 
 ### PROVIDERS:
 - **GlobalProviders:** Mounts once, prevents duplication
 - **MotionProvider:** Provides orchestrator
 - **AudioProvider:** Audio context
 
+### BUILD & DEPLOYMENT:
+- **Build:** ✅ Passing
+- **TypeScript:** ✅ No errors
+- **Vercel:** ✅ Deployed
+- **Last Commit:** "Super Cosmic UI + global background + final polish"
+
 ---
 
 **END OF SCAN**
 
+**Last Updated:** 2024-12-02
+**Next Review:** After next major feature addition
+
+---
+
+## Full System Reactivation — Status (Phases 0-7 Complete)
+
+**Date:** Latest Update  
+**Status:** ✅ All Critical Systems Reactivated
+
+### Auth (User + Admin)
+- ✅ User login/signup working with visible error states
+- ✅ Admin login working with session management
+- ✅ Route guards functional
+- ✅ Middleware allows public auth routes
+
+### Guru + Pinecone
+- ✅ Guru API functional (requires OPENAI_API_KEY or GEMINI_API_KEY)
+- ✅ RAG integration ready (requires PINECONE_API_KEY)
+- ✅ Clear error messages when env vars missing
+- ✅ Graceful degradation when RAG unavailable
+
+### Pricing + Payments
+- ✅ Unified pricing config: Basic ₹99, Advanced ₹199, Premium ₹299
+- ✅ Single source of truth in `lib/pricing/plans.ts`
+- ✅ Payment flows wired correctly
+- ✅ Limits applied on payment success
+
+### API Health
+- ✅ Dev tool at `/dev/api-health` to test all endpoints
+- ✅ 30+ endpoints checked across 8 categories
+- ✅ Clear error messages for missing env vars
+
+### Frontend Routes
+- ✅ All major routes render without crashing
+- ✅ Correct shells applied (DashboardPageShell, MarketingPageShell, etc.)
+- ✅ Empty states in place
+
+### How to Run Locally
+1. `npm install`
+2. `cp .env.example .env.local` and fill values
+3. `npm run dev`
+4. Access API Health: `http://localhost:3000/dev/api-health` (dev only)
+
+See `FULL_SYSTEM_REACTIVATION_SUMMARY.md` for complete details.

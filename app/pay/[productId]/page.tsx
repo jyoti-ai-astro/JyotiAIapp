@@ -9,7 +9,10 @@ import { Card } from '@/components/ui/card'
 import { useUserStore } from '@/store/user-store'
 import Script from 'next/script'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
-// Note: envVars is server-only, use NEXT_PUBLIC_RAZORPAY_KEY_ID directly
+import { getOneTimeProduct, isValidOneTimeProduct, type OneTimeProduct } from '@/lib/pricing/plans'
+
+// Get payments disabled status from environment
+const isPaymentsDisabled = process.env.NEXT_PUBLIC_DISABLE_PAYMENTS === 'true'
 
 declare global {
   interface Window {
@@ -17,90 +20,10 @@ declare global {
   }
 }
 
-// Product Configuration
-const PRODUCTS: Record<
-  string,
-  {
-    name: string
-    price: number
-    type: 'ticket' | 'subscription'
-    features: string[]
-    icon: 'zap' | 'crown'
-  }
-> = {
-  // One-time ticket packs
-  quick: {
-    name: 'Quick Question Pack',
-    price: 99,
-    type: 'ticket',
-    features: ['1 AI Guru Question', 'Detailed Analysis', 'Instant Reply'],
-    icon: 'zap',
-  },
-  '99': {
-    name: 'Quick Readings',
-    price: 99,
-    type: 'ticket',
-    features: [
-      'Daily Horoscope (7 days)',
-      'Name Correction / Name Numerology',
-      'One AI Guru Question',
-      'Lucky Number & Color',
-    ],
-    icon: 'zap',
-  },
-  deep: {
-    name: 'Deep Dive Pack',
-    price: 199,
-    type: 'ticket',
-    features: ['3 AI Guru Questions', 'Deep Karmic Analysis', 'Remedy Suggestions'],
-    icon: 'zap',
-  },
-  '199': {
-    name: 'Deep Insights',
-    price: 199,
-    type: 'ticket',
-    features: [
-      'Kundali Report (Basic)',
-      'Relationship Compatibility (Lite)',
-      'Career Reading (Lite)',
-      '3 AI Guru Questions',
-    ],
-    icon: 'zap',
-  },
-  // Subscription plans
-  starter: {
-    name: 'Starter Plan',
-    price: 499,
-    type: 'subscription',
-    features: ['5 Questions / Day', 'Daily Horoscope', 'Basic Remedies', 'Basic Kundali'],
-    icon: 'crown',
-  },
-  advanced: {
-    name: 'Advanced Plan',
-    price: 999,
-    type: 'subscription',
-    features: ['Unlimited Chat', 'Full Kundali', 'All Remedies', 'Priority Support'],
-    icon: 'crown',
-  },
-  supreme: {
-    name: 'Supreme Plan',
-    price: 1999,
-    type: 'subscription',
-    features: [
-      'Everything in Advanced',
-      'Career & Business Engine',
-      'Pregnancy Insights',
-      'Advanced Reports (PDF)',
-      'Priority Support',
-    ],
-    icon: 'crown',
-  },
-}
-
 export default function PaymentPage() {
   const params = useParams()
   const productId = (params?.productId as string) || ''
-  const product = PRODUCTS[productId.toLowerCase()]
+  const product = getOneTimeProduct(productId)
 
   const router = useRouter()
   const { user } = useUserStore()
@@ -109,10 +32,10 @@ export default function PaymentPage() {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false)
 
   useEffect(() => {
-    if (!product) {
+    if (!product || !isValidOneTimeProduct(productId)) {
       router.push('/pricing')
     }
-  }, [product, router])
+  }, [product, router, productId])
 
   useEffect(() => {
     if (!user) {
@@ -121,7 +44,7 @@ export default function PaymentPage() {
   }, [user, router, productId])
 
   const handlePayment = async () => {
-    if (!user || !razorpayLoaded) {
+    if (!user || !razorpayLoaded || !product) {
       return
     }
 
@@ -129,109 +52,54 @@ export default function PaymentPage() {
     setError('')
 
     try {
-      let orderData: any
+      // Use one-time order API
+      const res = await fetch('/api/pay/create-one-time-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ productId: productId }),
+      })
 
-      // Route to correct API based on product type
-      if (product.type === 'ticket') {
-        // Use one-time order API
-        const numericId = productId === 'quick' || productId === '99' ? 99 : 199
-        const res = await fetch('/api/pay/create-one-time-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ productId: numericId }),
-        })
-
-        if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.error || 'Order creation failed')
-        }
-
-        orderData = await res.json()
-      } else {
-        // Use subscription order API
-        const res = await fetch('/api/payments/order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            amount: product.price,
-            planName: productId,
-            reportType: 'subscription',
-          }),
-        })
-
-        if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.error || 'Order creation failed')
-        }
-
-        const data = await res.json()
-        orderData = {
-          id: data.order.id,
-          amount: data.order.amount,
-          currency: data.order.currency,
-          key: data.order.key,
-        }
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Order creation failed')
       }
 
+      const orderData = await res.json()
+
       // Initialize Razorpay
-      const razorpayKeyId =
-        product.type === 'ticket'
-          ? process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || ''
-          : orderData.key
+      const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || ''
 
       const options = {
         key: razorpayKeyId,
-        amount: product.type === 'ticket' ? orderData.amount : orderData.amount * 100,
+        amount: orderData.amount, // Amount is already in paise from API
         currency: 'INR',
         name: 'Jyoti AI',
-        description: product.name,
+        description: product.description,
         order_id: orderData.id,
         method: {
-          upi: true, // Enable UPI for Indian users
+          upi: true,
         },
         handler: async function (response: any) {
           try {
-            if (product.type === 'ticket') {
-              // Verify one-time payment
-              const verifyRes = await fetch('/api/pay/success-one-time', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                  order_id: orderData.id,
-                  payment_id: response.razorpay_payment_id,
-                  signature: response.razorpay_signature,
-                  productId: productId === 'quick' ? '99' : productId === 'deep' ? '199' : productId,
-                }),
-              })
+            // Verify one-time payment
+            const verifyRes = await fetch('/api/pay/success-one-time', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                order_id: orderData.id,
+                payment_id: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+                productId: product.productId,
+              }),
+            })
 
-              if (!verifyRes.ok) {
-                throw new Error('Payment verification failed')
-              }
-
-              router.push('/thanks?payment=success')
-            } else {
-              // Verify subscription payment
-              const verifyRes = await fetch('/api/payments/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  planName: productId,
-                }),
-              })
-
-              if (!verifyRes.ok) {
-                throw new Error('Payment verification failed')
-              }
-
-              router.push('/thanks?payment=success&plan=' + productId)
+            if (!verifyRes.ok) {
+              throw new Error('Payment verification failed')
             }
+
+            router.push('/thanks?payment=success')
           } catch (err: any) {
             console.error('Payment verification error:', err)
             setError('Payment verification failed. Please contact support.')
@@ -243,7 +111,7 @@ export default function PaymentPage() {
           email: user?.email || '',
         },
         theme: {
-          color: '#F4CE65', // Gold color
+          color: '#F4CE65',
         },
         modal: {
           ondismiss: function () {
@@ -261,99 +129,104 @@ export default function PaymentPage() {
     }
   }
 
-  if (!product || !user) {
-    return (
-      <DashboardPageShell title="Loading..." subtitle="Please wait">
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-[#FFD57A]" />
-        </div>
-      </DashboardPageShell>
-    )
+  if (!product) {
+    return null
   }
 
-  const IconComponent = product.icon === 'zap' ? Zap : Crown
+  const iconMap: Record<string, any> = {
+    quick_99: Zap,
+    deep_199: Sparkles,
+    supreme_299: Crown,
+  }
+
+  const Icon = iconMap[product.id] || Sparkles
 
   return (
-    <>
-      {/* Razorpay Script */}
+    <DashboardPageShell title="Complete Payment" subtitle={`${product.name} - ${product.label}`}>
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         onLoad={() => setRazorpayLoaded(true)}
-        strategy="lazyOnload"
       />
 
-      <DashboardPageShell
-        title={product.name}
-        subtitle={product.type === 'subscription' ? 'Monthly subscription' : 'One-time payment'}
-      >
-        <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {isPaymentsDisabled && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 p-4 rounded-lg flex items-center gap-3"
+          >
+            <AlertCircle className="w-5 h-5" />
+            <span>Payments are currently disabled. Please try again later.</span>
+          </motion.div>
+        )}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-500/10 border border-red-500/30 text-red-200 p-4 rounded-lg flex items-center gap-3"
+          >
+            <AlertCircle className="w-5 h-5" />
+            <span>{error}</span>
+          </motion.div>
+        )}
 
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="relative z-10 w-full max-w-md"
-        >
-          <Card className="bg-cosmic-indigo/60 backdrop-blur-xl border-white/10 p-8 space-y-8 shadow-2xl relative overflow-hidden">
-            {/* Header */}
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-full bg-gold/10 border border-gold/30 mx-auto flex items-center justify-center mb-4">
-                <IconComponent className="w-8 h-8 text-gold" />
+        <Card className="bg-cosmic-indigo/60 backdrop-blur-xl border-white/10 p-8">
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gold to-gold/60 flex items-center justify-center">
+                <Icon className="w-8 h-8 text-black" />
               </div>
-              <h1 className="text-2xl font-bold font-display text-white">{product.name}</h1>
-              <p className="text-white/60">
-                {product.type === 'subscription' ? 'Monthly subscription' : 'One-time payment'}
-              </p>
+              <div>
+                <h2 className="text-2xl font-bold text-white">{product.name}</h2>
+                <p className="text-gold text-lg font-semibold">{product.label}</p>
+              </div>
             </div>
 
-            {/* Price Tag */}
-            <div className="text-center py-6 bg-white/5 rounded-2xl border border-white/5">
-              <span className="text-4xl font-bold text-gold">₹{product.price}</span>
-              <span className="text-sm text-white/40 block mt-1">
-                {product.type === 'subscription' ? '/month' : 'one-time payment'}
-              </span>
+            <div className="pt-4 border-t border-white/10">
+              <p className="text-white/80 mb-4">{product.description}</p>
+              <ul className="space-y-2">
+                {product.bullets.map((bullet, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-white/70">
+                    <Check className="w-4 h-4 text-gold" />
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/* Features */}
-            <div className="space-y-3">
-              {product.features.map((feat, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm text-white/80">
-                  <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-3 h-3 text-green-400" />
-                  </div>
-                  <span>{feat}</span>
-                </div>
-              ))}
+            <div className="pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-white/60">Total Amount</span>
+                <span className="text-3xl font-bold text-gold">₹{product.amountInINR}</span>
+              </div>
             </div>
 
-            {/* Action */}
-            <div className="space-y-4">
-              {error && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-200 text-sm flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" /> {error}
-                </div>
+            <Button
+              onClick={handlePayment}
+              disabled={loading || !razorpayLoaded || isPaymentsDisabled}
+              className="w-full gold-btn py-6 text-lg"
+            >
+              {isPaymentsDisabled ? (
+                'Payments Temporarily Disabled'
+              ) : loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-5 h-5 mr-2" />
+                  Pay ₹{product.amountInINR} Securely
+                </>
               )}
+            </Button>
 
-              <Button
-                onClick={handlePayment}
-                disabled={loading || !razorpayLoaded}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold h-12 text-lg shadow-lg shadow-purple-500/25 disabled:opacity-50"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  `Pay ₹${product.price}${product.type === 'subscription' ? '/month' : ''}`
-                )}
-              </Button>
-
-              <div className="flex items-center justify-center gap-2 text-xs text-white/30">
-                <ShieldCheck className="w-3 h-3" />
-                Secure Payment via Razorpay
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-        </div>
-      </DashboardPageShell>
-    </>
+            <p className="text-xs text-white/50 text-center">
+              Secure payment powered by Razorpay. Your payment information is encrypted and secure.
+            </p>
+          </div>
+        </Card>
+      </div>
+    </DashboardPageShell>
   )
 }
