@@ -10,6 +10,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import Razorpay from 'razorpay'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { envVars } from '@/lib/env/env.mjs'
+import { logEvent } from '@/lib/logging/log-event'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {

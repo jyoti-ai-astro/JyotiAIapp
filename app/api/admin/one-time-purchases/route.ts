@@ -9,6 +9,8 @@ import { withAdminAuth } from '@/lib/middleware/admin-middleware'
 import { adminDb } from '@/lib/firebase/admin'
 import { getOneTimeProduct } from '@/lib/pricing/plans'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   return withAdminAuth(async (req, admin) => {
     if (!adminDb) {

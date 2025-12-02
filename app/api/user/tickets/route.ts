@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { splitSubscriptionAndTickets } from '@/lib/payments/ticket-service'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const sessionCookie = request.cookies.get('session')?.value
