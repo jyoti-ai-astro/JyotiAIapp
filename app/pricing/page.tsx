@@ -1,6 +1,6 @@
 'use client';
 
-import PricingSection6 from "@/components/sections/pricing/PricingSection6";
+import PricingSection6 from "@/components/sections/Pricing/PricingSection6";
 
 export default function PricingPage() {
   return (
