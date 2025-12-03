@@ -31,6 +31,9 @@ export default function SignupPage() {
   const handleSocialSignup = async (provider: GoogleAuthProvider | FacebookAuthProvider, providerName: string) => {
     try {
       setLoading(true);
+      if (!auth) {
+        throw new Error('Firebase is not configured. Please contact support.');
+      }
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
 
@@ -118,6 +121,9 @@ export default function SignupPage() {
 
     try {
       setLoading(true);
+      if (!auth) {
+        throw new Error('Firebase is not configured. Please contact support.');
+      }
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const idToken = await result.user.getIdToken();
 

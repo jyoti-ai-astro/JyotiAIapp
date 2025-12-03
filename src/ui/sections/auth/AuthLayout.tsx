@@ -56,11 +56,7 @@ export default function AuthLayout({
               ? 'Sign in to continue your journey with The Guru.'
               : 'Create your account to start asking cosmic questions.'
           }
-          heroImageSrc={
-            isLogin
-              ? '/images/jyotai-login-hero.jpg'
-              : '/images/jyotai-signup-hero.jpg'
-          }
+          heroImageSrc={undefined}
           onSignIn={async (e) => {
             setLoading(true);
             try {
