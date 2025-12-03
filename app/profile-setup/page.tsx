@@ -36,8 +36,7 @@ export default function ProfileSetupPage() {
     }
   }, [user, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (data: { name: string; dob: string; pob: string; lat?: number; lng?: number }) => {
     setLoading(true);
 
     try {
@@ -46,26 +45,29 @@ export default function ProfileSetupPage() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          name: formData.name,
-          dob: formData.dob,
-          pob: formData.pob,
+          name: data.name,
+          dob: data.dob,
+          pob: data.pob,
+          lat: data.lat,
+          lng: data.lng,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update profile');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update profile');
       }
 
       updateUser({
-        name: formData.name,
-        dob: formData.dob,
-        pob: formData.pob,
+        name: data.name,
+        dob: data.dob,
+        pob: data.pob,
       });
 
       handleProfileSetupSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Profile setup error:', error);
-      alert('Failed to save profile. Please try again.');
+      alert(error.message || 'Failed to save profile. Please try again.');
     } finally {
       setLoading(false);
     }
