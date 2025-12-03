@@ -30,11 +30,24 @@ export default function FirebaseCheckPage() {
           .filter(([_, exists]) => !exists)
           .map(([key]) => key);
 
+        // Check client-side auth status
+        const clientAuthInitialized = !!auth;
+        
+        // Use server-side check if available, otherwise use client-side
+        const authStatus = data.authInitialized !== undefined ? data.authInitialized : clientAuthInitialized;
+
         setChecks({
-          auth: !!auth || data.authInitialized,
+          auth: authStatus,
           envVars: serverEnvVars,
           errors: missing,
         });
+
+        // Log debug info if auth is not initialized but vars are present
+        if (!authStatus && missing.length === 0 && data.envVarValues) {
+          console.warn('⚠️ Firebase variables are present but auth is not initialized.');
+          console.warn('⚠️ Variable values:', data.envVarValues);
+          console.warn('⚠️ This may indicate a Firebase initialization error. Check browser console for details.');
+        }
       })
       .catch((error) => {
         console.error('Failed to fetch Firebase check:', error);
@@ -129,6 +142,34 @@ export default function FirebaseCheckPage() {
                   <li>Select "Production", "Preview", and "Development"</li>
                   <li>Redeploy your application</li>
                 </ol>
+              </div>
+            </div>
+          )}
+
+          {!checks.auth && checks.errors.length === 0 && (
+            <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4 text-yellow-400">⚠️ Variables Present But Auth Not Initialized</h2>
+              <p className="text-yellow-300 mb-4">
+                All Firebase environment variables are present, but Firebase Auth is not initializing.
+              </p>
+              <div className="space-y-2 text-sm text-yellow-200">
+                <p><strong>Possible causes:</strong></p>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <li>Firebase initialization error (check browser console)</li>
+                  <li>Invalid Firebase configuration values</li>
+                  <li>Client-side code not executing properly</li>
+                  <li>Browser blocking Firebase initialization</li>
+                </ul>
+                <div className="mt-4 p-3 bg-zinc-800 rounded">
+                  <p className="text-xs text-zinc-300 mb-2"><strong>Debug steps:</strong></p>
+                  <ol className="list-decimal list-inside space-y-1 text-xs text-zinc-400">
+                    <li>Open browser console (F12)</li>
+                    <li>Look for Firebase initialization errors</li>
+                    <li>Check if variables are being read correctly</li>
+                    <li>Try hard refresh (Ctrl+Shift+R or Cmd+Shift+R)</li>
+                    <li>Clear browser cache and try again</li>
+                  </ol>
+                </div>
               </div>
             </div>
           )}
