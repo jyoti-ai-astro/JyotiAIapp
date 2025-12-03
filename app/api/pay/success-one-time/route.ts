@@ -127,6 +127,27 @@ export async function POST(req: NextRequest) {
       tickets: product.tickets,
     }, uid)
 
+    // Send payment receipt email
+    try {
+      const { sendPaymentReceipt } = await import('@/lib/email/email-service')
+      const userData = userSnap.exists ? userSnap.data() : {}
+      const userEmail = userData?.email || decodedClaims.email
+      
+      if (userEmail) {
+        await sendPaymentReceipt(
+          userEmail,
+          product.amountInINR,
+          payment_id,
+          undefined, // planName (not applicable for one-time)
+          undefined, // expiryDate (not applicable for one-time)
+          product.name // productName
+        ).catch(err => console.error('Failed to send payment receipt email:', err))
+      }
+    } catch (emailError) {
+      console.error('Payment receipt email error:', emailError)
+      // Don't fail the payment if email fails
+    }
+
     return NextResponse.redirect(new URL('/thanks?payment=success', req.url))
   } catch (err: any) {
     console.error('One-time payment success error:', err)

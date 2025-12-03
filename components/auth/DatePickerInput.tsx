@@ -57,11 +57,19 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
         yearNum >= 1900 && yearNum <= new Date().getFullYear()
       ) {
         const date = new Date(yearNum, monthNum - 1, dayNum);
-        if (date.getDate() === dayNum && date.getMonth() === monthNum - 1) {
+        // Check if date is valid (handles leap years, month boundaries, etc.)
+        if (
+          date.getDate() === dayNum && 
+          date.getMonth() === monthNum - 1 &&
+          date.getFullYear() === yearNum
+        ) {
           const isoString = date.toISOString().split('T')[0];
           onChange(isoString);
         }
       }
+    } else if (!day && !month && !year) {
+      // Clear value if all fields are empty
+      onChange('');
     }
   }, [day, month, year, onChange]);
 

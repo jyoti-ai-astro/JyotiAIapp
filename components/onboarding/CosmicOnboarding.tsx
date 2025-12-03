@@ -77,7 +77,28 @@ const BirthDetailsStep: React.FC<OnboardingStepProps> = ({
         </p>
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-6">
+      <form 
+        onSubmit={(e) => { 
+          e.preventDefault(); 
+          // Validate all fields are filled
+          if (!formData.dob || !formData.tob || !formData.pob) {
+            alert('Please fill in all fields: Date of Birth, Time of Birth, and Place of Birth');
+            return;
+          }
+          // Validate date format (YYYY-MM-DD)
+          if (!formData.dob.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            alert('Please enter a valid date of birth');
+            return;
+          }
+          // Validate time format (HH:MM)
+          if (!formData.tob.match(/^\d{2}:\d{2}$/)) {
+            alert('Please enter a valid time of birth (24-hour format, e.g., 14:30)');
+            return;
+          }
+          onSubmit(); 
+        }} 
+        className="space-y-6"
+      >
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}

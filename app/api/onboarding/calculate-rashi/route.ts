@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { calculatePlanetPositions, longitudeToRashi, longitudeToNakshatra } from '@/lib/engines/kundali/swisseph-wrapper'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Calculate Rashi and Nakshatra from birth details
  * Part B - Section 3: Onboarding Flow

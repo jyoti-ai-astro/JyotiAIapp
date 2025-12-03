@@ -10,12 +10,12 @@ Google, Facebook, and Magic Link authentication are not working because Firebase
 Go to **Vercel Dashboard → Your Project → Settings → Environment Variables** and add:
 
 ```
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyB_VtT2vxxe7ZlcbftI9u2Z1dVKykZYBXw
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=jyotai-v2-prod.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=jyotai-v2-prod
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=jyotai-v2-prod.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=844576794256
-NEXT_PUBLIC_FIREBASE_APP_ID=1:844576794256:web:2773b1f7d354a9cff05a15
+NEXT_PUBLIC_FIREBASE_API_KEY=YOUR_FIREBASE_API_KEY_HERE
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
 ```
 
 ### 2. Add Firebase Admin Environment Variables to Vercel

@@ -65,7 +65,14 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
         if (data.results && Array.isArray(data.results)) {
           setSuggestions(data.results);
           setShowSuggestions(true);
+        } else if (data.error) {
+          console.warn('Location search error:', data.error);
+          // Still allow manual entry even if autocomplete fails
         }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.warn('Location search failed:', errorData.error || 'Unknown error');
+        // Allow manual entry even if API fails
       }
     } catch (error) {
       console.error('Location search error:', error);

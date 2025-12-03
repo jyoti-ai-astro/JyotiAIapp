@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { geocodePlace, getDefaultGeocode } from '@/lib/services/geocoding'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Save birth details during onboarding
  * Part B - Section 3: Onboarding Flow

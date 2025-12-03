@@ -21,8 +21,12 @@ export async function POST(request: NextRequest) {
     const googleApiKey = envVars.geocoding.googleApiKey;
 
     if (!googleApiKey) {
-      // Fallback: return empty results if no API key
-      return NextResponse.json({ results: [] });
+      console.warn('GOOGLE_GEOCODING_API_KEY not configured. Location autocomplete will not work.');
+      // Return helpful error message instead of empty results
+      return NextResponse.json({ 
+        results: [],
+        error: 'Location search is not configured. Please set GOOGLE_GEOCODING_API_KEY in Vercel environment variables.',
+      });
     }
 
     // Use Google Places Autocomplete API for better suggestions

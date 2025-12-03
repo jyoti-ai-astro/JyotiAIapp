@@ -13,7 +13,8 @@ const getZeptoConfig = () => {
     apiKey: envVars.zepto.apiKey,
     domain: envVars.zepto.domain,
     from: envVars.zepto.from,
-    apiUrl: 'https://api.zeptomail.com/v1.1/email',
+    // Use Indian API endpoint: api.zeptomail.in
+    apiUrl: 'https://api.zeptomail.in/v1.1/email',
   }
 }
 
@@ -162,38 +163,9 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
  * Send magic link email for authentication
  */
 export async function sendMagicLink(email: string, loginUrl: string, device?: string): Promise<boolean> {
+  const { getMagicLinkEmailTemplate } = await import('./email-templates')
   const subject = 'Sign in to Jyoti.ai'
-  const htmlBody = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background: linear-gradient(135deg, #0D0A33 0%, #5A3FEF 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: #fff; margin: 0; font-size: 28px;">Jyoti.ai</h1>
-        <p style="color: #fff; margin: 10px 0 0 0; opacity: 0.9;">Your Spiritual Operating System</p>
-      </div>
-      <div style="background: #fff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
-        <h2 style="color: #0D0A33; margin-top: 0;">Sign in to your account</h2>
-        <p>Click the button below to securely sign in to your Jyoti.ai account:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${loginUrl}" style="background: #5A3FEF; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Sign In</a>
-        </div>
-        <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
-        <p style="color: #5A3FEF; font-size: 12px; word-break: break-all;">${loginUrl}</p>
-        <p style="color: #666; font-size: 14px; margin-top: 30px;">
-          This link will expire in 1 hour. If you didn't request this, please ignore this email.
-        </p>
-        ${device ? `<p style="color: #666; font-size: 12px;">Device: ${device}</p>` : ''}
-      </div>
-      <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-        <p>© ${new Date().getFullYear()} Jyoti.ai. All rights reserved.</p>
-      </div>
-    </body>
-    </html>
-  `
+  const htmlBody = getMagicLinkEmailTemplate({ email, loginUrl, device })
 
   return sendEmail({
     to: email,
@@ -211,33 +183,19 @@ export async function sendPaymentReceipt(
   amount: number,
   transactionId: string,
   planName?: string,
-  expiryDate?: Date
+  expiryDate?: Date,
+  productName?: string
 ): Promise<boolean> {
+  const { getPaymentReceiptEmailTemplate } = await import('./email-templates')
   const subject = 'Payment Confirmation - Jyoti.ai'
-  const htmlBody = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background: linear-gradient(135deg, #0D0A33 0%, #5A3FEF 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: #fff; margin: 0; font-size: 28px;">Payment Successful</h1>
-      </div>
-      <div style="background: #fff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
-        <p>Thank you for your payment!</p>
-        <div style="background: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
-          <p style="margin: 5px 0;"><strong>Amount:</strong> ₹${amount}</p>
-          ${planName ? `<p style="margin: 5px 0;"><strong>Plan:</strong> ${planName}</p>` : ''}
-          <p style="margin: 5px 0;"><strong>Transaction ID:</strong> ${transactionId}</p>
-          ${expiryDate ? `<p style="margin: 5px 0;"><strong>Expires:</strong> ${expiryDate.toLocaleDateString()}</p>` : ''}
-        </div>
-        <p>Your subscription is now active. Enjoy unlimited access to Jyoti.ai!</p>
-      </div>
-    </body>
-    </html>
-  `
+  const htmlBody = getPaymentReceiptEmailTemplate({
+    email,
+    amount,
+    transactionId,
+    planName,
+    expiryDate,
+    productName,
+  })
 
   return sendEmail({
     to: email,

@@ -212,13 +212,13 @@ export default function PricingSection6() {
         </TimelineContent>
       </article>
 
-      {/* Soft radial glow behind cards */}
+      {/* Soft radial glow behind cards - using website theme colors */}
       <div
         className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0"
         style={{
           backgroundImage:
-            "radial-gradient(circle at center, #206ce8 0%, transparent 70%)",
-          opacity: 0.6,
+            "radial-gradient(circle at center, rgba(90, 63, 239, 0.3) 0%, transparent 70%)",
+          opacity: 0.4,
           mixBlendMode: "multiply",
         }}
       />
@@ -247,7 +247,7 @@ export default function PricingSection6() {
                     {plan.name}
                   </h3>
                   {plan.highlight && (
-                    <span className="text-xs rounded-full bg-blue-500/20 px-2 py-1 text-blue-100 border border-blue-500/40">
+                    <span className="text-xs rounded-full bg-gold/20 px-2 py-1 text-gold border border-gold/40">
                       {plan.badge}
                     </span>
                   )}
@@ -275,7 +275,7 @@ export default function PricingSection6() {
                     className={cn(
                       "w-full mb-6 p-3 md:p-4 text-base md:text-lg rounded-xl transition-all duration-200 block text-center opacity-50 cursor-not-allowed",
                       plan.highlight
-                        ? "bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800 border border-blue-500 text-white"
+                        ? "bg-gradient-to-t from-gold to-gold/80 shadow-lg shadow-gold/30 border border-gold/50 text-cosmic-navy"
                         : "bg-gradient-to-t from-neutral-950 to-neutral-700 shadow-lg shadow-neutral-900 border border-neutral-800 text-white",
                     )}
                     title="Payments temporarily disabled"
@@ -289,7 +289,7 @@ export default function PricingSection6() {
                     className={cn(
                       "w-full mb-6 p-3 md:p-4 text-base md:text-lg rounded-xl transition-all duration-200 block text-center",
                       plan.highlight
-                        ? "bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800 border border-blue-500 text-white hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                        ? "bg-gradient-to-t from-gold to-gold/80 shadow-lg shadow-gold/30 border border-gold/50 text-cosmic-navy hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                         : "bg-gradient-to-t from-neutral-950 to-neutral-700 shadow-lg shadow-neutral-900 border border-neutral-800 text-white hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed",
                     )}
                   >
@@ -386,7 +386,7 @@ export default function PricingSection6() {
                       {product.name}
                     </h3>
                     {product.mostPopular && (
-                      <span className="text-xs rounded-full bg-blue-500/20 px-2 py-1 text-blue-100 border border-blue-500/40">
+                      <span className="text-xs rounded-full bg-gold/20 px-2 py-1 text-gold border border-gold/40">
                         Most Popular
                       </span>
                     )}
@@ -411,7 +411,7 @@ export default function PricingSection6() {
                       className={cn(
                         "w-full mb-6 p-3 md:p-4 text-base md:text-lg rounded-xl transition-all duration-200 block text-center opacity-50 cursor-not-allowed",
                         product.mostPopular
-                          ? "bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800 border border-blue-500 text-white"
+                          ? "bg-gradient-to-t from-gold to-gold/80 shadow-lg shadow-gold/30 border border-gold/50 text-cosmic-navy"
                           : "bg-gradient-to-t from-neutral-950 to-neutral-700 shadow-lg shadow-neutral-900 border border-neutral-800 text-white",
                       )}
                       title="Payments temporarily disabled"
@@ -424,7 +424,7 @@ export default function PricingSection6() {
                       className={cn(
                         "w-full mb-6 p-3 md:p-4 text-base md:text-lg rounded-xl transition-all duration-200 block text-center",
                         product.mostPopular
-                          ? "bg-gradient-to-t from-blue-500 to-blue-600 shadow-lg shadow-blue-800 border border-blue-500 text-white hover:scale-[1.02]"
+                          ? "bg-gradient-to-t from-gold to-gold/80 shadow-lg shadow-gold/30 border border-gold/50 text-cosmic-navy hover:scale-[1.02]"
                           : "bg-gradient-to-t from-neutral-950 to-neutral-700 shadow-lg shadow-neutral-900 border border-neutral-800 text-white hover:scale-[1.02]",
                       )}
                     >
