@@ -49,11 +49,22 @@ export default function FirebaseCheckPage() {
           console.warn('⚠️ Check browser console for Firebase initialization errors.');
           console.warn('⚠️ Variable values:', data.envVarValues);
           
-          // Try to initialize Firebase manually to see the error
+          // Try to manually trigger Firebase initialization
           if (typeof window !== 'undefined' && !auth) {
-            console.warn('⚠️ Attempting to debug Firebase initialization...');
-            // The initialization should have happened in lib/firebase/config.ts
-            // If it didn't, there's likely an error in the console
+            console.warn('⚠️ Attempting to manually initialize Firebase...');
+            // Re-import to trigger initialization
+            import('@/lib/firebase/config').then((module) => {
+              const { auth: newAuth } = module;
+              if (newAuth) {
+                console.log('✅ Firebase initialized after manual import');
+                setChecks(prev => ({ ...prev, auth: true }));
+              } else {
+                console.error('❌ Firebase still not initialized after manual import');
+                console.error('❌ Check for errors above in the console');
+              }
+            }).catch((err) => {
+              console.error('❌ Failed to import Firebase config:', err);
+            });
           }
         }
       })
