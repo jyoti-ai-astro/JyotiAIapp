@@ -11,6 +11,8 @@ import { withAdminAuth } from '@/lib/middleware/admin-middleware'
 import { consumeTickets } from '@/lib/payments/ticket-service'
 import { adminDb } from '@/lib/firebase/admin'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   return withAdminAuth(async (req, admin) => {
     if (!adminDb) {

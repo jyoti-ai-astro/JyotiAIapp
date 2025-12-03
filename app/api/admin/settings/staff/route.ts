@@ -3,6 +3,8 @@ import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
 import { ADMIN_PERMISSIONS, type AdminRole } from '@/lib/admin/admin-auth'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * List Staff Accounts API
  * Milestone 10 - Step 12

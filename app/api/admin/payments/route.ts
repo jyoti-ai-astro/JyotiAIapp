@@ -3,6 +3,8 @@ import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
 import Razorpay from 'razorpay'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * List Payments API
  * Milestone 10 - Step 5

@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 // Phase 30 - F45: PDF builders loaded on demand (dynamic imports)
 import { pdfReportSchema, rateLimitConfig } from '@/lib/security/validation-schemas';
+
+export const dynamic = 'force-dynamic';
 import { rateLimit, getRateLimitHeaders } from '@/lib/middleware/rate-limit';
 import { generateFingerprint, checkCooldown, setCooldown, getCooldownMessage } from '@/lib/security/abuse-protection';
 import { logSecurityEvent } from '@/lib/security/security-logger';

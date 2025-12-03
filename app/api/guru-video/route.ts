@@ -9,6 +9,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, getRateLimitHeaders } from '@/lib/middleware/rate-limit';
+
+export const dynamic = 'force-dynamic';
 import { rateLimitConfig } from '@/lib/security/validation-schemas';
 import { generateFingerprint, checkCooldown, setCooldown, getCooldownMessage } from '@/lib/security/abuse-protection';
 import { logSecurityEvent } from '@/lib/security/security-logger';

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { KundaliGenerator } from '@/lib/engines/kundali/generator'
 import type { BirthDetails } from '@/lib/engines/kundali/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
