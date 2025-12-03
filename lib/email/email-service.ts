@@ -49,8 +49,11 @@ async function sendViaZeptoMail(options: EmailOptions): Promise<boolean> {
     
     // Check if ZeptoMail is configured
     if (!zeptoConfig.apiKey) {
-      console.error('ZeptoMail API key not configured. Please set ZEPTO_API_KEY environment variable in Vercel.')
-      throw new Error('Email service not configured. Please contact support.')
+      const errorMsg = 'Email service not configured. Please contact support.'
+      if (typeof console !== 'undefined' && console.error) {
+        console.error('ZeptoMail API key not configured. Please set ZEPTO_API_KEY environment variable in Vercel.')
+      }
+      throw new Error(errorMsg)
     }
 
     const zeptoConfig = getZeptoConfig()
