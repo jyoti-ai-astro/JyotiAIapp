@@ -31,6 +31,13 @@ export function useAuth(options: UseAuthOptions = {}) {
       return;
     }
     
+    // Check if auth is available before subscribing
+    if (!auth) {
+      console.warn('⚠️ Firebase auth is not initialized. Authentication features will not work.');
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setFirebaseUser(firebaseUser);
       

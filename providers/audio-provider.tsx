@@ -46,7 +46,7 @@ interface AudioProviderProps {
 }
 
 export function AudioProvider({ children }: AudioProviderProps) {
-  const engineRef = useRef<AudioEngineType | null>(null);
+  const engineRef = useRef<AudioEngine | null>(null);
   const [fftData, setFFTData] = useState<FFTData>({ bass: 0, mid: 0, high: 0 });
   const [isReady, setIsReady] = useState(false);
 
@@ -56,10 +56,10 @@ export function AudioProvider({ children }: AudioProviderProps) {
     if (typeof window === 'undefined') return;
     
     let interval: NodeJS.Timeout | null = null;
-    let engineInstance: AudioEngineType | null = null;
+    let engineInstance: AudioEngine | null = null;
     
     // Dynamic import to ensure client-side only and avoid SSR issues
-    import('@/cosmos/audio/audio-engine').then((module) => {
+    import('@/cosmos/audio').then((module) => {
       const { AudioEngine } = module;
       
       if (!AudioEngine) {
