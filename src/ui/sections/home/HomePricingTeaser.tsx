@@ -13,7 +13,6 @@ export default function HomePricingTeaser() {
   const oneTimeProducts = getAllOneTimeProducts();
   const starterPlan = subscriptionPlans.find(p => p.id === 'starter');
   const supremePlan = subscriptionPlans.find(p => p.id === 'supreme');
-  const quickReading = oneTimeProducts.find(p => p.id === 'quick_99');
 
   return (
     <motion.div
@@ -32,11 +31,12 @@ export default function HomePricingTeaser() {
         </h2>
         <p className="text-lg text-white/60 max-w-2xl mx-auto">
           Monthly subscriptions starting at {starterPlan?.priceLabel}{starterPlan?.period}. 
-          Not ready for a subscription? Try a one-time Quick Reading from ₹99.
+          Not ready for a subscription? Try one-time readings from ₹99.
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      {/* Subscription Plans */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {starterPlan && (
           <motion.div
             variants={fadeUp}
@@ -106,12 +106,33 @@ export default function HomePricingTeaser() {
             </div>
           </motion.div>
         )}
+      </div>
 
-        {quickReading && (
+      {/* One-Time Products */}
+      <motion.div variants={fadeUp} className="text-center space-y-4 mt-8">
+        <h3 className="text-2xl font-bold text-white">One-Time Readings</h3>
+        <p className="text-sm text-white/60">Perfect for trying JyotiAI without a subscription</p>
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        {oneTimeProducts.map((product) => (
           <motion.div
+            key={product.id}
             variants={fadeUp}
-            className="relative rounded-2xl border border-[#FFD57A]/20 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm p-8 hover:border-[#FFD57A]/50 transition-all duration-300"
+            className={`relative rounded-2xl border ${
+              product.mostPopular
+                ? 'border-[#FFD57A]/40 bg-gradient-to-br from-[#0A0F1F]/90 to-[#1A2347]/80 shadow-[0_8px_32px_rgba(255,213,122,0.25)]'
+                : 'border-[#FFD57A]/20 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60'
+            } backdrop-blur-sm p-8 hover:border-[#FFD57A]/50 transition-all duration-300`}
           >
+            {product.mostPopular && (
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="px-3 py-1 rounded-full bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#0A0F1F] text-xs font-semibold">
+                  Most Popular
+                </span>
+              </div>
+            )}
+
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-[#FFD57A]/20 border border-[#FFD57A]/30">
@@ -122,27 +143,27 @@ export default function HomePricingTeaser() {
                     One-Time
                   </p>
                   <p className="text-sm font-semibold text-white">
-                    {quickReading.name}
+                    {product.name}
                   </p>
                 </div>
               </div>
 
-              <h3 className="text-2xl font-bold text-white">{quickReading.name}</h3>
+              <h3 className="text-2xl font-bold text-white">{product.name}</h3>
               <p className="text-sm text-white/70 leading-relaxed">
-                {quickReading.description}
+                {product.description}
               </p>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-[#FFD57A]">₹{quickReading.amountInINR}</span>
+                <span className="text-2xl font-bold text-[#FFD57A]">₹{product.amountInINR}</span>
                 <span className="text-sm text-white/60">one-time</span>
               </div>
-              <Link href={`/pay/${quickReading.productId}`}>
+              <Link href={`/pay/${product.productId}`}>
                 <button className="w-full mt-4 rounded-xl bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#0A0F1F] font-semibold py-3 hover:scale-[1.02] transition-transform">
-                  Get {quickReading.name}
+                  Get {product.name}
                 </button>
               </Link>
             </div>
           </motion.div>
-        )}
+        ))}
       </div>
 
       <motion.div variants={fadeUp} className="text-center pt-4">

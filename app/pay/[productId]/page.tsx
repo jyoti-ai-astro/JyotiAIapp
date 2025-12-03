@@ -108,7 +108,7 @@ export default function PaymentPage() {
         },
         prefill: {
           name: user?.name || '',
-          email: user?.email || '',
+          email: user?.email || '', // Razorpay will capture email if user is not logged in
         },
         theme: {
           color: '#F4CE65',
