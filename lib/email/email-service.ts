@@ -48,12 +48,18 @@ async function sendViaZeptoMail(options: EmailOptions): Promise<boolean> {
   try {
     const zeptoConfig = getZeptoConfig()
     
-    // Check if ZeptoMail is configured
-    if (!zeptoConfig.apiKey) {
+    // Check if ZeptoMail is configured - also check process.env directly as fallback
+    const apiKey = zeptoConfig.apiKey || (typeof process !== 'undefined' ? process.env.ZEPTO_API_KEY : undefined)
+    
+    if (!apiKey) {
       // Log error for debugging (server-side only)
       if (typeof process !== 'undefined' && process.env) {
         // eslint-disable-next-line no-console
         console.error('ZeptoMail API key not configured. Please set ZEPTO_API_KEY environment variable in Vercel.')
+        console.error('Current env check:', {
+          fromConfig: zeptoConfig.apiKey ? 'found' : 'missing',
+          fromProcessEnv: process.env.ZEPTO_API_KEY ? 'found' : 'missing',
+        })
       }
       throw new Error('Email service not configured. Please contact support.')
     }
@@ -61,7 +67,7 @@ async function sendViaZeptoMail(options: EmailOptions): Promise<boolean> {
     const response = await fetch(zeptoConfig.apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Zoho-enczapikey ${zeptoConfig.apiKey}`,
+        'Authorization': `Zoho-enczapikey ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

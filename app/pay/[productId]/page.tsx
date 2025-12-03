@@ -34,14 +34,19 @@ export default function PaymentPage() {
   useEffect(() => {
     if (!product || !isValidOneTimeProduct(productId)) {
       router.push('/pricing')
+      return
     }
-  }, [product, router, productId])
-
-  useEffect(() => {
+    
+    // Allow page to render first, then check auth
+    // This prevents immediate redirect and allows user to see the page
     if (!user) {
-      router.push(`/login?redirect=/pay/${productId}`)
+      // Small delay to allow page to render
+      const timer = setTimeout(() => {
+        router.push(`/login?redirect=/pay/${productId}`)
+      }, 100)
+      return () => clearTimeout(timer)
     }
-  }, [user, router, productId])
+  }, [product, router, productId, user])
 
   const handlePayment = async () => {
     if (!user || !razorpayLoaded || !product) {

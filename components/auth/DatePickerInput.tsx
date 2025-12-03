@@ -87,8 +87,14 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
 
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-    if (val === '' || (parseInt(val, 10) >= 1900 && parseInt(val, 10) <= new Date().getFullYear())) {
+    // Allow partial input - only validate when all 4 digits are entered
+    if (val === '' || val.length < 4) {
       setYear(val);
+    } else {
+      const yearNum = parseInt(val, 10);
+      if (yearNum >= 1900 && yearNum <= new Date().getFullYear()) {
+        setYear(val);
+      }
     }
   };
 
