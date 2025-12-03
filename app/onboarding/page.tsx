@@ -26,6 +26,8 @@ export default function OnboardingPage() {
     dob: '',
     tob: '',
     pob: '',
+    lat: undefined as number | undefined,
+    lng: undefined as number | undefined,
   })
 
   // Step 1: Save birth details with geocoding
@@ -38,7 +40,13 @@ export default function OnboardingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          dob: formData.dob,
+          tob: formData.tob,
+          pob: formData.pob,
+          lat: formData.lat,
+          lng: formData.lng,
+        }),
       })
 
       if (!response.ok) {

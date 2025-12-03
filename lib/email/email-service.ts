@@ -40,8 +40,10 @@ interface EmailLog {
  */
 async function sendViaZeptoMail(options: EmailOptions): Promise<boolean> {
   try {
+    // Check if ZeptoMail is configured
     if (!ZEPTO_API_KEY) {
-      throw new Error('ZeptoMail API key not configured')
+      console.error('ZeptoMail API key not configured. Please set ZEPTO_API_KEY environment variable.')
+      throw new Error('Email service not configured. Please contact support.')
     }
 
     const response = await fetch(ZEPTO_API_URL, {

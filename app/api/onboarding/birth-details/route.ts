@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
     const uid = decodedClaims.uid
 
-    const { dob, tob, pob } = await request.json()
+    const { dob, tob, pob, lat, lng } = await request.json()
 
     // Validation
     if (!dob || !tob || !pob) {
@@ -33,13 +33,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid date of birth' }, { status: 400 })
     }
 
-    // Geocode place of birth
+    // Geocode place of birth (use provided coordinates if available, otherwise geocode)
     let geocodeResult
-    try {
-      geocodeResult = await geocodePlace(pob)
-    } catch (error) {
-      console.warn('Geocoding failed, using default:', error)
-      geocodeResult = getDefaultGeocode(pob)
+    if (lat && lng && typeof lat === 'number' && typeof lng === 'number') {
+      // Use provided coordinates from location autocomplete
+      try {
+        // Get timezone for the coordinates
+        const { envVars } = await import('@/lib/env/env.mjs')
+        const timezoneDbKey = envVars.geocoding.timezoneDbKey
+        
+        let timezone = 'UTC'
+        if (timezoneDbKey) {
+          try {
+            const timezoneResponse = await fetch(
+              `https://api.timezonedb.com/v2.1/get-time-zone?key=${timezoneDbKey}&format=json&by=position&lat=${lat}&lng=${lng}`
+            )
+            const timezoneData = await timezoneResponse.json()
+            if (timezoneData.status === 'OK') {
+              timezone = timezoneData.zoneName || 'UTC'
+            }
+          } catch (err) {
+            console.warn('Timezone lookup failed:', err)
+          }
+        }
+        
+        geocodeResult = {
+          lat,
+          lng,
+          formattedAddress: pob,
+          timezone,
+        }
+      } catch (error) {
+        console.warn('Using provided coordinates failed, falling back to geocoding:', error)
+        // Fall through to geocoding
+      }
+    }
+    
+    // If coordinates weren't provided or failed, geocode the place name
+    if (!geocodeResult) {
+      try {
+        geocodeResult = await geocodePlace(pob)
+      } catch (error) {
+        console.warn('Geocoding failed, using default:', error)
+        geocodeResult = getDefaultGeocode(pob)
+      }
     }
 
     // Update user profile

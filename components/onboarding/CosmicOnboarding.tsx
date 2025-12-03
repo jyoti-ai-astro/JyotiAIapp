@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
 import { Sparkles, Calendar, MapPin, Clock, Star, Moon, Sun } from 'lucide-react';
+import { DatePickerInput } from '@/components/auth/DatePickerInput';
+import { LocationAutocomplete } from '@/components/auth/LocationAutocomplete';
 
 interface OnboardingStepProps {
   step: number;
@@ -21,6 +23,8 @@ interface OnboardingStepProps {
     dob: string;
     tob: string;
     pob: string;
+    lat?: number;
+    lng?: number;
   };
   setFormData: (data: any) => void;
   onSubmit: () => void;
@@ -79,17 +83,12 @@ const BirthDetailsStep: React.FC<OnboardingStepProps> = ({
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <label className="mb-2 block text-sm font-medium text-aura-cyan flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Date of Birth
-          </label>
-          <Input
-            type="date"
+          <DatePickerInput
             value={formData.dob}
-            onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+            onChange={(value) => setFormData({ ...formData, dob: value })}
             required
-            max={new Date().toISOString().split('T')[0]}
-            className="cosmic-card border-aura-blue/30 bg-cosmic-indigo/10 text-white"
+            label="Date of Birth"
+            className=""
           />
         </motion.div>
 
@@ -117,19 +116,23 @@ const BirthDetailsStep: React.FC<OnboardingStepProps> = ({
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <label className="mb-2 block text-sm font-medium text-aura-cyan flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            Place of Birth
-          </label>
-          <Input
-            type="text"
-            placeholder="e.g., Delhi, India"
+          <LocationAutocomplete
             value={formData.pob}
-            onChange={(e) => setFormData({ ...formData, pob: e.target.value })}
+            onChange={(value, coordinates) => {
+              // Store both the formatted address and coordinates
+              setFormData({ 
+                ...formData, 
+                pob: value,
+                // Store coordinates in a way that can be passed to API
+                lat: coordinates?.lat,
+                lng: coordinates?.lng,
+              });
+            }}
             required
-            className="cosmic-card border-aura-blue/30 bg-cosmic-indigo/10 text-white"
+            label="Place of Birth"
+            className=""
           />
-          <p className="mt-1 text-xs text-aura-cyan/60">City and country for accurate calculations</p>
+          <p className="mt-1 text-xs text-aura-cyan/60">Start typing to search for your city</p>
         </motion.div>
 
         <motion.div
@@ -352,6 +355,8 @@ export interface CosmicOnboardingProps {
     dob: string;
     tob: string;
     pob: string;
+    lat?: number;
+    lng?: number;
   };
   setFormData: (data: any) => void;
   rashiData: {
