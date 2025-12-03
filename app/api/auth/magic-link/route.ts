@@ -37,15 +37,24 @@ export async function POST(request: NextRequest) {
     const link = await adminAuth.generateSignInWithEmailLink(email, actionCodeSettings)
 
     // Send email via ZeptoMail
-    const emailSent = await sendMagicLink(
-      email,
-      link,
-      request.headers.get('user-agent') || undefined
-    )
+    try {
+      const emailSent = await sendMagicLink(
+        email,
+        link,
+        request.headers.get('user-agent') || undefined
+      )
 
-    if (!emailSent) {
+      if (!emailSent) {
+        console.error('Magic link email sending returned false')
+        return NextResponse.json(
+          { error: 'Failed to send email. Please check if ZEPTO_API_KEY is configured in Vercel environment variables.' },
+          { status: 500 }
+        )
+      }
+    } catch (emailError: any) {
+      console.error('Magic link email error:', emailError)
       return NextResponse.json(
-        { error: 'Failed to send email. Please try again.' },
+        { error: emailError.message || 'Failed to send email. Please check email service configuration.' },
         { status: 500 }
       )
     }

@@ -7,10 +7,15 @@
 import { adminDb } from '@/lib/firebase/admin'
 import { envVars } from '@/lib/env/env.mjs'
 
-const ZEPTO_API_KEY = envVars.zepto.apiKey
-const ZEPTO_DOMAIN = envVars.zepto.domain
-const ZEPTO_FROM = envVars.zepto.from
-const ZEPTO_API_URL = 'https://api.zeptomail.com/v1.1/email'
+// Get ZeptoMail config (may be undefined if not configured)
+const getZeptoConfig = () => {
+  return {
+    apiKey: envVars.zepto.apiKey,
+    domain: envVars.zepto.domain,
+    from: envVars.zepto.from,
+    apiUrl: 'https://api.zeptomail.com/v1.1/email',
+  }
+}
 
 interface EmailOptions {
   to: string
@@ -40,21 +45,25 @@ interface EmailLog {
  */
 async function sendViaZeptoMail(options: EmailOptions): Promise<boolean> {
   try {
+    const zeptoConfig = getZeptoConfig()
+    
     // Check if ZeptoMail is configured
-    if (!ZEPTO_API_KEY) {
-      console.error('ZeptoMail API key not configured. Please set ZEPTO_API_KEY environment variable.')
+    if (!zeptoConfig.apiKey) {
+      console.error('ZeptoMail API key not configured. Please set ZEPTO_API_KEY environment variable in Vercel.')
       throw new Error('Email service not configured. Please contact support.')
     }
 
-    const response = await fetch(ZEPTO_API_URL, {
+    const zeptoConfig = getZeptoConfig()
+    
+    const response = await fetch(zeptoConfig.apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Zoho-enczapikey ${ZEPTO_API_KEY}`,
+        'Authorization': `Zoho-enczapikey ${zeptoConfig.apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         from: {
-          address: ZEPTO_FROM,
+          address: zeptoConfig.from,
           name: 'Jyoti.ai',
         },
         to: [
