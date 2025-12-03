@@ -17,11 +17,13 @@ export function Header() {
 
   const navLinks = [
     { href: '/', label: 'Home' },
+    { href: '/features', label: 'Features' },
+    { href: '/modules', label: 'Modules' },
     { href: '/guru', label: 'Guru' },
     { href: '/pricing', label: 'Pricing' },
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/company/about', label: 'About' },
-    { href: '/company/contact', label: 'Contact' },
+    { href: '/support', label: 'Support' },
   ];
 
   useEffect(() => {

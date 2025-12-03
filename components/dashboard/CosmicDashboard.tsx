@@ -116,10 +116,47 @@ export const CosmicDashboard: React.FC<CosmicDashboardProps> = ({
       onClick: () => window.location.href = '/kundali',
     },
     {
+      id: 'predictions',
+      label: 'Predictions',
+      icon: <TrendingUp className="w-6 h-6 text-aura-green" />,
+      onClick: () => window.location.href = '/predictions',
+    },
+    {
+      id: 'guru',
+      label: 'AI Guru',
+      icon: <Sparkles className="w-6 h-6 text-aura-cyan" />,
+      onClick: () => window.location.href = '/guru',
+      variant: 'premium',
+    },
+    {
+      id: 'career',
+      label: 'Career Destiny',
+      icon: <TrendingUp className="w-6 h-6 text-aura-green" />,
+      onClick: () => window.location.href = '/career',
+    },
+    {
+      id: 'business',
+      label: 'Business',
+      icon: <DollarSign className="w-6 h-6 text-aura-gold" />,
+      onClick: () => window.location.href = '/business',
+    },
+    {
+      id: 'compatibility',
+      label: 'Compatibility',
+      icon: <Users className="w-6 h-6 text-aura-orange" />,
+      onClick: () => window.location.href = '/compatibility',
+    },
+    {
       id: 'palmistry',
       label: 'Palm Reading',
       icon: <BookOpen className="w-6 h-6 text-aura-violet" />,
       onClick: () => window.location.href = '/palmistry',
+    },
+    {
+      id: 'face',
+      label: 'Face Reading',
+      icon: <Activity className="w-6 h-6 text-aura-violet" />,
+      onClick: () => window.location.href = '/face',
     },
     {
       id: 'aura',
@@ -134,18 +171,6 @@ export const CosmicDashboard: React.FC<CosmicDashboardProps> = ({
       onClick: () => window.location.href = '/numerology',
     },
     {
-      id: 'career',
-      label: 'Career Destiny',
-      icon: <TrendingUp className="w-6 h-6 text-aura-green" />,
-      onClick: () => window.location.href = '/career',
-    },
-    {
-      id: 'compatibility',
-      label: 'Compatibility',
-      icon: <Users className="w-6 h-6 text-aura-orange" />,
-      onClick: () => window.location.href = '/compatibility',
-    },
-    {
       id: 'timeline',
       label: 'Timeline',
       icon: <Calendar className="w-6 h-6 text-aura-blue" />,
@@ -158,17 +183,16 @@ export const CosmicDashboard: React.FC<CosmicDashboardProps> = ({
       onClick: () => window.location.href = '/rituals',
     },
     {
-      id: 'mantras',
-      label: 'Mantras',
-      icon: <Activity className="w-6 h-6 text-aura-violet" />,
-      onClick: () => window.location.href = '/mantras',
+      id: 'calendar',
+      label: 'Calendar',
+      icon: <Calendar className="w-6 h-6 text-aura-blue" />,
+      onClick: () => window.location.href = '/calendar',
     },
     {
-      id: 'guru',
-      label: 'AI Guru',
-      icon: <Sparkles className="w-6 h-6 text-aura-cyan" />,
-      onClick: () => window.location.href = '/guru',
-      variant: 'premium',
+      id: 'reports',
+      label: 'Reports',
+      icon: <BookOpen className="w-6 h-6 text-aura-violet" />,
+      onClick: () => window.location.href = '/reports',
     },
   ];
 
