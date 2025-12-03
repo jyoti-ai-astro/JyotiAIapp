@@ -21,24 +21,52 @@ export default function FirebaseCheckPage() {
   });
 
   useEffect(() => {
+    // Check environment variables (client-side)
     const envVars = {
-      'NEXT_PUBLIC_FIREBASE_API_KEY': !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN': !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      'NEXT_PUBLIC_FIREBASE_PROJECT_ID': !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET': !!process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID': !!process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      'NEXT_PUBLIC_FIREBASE_APP_ID': !!process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      'NEXT_PUBLIC_FIREBASE_API_KEY': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY),
+      'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN),
+      'NEXT_PUBLIC_FIREBASE_PROJECT_ID': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
+      'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET),
+      'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID),
+      'NEXT_PUBLIC_FIREBASE_APP_ID': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_APP_ID || process.env.NEXT_PUBLIC_FIREBASE_APP_ID),
     };
 
-    const missing = Object.entries(envVars)
-      .filter(([_, exists]) => !exists)
-      .map(([key]) => key);
+    // Also check via API to get server-side values
+    fetch('/api/dev/firebase-env-check')
+      .then(res => res.json())
+      .then(data => {
+        const serverEnvVars = data.envVars || {};
+        const combinedEnvVars = {
+          'NEXT_PUBLIC_FIREBASE_API_KEY': envVars['NEXT_PUBLIC_FIREBASE_API_KEY'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_API_KEY'],
+          'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN': envVars['NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'],
+          'NEXT_PUBLIC_FIREBASE_PROJECT_ID': envVars['NEXT_PUBLIC_FIREBASE_PROJECT_ID'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_PROJECT_ID'],
+          'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET': envVars['NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'],
+          'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID': envVars['NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'],
+          'NEXT_PUBLIC_FIREBASE_APP_ID': envVars['NEXT_PUBLIC_FIREBASE_APP_ID'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_APP_ID'],
+        };
 
-    setChecks({
-      auth: !!auth,
-      envVars,
-      errors: missing,
-    });
+        const missing = Object.entries(combinedEnvVars)
+          .filter(([_, exists]) => !exists)
+          .map(([key]) => key);
+
+        setChecks({
+          auth: !!auth || data.authInitialized,
+          envVars: combinedEnvVars,
+          errors: missing,
+        });
+      })
+      .catch(() => {
+        // Fallback to client-side check only
+        const missing = Object.entries(envVars)
+          .filter(([_, exists]) => !exists)
+          .map(([key]) => key);
+
+        setChecks({
+          auth: !!auth,
+          envVars,
+          errors: missing,
+        });
+      });
   }, []);
 
   return (
