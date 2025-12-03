@@ -21,42 +21,33 @@ export default function FirebaseCheckPage() {
   });
 
   useEffect(() => {
-    // Check environment variables (client-side)
-    const envVars = {
-      'NEXT_PUBLIC_FIREBASE_API_KEY': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY),
-      'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN),
-      'NEXT_PUBLIC_FIREBASE_PROJECT_ID': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
-      'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET),
-      'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID),
-      'NEXT_PUBLIC_FIREBASE_APP_ID': !!(typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_FIREBASE_APP_ID || process.env.NEXT_PUBLIC_FIREBASE_APP_ID),
-    };
-
-    // Also check via API to get server-side values
+    // Check via API to get server-side values (most accurate)
     fetch('/api/dev/firebase-env-check')
       .then(res => res.json())
       .then(data => {
         const serverEnvVars = data.envVars || {};
-        const combinedEnvVars = {
-          'NEXT_PUBLIC_FIREBASE_API_KEY': envVars['NEXT_PUBLIC_FIREBASE_API_KEY'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_API_KEY'],
-          'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN': envVars['NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'],
-          'NEXT_PUBLIC_FIREBASE_PROJECT_ID': envVars['NEXT_PUBLIC_FIREBASE_PROJECT_ID'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_PROJECT_ID'],
-          'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET': envVars['NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'],
-          'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID': envVars['NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'],
-          'NEXT_PUBLIC_FIREBASE_APP_ID': envVars['NEXT_PUBLIC_FIREBASE_APP_ID'] || serverEnvVars['NEXT_PUBLIC_FIREBASE_APP_ID'],
-        };
-
-        const missing = Object.entries(combinedEnvVars)
+        const missing = Object.entries(serverEnvVars)
           .filter(([_, exists]) => !exists)
           .map(([key]) => key);
 
         setChecks({
           auth: !!auth || data.authInitialized,
-          envVars: combinedEnvVars,
+          envVars: serverEnvVars,
           errors: missing,
         });
       })
-      .catch(() => {
-        // Fallback to client-side check only
+      .catch((error) => {
+        console.error('Failed to fetch Firebase check:', error);
+        // Fallback: check client-side (less accurate but better than nothing)
+        const envVars = {
+          'NEXT_PUBLIC_FIREBASE_API_KEY': !!(process.env.NEXT_PUBLIC_FIREBASE_API_KEY),
+          'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN': !!(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN),
+          'NEXT_PUBLIC_FIREBASE_PROJECT_ID': !!(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
+          'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET': !!(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET),
+          'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID': !!(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID),
+          'NEXT_PUBLIC_FIREBASE_APP_ID': !!(process.env.NEXT_PUBLIC_FIREBASE_APP_ID),
+        };
+
         const missing = Object.entries(envVars)
           .filter(([_, exists]) => !exists)
           .map(([key]) => key);
@@ -94,23 +85,29 @@ export default function FirebaseCheckPage() {
 
           <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
             <h2 className="text-xl font-semibold mb-4">Environment Variables</h2>
-            <div className="space-y-2">
-              {Object.entries(checks.envVars).map(([key, exists]) => (
-                <div key={key} className="flex items-center gap-3">
-                  {exists ? (
-                    <>
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-green-400 text-sm">{key}</span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <span className="text-red-400 text-sm">{key} - MISSING</span>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
+            {Object.keys(checks.envVars).length === 0 ? (
+              <div className="text-yellow-400 text-sm">Loading...</div>
+            ) : (
+              <div className="space-y-2">
+                {Object.entries(checks.envVars).map(([key, exists]) => (
+                  <div key={key} className="flex items-center gap-3 p-2 rounded bg-zinc-800/50">
+                    {exists ? (
+                      <>
+                        <div className="w-4 h-4 bg-green-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-green-400 text-sm font-mono">{key}</span>
+                        <span className="text-green-500 text-xs ml-auto">✓ Set</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-4 h-4 bg-red-500 rounded-full flex-shrink-0 animate-pulse"></div>
+                        <span className="text-red-400 text-sm font-mono">{key}</span>
+                        <span className="text-red-500 text-xs ml-auto font-semibold">✗ MISSING</span>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {checks.errors.length > 0 && (
