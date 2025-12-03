@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/firebase/config';
 import { envVars } from '@/lib/env/env.mjs';
 
 export const dynamic = 'force-dynamic';
@@ -29,8 +28,11 @@ export async function GET() {
     val => val !== 'MISSING' && !val.startsWith('dummy-')
   );
 
+  // Note: auth is client-side only, so we can't check it here
+  // The client-side code will check auth initialization
   return NextResponse.json({
-    authInitialized: !!auth && allValid,
+    authInitialized: false, // Client-side only - will be checked by client
+    configValid: allValid,
     envVars: envVarsCheck,
     envVarValues: envVarValues, // For debugging
     allValid,

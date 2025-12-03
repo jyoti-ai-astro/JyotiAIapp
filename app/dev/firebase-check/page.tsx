@@ -30,11 +30,11 @@ export default function FirebaseCheckPage() {
           .filter(([_, exists]) => !exists)
           .map(([key]) => key);
 
-        // Check client-side auth status
+        // Check client-side auth status (this is the real check)
         const clientAuthInitialized = !!auth;
         
-        // Use server-side check if available, otherwise use client-side
-        const authStatus = data.authInitialized !== undefined ? data.authInitialized : clientAuthInitialized;
+        // Use client-side check (auth is only initialized on client)
+        const authStatus = clientAuthInitialized;
 
         setChecks({
           auth: authStatus,
@@ -43,10 +43,18 @@ export default function FirebaseCheckPage() {
         });
 
         // Log debug info if auth is not initialized but vars are present
-        if (!authStatus && missing.length === 0 && data.envVarValues) {
+        if (!authStatus && missing.length === 0 && data.configValid) {
           console.warn('⚠️ Firebase variables are present but auth is not initialized.');
+          console.warn('⚠️ This means Firebase initialization failed on the client side.');
+          console.warn('⚠️ Check browser console for Firebase initialization errors.');
           console.warn('⚠️ Variable values:', data.envVarValues);
-          console.warn('⚠️ This may indicate a Firebase initialization error. Check browser console for details.');
+          
+          // Try to initialize Firebase manually to see the error
+          if (typeof window !== 'undefined' && !auth) {
+            console.warn('⚠️ Attempting to debug Firebase initialization...');
+            // The initialization should have happened in lib/firebase/config.ts
+            // If it didn't, there's likely an error in the console
+          }
         }
       })
       .catch((error) => {
