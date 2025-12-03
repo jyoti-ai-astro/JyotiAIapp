@@ -10,7 +10,10 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { AudioEngine, FFTData, AudioEventType } from '@/cosmos/audio';
+// AudioEngine is dynamically imported to avoid SSR issues
+type AudioEngine = any;
+type FFTData = { bass: number; mid: number; high: number };
+type AudioEventType = string;
 
 interface AudioContextValue {
   // FFT data
@@ -59,37 +62,45 @@ export function AudioProvider({ children }: AudioProviderProps) {
     let engineInstance: AudioEngine | null = null;
     
     // Dynamic import to ensure client-side only and avoid SSR issues
-    import('@/cosmos/audio').then((module) => {
-      const { AudioEngine } = module;
-      
-      if (!AudioEngine) {
-        console.error('AudioEngine is undefined');
-        return;
-      }
-      
-      try {
-        const engine = new AudioEngine();
-        engineInstance = engine;
-        engineRef.current = engine;
-    
-        // Resume audio context (required after user interaction)
-        engine.resume().then(() => {
-          setIsReady(true);
-        });
+    import('@/cosmos/audio')
+      .then((module) => {
+        const { AudioEngine } = module;
         
-        // Update FFT data periodically
-        interval = setInterval(() => {
-          if (engine) {
-            const data = engine.getFFTData();
-            setFFTData(data);
-          }
-        }, 16); // ~60fps
-      } catch (error) {
-        console.error('Failed to initialize AudioEngine:', error);
-      }
-    }).catch((error) => {
-      console.error('Failed to import AudioEngine:', error);
-    });
+        if (!AudioEngine) {
+          // Silently fail - audio is optional
+          return;
+        }
+        
+        try {
+          const engine = new AudioEngine();
+          engineInstance = engine;
+          engineRef.current = engine;
+      
+          // Resume audio context (required after user interaction)
+          engine.resume().then(() => {
+            setIsReady(true);
+          }).catch(() => {
+            // Silently fail - audio context may not be available
+          });
+          
+          // Update FFT data periodically
+          interval = setInterval(() => {
+            if (engine) {
+              try {
+                const data = engine.getFFTData();
+                setFFTData(data);
+              } catch (e) {
+                // Silently fail - FFT may not be available
+              }
+            }
+          }, 16); // ~60fps
+        } catch (error) {
+          // Silently fail - audio engine is optional
+        }
+      })
+      .catch(() => {
+        // Silently fail - audio module is optional
+      });
     
     // Cleanup function
     return () => {
