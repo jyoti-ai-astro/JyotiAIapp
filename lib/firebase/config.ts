@@ -43,14 +43,41 @@ if (typeof window !== 'undefined') {
 
   if (hasValidConfig) {
     try {
-      app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
-      auth = getAuth(app)
-      db = getFirestore(app)
-      storage = getStorage(app)
-      console.log('✅ Firebase initialized successfully')
-    } catch (error) {
-      console.error('❌ Firebase initialization error:', error)
-      console.warn('⚠️ Firebase config may be invalid. Check your environment variables.')
+      // Check if Firebase is already initialized
+      const existingApps = getApps();
+      if (existingApps.length > 0) {
+        app = existingApps[0];
+        console.log('✅ Using existing Firebase app');
+      } else {
+        app = initializeApp(firebaseConfig);
+        console.log('✅ Firebase app initialized');
+      }
+      
+      auth = getAuth(app);
+      db = getFirestore(app);
+      storage = getStorage(app);
+      
+      console.log('✅ Firebase initialized successfully', {
+        projectId: firebaseConfig.projectId,
+        authDomain: firebaseConfig.authDomain,
+        hasAuth: !!auth,
+      });
+    } catch (error: any) {
+      console.error('❌ Firebase initialization error:', error);
+      console.error('❌ Error details:', {
+        code: error.code,
+        message: error.message,
+        name: error.name,
+      });
+      console.warn('⚠️ Firebase config may be invalid. Check your environment variables.');
+      console.warn('⚠️ Config values:', {
+        apiKey: firebaseConfig.apiKey?.substring(0, 15) + '...',
+        authDomain: firebaseConfig.authDomain,
+        projectId: firebaseConfig.projectId,
+        storageBucket: firebaseConfig.storageBucket,
+        messagingSenderId: firebaseConfig.messagingSenderId,
+        appId: firebaseConfig.appId?.substring(0, 20) + '...',
+      });
     }
   } else {
     // More detailed warning with missing variables
