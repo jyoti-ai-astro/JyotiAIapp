@@ -31,10 +31,31 @@ export default function SignupPage() {
   const handleSocialSignup = async (provider: GoogleAuthProvider | FacebookAuthProvider, providerName: string) => {
     try {
       setLoading(true);
+      setError(null);
+      
       if (!auth) {
-        throw new Error('Firebase is not configured. Please contact support.');
+        throw new Error('Firebase authentication is not configured. Please add Firebase environment variables to Vercel.');
       }
-      const result = await signInWithPopup(auth, provider);
+      
+      // Add error handling for popup blockers
+      const result = await signInWithPopup(auth, provider).catch((error: any) => {
+        console.error(`${providerName} popup error:`, error);
+        
+        // Handle specific Firebase auth errors
+        if (error.code === 'auth/popup-closed-by-user') {
+          throw new Error('Sign-in popup was closed. Please try again.');
+        } else if (error.code === 'auth/popup-blocked') {
+          throw new Error('Popup was blocked. Please allow popups for this site and try again.');
+        } else if (error.code === 'auth/unauthorized-domain') {
+          throw new Error(`${providerName} sign-in is not authorized for this domain. Please contact support.`);
+        } else if (error.code === 'auth/operation-not-allowed') {
+          throw new Error(`${providerName} sign-in is not enabled. Please contact support.`);
+        } else if (error.message) {
+          throw new Error(error.message);
+        } else {
+          throw new Error(`${providerName} sign-in failed. Please try again.`);
+        }
+      });
       const idToken = await result.user.getIdToken();
 
       const response = await fetch('/api/auth/login', {
@@ -68,7 +89,18 @@ export default function SignupPage() {
       }
     } catch (error: any) {
       console.error(`${providerName} signup error:`, error);
-      setError(error.message || `${providerName} signup failed. Please try again.`);
+      const errorMessage = error.message || `${providerName} signup failed. Please try again.`;
+      setError(errorMessage);
+      
+      // Show more detailed error in console for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Full error details:', {
+          code: error.code,
+          message: error.message,
+          auth: !!auth,
+          provider: providerName,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -87,6 +119,13 @@ export default function SignupPage() {
   const handleMagicLink = async (email: string) => {
     try {
       setLoading(true);
+      setError(null);
+      
+      // Validate email
+      if (!email || !email.includes('@')) {
+        throw new Error('Please enter a valid email address.');
+      }
+      
       // Store email in localStorage for callback
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('emailForSignIn', email);
@@ -98,16 +137,27 @@ export default function SignupPage() {
         body: JSON.stringify({ email }),
       });
 
-      if (response.ok) {
-        // Redirect to magic link confirmation page
-        router.push('/magic-link');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send magic link');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to send magic link' }));
+        throw new Error(errorData.error || `Failed to send magic link (${response.status})`);
       }
+
+      const data = await response.json();
+      
+      // Redirect to magic link confirmation page
+      router.push('/magic-link');
     } catch (error: any) {
       console.error('Magic link error:', error);
-      setError(error.message || 'Failed to send magic link. Please try again.');
+      const errorMessage = error.message || 'Failed to send magic link. Please try again.';
+      setError(errorMessage);
+      
+      // Show more detailed error in console for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Magic link error details:', {
+          message: error.message,
+          email: email,
+        });
+      }
     } finally {
       setLoading(false);
     }
