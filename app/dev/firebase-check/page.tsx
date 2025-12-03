@@ -54,13 +54,32 @@ export default function FirebaseCheckPage() {
             console.warn('⚠️ Attempting to manually initialize Firebase...');
             // Re-import to trigger initialization
             import('@/lib/firebase/config').then((module) => {
-              const { auth: newAuth } = module;
-              if (newAuth) {
+              const { auth: newAuth, getFirebaseAuth } = module;
+              
+              // Try using the getter function which triggers initialization
+              const authFromGetter = getFirebaseAuth ? getFirebaseAuth() : newAuth;
+              
+              if (authFromGetter) {
                 console.log('✅ Firebase initialized after manual import');
                 setChecks(prev => ({ ...prev, auth: true }));
               } else {
                 console.error('❌ Firebase still not initialized after manual import');
+                console.error('❌ Env vars check:', {
+                  apiKey: data.envVarValues?.['NEXT_PUBLIC_FIREBASE_API_KEY']?.substring(0, 10),
+                  authDomain: data.envVarValues?.['NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'],
+                  projectId: data.envVarValues?.['NEXT_PUBLIC_FIREBASE_PROJECT_ID'],
+                });
                 console.error('❌ Check for errors above in the console');
+                
+                // Try one more time with a direct initialization attempt
+                setTimeout(() => {
+                  const { getFirebaseAuth: retryGetAuth } = require('@/lib/firebase/config');
+                  const retryAuth = retryGetAuth();
+                  if (retryAuth) {
+                    console.log('✅ Firebase initialized on retry');
+                    setChecks(prev => ({ ...prev, auth: true }));
+                  }
+                }, 500);
               }
             }).catch((err) => {
               console.error('❌ Failed to import Firebase config:', err);
