@@ -35,6 +35,11 @@ export default function AuthCallbackPage() {
           throw new Error('Invalid magic link')
         }
 
+        // Check if auth is available
+        if (!auth) {
+          throw new Error('Firebase is not configured. Please contact support.')
+        }
+
         // Sign in with email link
         const result = await signInWithEmailLink(auth, email, fullUrl)
         const idToken = await result.user.getIdToken()
