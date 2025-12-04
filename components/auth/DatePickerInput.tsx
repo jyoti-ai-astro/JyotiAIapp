@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,63 +30,106 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
   const [day, setDay] = useState('');
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
+  const isEditingRef = useRef(false);
+  const lastValueRef = useRef<string>('');
 
-  // Parse initial value
+  // Parse initial value - only when value prop changes externally (not from our own onChange)
   useEffect(() => {
+    // Don't update if we're currently editing or if value hasn't actually changed
+    if (isEditingRef.current || value === lastValueRef.current) {
+      return;
+    }
+
     if (value) {
       const date = new Date(value);
       if (!isNaN(date.getTime())) {
-        setDay(String(date.getDate()).padStart(2, '0'));
-        setMonth(String(date.getMonth() + 1).padStart(2, '0'));
-        setYear(String(date.getFullYear()));
-      }
-    }
-  }, [value]);
-
-  // Update parent when any field changes
-  useEffect(() => {
-    if (day && month && year) {
-      const dayNum = parseInt(day, 10);
-      const monthNum = parseInt(month, 10);
-      const yearNum = parseInt(year, 10);
-
-      // Validate date
-      if (
-        dayNum >= 1 && dayNum <= 31 &&
-        monthNum >= 1 && monthNum <= 12 &&
-        yearNum >= 1900 && yearNum <= new Date().getFullYear()
-      ) {
-        const date = new Date(yearNum, monthNum - 1, dayNum);
-        // Check if date is valid (handles leap years, month boundaries, etc.)
-        if (
-          date.getDate() === dayNum && 
-          date.getMonth() === monthNum - 1 &&
-          date.getFullYear() === yearNum
-        ) {
-          const isoString = date.toISOString().split('T')[0];
-          onChange(isoString);
+        const newDay = String(date.getDate()).padStart(2, '0');
+        const newMonth = String(date.getMonth() + 1).padStart(2, '0');
+        const newYear = String(date.getFullYear());
+        
+        // Only update if different from current values
+        if (newDay !== day || newMonth !== month || newYear !== year) {
+          setDay(newDay);
+          setMonth(newMonth);
+          setYear(newYear);
+          lastValueRef.current = value;
         }
       }
-    } else if (!day && !month && !year) {
-      // Clear value if all fields are empty
-      onChange('');
+    } else if (day || month || year) {
+      // Clear if value is empty
+      setDay('');
+      setMonth('');
+      setYear('');
+      lastValueRef.current = '';
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]); // Only depend on value, not day/month/year to prevent loops
+
+  // Update parent when any field changes - but only when we have a complete valid date
+  useEffect(() => {
+    // Skip if we don't have all fields
+    if (!day || !month || !year || year.length < 4) {
+      return;
+    }
+
+    const dayNum = parseInt(day, 10);
+    const monthNum = parseInt(month, 10);
+    const yearNum = parseInt(year, 10);
+
+    // Validate date
+    if (
+      dayNum >= 1 && dayNum <= 31 &&
+      monthNum >= 1 && monthNum <= 12 &&
+      yearNum >= 1900 && yearNum <= new Date().getFullYear()
+    ) {
+      const date = new Date(yearNum, monthNum - 1, dayNum);
+      // Check if date is valid (handles leap years, month boundaries, etc.)
+      if (
+        date.getDate() === dayNum && 
+        date.getMonth() === monthNum - 1 &&
+        date.getFullYear() === yearNum
+      ) {
+        const isoString = date.toISOString().split('T')[0];
+        
+        // Only call onChange if the value actually changed
+        if (isoString !== lastValueRef.current) {
+          isEditingRef.current = true;
+          lastValueRef.current = isoString;
+          onChange(isoString);
+          // Reset editing flag after a short delay
+          setTimeout(() => {
+            isEditingRef.current = false;
+          }, 100);
+        }
+      }
     }
   }, [day, month, year, onChange]);
 
   const handleDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+    isEditingRef.current = true;
     setDay(val);
+    // Reset editing flag after a delay
+    setTimeout(() => {
+      isEditingRef.current = false;
+    }, 200);
   };
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 2);
     if (val === '' || (parseInt(val, 10) >= 1 && parseInt(val, 10) <= 12)) {
+      isEditingRef.current = true;
       setMonth(val);
+      // Reset editing flag after a delay
+      setTimeout(() => {
+        isEditingRef.current = false;
+      }, 200);
     }
   };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+    isEditingRef.current = true;
     // Allow partial input - only validate when all 4 digits are entered
     if (val === '' || val.length < 4) {
       setYear(val);
@@ -96,6 +139,10 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
         setYear(val);
       }
     }
+    // Reset editing flag after a delay
+    setTimeout(() => {
+      isEditingRef.current = false;
+    }, 200);
   };
 
   return (
