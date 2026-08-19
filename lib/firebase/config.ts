@@ -1,29 +1,28 @@
-// Phase 31 - F46: Use validated environment variables
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app'
 import { getAuth, Auth } from 'firebase/auth'
 import { getFirestore, Firestore } from 'firebase/firestore'
 import { getStorage, FirebaseStorage } from 'firebase/storage'
-import { envVars } from '@/lib/env/env.mjs'
+import { publicEnv } from '@/lib/env/client'
 
 // Check if Firebase config is complete
 const isFirebaseConfigComplete = () => {
   return !!(
-    envVars.firebase.apiKey &&
-    envVars.firebase.authDomain &&
-    envVars.firebase.projectId &&
-    envVars.firebase.storageBucket &&
-    envVars.firebase.messagingSenderId &&
-    envVars.firebase.appId
+    publicEnv.firebase.apiKey &&
+    publicEnv.firebase.authDomain &&
+    publicEnv.firebase.projectId &&
+    publicEnv.firebase.storageBucket &&
+    publicEnv.firebase.messagingSenderId &&
+    publicEnv.firebase.appId
   )
 }
 
 const firebaseConfig = {
-  apiKey: envVars.firebase.apiKey || 'dummy-key',
-  authDomain: envVars.firebase.authDomain || 'dummy-domain',
-  projectId: envVars.firebase.projectId || 'dummy-project',
-  storageBucket: envVars.firebase.storageBucket || 'dummy-bucket',
-  messagingSenderId: envVars.firebase.messagingSenderId || 'dummy-sender',
-  appId: envVars.firebase.appId || 'dummy-app',
+  apiKey: publicEnv.firebase.apiKey || 'dummy-key',
+  authDomain: publicEnv.firebase.authDomain || 'dummy-domain',
+  projectId: publicEnv.firebase.projectId || 'dummy-project',
+  storageBucket: publicEnv.firebase.storageBucket || 'dummy-bucket',
+  messagingSenderId: publicEnv.firebase.messagingSenderId || 'dummy-sender',
+  appId: publicEnv.firebase.appId || 'dummy-app',
 }
 
 let app: FirebaseApp | undefined
@@ -51,7 +50,7 @@ function initializeFirebase() {
     return;
   }
 
-  // Debug: Check both envVars and process.env directly
+  // Debug: Check both publicEnv and process.env directly
   console.log('🔍 Checking Firebase config...');
   const directEnv = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -68,20 +67,20 @@ function initializeFirebase() {
     hasProjectId: !!directEnv.projectId,
   });
   
-  console.log('🔍 envVars.firebase check:', {
-    hasApiKey: !!envVars.firebase.apiKey,
-    hasAuthDomain: !!envVars.firebase.authDomain,
-    hasProjectId: !!envVars.firebase.projectId,
+  console.log('🔍 publicEnv.firebase check:', {
+    hasApiKey: !!publicEnv.firebase.apiKey,
+    hasAuthDomain: !!publicEnv.firebase.authDomain,
+    hasProjectId: !!publicEnv.firebase.projectId,
   });
 
-  // Use direct process.env as fallback if envVars is missing values
+  // Use direct process.env as fallback if publicEnv is missing values
   const effectiveConfig = {
-    apiKey: envVars.firebase.apiKey || directEnv.apiKey || 'dummy-key',
-    authDomain: envVars.firebase.authDomain || directEnv.authDomain || 'dummy-domain',
-    projectId: envVars.firebase.projectId || directEnv.projectId || 'dummy-project',
-    storageBucket: envVars.firebase.storageBucket || directEnv.storageBucket || 'dummy-bucket',
-    messagingSenderId: envVars.firebase.messagingSenderId || directEnv.messagingSenderId || 'dummy-sender',
-    appId: envVars.firebase.appId || directEnv.appId || 'dummy-app',
+    apiKey: publicEnv.firebase.apiKey || directEnv.apiKey || 'dummy-key',
+    authDomain: publicEnv.firebase.authDomain || directEnv.authDomain || 'dummy-domain',
+    projectId: publicEnv.firebase.projectId || directEnv.projectId || 'dummy-project',
+    storageBucket: publicEnv.firebase.storageBucket || directEnv.storageBucket || 'dummy-bucket',
+    messagingSenderId: publicEnv.firebase.messagingSenderId || directEnv.messagingSenderId || 'dummy-sender',
+    appId: publicEnv.firebase.appId || directEnv.appId || 'dummy-app',
   };
 
   // Check if config values are valid (not dummy values)
@@ -151,12 +150,12 @@ function initializeFirebase() {
   } else {
     // More detailed warning with missing variables
     const missing = []
-    if (!envVars.firebase.apiKey || envVars.firebase.apiKey === 'dummy-key') missing.push('NEXT_PUBLIC_FIREBASE_API_KEY')
-    if (!envVars.firebase.authDomain || envVars.firebase.authDomain === 'dummy-domain') missing.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN')
-    if (!envVars.firebase.projectId || envVars.firebase.projectId === 'dummy-project') missing.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID')
-    if (!envVars.firebase.storageBucket || envVars.firebase.storageBucket === 'dummy-bucket') missing.push('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET')
-    if (!envVars.firebase.messagingSenderId || envVars.firebase.messagingSenderId === 'dummy-sender') missing.push('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID')
-    if (!envVars.firebase.appId || envVars.firebase.appId === 'dummy-app') missing.push('NEXT_PUBLIC_FIREBASE_APP_ID')
+    if (!publicEnv.firebase.apiKey || publicEnv.firebase.apiKey === 'dummy-key') missing.push('NEXT_PUBLIC_FIREBASE_API_KEY')
+    if (!publicEnv.firebase.authDomain || publicEnv.firebase.authDomain === 'dummy-domain') missing.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN')
+    if (!publicEnv.firebase.projectId || publicEnv.firebase.projectId === 'dummy-project') missing.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID')
+    if (!publicEnv.firebase.storageBucket || publicEnv.firebase.storageBucket === 'dummy-bucket') missing.push('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET')
+    if (!publicEnv.firebase.messagingSenderId || publicEnv.firebase.messagingSenderId === 'dummy-sender') missing.push('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID')
+    if (!publicEnv.firebase.appId || publicEnv.firebase.appId === 'dummy-app') missing.push('NEXT_PUBLIC_FIREBASE_APP_ID')
     
     if (missing.length > 0) {
       console.warn('⚠️ Firebase environment variables are missing or invalid. Authentication features will not work.');
@@ -166,9 +165,9 @@ function initializeFirebase() {
     } else {
       console.warn('⚠️ Firebase config check failed but no variables are missing. This may be a configuration issue.');
       console.warn('⚠️ Env vars:', {
-        apiKey: envVars.firebase.apiKey?.substring(0, 10),
-        authDomain: envVars.firebase.authDomain,
-        projectId: envVars.firebase.projectId,
+        apiKey: publicEnv.firebase.apiKey?.substring(0, 10),
+        authDomain: publicEnv.firebase.authDomain,
+        projectId: publicEnv.firebase.projectId,
       });
     }
   }
