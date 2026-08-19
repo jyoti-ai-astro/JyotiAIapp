@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
         const snapshot = await query.orderBy('timestamp', 'desc').limit(limit).get()
 
-        const logs = snapshot.docs.map((doc) => ({
+        const logs = snapshot.docs.map((doc: { id: string; data: () => Record<string, any> }) => ({
           id: doc.id,
           ...doc.data(),
         }))

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { generateEnhancedGuruResponse } from '@/lib/engines/guru/guru-fusion-v2'
+import type { GuruContext } from '@/lib/engines/guru/guru-engine'
 import { generatePredictions } from '@/lib/engines/reports/prediction-engine'
 import { normalizeData } from '@/lib/engines/reports/data-collector'
 import { rateLimit, getRateLimitHeaders } from '@/lib/middleware/rate-limit'
@@ -54,6 +55,10 @@ export async function POST(request: NextRequest) {
     // Build Guru context
     const context: GuruContext = {}
 
+    // Keep Kundali data available for the full request scope.
+    let D1Data: any = null
+    let dashaData: any = null
+
     // Get Kundali snapshot
     const kundaliRef = adminDb.collection('kundali').doc(uid)
     const kundaliSnap = await kundaliRef.get()
@@ -63,8 +68,8 @@ export async function POST(request: NextRequest) {
       const dashaSnap = await kundaliRef.collection('dasha').doc('vimshottari').get()
       
       if (D1Snap.exists && dashaSnap.exists) {
-        const D1Data = D1Snap.data()
-        const dashaData = dashaSnap.data()
+        D1Data = D1Snap.data()
+        dashaData = dashaSnap.data()
         
         context.kundali = {
           rashi: userData?.rashi || D1Data?.grahas?.moon?.sign || 'Unknown',

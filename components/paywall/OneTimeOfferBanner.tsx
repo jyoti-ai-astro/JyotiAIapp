@@ -9,13 +9,33 @@ import { Card } from '@/components/ui/card'
 import { getOneTimeProduct } from '@/lib/pricing/plans'
 
 interface OneTimeOfferBannerProps {
-  feature: string
+  // Current API
+  feature?: string
   productId?: string
   className?: string
+
+  // Legacy API kept temporarily while older feature pages migrate.
+  title?: string
+  description?: string
+  priceLabel?: string
+  ctaLabel?: string
+  ctaHref?: string
 }
 
-export function OneTimeOfferBanner({ feature, productId = '199', className = '' }: OneTimeOfferBannerProps) {
-  const product = getOneTimeProduct(productId)
+export function OneTimeOfferBanner({
+  feature,
+  productId = '199',
+  className = '',
+  title,
+  description,
+  priceLabel,
+  ctaLabel,
+  ctaHref,
+}: OneTimeOfferBannerProps) {
+  const resolvedProductId =
+    ctaHref?.match(/\/pay\/([^/?#]+)/)?.[1] || productId
+
+  const product = getOneTimeProduct(resolvedProductId)
 
   if (!product) {
     return null
@@ -35,17 +55,17 @@ export function OneTimeOfferBanner({ feature, productId = '199', className = '' 
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">
-                Unlock {feature} instantly
+                {title || `Unlock ${feature || product.name} instantly`}
               </h3>
               <p className="text-sm text-white/70">
-                No subscription needed • {product.bullets[0]}
+                {description || `No subscription needed • ${product.bullets[0]}`}
               </p>
             </div>
           </div>
-          <Link href={`/pay/${product.productId}`}>
+          <Link href={ctaHref || `/pay/${product.productId}`}>
             <Button className="gold-btn whitespace-nowrap">
               <Zap className="w-4 h-4 mr-2" />
-              Get {product.name} – ₹{product.amountInINR}
+              {ctaLabel || `Get ${product.name} – ${priceLabel || `₹${product.amountInINR}`}`}
             </Button>
           </Link>
         </div>

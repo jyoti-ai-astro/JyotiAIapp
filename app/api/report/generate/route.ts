@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    let body: { type: 'kundali' | 'predictions' | 'timeline'; sendEmail?: boolean } = {}
+    let body: { type?: 'kundali' | 'predictions' | 'timeline'; sendEmail?: boolean } = {}
     try {
       body = await request.json()
     } catch (error) {
@@ -210,7 +210,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Return PDF as response
-    return new NextResponse(result.buffer, {
+    const responseBytes = new Uint8Array(result.buffer)
+
+    return new NextResponse(responseBytes, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

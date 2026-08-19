@@ -34,6 +34,9 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess }) => {
     try {
       setLoading(true);
       const provider = new GoogleAuthProvider();
+      if (!auth) {
+        throw new Error('Firebase authentication is not initialized')
+      }
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
 

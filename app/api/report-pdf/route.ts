@@ -156,7 +156,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return new NextResponse(pdfBytes, {
+    const responseBytes = new Uint8Array(pdfBytes).buffer
+
+    return new NextResponse(responseBytes, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

@@ -40,6 +40,10 @@ export async function GET(request: NextRequest) {
 
     const userData = userSnap.data()
 
+    if (!userData) {
+      return NextResponse.json({ error: 'User data unavailable' }, { status: 404 })
+    }
+
     return NextResponse.json({
       success: true,
       user: {

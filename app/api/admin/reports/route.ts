@@ -40,7 +40,11 @@ export async function GET(request: NextRequest) {
 
       const snapshot = await query.orderBy('createdAt', 'desc').limit(limit).get()
 
-      const reports = snapshot.docs.map((doc) => {
+      const reports = snapshot.docs.map((doc: {
+        id: string
+        data: () => Record<string, any>
+        ref: { parent: { parent?: { id: string } | null } }
+      }) => {
         const data = doc.data()
         return {
           id: doc.id,

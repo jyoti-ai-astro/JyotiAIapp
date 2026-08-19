@@ -116,6 +116,10 @@ export async function uploadImage(options: UploadOptions): Promise<UploadResult>
 
   const { userId, file, category, subcategory } = options
 
+  if (!storage) {
+    throw new Error('Firebase Storage not initialized')
+  }
+
   // Validate file
   const validation = validateImage(file)
   if (!validation.valid) {

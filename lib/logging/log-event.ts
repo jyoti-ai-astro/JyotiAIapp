@@ -14,6 +14,8 @@ export type LogEventType =
   | 'subscription.cancelled'
   | 'subscription.expired'
   | 'subscription.synced'
+  | 'subscription.charged'
+  | 'subscription.halted'
   | 'payment.success'
   | 'payment.failed'
   | 'payment.order_created'
@@ -21,8 +23,10 @@ export type LogEventType =
   | 'webhook.verified'
   | 'webhook.failed'
   | 'api.error'
+  | 'horoscope.error'
   | 'ticket.consumed'
-  | 'ticket.added';
+  | 'ticket.added'
+  | 'ticket.webhook_fulfilled';
 
 export interface LogEventData {
   type: LogEventType;

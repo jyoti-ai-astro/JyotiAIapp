@@ -61,6 +61,10 @@ export async function POST(request: NextRequest) {
     const D1Data = D1Snap.data()
     const dashaData = dashaSnap.data()
 
+    if (!D1Data || !dashaData) {
+      return NextResponse.json({ error: 'Kundali data incomplete' }, { status: 400 })
+    }
+
     // Get Numerology
     const userRef = adminDb.collection('users').doc(uid)
     const userSnap = await userRef.get()
@@ -70,12 +74,8 @@ export async function POST(request: NextRequest) {
     const ritual = await generateRitual(
       purpose,
       {
-        grahas: D1Data?.grahas || {},
-        bhavas: D1Data?.bhavas || {},
-        dasha: {
-          currentMahadasha: dashaData.currentMahadasha,
-          currentAntardasha: dashaData.currentAntardasha,
-        },
+        grahas: D1Data.grahas || {},
+        bhavas: D1Data.bhavas || {},
       },
       numerology
     )

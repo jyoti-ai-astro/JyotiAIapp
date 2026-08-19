@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
         const snapshot = await query.orderBy('createdAt', 'desc').limit(limit).get()
 
-        const documents = snapshot.docs.map((doc) => ({
+        const documents = snapshot.docs.map((doc: { id: string; data: () => Record<string, any> }) => ({
           id: doc.id,
           ...doc.data(),
         }))

@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       success: true,
       order: {
         id: order.id,
-        amount: order.amount / 100, // Convert back to rupees
+        amount: Number(order.amount) / 100, // Convert back to rupees
         currency: order.currency,
         key: razorpayKeyId,
       },

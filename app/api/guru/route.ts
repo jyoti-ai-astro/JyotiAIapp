@@ -14,6 +14,7 @@ import { rateLimit, getRateLimitHeaders } from '@/lib/middleware/rate-limit'
 import { sanitizeMessage } from '@/lib/security/xss-protection'
 import { rateLimitConfig } from '@/lib/security/validation-schemas'
 import { fetchUserTickets, consumeTickets, splitSubscriptionAndTickets } from '@/lib/payments/ticket-service'
+import { deriveGuruModeFromQuestion } from '@/lib/guru/guru-context'
 
 export const dynamic = 'force-dynamic'
 
@@ -236,7 +237,7 @@ export async function POST(request: NextRequest) {
             answer: result.answer || '',
             usedAstroContext: result.usedAstroContext,
             usedRag: result.usedRag,
-            mode: result.mode,
+            mode: deriveGuruModeFromQuestion(lastUserMessage.content),
           },
           'default'
         )

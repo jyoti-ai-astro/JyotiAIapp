@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     try {
       cancelResult = await razorpay.subscriptions.cancel(
         razorpaySubscriptionId,
-        { cancel_at_cycle_end: 0 }
+        0
       );
     } catch (err: any) {
       console.error("Razorpay cancel error:", {

@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 
 export type SubscriptionTier = 'free' | 'starter' | 'advanced' | 'supreme'
 
-interface User {
+export interface User {
   uid: string
   name: string | null
   email: string | null

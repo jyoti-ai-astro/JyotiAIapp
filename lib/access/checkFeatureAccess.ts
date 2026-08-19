@@ -6,7 +6,7 @@
 
 import { canAccessFeature } from './ticket-access'
 import { decrementTicket } from './ticket-access'
-import type { User } from '@/store/user-store'
+import { useUserStore, type User } from '@/store/user-store'
 
 interface AccessCheckResult {
   allowed: boolean
@@ -88,27 +88,51 @@ export async function checkFeatureAccess(
 /**
  * Hook version for React components
  */
-export function useFeatureAccess(feature: Parameters<typeof checkFeatureAccess>[0]) {
+export function useFeatureAccess(
+  feature: 'kundali' | 'predictions' | 'palmistry' | 'career' | 'business' | 'aura' | 'face' | 'numerology' | 'compatibility' | 'ai_question' | 'kundali_basic'
+) {
   const { user } = useUserStore()
+
+  const featureMap: Record<
+    typeof feature,
+    'ai_question' | 'kundali_basic' | 'compatibility' | 'career' | 'palmistry' | 'aura'
+  > = {
+    kundali: 'kundali_basic',
+    predictions: 'ai_question',
+    palmistry: 'palmistry',
+    career: 'career',
+    business: 'career',
+    aura: 'aura',
+    face: 'aura',
+    numerology: 'kundali_basic',
+    compatibility: 'compatibility',
+    ai_question: 'ai_question',
+    kundali_basic: 'kundali_basic',
+  }
+
+  const mappedFeature = featureMap[feature]
 
   const hasSubscription =
     !!user &&
     ['advanced', 'supreme'].includes(user.subscription) &&
-    user.subscriptionExpiry &&
+    !!user.subscriptionExpiry &&
     new Date(user.subscriptionExpiry) > new Date()
 
   const hasAccess = canAccessFeature(
     {
-      hasSubscription: !!hasSubscription,
+      hasSubscription,
       tickets: user?.tickets,
+      legacyTickets: user?.legacyTickets,
     },
-    feature
+    mappedFeature
   )
 
   return {
     hasAccess,
     canAccess: hasAccess,
-    redirectTo: hasAccess ? undefined : `/pay/${feature === 'ai_question' ? '99' : '199'}`,
+    redirectTo: hasAccess
+      ? undefined
+      : `/pay/${feature === 'ai_question' || feature === 'predictions' ? '99' : '199'}`,
   }
 }
 
