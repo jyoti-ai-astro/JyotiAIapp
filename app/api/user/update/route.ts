@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       'rashiSun',
       'ascendant',
       'nakshatra',
+      'onboarded',
     ]
 
     // Filter updates to only allowed fields
@@ -74,4 +75,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

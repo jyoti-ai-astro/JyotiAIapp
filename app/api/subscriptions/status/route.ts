@@ -25,7 +25,7 @@ type NormalizedSubscription = {
   lastSyncedAt: Date | null
 }
 
-const ACTIVE_STATUSES = new Set(['active', 'authenticated', 'completed', 'created'])
+const ACTIVE_STATUSES = new Set(['active', 'authenticated'])
 
 function toDateOrNull(value: any): Date | null {
   if (!value) return null

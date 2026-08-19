@@ -135,10 +135,12 @@ export default function OnboardingPage() {
       // Calculate Rashi and move to Step 2
       await calculateRashi();
 
-      // Generate full kundali in background (non-blocking, may 403 if no tickets)
+      // Generate the first onboarding Kundali in the canonical Kundali store.
       fetch('/api/kundali/generate-full', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify({ source: 'onboarding' }),
       }).catch((err) => console.error('Kundali generation error:', err));
     } catch (error: any) {
       console.error('Birth details error:', error);
@@ -208,7 +210,19 @@ export default function OnboardingPage() {
   const handleComplete = async () => {
     setLoading(true);
     try {
-      // Mark as onboarded
+      const kundaliResponse = await fetch('/api/kundali/generate-full', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ source: 'onboarding' }),
+      });
+
+      if (!kundaliResponse.ok) {
+        const kundaliError = await kundaliResponse.json().catch(() => ({}));
+        throw new Error(kundaliError.message || kundaliError.error || 'Failed to generate Kundali');
+      }
+
+      // Mark as onboarded after the canonical onboarding Kundali exists.
       const response = await fetch('/api/user/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -224,18 +238,6 @@ export default function OnboardingPage() {
       }
 
       updateUser({ onboarded: true });
-
-      // Generate full kundali again in background (ignore failures)
-      fetch('/api/kundali/generate-full', {
-        method: 'POST',
-        credentials: 'include',
-      })
-        .then(() => {
-          console.log('Kundali generation triggered on completion');
-        })
-        .catch((err) => {
-          console.error('Kundali generation error (completion):', err);
-        });
 
       // Redirect to dashboard
       router.push('/dashboard');

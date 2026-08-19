@@ -186,8 +186,7 @@ export async function POST(request: NextRequest) {
         const subStatus = subscription.status;
         const isActiveSnapshot =
           subStatus === 'active' ||
-          subStatus === 'authenticated' ||
-          subStatus === 'created'; // dev/test friendly
+          subStatus === 'authenticated';
 
         await userRef.set(
           {

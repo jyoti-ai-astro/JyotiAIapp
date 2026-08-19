@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+    const db = adminDb;
 
     /**
      * 1️⃣ SUBSCRIPTION EVENTS (existing behaviour)
@@ -270,51 +271,85 @@ export async function POST(request: NextRequest) {
               orderId,
             });
           } else {
-            const orderDoc = oneTimeOrdersSnap.docs[0];
-            const orderRef = orderDoc.ref;
-            const orderData = orderDoc.data() as any;
-
-            const tickets = orderData?.tickets || {};
-            const productIdInternal: string | undefined =
-              orderData?.productIdInternal;
+            const orderRef = oneTimeOrdersSnap.docs[0].ref;
 
             // Extract userId from Firestore path: payments/{uid}/one_time_orders/{orderId}
             const paymentsDocRef = orderRef.parent.parent; // -> payments/{uid}
             const userId = paymentsDocRef?.id;
 
-            // Mark order as paid (idempotent)
-            await orderRef.set(
-              {
-                status: 'paid',
-                paidAt: new Date(),
-                razorpayEvent: event,
-                paymentId: payment?.id,
-              },
-              { merge: true }
-            );
+            const fulfillment = await db.runTransaction(async (transaction) => {
+              const lockedOrderSnap = await transaction.get(orderRef);
+              const orderData = lockedOrderSnap.exists ? lockedOrderSnap.data() as any : {};
+
+              if (orderData?.fulfilledAt) {
+                return {
+                  alreadyFulfilled: true,
+                  tickets: orderData?.tickets || {},
+                  productIdInternal: orderData?.productIdInternal as string | undefined,
+                };
+              }
+
+              const tickets = orderData?.tickets || {};
+              const productIdInternal: string | undefined =
+                orderData?.productIdInternal;
+
+              transaction.set(
+                orderRef,
+                {
+                  status: 'paid',
+                  paidAt: new Date(),
+                  razorpayEvent: event,
+                  paymentId: payment?.id,
+                  fulfilledAt: new Date(),
+                  fulfillmentSource: 'razorpay-webhook',
+                },
+                { merge: true }
+              );
+
+              if (userId) {
+                const userRef = db.collection('users').doc(userId);
+                const update: Record<string, any> = { updatedAt: new Date() };
+
+                if (tickets.aiQuestions) {
+                  update.aiGuruTickets = FieldValue.increment(tickets.aiQuestions);
+                  update.tickets = FieldValue.increment(tickets.aiQuestions);
+                  update['legacyTickets.ai_questions'] = FieldValue.increment(tickets.aiQuestions);
+                }
+
+                if (tickets.kundaliBasic) {
+                  update.kundaliTickets = FieldValue.increment(tickets.kundaliBasic);
+                  update['legacyTickets.kundali_basic'] = FieldValue.increment(tickets.kundaliBasic);
+                }
+
+                if (tickets.predictions) {
+                  update.lifetimePredictions = FieldValue.increment(tickets.predictions);
+                }
+
+                transaction.set(userRef, update, { merge: true });
+              }
+
+              return {
+                alreadyFulfilled: false,
+                tickets,
+                productIdInternal,
+              };
+            });
+
+            if (fulfillment.alreadyFulfilled) {
+              await logEvent(
+                'payment.success',
+                {
+                  source: 'razorpay-webhook',
+                  reason: 'already_fulfilled',
+                  event,
+                  orderId,
+                },
+                userId
+              );
+              return NextResponse.json({ received: true });
+            }
 
             if (userId) {
-              const userRef = adminDb.collection('users').doc(userId);
-
-              const update: Record<string, any> = { updatedAt: new Date() };
-
-              if (tickets.aiQuestions) {
-                update.aiGuruTickets = FieldValue.increment(tickets.aiQuestions);
-                update.tickets = FieldValue.increment(tickets.aiQuestions);
-                update['legacyTickets.ai_questions'] = FieldValue.increment(tickets.aiQuestions);
-              }
-
-              if (tickets.kundaliBasic) {
-                update.kundaliTickets = FieldValue.increment(tickets.kundaliBasic);
-                update['legacyTickets.kundali_basic'] = FieldValue.increment(tickets.kundaliBasic);
-              }
-
-              if (tickets.predictions) {
-                update.lifetimePredictions = FieldValue.increment(tickets.predictions);
-              }
-
-              await userRef.set(update, { merge: true });
-
               await logEvent(
                 'payment.success',
                 {
@@ -322,8 +357,8 @@ export async function POST(request: NextRequest) {
                   event,
                   orderId,
                   paymentId: payment?.id,
-                  ticketsCredited: tickets,
-                  productIdInternal,
+                  ticketsCredited: fulfillment.tickets,
+                  productIdInternal: fulfillment.productIdInternal,
                 },
                 userId
               );

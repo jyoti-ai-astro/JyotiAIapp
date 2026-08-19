@@ -24,29 +24,65 @@ export async function POST(request: NextRequest) {
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
     const uid = decodedClaims.uid;
 
-    // Phase S: Ticket enforcement — DEV MODE: do NOT block on missing tickets
-    const featureKey: FeatureKey = 'kundali';
-    try {
-      await ensureFeatureAccess(uid, featureKey);
-    } catch (err: any) {
-      const code = err?.code || err?.message || 'UNKNOWN';
-      console.warn('[kundali] Ticket check failed, allowing anyway (DEV OVERRIDE):', code);
-      // IMPORTANT: We do NOT return 403 anymore. We just log and continue.
-    }
-
-    // Get user birth details
     if (!adminDb) {
       return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 });
     }
 
+    const body = await request.json().catch(() => ({}));
+    const source = typeof body?.source === 'string' ? body.source : null;
+    const isOnboardingRequest = source === 'onboarding';
+    const featureKey: FeatureKey = 'kundali';
+
     const userRef = adminDb.collection('users').doc(uid);
+    const kundaliRef = adminDb.collection('kundali').doc(uid);
     const userSnap = await userRef.get();
+    const kundaliSnap = await kundaliRef.get();
 
     if (!userSnap.exists) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const userData = userSnap.data();
+    const hasFreeOnboardingKundali = !!userData?.freeOnboardingKundaliGeneratedAt;
+    const isFirstOnboardingKundali =
+      isOnboardingRequest && !kundaliSnap.exists && !hasFreeOnboardingKundali;
+
+    if (isOnboardingRequest && (kundaliSnap.exists || hasFreeOnboardingKundali)) {
+      return NextResponse.json({
+        success: true,
+        reused: true,
+        source: 'onboarding',
+      });
+    }
+
+    if (!isFirstOnboardingKundali) {
+      try {
+        await ensureFeatureAccess(uid, featureKey);
+      } catch (err: any) {
+        const code = err?.code || err?.message || 'UNKNOWN';
+        if (code === 'NO_TICKETS') {
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'NO_TICKETS',
+              message: 'Kundali credits or an active subscription are required.',
+            },
+            { status: 403 }
+          );
+        }
+
+        console.error('[kundali] Ticket check failed:', err);
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'ACCESS_CHECK_FAILED',
+            message: 'Unable to verify Kundali access.',
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     if (!userData?.dob || !userData?.tob || !userData?.lat || !userData?.lng) {
       return NextResponse.json(
         { error: 'Birth details incomplete. Please complete onboarding first.' },
@@ -81,24 +117,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to Firestore
-    const kundaliRef = adminDb.collection('kundali').doc(uid);
-
-    // Save meta
-    await kundaliRef.set(
-      {
-        meta: {
-          ...kundali.meta,
-          generatedAt:
-            (kundali.meta as any).generatedAt instanceof Date
-              ? (adminDb as any)?.constructor?.Timestamp?.fromDate?.(kundali.meta.generatedAt) ??
-                kundali.meta.generatedAt
-              : kundali.meta.generatedAt,
-        },
+    await kundaliRef.set({
+      meta: {
+        ...kundali.meta,
+        generatedAt:
+          (kundali.meta as any).generatedAt instanceof Date
+            ? kundali.meta.generatedAt
+            : new Date(),
+        generationKind: isFirstOnboardingKundali ? 'onboarding_basic' : 'paid_or_subscription',
+        source: isFirstOnboardingKundali ? 'onboarding' : 'entitled',
       },
-      { merge: true }
-    ).catch((err: any) => {
-      console.error('[kundali] meta write error (non-blocking)', err);
-    });
+    }, { merge: true });
 
     // Save D1 chart
     await kundaliRef
@@ -110,9 +139,6 @@ export async function POST(request: NextRequest) {
         bhavas: kundali.D1?.bhavas,
         lagna: kundali.D1?.lagna,
         aspects: kundali.D1?.aspects,
-      })
-      .catch((err: any) => {
-        console.error('[kundali] D1 write error (non-blocking)', err);
       });
 
     // Save Dasha
@@ -165,20 +191,23 @@ export async function POST(request: NextRequest) {
               },
             }
           : {}),
-      })
-      .catch((err: any) => {
-        console.error('[kundali] dasha write error (non-blocking)', err);
       });
 
-    // Phase S: Consume ticket after successful generation (best-effort only)
-    try {
+    if (isFirstOnboardingKundali) {
+      await userRef.set(
+        {
+          freeOnboardingKundaliGeneratedAt: new Date(),
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
+    } else {
       await consumeFeatureTicket(uid, featureKey);
-    } catch (err: any) {
-      console.error('Ticket consumption error:', err);
     }
 
     return NextResponse.json({
       success: true,
+      source: isFirstOnboardingKundali ? 'onboarding' : 'entitled',
       kundali: {
         ...kundali,
         meta: {
@@ -193,8 +222,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[kundali] generate-full error', error);
     return NextResponse.json(
-      { success: false, message: 'Kundali generation failed in dev' },
-      { status: 200 }
+      { success: false, message: 'Kundali generation failed' },
+      { status: 500 }
     );
   }
 }

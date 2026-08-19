@@ -24,7 +24,7 @@ export interface UserTickets {
   uid?: string
 }
 
-const ACTIVE_STATUSES = new Set(['active', 'authenticated', 'completed'])
+const ACTIVE_STATUSES = new Set(['active', 'authenticated'])
 
 function toDateOrNull(value: any): Date | null {
   if (!value) return null

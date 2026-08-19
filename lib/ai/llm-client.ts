@@ -26,11 +26,12 @@ export async function callLLM(
   const provider = envVars.ai.provider
   const openaiApiKey = envVars.ai.openaiApiKey
   const geminiApiKey = envVars.ai.geminiApiKey
+  const openaiModel = envVars.ai.predictionModelName
 
   if (provider === 'gemini' && geminiApiKey) {
     return callGemini(messages, geminiApiKey, signal, options)
   } else if (openaiApiKey) {
-    return callOpenAI(messages, openaiApiKey, signal, options)
+    return callOpenAI(messages, openaiApiKey, openaiModel, signal, options)
   } else {
     throw new Error('No AI provider configured')
   }
@@ -42,6 +43,7 @@ export async function callLLM(
 async function callOpenAI(
   messages: LLMMessage[],
   apiKey: string,
+  model: string,
   signal?: AbortSignal,
   options?: {
     temperature?: number
@@ -55,7 +57,7 @@ async function callOpenAI(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4',
+      model,
       messages: messages.map((m) => ({
         role: m.role,
         content: m.content,
@@ -136,4 +138,3 @@ export function safeJsonParse<T>(json: string, fallback: T): T {
     return fallback
   }
 }
-

@@ -55,6 +55,15 @@ export async function POST(req: NextRequest) {
     const orderSnap = await orderRef.get()
     const orderData = orderSnap.exists ? orderSnap.data() : {}
     const productIdStr = String(orderData?.productId || productId)
+    if (orderData?.fulfilledAt) {
+      return NextResponse.json({
+        success: true,
+        orderId: order_id,
+        paymentId: payment_id,
+        productId: productIdStr,
+        alreadyFulfilled: true,
+      })
+    }
 
     // Get one-time product from single source of truth
     const product = getOneTimeProduct(productIdStr)
@@ -62,9 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid product' }, { status: 400 })
     }
 
-    // Get user document
     const userRef = adminDb.collection('users').doc(uid)
-    const userSnap = await userRef.get()
 
     // ============================================
     // ✅ Unified Ticket Fulfillment (Clean + Correct)
@@ -94,7 +101,6 @@ export async function POST(req: NextRequest) {
       updates.lifetimePredictions = FieldValue.increment(qty);
     }
 
-    // Update user document
     const oneTimePurchase = {
       productId: String(productId),
       productIdInternal: product.id,
@@ -104,22 +110,49 @@ export async function POST(req: NextRequest) {
       tickets: product.tickets,
       amount: product.amountInINR,
     }
-    
-    await userRef.set(
-      {
-        ...updates,
-        oneTimePurchases: FieldValue.arrayUnion(oneTimePurchase),
-      },
-      { merge: true }
-    )
 
-    // Update order status
-    await orderRef.update({
-      paymentId: payment_id,
-      signature: signature,
-      status: 'completed',
-      completedAt: new Date(),
+    const fulfillment = await adminDb.runTransaction(async (transaction) => {
+      const lockedOrderSnap = await transaction.get(orderRef)
+      const lockedOrderData = lockedOrderSnap.exists ? lockedOrderSnap.data() : {}
+
+      if (lockedOrderData?.fulfilledAt) {
+        return { alreadyFulfilled: true }
+      }
+
+      transaction.set(
+        userRef,
+        {
+          ...updates,
+          oneTimePurchases: FieldValue.arrayUnion(oneTimePurchase),
+        },
+        { merge: true }
+      )
+
+      transaction.set(
+        orderRef,
+        {
+          paymentId: payment_id,
+          signature: signature,
+          status: 'completed',
+          completedAt: new Date(),
+          fulfilledAt: new Date(),
+          fulfillmentSource: 'success-endpoint',
+        },
+        { merge: true }
+      )
+
+      return { alreadyFulfilled: false }
     })
+
+    if (fulfillment.alreadyFulfilled) {
+      return NextResponse.json({
+        success: true,
+        orderId: order_id,
+        paymentId: payment_id,
+        productId: productIdStr,
+        alreadyFulfilled: true,
+      })
+    }
 
     // Phase Z3: Log successful payment
     await logEvent('payment.success', {
@@ -133,6 +166,7 @@ export async function POST(req: NextRequest) {
     // Send payment receipt email
     try {
       const { sendPaymentReceipt } = await import('@/lib/email/email-service')
+      const userSnap = await userRef.get()
       const userData = userSnap.exists ? userSnap.data() : {}
       const userEmail = userData?.email || decodedClaims.email
       

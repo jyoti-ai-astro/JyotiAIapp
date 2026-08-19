@@ -57,10 +57,10 @@
 - Firebase client: `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` (used in `lib/firebase/config.ts`, `lib/env/env.mjs`).
 - Firebase Admin: `FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_PRIVATE_KEY`, `FIREBASE_ADMIN_CLIENT_EMAIL` (used in `lib/firebase/admin.ts`, `lib/env/env.mjs`, APIs).
 - Auth/session: `ADMIN_SESSION_SECRET` (used in `lib/admin/admin-auth.ts`, `middleware.ts`, `lib/env/env.mjs`).
-- AI: `AI_PROVIDER`, `EMBEDDING_PROVIDER`, `OPENAI_API_KEY`, `GEMINI_API_KEY` (used in `lib/env/env.mjs`, AI engines/routes).
+- AI: `AI_PROVIDER`, `EMBEDDING_PROVIDER`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GURU_MODEL_NAME`, `PREDICTION_MODEL_NAME` (used in `lib/env/env.mjs`, AI engines/routes).
 - Razorpay: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `NEXT_PUBLIC_RAZORPAY_KEY_ID`, `RAZORPAY_PLAN_*` (used in payments routes, webhook, `lib/env/env.mjs`).
 - Pinecone: `PINECONE_API_KEY`, `PINECONE_ENVIRONMENT`, `PINECONE_INDEX_NAME`, `PINECONE_INDEX_GURU`, `GURU_RAG_ENABLED` (used in env and RAG services).
-- Email: `ZEPTO_API_KEY`, `ZEPTO_DOMAIN`, `ZEPTO_FROM` (used in `lib/email`).
+- Email: `ZEPTO_API_URL`, `ZEPTO_API_TOKEN`, `ZEPTO_DOMAIN`, `SENDER_EMAIL` (used in `lib/email`).
 - Analytics/monitoring: `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_MIXPANEL_TOKEN` (used in env validation/logging).
 - App config: `APP_ENV`, `NEXT_PUBLIC_APP_ENV`, `NEXT_PUBLIC_BASE_URL`, `BETA_MODE`, `NEXT_PUBLIC_BETA_MODE`, `DISABLE_PAYMENTS` (used in `lib/env/env.mjs` and feature toggles).
 - Worker/Cloudflare: `WORKER_API_KEY`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (used in env).

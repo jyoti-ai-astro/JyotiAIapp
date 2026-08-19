@@ -155,11 +155,12 @@ async function generateAIResponse(userMessage: string): Promise<string> {
   const provider = envVars.ai.provider
   const openaiApiKey = envVars.ai.openaiApiKey
   const geminiApiKey = envVars.ai.geminiApiKey
+  const openaiModel = envVars.ai.guruModelName
   
   if (provider === 'gemini' && geminiApiKey) {
     return generateGeminiResponse(userMessage)
   } else if (openaiApiKey) {
-    return generateOpenAIResponse(userMessage)
+    return generateOpenAIResponse(userMessage, openaiModel)
   } else {
     throw new Error('No AI provider configured')
   }
@@ -168,7 +169,7 @@ async function generateAIResponse(userMessage: string): Promise<string> {
 /**
  * Generate response using OpenAI
  */
-async function generateOpenAIResponse(userMessage: string): Promise<string> {
+async function generateOpenAIResponse(userMessage: string, model: string): Promise<string> {
   const openaiApiKey = envVars.ai.openaiApiKey
   if (!openaiApiKey) {
     throw new Error('OpenAI API key not configured')
@@ -181,7 +182,7 @@ async function generateOpenAIResponse(userMessage: string): Promise<string> {
       Authorization: `Bearer ${openaiApiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4',
+      model,
       messages: [
         { role: 'system', content: GURU_SYSTEM_PROMPT },
         { role: 'user', content: userMessage },
@@ -238,4 +239,3 @@ async function generateGeminiResponse(userMessage: string): Promise<string> {
   const data = await response.json()
   return data.candidates[0].content.parts[0].text
 }
-

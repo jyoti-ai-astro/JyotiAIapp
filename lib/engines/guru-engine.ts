@@ -333,11 +333,12 @@ async function callLLM(
   const provider = envVars.ai.provider || 'openai'
   const openaiApiKey = envVars.ai.openaiApiKey
   const geminiApiKey = envVars.ai.geminiApiKey
+  const openaiModel = envVars.ai.guruModelName
 
   if (provider === 'gemini' && geminiApiKey) {
     return callGemini(messages, geminiApiKey, signal)
   } else if (openaiApiKey) {
-    return callOpenAI(messages, openaiApiKey, signal)
+    return callOpenAI(messages, openaiApiKey, openaiModel, signal)
   } else {
     throw new Error('No AI provider configured. Please set OPENAI_API_KEY or GEMINI_API_KEY in your environment variables.')
   }
@@ -349,6 +350,7 @@ async function callLLM(
 async function callOpenAI(
   messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
   apiKey: string,
+  model: string,
   signal?: AbortSignal
 ): Promise<string> {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -358,7 +360,7 @@ async function callOpenAI(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4',
+      model,
       messages: messages.map((m) => ({
         role: m.role,
         content: m.content,
