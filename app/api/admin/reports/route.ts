@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
+import { Timestamp } from 'firebase-admin/firestore'
 
 /**
  * List Reports API
@@ -31,10 +32,10 @@ export async function GET(request: NextRequest) {
         query = query.where('status', '==', status)
       }
       if (startDate) {
-        query = query.where('createdAt', '>=', adminDb.Timestamp.fromDate(new Date(startDate)))
+        query = query.where('createdAt', '>=', Timestamp.fromDate(new Date(startDate)))
       }
       if (endDate) {
-        query = query.where('createdAt', '<=', adminDb.Timestamp.fromDate(new Date(endDate)))
+        query = query.where('createdAt', '<=', Timestamp.fromDate(new Date(endDate)))
       }
 
       const snapshot = await query.orderBy('createdAt', 'desc').limit(limit).get()

@@ -2,6 +2,8 @@
  * User Service - Client-side API calls for user management
  */
 
+import type { SubscriptionTier } from '@/store/user-store'
+
 export interface UserProfile {
   uid: string
   name: string | null
@@ -19,7 +21,7 @@ export interface UserProfile {
   rashiSun?: string
   ascendant?: string
   nakshatra: string | null
-  subscription: 'free' | 'pro'
+  subscription: SubscriptionTier
   subscriptionExpiry: Date | null
   onboarded: boolean
 }

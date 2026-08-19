@@ -7,6 +7,7 @@
 
 import { adminDb } from '@/lib/firebase/admin'
 import { logError, logWarning, logInfo } from '@/lib/utils/error-handler'
+import { Timestamp } from 'firebase-admin/firestore'
 
 export interface LogEntry {
   timestamp: Date
@@ -176,7 +177,7 @@ export class Logger {
 
         batch.set(logRef, {
           ...entry,
-          timestamp: adminDb.Timestamp.fromDate(entry.timestamp),
+          timestamp: Timestamp.fromDate(entry.timestamp),
         })
       })
 

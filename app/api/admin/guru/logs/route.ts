@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
+import { Timestamp } from 'firebase-admin/firestore'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,8 +37,8 @@ export async function GET(request: NextRequest) {
 
       if (todayOnly) {
         query = query
-          .where('createdAt', '>=', adminDb.Timestamp.fromDate(todayStart))
-          .where('createdAt', '<', adminDb.Timestamp.fromDate(todayEnd))
+          .where('createdAt', '>=', Timestamp.fromDate(todayStart))
+          .where('createdAt', '<', Timestamp.fromDate(todayEnd))
       }
 
       const snapshot = await query.get()

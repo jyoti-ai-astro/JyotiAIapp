@@ -50,7 +50,7 @@ export async function checkFeatureAccess(
   const mappedFeature = featureMap[feature] || 'kundali_basic'
 
   const hasSubscription =
-    (user.subscription === 'pro' || user.subscription === 'advanced' || user.subscription === 'supreme') &&
+    (['advanced', 'supreme'] as const).includes(user.subscription as 'advanced' | 'supreme') &&
     user.subscriptionExpiry &&
     new Date(user.subscriptionExpiry) > new Date()
 
@@ -92,8 +92,9 @@ export function useFeatureAccess(feature: Parameters<typeof checkFeatureAccess>[
   const { user } = useUserStore()
 
   const hasSubscription =
-    user?.subscription === 'pro' &&
-    user?.subscriptionExpiry &&
+    !!user &&
+    ['advanced', 'supreme'].includes(user.subscription) &&
+    user.subscriptionExpiry &&
     new Date(user.subscriptionExpiry) > new Date()
 
   const hasAccess = canAccessFeature(

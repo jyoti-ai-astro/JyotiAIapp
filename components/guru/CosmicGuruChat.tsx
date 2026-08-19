@@ -42,7 +42,7 @@ export const CosmicGuruChat = () => {
   } = useGuruChat()
 
   // Check if user has access
-  const hasSubscription = user?.subscription === 'pro' && user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date()
+  const hasSubscription = ['advanced', 'supreme'].includes(user?.subscription ?? 'free') && user?.subscriptionExpiry && new Date(user.subscriptionExpiry) > new Date()
   // Phase G: Use aiGuruTickets from new ticket system
   const aiGuruTickets = user?.aiGuruTickets || 0
   const remainingQuestions = hasSubscription ? Infinity : aiGuruTickets

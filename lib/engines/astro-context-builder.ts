@@ -9,6 +9,7 @@ import { adminDb } from '@/lib/firebase/admin'
 import { kundaliEngine, type KundaliData } from '@/lib/engines/kundali-engine'
 import { predictionEngine, type DailyPrediction } from '@/lib/engines/prediction-engine'
 import { timelineEngine, type MonthTimeline } from '@/lib/engines/timeline-engine'
+import { Timestamp } from 'firebase-admin/firestore'
 import type {
   AstroContext,
   AstroBirthData,
@@ -313,7 +314,7 @@ export async function buildAstroContext(
   const contextRef = adminDb.collection('users').doc(userId).collection('astroContext').doc('current')
   await contextRef.set({
     ...context,
-    cachedAt: adminDb.Timestamp.now(),
+    cachedAt: Timestamp.now(),
   })
 
   return context

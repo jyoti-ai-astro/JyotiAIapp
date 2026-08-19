@@ -13,7 +13,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { JyotiComponentProps } from './types';
 
-export interface CardProps extends JyotiComponentProps, React.HTMLAttributes<HTMLDivElement> {
+export interface CardProps extends Omit<JyotiComponentProps, 'variant' | 'motion'>, Omit<React.HTMLAttributes<HTMLDivElement>, 'onAnimationStart'> {
   /** Card variant */
   variant?: 'base' | 'glow' | 'gradient' | 'minimal' | 'interactive' | 'icon' | 'energy-pulse';
   

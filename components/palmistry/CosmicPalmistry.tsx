@@ -56,7 +56,7 @@ export const CosmicPalmistry: React.FC<CosmicPalmistryProps> = ({
 
     // If user has tickets (not subscription), decrement after successful analysis
     const hasSubscription =
-      user?.subscription === 'pro' &&
+      ['advanced', 'supreme'].includes(user?.subscription ?? 'free') &&
       user?.subscriptionExpiry &&
       new Date(user.subscriptionExpiry) > new Date();
 
@@ -64,7 +64,7 @@ export const CosmicPalmistry: React.FC<CosmicPalmistryProps> = ({
     await onUpload();
 
     // Decrement ticket if not subscription (ticket will be decremented after successful API response)
-    if (!hasSubscription && user?.tickets?.kundali_basic && user.tickets.kundali_basic > 0) {
+    if (!hasSubscription && (user?.kundaliTickets ?? user?.legacyTickets?.kundali_basic ?? 0) > 0) {
       await decrementTicket('kundali_basic');
     }
   };

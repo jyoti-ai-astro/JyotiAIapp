@@ -11,7 +11,14 @@ interface User {
   dob: string | null
   tob: string | null
   pob: string | null
+  lat?: number
+  lng?: number
+  timezone?: string
   rashi: string | null
+  rashiPreferred?: 'moon' | 'sun' | 'ascendant'
+  rashiMoon?: string
+  rashiSun?: string
+  ascendant?: string
   nakshatra: string | null
   subscription: SubscriptionTier
   subscriptionExpiry: Date | null
