@@ -22,7 +22,7 @@ export class VoiceEngine {
   private callbacks: VoiceEngineCallbacks;
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
-  private dataArray: Uint8Array | null = null;
+  private dataArray: Uint8Array<ArrayBuffer> | null = null;
 
   constructor(callbacks: VoiceEngineCallbacks = {}) {
     this.callbacks = callbacks;
@@ -404,4 +404,3 @@ export class VoiceEngine {
     }
   }
 }
-

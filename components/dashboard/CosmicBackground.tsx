@@ -70,7 +70,10 @@ function AuroraFlow() {
 
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.material.uniforms.time.value = state.clock.elapsedTime;
+      const material = meshRef.current.material;
+      if (material instanceof THREE.ShaderMaterial) {
+        material.uniforms.time.value = state.clock.elapsedTime;
+      }
     }
   });
 
@@ -125,4 +128,3 @@ export function CosmicBackground() {
     </div>
   );
 }
-

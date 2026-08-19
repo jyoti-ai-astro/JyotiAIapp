@@ -9,9 +9,10 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import type { HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-export interface InputGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface InputGroupProps extends Omit<HTMLMotionProps<'div'>, 'ref' | 'children'> {
   /** Group label */
   label?: string;
   
@@ -20,6 +21,8 @@ export interface InputGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   
   /** Gap between inputs */
   gap?: 'sm' | 'md' | 'lg';
+
+  children?: React.ReactNode;
 }
 
 const InputGroup = React.forwardRef<HTMLDivElement, InputGroupProps>(
@@ -70,4 +73,3 @@ const InputGroup = React.forwardRef<HTMLDivElement, InputGroupProps>(
 InputGroup.displayName = 'InputGroup';
 
 export { InputGroup };
-

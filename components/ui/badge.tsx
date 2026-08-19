@@ -9,10 +9,16 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import type { HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { JyotiComponentProps } from './types';
 
-export interface BadgeProps extends Omit<JyotiComponentProps, 'variant' | 'size' | 'motion'>, Omit<React.HTMLAttributes<HTMLSpanElement>, 'onAnimationStart'> {
+type BadgeMotionProps = Omit<
+  HTMLMotionProps<'span'>,
+  keyof JyotiComponentProps | 'ref' | 'size'
+>;
+
+export interface BadgeProps extends Omit<JyotiComponentProps, 'variant' | 'size' | 'motion'>, BadgeMotionProps {
   /** Badge variant */
   variant?: 'premium' | 'guru' | 'verified' | 'chakra' | 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline' | 'secondary' | 'destructive';
   

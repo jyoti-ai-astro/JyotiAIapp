@@ -76,7 +76,7 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     category: 'guru',
     requiresAuth: true,
     ticketGuarded: true,
-    featureKey: 'ai_question', // Special case for Guru
+    featureKey: 'palmistry', // Guru currently consumes aiGuruTickets like AI vision features
     sampleBody: {
       messages: [{ role: 'user', content: 'Test question' }],
     },
@@ -373,4 +373,3 @@ export function getEndpointsByCategory(category: ApiEndpoint['category']): ApiEn
 export function getAllCategories(): ApiEndpoint['category'][] {
   return Array.from(new Set(API_ENDPOINTS.map((ep) => ep.category)))
 }
-

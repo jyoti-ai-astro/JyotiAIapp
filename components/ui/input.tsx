@@ -10,12 +10,18 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { colors, states, durations, easing } from '@/styles/tokens';
 import type { JyotiComponentProps } from './types';
 
+type InputMotionProps = Omit<
+  HTMLMotionProps<'input'>,
+  keyof JyotiComponentProps | 'ref' | 'size'
+>;
+
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
+  extends InputMotionProps,
     Omit<JyotiComponentProps, 'motion'> {
   /** Input label */
   label?: string;
@@ -55,7 +61,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const [isFocused, setIsFocused] = useState(false);
     const [hasValue, setHasValue] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement | null>(null);
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setHasValue(e.target.value.length > 0);
@@ -124,7 +130,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <motion.input
             ref={(node) => {
               if (typeof ref === 'function') ref(node);
-              else if (ref) ref.current = node;
+              else if (ref) (ref as React.MutableRefObject<HTMLInputElement | null>).current = node;
               inputRef.current = node;
             }}
             className={baseClasses}

@@ -134,7 +134,7 @@ export default function BusinessPage() {
             <p className="text-white/70 mt-2">Check if your business idea aligns with your cosmic blueprint</p>
           </div>
 
-          <BusinessEngine onAnalysisComplete={(analysis) => setAnalysis(analysis)} />
+          <BusinessEngine />
 
           {/* Ask Guru With Context Button */}
           {astro && (
@@ -158,4 +158,3 @@ export default function BusinessPage() {
     </DashboardPageShell>
   );
 }
-

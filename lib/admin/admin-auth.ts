@@ -80,6 +80,10 @@ export const ADMIN_PERMISSIONS: Record<AdminRole, string[]> = {
   ],
 }
 
+function isAdminRole(role: unknown): role is AdminRole {
+  return typeof role === 'string' && role in ADMIN_PERMISSIONS
+}
+
 /**
  * Check if user is admin
  */
@@ -115,14 +119,15 @@ export async function getAdminUser(uid: string): Promise<AdminUser | null> {
     }
 
     const data = adminSnap.data()
+    const role: AdminRole = isAdminRole(data?.role) ? data.role : 'Support'
     return {
       uid,
       email: data?.email || '',
-      role: data?.role || 'Support',
+      role,
       name: data?.name || '',
       createdAt: data?.createdAt?.toDate() || new Date(),
       lastLogin: data?.lastLogin?.toDate(),
-      permissions: ADMIN_PERMISSIONS[data?.role || 'Support'] || [],
+      permissions: ADMIN_PERMISSIONS[role],
     }
   } catch (error) {
     console.error('Error getting admin user:', error)

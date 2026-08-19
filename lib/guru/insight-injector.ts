@@ -68,10 +68,14 @@ export function injectNumerologyInsights(
 
   if (isRelevant) {
     if (context.numerology.lifePath) {
+      const destinyClause = context.numerology.destiny
+        ? ` Combined with your Destiny number ${context.numerology.destiny}, you are on a path of ${getDestinyInsight(context.numerology.destiny)}.`
+        : '';
+
       insights.push({
         type: 'numerology',
         title: 'Numerology Insight',
-        content: `Your Life Path number ${context.numerology.lifePath} indicates ${getLifePathInsight(context.numerology.lifePath)}. Combined with your Destiny number ${context.numerology.destiny}, you are on a path of ${getDestinyInsight(context.numerology.destiny)}.`,
+        content: `Your Life Path number ${context.numerology.lifePath} indicates ${getLifePathInsight(context.numerology.lifePath)}.${destinyClause}`,
       });
     }
   }
@@ -244,4 +248,3 @@ function getPredictionInsight(topic: string, context?: GuruContext): string {
 
   return insight;
 }
-

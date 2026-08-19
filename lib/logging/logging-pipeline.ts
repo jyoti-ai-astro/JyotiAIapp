@@ -161,15 +161,16 @@ export class Logger {
       return
     }
 
+    const db = adminDb
     const logsToFlush = [...this.logBuffer]
     this.logBuffer = []
 
     try {
-      const batch = adminDb.batch()
+      const batch = db.batch()
       const timestamp = new Date()
 
       logsToFlush.forEach((entry) => {
-        const logRef = adminDb
+        const logRef = db
           .collection('logs')
           .doc(entry.level)
           .collection('items')
@@ -243,4 +244,3 @@ export async function logAPIError(
     metadata,
   })
 }
-

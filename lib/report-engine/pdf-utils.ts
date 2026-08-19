@@ -7,6 +7,7 @@
 
 import { pdf } from '@react-pdf/renderer'
 import type { ReactElement } from 'react'
+import type { Readable } from 'stream'
 
 /**
  * Create PDF stream from React-PDF document
@@ -15,8 +16,14 @@ export async function createPdfStream(doc: ReactElement): Promise<Buffer> {
   try {
     // Use pdf() to create PDF instance, then convert to buffer
     const pdfInstance = pdf(doc)
-    const buffer = await pdfInstance.toBuffer()
-    return Buffer.from(buffer)
+    const stream = (await pdfInstance.toBuffer()) as Readable
+    const chunks: Buffer[] = []
+
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+    }
+
+    return Buffer.concat(chunks)
   } catch (error) {
     console.error('Error creating PDF stream:', error)
     throw new Error('Failed to generate PDF')
@@ -68,4 +75,3 @@ export function formatDateTimeForReport(date: Date | string): string {
     minute: '2-digit',
   })
 }
-

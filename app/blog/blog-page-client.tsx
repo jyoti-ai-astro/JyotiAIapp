@@ -13,7 +13,7 @@ export function BlogPageClient() {
   return (
     <div className="relative z-10 min-h-screen">
         <CosmicHero
-          variant="global"
+          variant="cosmos"
           title="Spiritual Knowledge Base"
           subtitle="Blog & Articles"
           description="Discover articles about Vedic astrology, numerology, palmistry, aura reading, and spiritual guidance. Learn from ancient wisdom and modern insights."

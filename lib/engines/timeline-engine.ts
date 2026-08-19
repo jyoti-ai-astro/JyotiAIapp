@@ -42,7 +42,7 @@ class TimelineEngine {
     return `event-${month}-${index}`;
   }
 
-  private getEventColor(type: EventType, impact: ImpactLevel): string {
+  private getEventColorClass(type: EventType, impact: ImpactLevel): string {
     if (type === 'auspicious' || impact === 'positive') return 'text-green-400';
     if (type === 'challenging' || impact === 'challenging') return 'text-red-400';
     return 'text-yellow-400';
@@ -179,7 +179,7 @@ class TimelineEngine {
   }
 
   getEventColor(type: EventType, impact: ImpactLevel): string {
-    return this.getEventColor(type, impact);
+    return this.getEventColorClass(type, impact);
   }
 }
 

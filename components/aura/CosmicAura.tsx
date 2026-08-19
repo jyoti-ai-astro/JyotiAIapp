@@ -166,7 +166,7 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
 
   const handleScan = async () => {
     // Check access before scanning
-    const access = await checkFeatureAccess('aura');
+    const access = await checkFeatureAccess(user, 'aura');
     if (!access.allowed) {
       if (access.redirectTo) {
         router.push(access.redirectTo);
@@ -364,4 +364,3 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
     </div>
   );
 };
-

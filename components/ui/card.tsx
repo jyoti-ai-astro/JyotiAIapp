@@ -10,10 +10,16 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import type { HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { JyotiComponentProps } from './types';
 
-export interface CardProps extends Omit<JyotiComponentProps, 'variant' | 'motion'>, Omit<React.HTMLAttributes<HTMLDivElement>, 'onAnimationStart'> {
+type CardMotionProps = Omit<
+  HTMLMotionProps<'div'>,
+  keyof JyotiComponentProps | 'ref'
+>;
+
+export interface CardProps extends Omit<JyotiComponentProps, 'variant' | 'motion'>, CardMotionProps {
   /** Card variant */
   variant?: 'base' | 'glow' | 'gradient' | 'minimal' | 'interactive' | 'icon' | 'energy-pulse';
   

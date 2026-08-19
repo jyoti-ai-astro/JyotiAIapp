@@ -26,6 +26,7 @@ interface OnboardingStepProps {
 
 interface NakshatraObj {
   nakshatra: string;
+  name?: string;
   pada?: string;
 }
 

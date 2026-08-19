@@ -402,7 +402,7 @@ function computeTransitEvents(chart: AstroChartCore, timeline: AstroTimelineEven
           planet: 'Jupiter', // Default - would need actual transit calculation
           house: houseMap[event.focusArea] || 1,
           start: event.dateRange.from,
-          end: event.dateRange.end,
+          end: event.dateRange.to,
           theme: event.summary,
           intensity: event.intensity,
         })
@@ -518,4 +518,3 @@ export async function getCachedAstroContext(userId: string): Promise<AstroContex
     return null
   }
 }
-

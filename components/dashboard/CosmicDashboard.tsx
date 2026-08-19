@@ -84,7 +84,7 @@ export const CosmicDashboard: React.FC<CosmicDashboardProps> = ({
 }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  const formatNakshatra = (value?: { nakshatra?: string; pada?: number } | string | null) => {
+  const formatNakshatra = (value?: { nakshatra?: string; name?: string; pada?: number } | string | null) => {
     if (!value) return '—';
     if (typeof value === 'string') return value;
     const name = value.nakshatra || value.name || '';

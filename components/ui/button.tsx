@@ -11,11 +11,17 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import type { HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { colors, states, durations, easing } from '@/styles/tokens';
 import type { JyotiComponentProps } from './types';
 
-export interface ButtonProps extends Omit<JyotiComponentProps, 'motion' | 'variant' | 'size'>, Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart'> {
+type ButtonMotionProps = Omit<
+  HTMLMotionProps<'button'>,
+  keyof JyotiComponentProps | 'ref' | 'size'
+>;
+
+export interface ButtonProps extends Omit<JyotiComponentProps, 'motion' | 'variant' | 'size'>, ButtonMotionProps {
   /** Button variant */
   variant?: 'primary' | 'secondary' | 'ghost' | 'text' | 'icon' | 'floating' | 'outline' | 'destructive' | 'default';
   
@@ -53,7 +59,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isPressed, setIsPressed] = useState(false);
-    const buttonRef = useRef<HTMLButtonElement>(null);
+    const buttonRef = useRef<HTMLButtonElement | null>(null);
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
     

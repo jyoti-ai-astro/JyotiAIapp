@@ -46,7 +46,7 @@ export const CosmicPalmistry: React.FC<CosmicPalmistryProps> = ({
 
   const handleAnalyze = async () => {
     // Check access before analyzing
-    const access = await checkFeatureAccess('palmistry');
+    const access = await checkFeatureAccess(user, 'palmistry');
     if (!access.allowed) {
       if (access.redirectTo) {
         router.push(access.redirectTo);
@@ -137,7 +137,7 @@ export const CosmicPalmistry: React.FC<CosmicPalmistryProps> = ({
                   <Button
                     variant="outline"
                     className="flex-1 border-aura-blue/30 text-aura-blue hover:bg-aura-blue/10"
-                    onClick={() => document.querySelector('input[type="file"]')?.click()}
+                    onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
                   >
                     <Camera className="w-4 h-4 mr-2" />
                     Upload
@@ -188,7 +188,7 @@ export const CosmicPalmistry: React.FC<CosmicPalmistryProps> = ({
                   <Button
                     variant="outline"
                     className="flex-1 border-aura-violet/30 text-aura-violet hover:bg-aura-violet/10"
-                    onClick={() => document.querySelectorAll('input[type="file"]')[1]?.click()}
+                    onClick={() => document.querySelectorAll<HTMLInputElement>('input[type="file"]')[1]?.click()}
                   >
                     <Camera className="w-4 h-4 mr-2" />
                     Upload
@@ -314,4 +314,3 @@ export const CosmicPalmistry: React.FC<CosmicPalmistryProps> = ({
     </div>
   );
 };
-

@@ -40,7 +40,8 @@ export function useRouteMotion() {
       
       // Reset ScrollTrigger instances to prevent conflicts
       ScrollTrigger.getAll().forEach((trigger) => {
-        if (trigger.vars?.trigger?.closest('[data-page-transition]')) {
+        const triggerElement = trigger.vars?.trigger;
+        if (triggerElement instanceof Element && triggerElement.closest('[data-page-transition]')) {
           trigger.kill();
         }
       });
