@@ -5,10 +5,17 @@
  * Sentry error tracking and monitoring
  */
 
+interface SanitizableSentryEvent {
+  request?: {
+    cookies?: unknown
+    headers?: Record<string, unknown>
+  }
+}
+
 /**
  * Initialize Sentry (Server-side)
  */
-export function initSentryServer(): void {
+export async function initSentryServer(): Promise<void> {
   if (typeof window !== 'undefined') {
     return // Only run on server
   }
@@ -25,7 +32,7 @@ export function initSentryServer(): void {
       environment: envVars.nodeEnv,
       tracesSampleRate: envVars.isProduction ? 0.1 : 1.0,
       debug: envVars.isDevelopment,
-      beforeSend(event, hint) {
+      beforeSend(event: SanitizableSentryEvent) {
         // Filter out sensitive data
         if (event.request) {
           delete event.request.cookies
@@ -53,7 +60,7 @@ export function initSentryClient(): void {
   try {
     // Sentry will be initialized via next.config.js
     // This is a placeholder for client-side configuration
-    if (envVars.sentry.publicDsn) {
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
       // Client-side Sentry is typically initialized via SDK
       console.log('Sentry client initialized')
     }

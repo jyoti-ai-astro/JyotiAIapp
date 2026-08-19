@@ -8,7 +8,7 @@
 
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { useGlobalProgress } from '@/hooks/use-global-progress';
 import { useCTAGlow } from '@/hooks/cta/use-cta-glow';
 import { useCTAParallax } from '@/hooks/cta/use-cta-parallax';
 import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
+import { useSectionMotion } from '@/hooks/motion/useSectionMotion';
+import { useScrollMotion } from '@/hooks/motion/useScrollMotion';
 import { scrollGlowPulse } from '@/lib/motion/gsap-motion-bridge';
 
 export interface CosmicCTAProps {
@@ -214,6 +216,7 @@ export function CosmicCTA({
     premium: 1.3, // Gold premium glow
     about: 0.8, // Divine fade (soft)
     global: 1.0,
+    guru: 1.0,
   };
   
   const variantIntensity = variantIntensities[variant];
@@ -369,11 +372,11 @@ export function CosmicCTA({
           className="text-4xl md:text-6xl font-display font-bold text-white"
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { y: 0 } : { opacity: 0, y: 30 }}
-          style={isInView ? { opacity: globalProgress } : undefined}
-          transition={{ duration: 0.8, delay: 0.3 }}
           style={{
+            ...(isInView ? { opacity: globalProgress } : {}),
             textShadow: `0 0 ${glowIntensity * 30}px rgba(242, 201, 76, ${glowIntensity * 0.5})`,
           }}
+          transition={{ duration: 0.8, delay: 0.3 }}
         >
           {finalTitle}
         </motion.h2>

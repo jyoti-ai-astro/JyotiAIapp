@@ -181,11 +181,7 @@ function calculatePersonalImpact(
 
   const planet = transit.planet.toLowerCase()
   const userPlanet = userKundali.grahas[planet]
-  const affectedAreas = Array.isArray(transit.affectedAreas)
-    ? transit.affectedAreas
-    : transit.affectedAreas
-    ? [transit.affectedAreas as any]
-    : []
+  const affectedAreas = transit.affectedHouses.map(getHouseArea)
   const affectedLabel = affectedAreas.length > 0 ? affectedAreas.join(', ') : 'life areas'
 
   if (!userPlanet) {

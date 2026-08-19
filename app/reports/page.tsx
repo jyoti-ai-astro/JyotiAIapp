@@ -120,7 +120,7 @@ export default function ReportsPage() {
 
       // Decrement ticket if needed
       if (accessCheck.decrementTicket) {
-        await decrementTicket(user.uid, feature === 'kundali' ? 'kundali_basic' : 'ai_question')
+        await decrementTicket(feature === 'kundali' ? 'kundali_basic' : 'ai_questions')
       }
 
       loadReports()
@@ -148,31 +148,28 @@ export default function ReportsPage() {
       ? []
       : [
           {
-            id: '1',
             reportId: '1',
             title: 'Detailed Kundali Analysis',
             type: 'Premium',
-            date: new Date().toISOString().split('T')[0],
+            generatedAt: new Date().toISOString(),
             status: 'ready' as const,
             image: '/content/astro-1.png',
             createdAt: new Date().toISOString(),
           },
           {
-            id: '2',
             reportId: '2',
             title: '2024 Career Forecast',
             type: 'Standard',
-            date: new Date().toISOString().split('T')[0],
+            generatedAt: new Date().toISOString(),
             status: 'ready' as const,
             image: '/content/astro-2.png',
             createdAt: new Date().toISOString(),
           },
           {
-            id: '3',
             reportId: '3',
             title: 'Relationship Compatibility',
             type: 'Premium',
-            date: new Date().toISOString().split('T')[0],
+            generatedAt: new Date().toISOString(),
             status: 'locked' as const,
             image: '/content/astro-3.png',
             createdAt: new Date().toISOString(),
@@ -311,7 +308,7 @@ export default function ReportsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {displayReports.map((report, index) => {
-              const reportDate = report.generatedAt || report.createdAt || report.date
+              const reportDate = report.generatedAt || report.createdAt
               const formattedDate = reportDate
                 ? new Date(reportDate).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -322,7 +319,7 @@ export default function ReportsPage() {
 
               return (
                 <motion.div
-                  key={report.reportId || report.id}
+                  key={report.reportId}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
@@ -422,7 +419,7 @@ export default function ReportsPage() {
               className="h-full"
             >
               <button
-                onClick={() => handleGenerate('comprehensive')}
+                onClick={() => handleGenerate('kundali')}
                 disabled={generating}
                 className="w-full h-full min-h-[300px] border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-4 hover:border-gold/40 hover:bg-white/5 transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -459,7 +456,7 @@ export default function ReportsPage() {
               Generate your first cosmic report to unlock insights into your destiny.
             </p>
             <Button
-              onClick={() => handleGenerate('comprehensive')}
+              onClick={() => handleGenerate('kundali')}
               disabled={generating}
               className="bg-gradient-to-r from-gold/80 to-gold text-cosmic-navy font-semibold hover:brightness-110"
             >

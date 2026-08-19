@@ -468,7 +468,6 @@ function generateFollowUps(mode: GuruMode, astroContext: AstroContext | null): s
         followUps.push('What does my current dasha say about my career?')
       }
       break
-    case 'love':
     case 'RelationshipGuide':
       followUps.push('When will I find love?', 'What are my relationship strengths?')
       if (astroContext?.lifeThemes?.[0]?.area === 'love') {

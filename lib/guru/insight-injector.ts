@@ -9,7 +9,7 @@
 import { GuruContext } from '@/lib/ai/guruPrompt';
 
 export interface Insight {
-  type: 'kundali' | 'numerology' | 'aura' | 'prediction';
+  type: 'kundali' | 'numerology' | 'aura' | 'prediction' | 'past-life' | 'synergy';
   title: string;
   content: string;
 }

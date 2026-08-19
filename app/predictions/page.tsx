@@ -105,7 +105,7 @@ export default function PredictionsPage() {
 
       // Decrement ticket if needed
       if (accessCheck.decrementTicket) {
-        await decrementTicket(user.uid, 'ai_question');
+        await decrementTicket('ai_questions');
       }
     } catch (err: any) {
       console.error('Error generating predictions:', err);
@@ -161,7 +161,7 @@ export default function PredictionsPage() {
 
       // Decrement ticket if needed
       if (accessCheck.decrementTicket) {
-        await decrementTicket(user.uid, 'ai_question');
+        await decrementTicket('ai_questions');
       }
     } catch (err: any) {
       console.error('Error downloading report:', err);

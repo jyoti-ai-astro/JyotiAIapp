@@ -323,10 +323,6 @@ export const CosmicGuruChat = () => {
                       variant="outline"
                       onClick={() => {
                         reconnect()
-                        // Clear error state and allow retry
-                        setStatus('idle')
-                        setErrorCode(undefined)
-                        setErrorMessage(undefined)
                         inputRef.current?.focus()
                       }}
                       className="text-xs"
@@ -402,7 +398,6 @@ export const CosmicGuruChat = () => {
             <form onSubmit={handleSend} className="flex gap-2 relative">
               <Input
                 ref={inputRef}
-                disabled={!canAskQuestion || loading}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask your spiritual question..."

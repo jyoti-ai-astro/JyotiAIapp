@@ -25,6 +25,7 @@ export type GuruErrorCode =
   | 'INTERNAL_ERROR'
   | 'NETWORK'
   | 'UNKNOWN'
+  | 'NO_TICKETS'
 
 export function useGuruChat(sessionId?: string) {
   const { user } = useUserStore()

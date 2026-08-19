@@ -171,7 +171,7 @@ export default function KundaliPage() {
       document.body.removeChild(a)
 
       if (accessCheck.decrementTicket) {
-        await decrementTicket(user.uid, 'kundali_basic')
+        await decrementTicket('kundali_basic')
       }
     } catch (err: any) {
       console.error('Error downloading report:', err)

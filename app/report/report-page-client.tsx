@@ -18,6 +18,10 @@ import { PastLifeReport } from '@/components/reports/PastLifeReport';
 import { PredictionReport } from '@/components/reports/PredictionReport';
 import { CompatibilityReport } from '@/components/reports/CompatibilityReport';
 import { GuruChatEngine } from '@/lib/guru/GuruChatEngine';
+import type { PastLifeResult } from '@/lib/guru/past-life-engine';
+import type { TimelineMonth, TimelineSummary } from '@/lib/guru/timeline-builder';
+import type { CompatibilityReport as CompatibilityReportType } from '@/lib/guru/compatibility-engine';
+import type { CompatibilityMonth } from '@/lib/guru/compatibility-timeline';
 
 export type ReportType = 'kundali' | 'numerology' | 'aura-chakra' | 'past-life' | 'prediction' | 'compatibility' | 'guru';
 
@@ -29,11 +33,11 @@ export function ReportPageClient({ reportType }: ReportPageClientProps) {
   const { context } = useGuruContext();
   const [chatEngine] = useState(() => new GuruChatEngine());
   const [pdfContextData, setPdfContextData] = useState<any>(null);
-  const [pastLife, setPastLife] = useState(null);
-  const [timeline, setTimeline] = useState(null);
-  const [timelineSummary, setTimelineSummary] = useState(null);
-  const [compatibilityReport, setCompatibilityReport] = useState(null);
-  const [compatibilityTimeline, setCompatibilityTimeline] = useState(null);
+  const [pastLife, setPastLife] = useState<PastLifeResult | null>(null);
+  const [timeline, setTimeline] = useState<TimelineMonth[] | null>(null);
+  const [timelineSummary, setTimelineSummary] = useState<TimelineSummary | null>(null);
+  const [compatibilityReport, setCompatibilityReport] = useState<CompatibilityReportType | null>(null);
+  const [compatibilityTimeline, setCompatibilityTimeline] = useState<CompatibilityMonth[] | null>(null);
 
   // Initialize chat engine with context
   useEffect(() => {
