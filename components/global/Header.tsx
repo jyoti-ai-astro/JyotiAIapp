@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { useUserStore } from '@/store/user-store';
 
 export interface HeaderProps {
   /** Additional className */
@@ -21,15 +22,16 @@ export function Header({ className = '' }: HeaderProps) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const user = useUserStore((state) => state.user);
 
   // Navigation links
   const navLinks = [
     { href: '/', label: 'Home' },
-    { href: '/features', label: 'Features' },
-    { href: '/pricing', label: 'Pricing' },
     { href: '/modules', label: 'Modules' },
-    { href: '/blog', label: 'Blog' },
-    { href: '/company/contact', label: 'Contact' },
+    { href: '/guru', label: 'Guru AI' },
+    { href: '/pricing', label: 'Pricing' },
+    { href: '/company/about', label: 'About' },
+    { href: '/company/contact', label: 'Support' },
   ];
 
   // Track scroll for header background opacity
@@ -124,15 +126,30 @@ export function Header({ className = '' }: HeaderProps) {
 
           {/* Right Side: Login Button + Mobile Menu Toggle */}
           <div className="flex items-center space-x-4">
-            {/* Login Button - Desktop */}
-            <Link href="/login" className="hidden md:block">
-              <Button
-                variant="ghost"
-                className="border border-gold/30 text-gold hover:bg-gold/10 hover:border-gold/50 transition-all duration-300"
-              >
-                Login
-              </Button>
-            </Link>
+            {/* Auth Actions - Desktop */}
+            {!user ? (
+              <>
+                <Link href="/login" className="hidden md:block">
+                  <Button
+                    variant="ghost"
+                    className="border border-gold/30 text-gold hover:bg-gold/10 hover:border-gold/50 transition-all duration-300"
+                  >
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/signup" className="hidden md:block">
+                  <Button className="bg-gold text-cosmic-navy hover:bg-gold/90 transition-all duration-300">
+                    Sign up
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <Link href="/dashboard" className="hidden md:block">
+                <Button className="bg-gold text-cosmic-navy hover:bg-gold/90 transition-all duration-300">
+                  Open Dashboard
+                </Button>
+              </Link>
+            )}
 
             {/* Mobile Menu Toggle */}
             <button
@@ -222,17 +239,38 @@ export function Header({ className = '' }: HeaderProps) {
                   })}
                 </nav>
 
-                {/* Mobile Login Button */}
-                <div className="mt-8 pt-8 border-t border-gold/20">
-                  <Link href="/login" className="block w-full">
-                    <Button
-                      variant="ghost"
-                      className="w-full border border-gold/30 text-gold hover:bg-gold/10 hover:border-gold/50 transition-all duration-300"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Login
-                    </Button>
-                  </Link>
+                {/* Mobile Auth Actions */}
+                <div className="mt-8 pt-8 border-t border-gold/20 space-y-3">
+                  {!user ? (
+                    <>
+                      <Link href="/login" className="block w-full">
+                        <Button
+                          variant="ghost"
+                          className="w-full border border-gold/30 text-gold hover:bg-gold/10 hover:border-gold/50 transition-all duration-300"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Login
+                        </Button>
+                      </Link>
+                      <Link href="/signup" className="block w-full">
+                        <Button
+                          className="w-full bg-gold text-cosmic-navy hover:bg-gold/90 transition-all duration-300"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Sign up
+                        </Button>
+                      </Link>
+                    </>
+                  ) : (
+                    <Link href="/dashboard" className="block w-full">
+                      <Button
+                        className="w-full bg-gold text-cosmic-navy hover:bg-gold/90 transition-all duration-300"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Open Dashboard
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -324,4 +362,3 @@ function MobileNavLink({ href, label, isActive, onClick }: MobileNavLinkProps) {
     </Link>
   );
 }
-

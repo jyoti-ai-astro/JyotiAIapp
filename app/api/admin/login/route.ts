@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { adminAuth, adminDb } from '@/lib/firebase/admin'
-import { getAdminUser, updateAdminLastLogin, createAdminSession } from '@/lib/admin/admin-auth'
+import { adminDb } from '@/lib/firebase/admin'
+import { getAdminUser, updateAdminLastLogin, createAdminSession, verifyPassword } from '@/lib/admin/admin-auth'
 import { cookies } from 'next/headers'
 
 /**
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
     }
 
-    if (!adminAuth || !adminDb) {
+    if (!adminDb) {
       return NextResponse.json({ error: 'Admin auth not configured' }, { status: 500 })
     }
 
@@ -31,9 +31,27 @@ export async function POST(request: NextRequest) {
     const adminDoc = snapshot.docs[0]
     const adminData = adminDoc.data()
 
-    // In production, use proper password hashing (bcrypt, etc.)
-    // For now, check if password matches (this should be replaced with secure authentication)
-    if (adminData.password !== password) {
+    // Verify password (hashed, with legacy plaintext migration)
+    const passwordOk = await verifyPassword(
+      password,
+      {
+        passwordHash: adminData.passwordHash,
+        passwordSalt: adminData.passwordSalt,
+        passwordVersion: adminData.passwordVersion,
+        password: adminData.password, // legacy
+      },
+      async (newHash) => {
+        // Migrate legacy plaintext to hashed
+        await adminDoc.ref.update({
+          passwordHash: newHash.hash,
+          passwordSalt: newHash.salt,
+          passwordVersion: newHash.version,
+          password: null,
+        })
+      }
+    )
+
+    if (!passwordOk) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
@@ -47,20 +65,9 @@ export async function POST(request: NextRequest) {
     // Update last login
     await updateAdminLastLogin(uid)
 
-    // Create a session token (simplified approach for now)
-    // In production, this should use Firebase Admin session cookies with proper ID tokens
+    // Create signed session token
+    const sessionToken = await createAdminSession(uid)
     const expiresIn = 60 * 60 * 24 * 5 * 1000 // 5 days
-    
-    // Create a session payload
-    const sessionPayload = {
-      uid,
-      email: admin.email,
-      role: admin.role,
-      exp: Date.now() + expiresIn,
-    }
-    
-    // Create a simple session token (in production, use proper JWT signing)
-    const sessionToken = Buffer.from(JSON.stringify(sessionPayload)).toString('base64')
 
     // Set cookie
     const cookieStore = await cookies()
@@ -89,4 +96,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

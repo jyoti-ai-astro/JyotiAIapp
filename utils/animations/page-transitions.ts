@@ -6,5 +6,5 @@
  * Reference: Fade + Dissolve, Orbital Transition, Chakra Gate Transition
  */
 
-// Placeholder for page transition utilities implementation
-
+// Placeholder for page transitions implementation
+export const pageTransitions = {};

@@ -6,4 +6,6 @@
  */
 
 // Placeholder for contrast checker utilities implementation
+export const contrastChecker = {};
+
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
+import { FieldValue } from 'firebase-admin/firestore'
 import crypto from 'crypto'
 import { envVars } from '@/lib/env/env.mjs'
 import { getOneTimeProduct } from '@/lib/pricing/plans'
@@ -64,31 +65,33 @@ export async function POST(req: NextRequest) {
     // Get user document
     const userRef = adminDb.collection('users').doc(uid)
     const userSnap = await userRef.get()
-    const currentUserData = userSnap.exists ? userSnap.data() : {}
 
-    // Fulfillment Logic based on product tickets
-    const updates: any = {}
+    // ============================================
+    // ✅ Unified Ticket Fulfillment (Clean + Correct)
+    // ============================================
+    const updates: any = {
+      updatedAt: new Date(),
+    };
 
-    // Add AI Guru tickets
+    // ✔ AI Guru Tickets
     if (product.tickets.aiQuestions) {
-      const currentAiGuruTickets = currentUserData?.aiGuruTickets || 0
-      updates.aiGuruTickets = currentAiGuruTickets + product.tickets.aiQuestions
-      
-      // Also update legacy tickets field for backward compatibility
-      const currentTickets = currentUserData?.tickets || 0
-      updates.tickets = currentTickets + product.tickets.aiQuestions
+      const qty = product.tickets.aiQuestions;
+      updates.aiGuruTickets = FieldValue.increment(qty);
+      updates.tickets = FieldValue.increment(qty); // legacy
+      updates["legacyTickets.ai_questions"] = FieldValue.increment(qty);
     }
 
-    // Add Kundali basic tickets
+    // ✔ Kundali Tickets
     if (product.tickets.kundaliBasic) {
-      const currentKundaliTickets = currentUserData?.kundaliTickets || 0
-      updates.kundaliTickets = currentKundaliTickets + product.tickets.kundaliBasic
+      const qty = product.tickets.kundaliBasic;
+      updates.kundaliTickets = FieldValue.increment(qty);
+      updates["legacyTickets.kundali_basic"] = FieldValue.increment(qty);
     }
 
-    // Add prediction credits if specified
+    // ✔ Prediction Tickets
     if (product.tickets.predictions) {
-      const currentPredictions = currentUserData?.lifetimePredictions || 0
-      updates.lifetimePredictions = currentPredictions + product.tickets.predictions
+      const qty = product.tickets.predictions;
+      updates.lifetimePredictions = FieldValue.increment(qty);
     }
 
     // Update user document
@@ -105,7 +108,7 @@ export async function POST(req: NextRequest) {
     await userRef.set(
       {
         ...updates,
-        oneTimePurchases: adminDb.FieldValue.arrayUnion(oneTimePurchase),
+        oneTimePurchases: FieldValue.arrayUnion(oneTimePurchase),
       },
       { merge: true }
     )
@@ -148,7 +151,13 @@ export async function POST(req: NextRequest) {
       // Don't fail the payment if email fails
     }
 
-    return NextResponse.redirect(new URL('/thanks?payment=success', req.url))
+    return NextResponse.json({
+      success: true,
+      orderId: order_id,
+      paymentId: payment_id,
+      productId: String(productId),
+      ticketsGranted: product.tickets,
+    })
   } catch (err: any) {
     console.error('One-time payment success error:', err)
     // Phase Z3: Log error
@@ -160,4 +169,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message || 'Failed to process payment' }, { status: 500 })
   }
 }
-

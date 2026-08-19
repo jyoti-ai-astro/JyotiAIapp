@@ -185,7 +185,7 @@ export default function CareerPage() {
             Your Career Destiny
           </h1>
           <p className="text-aura-cyan max-w-2xl mx-auto">
-            Discover whether you're destined for a job, business, or hybrid path
+            Discover whether you&apos;re destined for a job, business, or hybrid path
           </p>
         </motion.div>
 

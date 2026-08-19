@@ -1,33 +1,52 @@
 /**
  * Cosmic Cursor Component
- * 
+ *
  * Batch 1 - Core Landing & Marketing
- * 
+ *
  * Cursor trail with light orbs that fade after 300ms
  */
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
+
+interface TrailItem {
+  id: number;
+  x: number;
+  y: number;
+  timestamp: number;
+}
 
 export function CosmicCursor() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [trail, setTrail] = useState<Array<{ id: number; x: number; y: number; timestamp: number }>>([]);
+  const [trail, setTrail] = useState<TrailItem[]>([]);
+
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const springX = useSpring(mouseX, { stiffness: 300, damping: 30 });
   const springY = useSpring(mouseY, { stiffness: 300, damping: 30 });
+
+  // Stable incremental ID for trail items to avoid duplicate keys
+  const trailIdRef = useRef(0);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
       setMousePosition({ x: e.clientX, y: e.clientY });
-      
-      // Add to trail
+
       setTrail((prev) => {
-        const newTrail = [...prev, { id: Date.now(), x: e.clientX, y: e.clientY, timestamp: Date.now() }];
+        const nextId = trailIdRef.current++;
+        const newTrail: TrailItem[] = [
+          ...prev,
+          {
+            id: nextId,
+            x: e.clientX,
+            y: e.clientY,
+            timestamp: Date.now(),
+          },
+        ];
         // Keep only last 5 orbs
         return newTrail.slice(-5);
       });
@@ -40,7 +59,8 @@ export function CosmicCursor() {
   // Clean up old trail items
   useEffect(() => {
     const interval = setInterval(() => {
-      setTrail((prev) => prev.filter((item) => Date.now() - item.timestamp < 300));
+      const now = Date.now();
+      setTrail((prev) => prev.filter((item) => now - item.timestamp < 300));
     }, 50);
     return () => clearInterval(interval);
   }, []);
@@ -75,7 +95,7 @@ export function CosmicCursor() {
       {trail.map((item, index) => {
         const age = Date.now() - item.timestamp;
         const opacity = Math.max(0, 1 - age / 300);
-        const scale = 0.5 + (index / trail.length) * 0.5;
+        const scale = 0.5 + (index / Math.max(trail.length, 1)) * 0.5;
 
         return (
           <motion.div
@@ -131,4 +151,3 @@ export function CosmicCursor() {
     </>
   );
 }
-

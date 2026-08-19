@@ -8,9 +8,6 @@
  */
 
 import * as THREE from 'three';
-const { Uniform, Vector2 } = THREE;
-
-
 
 import { finalCompositeShader } from './final-composite-shader';
 
@@ -34,22 +31,22 @@ export class FinalCompositeEngine {
   
   // Uniforms
   private uniforms: {
-    uTime: Uniform;
-    uIntensity: Uniform;
-    uBass: Uniform;
-    uMid: Uniform;
-    uHigh: Uniform;
-    uBlessingWaveProgress: Uniform;
-    uCameraFOV: Uniform;
-    uExposure: Uniform;
-    uFade: Uniform;
-    uResolution: Uniform;
-    uVibrance: Uniform;
-    uHighlightRepair: Uniform;
-    uDitherStrength: Uniform;
-    uLift: Uniform;
-    uGamma: Uniform;
-    uGain: Uniform;
+    uTime: THREE.IUniform;
+    uIntensity: THREE.IUniform;
+    uBass: THREE.IUniform;
+    uMid: THREE.IUniform;
+    uHigh: THREE.IUniform;
+    uBlessingWaveProgress: THREE.IUniform;
+    uCameraFOV: THREE.IUniform;
+    uExposure: THREE.IUniform;
+    uFade: THREE.IUniform;
+    uResolution: THREE.IUniform;
+    uVibrance: THREE.IUniform;
+    uHighlightRepair: THREE.IUniform;
+    uDitherStrength: THREE.IUniform;
+    uLift: THREE.IUniform;
+    uGamma: THREE.IUniform;
+    uGain: THREE.IUniform;
   };
 
   constructor(config: FinalCompositeEngineConfig = {}) {
@@ -113,7 +110,7 @@ export class FinalCompositeEngine {
     high: number,
     blessingWaveProgress: number,
     cameraFOV: number,
-    resolution: Vector2,
+    resolution: THREE.Vector2,
     exposure: number,
     fade: number
   ): void {

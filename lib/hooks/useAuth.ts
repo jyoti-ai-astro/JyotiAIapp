@@ -64,8 +64,13 @@ export function useAuth(options: UseAuthOptions = {}) {
               rashi: data.rashi || null,
               nakshatra: data.nakshatra || null,
               subscription: data.subscription || 'free',
-              subscriptionExpiry: data.subscriptionExpiry || null,
+              subscriptionExpiry: data.subscriptionExpiry ? new Date(data.subscriptionExpiry) : null,
               onboarded: data.onboarded || false,
+              tickets: data.tickets || 0,
+              aiGuruTickets: data.aiGuruTickets || data.tickets || 0,
+              kundaliTickets: data.kundaliTickets || 0,
+              lifetimePredictions: data.lifetimePredictions || 0,
+              dailyUsage: data.dailyUsage || { count: 0, date: new Date().toISOString().split('T')[0] },
             });
           } else {
             clearUser();

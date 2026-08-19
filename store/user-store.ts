@@ -18,6 +18,9 @@ interface User {
   onboarded: boolean
   // Consumable tickets (from Quick/Deep packs)
   tickets: number
+  aiGuruTickets: number
+  kundaliTickets: number
+  lifetimePredictions: number
   // Daily usage tracking (for Starter plan)
   dailyUsage: {
     count: number
@@ -53,8 +56,17 @@ export const useUserStore = create<UserState>()(
           user = {
             ...user,
             tickets: migratedTickets,
+            aiGuruTickets: user.aiGuruTickets ?? migratedTickets,
+            kundaliTickets: user.kundaliTickets ?? 0,
+            lifetimePredictions: user.lifetimePredictions ?? 0,
             legacyTickets: undefined,
           }
+        }
+        if (user) {
+          user.aiGuruTickets = user.aiGuruTickets ?? user.tickets ?? 0
+          user.kundaliTickets = user.kundaliTickets ?? 0
+          user.lifetimePredictions = user.lifetimePredictions ?? 0
+          user.tickets = user.tickets ?? user.aiGuruTickets ?? 0
         }
         // Ensure dailyUsage exists
         if (user && !user.dailyUsage) {

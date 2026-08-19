@@ -3,21 +3,23 @@
 const nextConfig = {
 
   eslint: {
-
-    ignoreDuringBuilds: true,
-
+    ignoreDuringBuilds: false,
   },
 
   typescript: {
-
-    ignoreBuildErrors: true,
-
+    ignoreBuildErrors: false,
   },
 
   images: {
-
-    domains: ["localhost"],
-
+    domains: [
+      "localhost",
+      "jyoti.app",
+      "firebasestorage.googleapis.com",
+      "lh3.googleusercontent.com",
+      "res.cloudinary.com",
+      "images.unsplash.com",
+      "cdn.jsdelivr.net"
+    ],
   },
 
   webpack: (config, { isServer, webpack }) => {

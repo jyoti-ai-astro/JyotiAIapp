@@ -117,54 +117,33 @@ export async function POST(request: NextRequest) {
     // Phase G: Check if user has tickets (if authenticated)
     if (userId) {
       try {
-        const accessInfo = await splitSubscriptionAndTickets(userId)
-        
-        // If no subscription, check for tickets
-        if (!accessInfo.hasSubscription) {
-          if (accessInfo.tickets.aiGuruTickets <= 0) {
-            return NextResponse.json(
-              {
-                status: 'error',
-                code: 'NO_TICKETS',
-                message: 'You have 0 AI Guru credits. Please purchase a one-time reading to continue.',
-              },
-              {
-                status: 403,
-                headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
-              }
-            )
-          }
-        }
-      } catch (ticketError: any) {
-        // If ticket check fails, log but don't block (graceful degradation)
-        console.error('Ticket check error:', ticketError)
-      }
-    }
+        const accessInfo = await splitSubscriptionAndTickets(userId);
 
-    // Phase G: Check if user has tickets (if authenticated)
-    if (userId) {
-      try {
-        const accessInfo = await splitSubscriptionAndTickets(userId)
-        
-        // If no subscription, check for tickets
+        // If user has an active subscription, allow access without tickets
         if (!accessInfo.hasSubscription) {
-          if (accessInfo.tickets.aiGuruTickets <= 0) {
+          const aiGuruCredits = accessInfo.tickets.aiGuruTickets ?? 0;
+
+          if (aiGuruCredits <= 0) {
             return NextResponse.json(
               {
                 status: 'error',
                 code: 'NO_TICKETS',
-                message: 'You have 0 AI Guru credits. Please purchase a one-time reading to continue.',
+                message:
+                  'You have 0 AI Guru credits. Please purchase a one-time reading to continue.',
               },
               {
                 status: 403,
-                headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
+                headers: getRateLimitHeaders(
+                  rateLimitResult.remaining,
+                  rateLimitResult.resetTime
+                ),
               }
-            )
+            );
           }
         }
       } catch (ticketError: any) {
         // If ticket check fails, log but don't block (graceful degradation)
-        console.error('Ticket check error:', ticketError)
+        console.error('Ticket check error:', ticketError);
       }
     }
 
@@ -231,36 +210,19 @@ export async function POST(request: NextRequest) {
     // Phase G: Consume ticket AFTER successful response (if authenticated and no subscription)
     if (userId && result.status !== 'error' && result.status !== 'degraded') {
       try {
-        const accessInfo = await splitSubscriptionAndTickets(userId)
-        
-        // Only consume ticket if user doesn't have subscription
-        if (!accessInfo.hasSubscription && accessInfo.tickets.aiGuruTickets > 0) {
-          const consumed = await consumeTickets(userId, { aiGuruTickets: 1 })
-          if (!consumed) {
-            console.warn('Failed to consume ticket for user:', userId)
-          }
-        }
-      } catch (ticketError: any) {
-        // Log but don't fail the request if ticket consumption fails
-        console.error('Ticket consumption error:', ticketError)
-      }
-    }
+        const accessInfo = await splitSubscriptionAndTickets(userId);
 
-    // Phase G: Consume ticket AFTER successful response (if authenticated and no subscription)
-    if (userId && result.status !== 'error' && result.status !== 'degraded') {
-      try {
-        const accessInfo = await splitSubscriptionAndTickets(userId)
-        
         // Only consume ticket if user doesn't have subscription
-        if (!accessInfo.hasSubscription && accessInfo.tickets.aiGuruTickets > 0) {
-          const consumed = await consumeTickets(userId, { aiGuruTickets: 1 })
+        const aiGuruCredits = accessInfo.tickets.aiGuruTickets ?? 0;
+        if (!accessInfo.hasSubscription && aiGuruCredits > 0) {
+          const consumed = await consumeTickets(userId, { aiGuruTickets: 1 });
           if (!consumed) {
-            console.warn('Failed to consume ticket for user:', userId)
+            console.warn('Failed to consume ticket for user:', userId);
           }
         }
       } catch (ticketError: any) {
         // Log but don't fail the request if ticket consumption fails
-        console.error('Ticket consumption error:', ticketError)
+        console.error('Ticket consumption error:', ticketError);
       }
     }
 
@@ -337,4 +299,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

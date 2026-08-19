@@ -579,7 +579,7 @@ export default function TimelinePage() {
                     <Calendar className="w-16 h-16 text-[#FFD57A]/40 mx-auto" />
                     <h3 className="text-2xl font-display font-semibold text-white">No Timeline Yet</h3>
                     <p className="text-white/60 max-w-md mx-auto">
-                      Your cosmic timeline will appear here once generated. Click "Generate 12-Month Timeline" to create your personalized astrological journey.
+                      Your cosmic timeline will appear here once generated. Click &quot;Generate 12-Month Timeline&quot; to create your personalized astrological journey.
                     </p>
                     <Button
                       onClick={handleGenerateTimeline}

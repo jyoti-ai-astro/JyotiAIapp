@@ -53,6 +53,14 @@ export default function PricingSection6() {
       return;
     }
 
+    // Extra safety: respect frontend kill switch too
+    if (isPaymentsDisabled) {
+      alert(
+        'Payments are temporarily disabled. Please try again later or use a one-time reading.'
+      );
+      return;
+    }
+
     setLoadingPlanId(plan.id);
 
     try {
@@ -66,12 +74,20 @@ export default function PricingSection6() {
         body: JSON.stringify({ planId: plan.id }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create subscription');
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
       }
 
-      const data = await response.json();
+      if (!response.ok || !data?.subscriptionId) {
+        const message =
+          data?.error ||
+          data?.message ||
+          `Failed to create subscription for plan "${plan.name}".`;
+        throw new Error(message);
+      }
 
       // Load Razorpay script if not already loaded
       if (typeof window !== 'undefined' && !(window as any).Razorpay) {
@@ -102,7 +118,7 @@ export default function PricingSection6() {
         theme: {
           color: '#F2C94C',
         },
-        handler: async (response: any) => {
+        handler: async () => {
           // Refresh subscription status
           await fetch('/api/subscriptions/status?refresh=true', {
             credentials: 'include',
@@ -120,7 +136,7 @@ export default function PricingSection6() {
       rzp.open();
     } catch (error: any) {
       console.error('Subscription checkout error:', error);
-      alert(error.message || 'Failed to start subscription checkout');
+      alert(error?.message || 'Failed to start subscription checkout');
       setLoadingPlanId(null);
     }
   };

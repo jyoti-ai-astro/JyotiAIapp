@@ -1,8 +1,8 @@
 /**
  * Profile Setup Page
- * 
+ *
  * Batch 2 - Auth & Onboarding
- * 
+ *
  * Initial profile setup after signup
  */
 
@@ -15,19 +15,27 @@ import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { motion } from 'framer-motion';
 import { ProfileSetupForm } from '@/components/auth/ProfileSetupForm';
-import { useAuthFlow } from '@/lib/utils/auth-flow';
-import { User, Calendar, MapPin } from 'lucide-react';
 import MarketingPageShell from '@/src/ui/layout/MarketingPageShell';
+
+interface ProfileFormData {
+  name: string;
+  dob: string;
+  pob: string;
+  lat?: number;
+  lng?: number;
+}
 
 export default function ProfileSetupPage() {
   const router = useRouter();
   const { user, updateUser } = useUserStore();
-  const { handleProfileSetupSuccess } = useAuthFlow();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+
+  const [formData] = useState<ProfileFormData>({
     name: user?.name || '',
-    dob: '',
-    pob: '',
+    dob: user?.dob || '',
+    pob: user?.pob || '',
+    lat: user?.lat,
+    lng: user?.lng,
   });
 
   useEffect(() => {
@@ -36,7 +44,11 @@ export default function ProfileSetupPage() {
     }
   }, [user, router]);
 
-  const handleSubmit = async (data: { name: string; dob: string; pob: string; lat?: number; lng?: number }) => {
+  if (!user) {
+    return null;
+  }
+
+  const handleSubmit = async (data: ProfileFormData) => {
     setLoading(true);
 
     try {
@@ -53,8 +65,9 @@ export default function ProfileSetupPage() {
         }),
       });
 
+      const errorData = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to update profile');
       }
 
@@ -62,9 +75,12 @@ export default function ProfileSetupPage() {
         name: data.name,
         dob: data.dob,
         pob: data.pob,
+        lat: data.lat,
+        lng: data.lng,
       });
 
-      handleProfileSetupSuccess();
+      // Navigate into onboarding flow
+      router.push('/onboarding');
     } catch (error: any) {
       console.error('Profile setup error:', error);
       alert(error.message || 'Failed to save profile. Please try again.');
@@ -72,27 +88,6 @@ export default function ProfileSetupPage() {
       setLoading(false);
     }
   };
-
-  const createRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const button = e.currentTarget;
-    const ripple = document.createElement('span');
-    const rect = button.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    
-    ripple.style.width = ripple.style.height = `${size}px`;
-    ripple.style.left = `${x}px`;
-    ripple.style.top = `${y}px`;
-    ripple.className = 'absolute rounded-full bg-gold/30 animate-ping pointer-events-none';
-    button.appendChild(ripple);
-    
-    setTimeout(() => ripple.remove(), 600);
-  };
-
-  if (!user) {
-    return null;
-  }
 
   return (
     <MarketingPageShell
@@ -119,4 +114,3 @@ export default function ProfileSetupPage() {
     </MarketingPageShell>
   );
 }
-

@@ -15,10 +15,13 @@ import { cn } from '@/lib/utils';
 import { colors, states, durations, easing } from '@/styles/tokens';
 import type { JyotiComponentProps } from './types';
 
-export interface ButtonProps extends Omit<JyotiComponentProps, 'motion'>, React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends Omit<JyotiComponentProps, 'motion' | 'variant' | 'size'>, Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart'> {
   /** Button variant */
-  variant?: 'primary' | 'secondary' | 'ghost' | 'text' | 'icon' | 'floating';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'text' | 'icon' | 'floating' | 'outline' | 'destructive' | 'default';
   
+  /** Button size */
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'icon';
+
   /** Icon to display on the left */
   iconLeft?: React.ReactNode;
   
@@ -82,6 +85,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       md: 'h-12 px-6 text-base',
       lg: 'h-14 px-8 text-lg',
       xl: 'h-16 px-10 text-xl',
+      icon: 'h-10 w-10 p-0',
     };
     
     // Variant classes
@@ -107,6 +111,39 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         'text-[#E0E7FF]',
         'hover:border-[#4e9df3] hover:text-white',
         'hover:shadow-[0_0_12px_rgba(78,157,243,0.4)]',
+        'active:scale-[0.98]',
+        'disabled:opacity-40 disabled:cursor-not-allowed',
+        'transition-all duration-150',
+        'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#8ab4f8] focus-visible:ring-offset-3'
+      ),
+      outline: cn(
+        'relative',
+        'bg-transparent',
+        'border border-white/20',
+        'text-white/90',
+        'hover:bg-white/5 hover:border-white/30 hover:text-white',
+        'active:scale-[0.98]',
+        'disabled:opacity-40 disabled:cursor-not-allowed',
+        'transition-all duration-150',
+        'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#8ab4f8] focus-visible:ring-offset-3'
+      ),
+      destructive: cn(
+        'relative',
+        'bg-[#e85555]',
+        'border border-[#e85555]',
+        'text-white font-medium',
+        'hover:bg-[#d94747] hover:border-[#d94747]',
+        'active:scale-[0.98]',
+        'disabled:opacity-40 disabled:cursor-not-allowed',
+        'transition-all duration-150',
+        'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#e85555]/60 focus-visible:ring-offset-3'
+      ),
+      default: cn(
+        'relative',
+        'bg-white/10',
+        'border border-white/20',
+        'text-white',
+        'hover:bg-white/15',
         'active:scale-[0.98]',
         'disabled:opacity-40 disabled:cursor-not-allowed',
         'transition-all duration-150',
@@ -180,7 +217,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <motion.button
         ref={(node) => {
           if (typeof ref === 'function') ref(node);
-          else if (ref) ref.current = node;
+          else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
           buttonRef.current = node;
         }}
         className={baseClasses}

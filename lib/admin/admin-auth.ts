@@ -1,11 +1,13 @@
 /**
  * Admin Authentication Layer
  * Milestone 10 - Step 1
- * 
+ *
  * Admin authentication and role management
  */
 
+import crypto from 'crypto'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
+import { envVars } from '@/lib/env/env.mjs'
 
 export type AdminRole = 'SuperAdmin' | 'Astrologer' | 'Support' | 'ContentManager' | 'Finance'
 
@@ -129,6 +131,94 @@ export async function getAdminUser(uid: string): Promise<AdminUser | null> {
 }
 
 /**
+ * Password hashing helpers (HMAC-scrypt)
+ */
+const HASH_VERSION = 'scrypt-v1'
+
+function getSessionSecret(): string {
+  const secret = envVars.auth.adminSessionSecret
+  if (!secret) {
+    throw new Error('ADMIN_SESSION_SECRET is not configured')
+  }
+  return secret
+}
+
+export function hashPassword(password: string): { hash: string; salt: string; version: string } {
+  const salt = crypto.randomBytes(16).toString('hex')
+  const derivedKey = crypto.scryptSync(password, salt, 64).toString('hex')
+  return { hash: derivedKey, salt, version: HASH_VERSION }
+}
+
+export function verifyPassword(
+  password: string,
+  stored: { passwordHash?: string; passwordSalt?: string; passwordVersion?: string; password?: string },
+  onRehash?: (hash: { hash: string; salt: string; version: string }) => Promise<void>
+): Promise<boolean> {
+  return new Promise(async (resolve) => {
+    try {
+      if (stored.passwordHash && stored.passwordSalt) {
+        const version = stored.passwordVersion || HASH_VERSION
+        if (version !== HASH_VERSION) {
+          return resolve(false)
+        }
+        const derivedKey = crypto.scryptSync(password, stored.passwordSalt, 64).toString('hex')
+        if (crypto.timingSafeEqual(Buffer.from(derivedKey, 'hex'), Buffer.from(stored.passwordHash, 'hex'))) {
+          return resolve(true)
+        }
+        return resolve(false)
+      }
+
+      // Transitional: if legacy plaintext exists, verify then immediately rehash and store
+      if (stored.password && stored.password === password && onRehash) {
+        const newHash = hashPassword(password)
+        await onRehash(newHash)
+        return resolve(true)
+      }
+
+      resolve(false)
+    } catch (error) {
+      console.error('Password verification error:', error)
+      resolve(false)
+    }
+  })
+}
+
+/**
+ * Signed admin session tokens (HMAC SHA-256)
+ */
+export function signAdminSession(payload: { uid: string; email: string; role: AdminRole; exp: number }): string {
+  const secret = getSessionSecret()
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url')
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url')
+  const signature = crypto.createHmac('sha256', secret).update(`${header}.${body}`).digest('base64url')
+  return `${header}.${body}.${signature}`
+}
+
+export function verifyAdminSessionToken(token: string): { valid: boolean; payload?: any } {
+  try {
+    const secret = getSessionSecret()
+    const parts = token.split('.')
+    if (parts.length !== 3) {
+      return { valid: false }
+    }
+    const [header, body, signature] = parts
+    const expected = crypto.createHmac('sha256', secret).update(`${header}.${body}`).digest('base64url')
+    const matches = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+    if (!matches) {
+      return { valid: false }
+    }
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'))
+    if (payload.exp && Date.now() > payload.exp) {
+      return { valid: false }
+    }
+    return { valid: true, payload }
+  } catch (error) {
+    console.error('Admin session verification error:', error)
+    return { valid: false }
+  }
+}
+
+/**
  * Check if admin has permission
  */
 export async function hasPermission(uid: string, permission: string): Promise<boolean> {
@@ -144,49 +234,34 @@ export async function hasPermission(uid: string, permission: string): Promise<bo
  * Create admin session
  */
 export async function createAdminSession(uid: string): Promise<string> {
-  if (!adminAuth) {
-    throw new Error('Admin auth not initialized')
+  const admin = await getAdminUser(uid)
+  if (!admin) {
+    throw new Error('Admin not found')
   }
 
-  // Create custom token for admin
-  const customToken = await adminAuth.createCustomToken(uid, {
-    admin: true,
-  })
+  const expiresIn = 60 * 60 * 24 * 5 * 1000 // 5 days
+  const payload = {
+    uid: admin.uid,
+    email: admin.email,
+    role: admin.role,
+    exp: Date.now() + expiresIn,
+  }
 
-  return customToken
+  return signAdminSession(payload)
 }
 
 /**
  * Verify admin session
  */
 export async function verifyAdminSession(sessionCookie: string): Promise<AdminUser | null> {
-  if (!adminAuth) {
-    return null
-  }
-
   try {
-    // Try to verify as Firebase session cookie first
-    try {
-      const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
-      const admin = await getAdminUser(decodedClaims.uid)
-      return admin
-    } catch (firebaseError) {
-      // If Firebase session cookie verification fails, try our simplified session token
-      try {
-        const sessionPayload = JSON.parse(Buffer.from(sessionCookie, 'base64').toString())
-        
-        // Check expiration
-        if (sessionPayload.exp && sessionPayload.exp < Date.now()) {
-          return null
-        }
-        
-        const admin = await getAdminUser(sessionPayload.uid)
-        return admin
-      } catch (tokenError) {
-        console.error('Error verifying admin session token:', tokenError)
-        return null
-      }
+    const result = verifyAdminSessionToken(sessionCookie)
+    if (!result.valid || !result.payload?.uid) {
+      return null
     }
+
+    const admin = await getAdminUser(result.payload.uid)
+    return admin
   } catch (error) {
     console.error('Error verifying admin session:', error)
     return null
@@ -209,4 +284,3 @@ export async function updateAdminLastLogin(uid: string): Promise<void> {
     console.error('Error updating admin last login:', error)
   }
 }
-

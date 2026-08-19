@@ -1,8 +1,9 @@
+// app/api/location/search/route.ts
 /**
  * Location Search API
- * 
- * Searches for locations using Google Geocoding API
- * Returns formatted addresses with coordinates
+ *
+ * Searches for locations using Google Places Autocomplete + Details,
+ * with a fallback to Geocoding API.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -18,37 +19,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ results: [] });
     }
 
-    const googleApiKey = envVars.geocoding.googleApiKey;
+    // Prefer envVars, but also support direct process.env
+    const googleApiKey =
+      envVars?.geocoding?.googleApiKey || process.env.GOOGLE_GEOCODING_API_KEY;
 
     if (!googleApiKey) {
-      console.warn('GOOGLE_GEOCODING_API_KEY not configured. Location autocomplete will not work.');
-      // Return helpful error message instead of empty results
-      return NextResponse.json({ 
-        results: [],
-        error: 'Location search is not configured. Please set GOOGLE_GEOCODING_API_KEY in Vercel environment variables.',
-      });
+      console.warn(
+        'GOOGLE_GEOCODING_API_KEY not configured. Location autocomplete will not work.'
+      );
+      return NextResponse.json(
+        {
+          results: [],
+          error:
+            'Location search is not configured. Please set GOOGLE_GEOCODING_API_KEY in environment variables.',
+        },
+        { status: 500 }
+      );
     }
 
     // Use Google Places Autocomplete API for better suggestions
-    const autocompleteUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&key=${googleApiKey}&types=(cities)`;
+    const autocompleteUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+      query
+    )}&key=${googleApiKey}&types=(cities)`;
 
     const autocompleteResponse = await fetch(autocompleteUrl);
     const autocompleteData = await autocompleteResponse.json();
 
-    if (autocompleteData.status !== 'OK' && autocompleteData.status !== 'ZERO_RESULTS') {
-      // Fallback to geocoding API
+    // If Places Autocomplete fails (or not enabled), fallback to Geocoding
+    if (
+      autocompleteData.status !== 'OK' &&
+      autocompleteData.status !== 'ZERO_RESULTS'
+    ) {
       return await geocodeFallback(query, googleApiKey);
     }
 
-    if (!autocompleteData.predictions || autocompleteData.predictions.length === 0) {
+    if (
+      !autocompleteData.predictions ||
+      autocompleteData.predictions.length === 0
+    ) {
+      // No predictions, just return empty list
       return NextResponse.json({ results: [] });
     }
 
-    // Get details for each prediction
+    // Fetch details (lat/lng, city, country) for each prediction
     const results = await Promise.all(
       autocompleteData.predictions.slice(0, 5).map(async (prediction: any) => {
-        // Get place details
-        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${prediction.place_id}&fields=geometry,formatted_address,name,address_components&key=${googleApiKey}`;
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${
+          prediction.place_id
+        }&fields=geometry,formatted_address,name,address_components&key=${googleApiKey}`;
+
         const detailsResponse = await fetch(detailsUrl);
         const detailsData = await detailsResponse.json();
 
@@ -61,7 +80,8 @@ export async function POST(request: NextRequest) {
           let country = '';
           if (result.address_components) {
             const cityComponent = result.address_components.find((comp: any) =>
-              comp.types.includes('locality') || comp.types.includes('administrative_area_level_2')
+              comp.types.includes('locality') ||
+              comp.types.includes('administrative_area_level_2')
             );
             const countryComponent = result.address_components.find((comp: any) =>
               comp.types.includes('country')
@@ -89,7 +109,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Location search error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to search locations' },
+      { error: error.message || 'Failed to search locations', results: [] },
       { status: 500 }
     );
   }
@@ -97,7 +117,9 @@ export async function POST(request: NextRequest) {
 
 async function geocodeFallback(query: string, apiKey: string) {
   try {
-    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`;
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+      query
+    )}&key=${apiKey}`;
     const response = await fetch(geocodeUrl);
     const data = await response.json();
 
@@ -109,7 +131,8 @@ async function geocodeFallback(query: string, apiKey: string) {
 
         if (result.address_components) {
           const cityComponent = result.address_components.find((comp: any) =>
-            comp.types.includes('locality') || comp.types.includes('administrative_area_level_2')
+            comp.types.includes('locality') ||
+            comp.types.includes('administrative_area_level_2')
           );
           const countryComponent = result.address_components.find((comp: any) =>
             comp.types.includes('country')
@@ -136,4 +159,3 @@ async function geocodeFallback(query: string, apiKey: string) {
     return NextResponse.json({ results: [] });
   }
 }
-

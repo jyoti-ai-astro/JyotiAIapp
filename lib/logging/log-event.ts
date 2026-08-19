@@ -1,12 +1,12 @@
 /**
  * Event Logging System
- * 
+ *
  * Phase Z - Production Validation & Monitoring
- * 
+ *
  * Centralized logging to Firestore for monitoring and debugging
  */
 
-import { adminDb } from '@/lib/firebase/admin'
+import { adminDb } from '@/lib/firebase/admin';
 
 export type LogEventType =
   | 'subscription.created'
@@ -22,18 +22,38 @@ export type LogEventType =
   | 'webhook.failed'
   | 'api.error'
   | 'ticket.consumed'
-  | 'ticket.added'
+  | 'ticket.added';
 
 export interface LogEventData {
-  type: LogEventType
-  data: Record<string, any>
-  userId?: string
+  type: LogEventType;
+  data: Record<string, any>;
+  userId?: string;
   metadata?: {
-    ip?: string
-    userAgent?: string
-    [key: string]: any
+    ip?: string;
+    userAgent?: string;
+    [key: string]: any;
+  };
+  createdAt: Date;
+}
+
+/**
+ * Strip undefined values from objects (Firestore does not allow undefined)
+ */
+function stripUndefined<T = any>(value: T): T {
+  if (value === null || typeof value !== 'object') {
+    return value;
   }
-  createdAt: Date
+
+  if (Array.isArray(value)) {
+    return value.map(stripUndefined) as unknown as T;
+  }
+
+  const cleaned: Record<string, any> = {};
+  for (const [key, val] of Object.entries(value)) {
+    if (typeof val === 'undefined') continue;
+    cleaned[key] = stripUndefined(val as any);
+  }
+  return cleaned as T;
 }
 
 /**
@@ -46,23 +66,26 @@ export async function logEvent(
   metadata?: LogEventData['metadata']
 ): Promise<void> {
   if (!adminDb) {
-    console.warn('Firestore not initialized, skipping event log')
-    return
+    console.warn('Firestore not initialized, skipping event log');
+    return;
   }
 
   try {
+    const safeData = stripUndefined(data || {});
+    const safeMetadata = stripUndefined(metadata || {});
+
     const logEntry: LogEventData = {
       type,
-      data,
+      data: safeData,
       userId,
-      metadata,
+      metadata: safeMetadata,
       createdAt: new Date(),
-    }
+    };
 
-    await adminDb.collection('app_logs').add(logEntry)
+    await adminDb.collection('app_logs').add(logEntry);
   } catch (error: any) {
     // Don't throw - logging failures shouldn't break the app
-    console.error('Failed to log event:', error)
+    console.error('Failed to log event:', error);
   }
 }
 
@@ -74,24 +97,26 @@ export async function getRecentLogs(
   limit: number = 20
 ): Promise<LogEventData[]> {
   if (!adminDb) {
-    return []
+    return [];
   }
 
   try {
-    let query = adminDb.collection('app_logs').orderBy('createdAt', 'desc').limit(limit)
+    let query = adminDb
+      .collection('app_logs')
+      .orderBy('createdAt', 'desc')
+      .limit(limit);
 
     if (type) {
-      query = query.where('type', '==', type) as any
+      query = query.where('type', '==', type) as any;
     }
 
-    const snapshot = await query.get()
+    const snapshot = await query.get();
     return snapshot.docs.map((doc) => ({
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-    })) as LogEventData[]
+    })) as LogEventData[];
   } catch (error: any) {
-    console.error('Failed to get recent logs:', error)
-    return []
+    console.error('Failed to get recent logs:', error);
+    return [];
   }
 }
-

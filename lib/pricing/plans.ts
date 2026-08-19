@@ -167,7 +167,7 @@ export const ONE_TIME_PRODUCTS: Record<ProductId, OneTimeProduct> = {
       'Extended personalised insight session',
     ],
     tickets: {
-      aiQuestions: 5,
+      predictions: 1,
     },
     mostPopular: false,
   },

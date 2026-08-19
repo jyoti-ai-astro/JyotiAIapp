@@ -24,6 +24,8 @@ interface ProfileSetupFormProps {
     name?: string;
     dob?: string;
     pob?: string;
+    lat?: number;
+    lng?: number;
   };
 }
 
@@ -36,8 +38,8 @@ export const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({
     name: initialData?.name || '',
     dob: initialData?.dob || '',
     pob: initialData?.pob || '',
-    lat: undefined as number | undefined,
-    lng: undefined as number | undefined,
+    lat: initialData?.lat,
+    lng: initialData?.lng,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -175,4 +177,3 @@ export const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({
     </motion.form>
   );
 };
-

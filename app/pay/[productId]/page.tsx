@@ -100,11 +100,12 @@ export default function PaymentPage() {
               }),
             })
 
-            if (!verifyRes.ok) {
-              throw new Error('Payment verification failed')
+            if (verifyRes.ok) {
+              router.push(`/thanks?payment=success&product=${productId}`)
+            } else {
+              const data = await verifyRes.json().catch(() => ({}))
+              throw new Error(data.error || 'Payment verification failed')
             }
-
-            router.push('/thanks?payment=success')
           } catch (err: any) {
             console.error('Payment verification error:', err)
             setError('Payment verification failed. Please contact support.')

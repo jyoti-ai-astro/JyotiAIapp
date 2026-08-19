@@ -12,9 +12,9 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { JyotiComponentProps } from './types';
 
-export interface BadgeProps extends JyotiComponentProps, React.HTMLAttributes<HTMLSpanElement> {
+export interface BadgeProps extends Omit<JyotiComponentProps, 'variant' | 'size' | 'motion'>, Omit<React.HTMLAttributes<HTMLSpanElement>, 'onAnimationStart'> {
   /** Badge variant */
-  variant?: 'premium' | 'guru' | 'verified' | 'chakra' | 'default' | 'success' | 'warning' | 'error' | 'info';
+  variant?: 'premium' | 'guru' | 'verified' | 'chakra' | 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline' | 'secondary' | 'destructive';
   
   /** Badge size */
   size?: 'sm' | 'md' | 'lg';
@@ -69,6 +69,22 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
         'bg-white/10',
         'border border-white/20',
         'text-white/80'
+      ),
+      outline: cn(
+        'bg-transparent',
+        'border border-white/20',
+        'text-white/80'
+      ),
+      secondary: cn(
+        'bg-white/10',
+        'border border-white/10',
+        'text-white/80'
+      ),
+      destructive: cn(
+        'bg-[#e85555]/20',
+        'border border-[#e85555]/40',
+        'text-[#e85555]',
+        'shadow-[0_0_8px_rgba(232,85,85,0.3)]'
       ),
       success: cn(
         'bg-[#42d87c]/20',

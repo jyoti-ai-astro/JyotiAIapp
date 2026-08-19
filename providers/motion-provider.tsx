@@ -7,4 +7,6 @@
  */
 
 // Placeholder for motion provider implementation
+export const MotionProvider = ({ children }: { children?: React.ReactNode }) => children;
+
 

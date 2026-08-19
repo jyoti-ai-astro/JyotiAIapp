@@ -13,7 +13,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { JyotiComponentProps } from './types';
 
-export interface IconProps extends Omit<JyotiComponentProps, 'motion'>, React.SVGProps<SVGSVGElement> {
+export interface IconProps extends Omit<JyotiComponentProps, 'motion' | 'variant' | 'size'>, Omit<React.SVGProps<SVGSVGElement>, 'onAnimationStart'> {
   /** Icon variant */
   variant?: 'default' | 'astro' | 'chakra' | 'planet' | 'element' | 'festival' | 'arrow' | 'mandala' | 'rune';
   

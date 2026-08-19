@@ -84,6 +84,14 @@ export const CosmicDashboard: React.FC<CosmicDashboardProps> = ({
 }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  const formatNakshatra = (value?: { nakshatra?: string; pada?: number } | string | null) => {
+    if (!value) return '—';
+    if (typeof value === 'string') return value;
+    const name = value.nakshatra || value.name || '';
+    const pada = value.pada ? ` (Pada ${value.pada})` : '';
+    return name ? `${name}${pada}` : '—';
+  };
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -299,7 +307,9 @@ export const CosmicDashboard: React.FC<CosmicDashboardProps> = ({
             <CardContent className="pt-6 text-center">
               <div className="text-2xl mb-2">⭐</div>
               <p className="text-xs text-aura-green mb-1">Nakshatra</p>
-              <p className="text-lg font-semibold text-white">{data.quickInfo.nakshatra}</p>
+              <p className="text-lg font-semibold text-white">
+                {formatNakshatra(data.quickInfo.nakshatra as any)}
+              </p>
             </CardContent>
           </Card>
 
@@ -410,4 +420,3 @@ export const CosmicDashboard: React.FC<CosmicDashboardProps> = ({
     </div>
   );
 };
-

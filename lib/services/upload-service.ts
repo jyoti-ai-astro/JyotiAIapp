@@ -1,11 +1,12 @@
 /**
  * Unified Upload Service
  * Part B - Section 4: Milestone 4 - Step 4
- * 
+ *
  * Handles image uploads for palm, face, aura scans
  */
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { getStorage as getAdminStorage } from 'firebase-admin/storage'
 import { storage } from '@/lib/firebase/config'
 
 export interface UploadResult {
@@ -27,6 +28,9 @@ export interface UploadOptions {
  * Compress image in browser (client-side)
  */
 export async function compressImage(file: File, maxWidth: number = 1200, quality: number = 0.7): Promise<Blob> {
+  if (typeof window === 'undefined') {
+    throw new Error('compressImage is client-only')
+  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     
@@ -106,8 +110,12 @@ export function validateImage(file: File): { valid: boolean; error?: string } {
  * Upload image to Firebase Storage
  */
 export async function uploadImage(options: UploadOptions): Promise<UploadResult> {
+  if (typeof window === 'undefined') {
+    throw new Error('uploadImage is client-only. Use uploadImageServer in server routes.')
+  }
+
   const { userId, file, category, subcategory } = options
-  
+
   // Validate file
   const validation = validateImage(file)
   if (!validation.valid) {
@@ -162,4 +170,52 @@ export async function uploadMultipleImages(
   )
   
   return Promise.all(uploadPromises)
+}
+
+/**
+ * Server-side upload using Firebase Admin Storage (for API routes)
+ */
+export async function uploadImageServer(
+  file: File,
+  userId: string,
+  type: 'palm-left' | 'palm-right' | 'face' | 'aura'
+): Promise<UploadResult> {
+  // Validate file
+  const validation = validateImage(file)
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Invalid image file')
+  }
+
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+  const contentType = file.type || 'application/octet-stream'
+  const extension = file.name?.split('.').pop() || 'jpg'
+  const timestamp = Date.now()
+
+  const storagePath = `user_uploads/${userId}/${type}-${timestamp}.${extension}`
+
+  const adminStorage = getAdminStorage()
+  const bucket = adminStorage.bucket()
+  const fileRef = bucket.file(storagePath)
+
+  await fileRef.save(buffer, {
+    contentType,
+    resumable: false,
+    metadata: {
+      contentType,
+    },
+  })
+
+  const [signedUrl] = await fileRef.getSignedUrl({
+    action: 'read',
+    expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // 7 days
+  })
+
+  return {
+    url: signedUrl,
+    path: storagePath,
+    size: buffer.length,
+    type: contentType,
+    uploadedAt: new Date(),
+  }
 }
