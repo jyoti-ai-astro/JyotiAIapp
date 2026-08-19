@@ -64,7 +64,7 @@ export class CosmicChromaticPass extends Effect {
 
     super('CosmicChromaticPass', cosmicChromaticShader.fragmentShader, {
       blendFunction: BlendFunction.NORMAL,
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uIntensity', intensityUniform],
         ['uBass', bassUniform],
@@ -173,4 +173,3 @@ export class CosmicChromaticPass extends Effect {
     }
   }
 }
-

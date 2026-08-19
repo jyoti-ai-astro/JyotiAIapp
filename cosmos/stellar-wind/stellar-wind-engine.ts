@@ -44,7 +44,7 @@ export class StellarWindEngine {
   private config: StellarWindEngineConfig;
   
   private windSheets: WindSheetData[] = [];
-  private ribbonPlane: RibbonPlaneData;
+  private ribbonPlane!: RibbonPlaneData;
   private dustParticles: DustParticleData[] = [];
   
   private numParticles: number;
@@ -431,4 +431,3 @@ export class StellarWindEngine {
     this.material.dispose();
   }
 }
-

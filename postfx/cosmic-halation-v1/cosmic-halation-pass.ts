@@ -64,7 +64,7 @@ export class CosmicHalationPass extends Effect {
 
     super('CosmicHalationPass', cosmicHalationShader.fragmentShader, {
       blendFunction: BlendFunction.SCREEN, // Additive blending for halation
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uIntensity', intensityUniform],
         ['uHalationIntensity', halationIntensityUniform],
@@ -173,4 +173,3 @@ export class CosmicHalationPass extends Effect {
     }
   }
 }
-

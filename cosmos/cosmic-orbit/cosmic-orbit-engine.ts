@@ -47,7 +47,7 @@ export class CosmicOrbitEngine {
   
   private orbitRings: OrbitRingData[] = [];
   private satellites: SatelliteData[] = [];
-  private core: CoreData;
+  private core!: CoreData;
   
   private numRings: number;
   private numSatellites: number;
@@ -456,4 +456,3 @@ export class CosmicOrbitEngine {
     this.material.dispose();
   }
 }
-

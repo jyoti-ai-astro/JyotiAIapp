@@ -64,7 +64,7 @@ export class CosmicGlarePass extends Effect {
 
     super('CosmicGlarePass', cosmicGlareShader.fragmentShader, {
       blendFunction: BlendFunction.SCREEN, // Additive blending for glare
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uIntensity', intensityUniform],
         ['uBass', bassUniform],
@@ -173,4 +173,3 @@ export class CosmicGlarePass extends Effect {
     }
   }
 }
-

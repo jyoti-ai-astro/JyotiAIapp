@@ -44,7 +44,7 @@ export class ChakraPulseEngine {
   
   private chakras: ChakraData[] = [];
   private pulseRings: PulseRingData[] = [];
-  private spine: SpineData;
+  private spine!: SpineData;
   
   private breathPhase: number = 0;
   private breathStrength: number = 0;
@@ -455,4 +455,3 @@ export class ChakraPulseEngine {
     this.material.dispose();
   }
 }
-
