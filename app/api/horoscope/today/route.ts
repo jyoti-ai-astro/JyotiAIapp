@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { generateDailyHoroscope } from '@/lib/engines/horoscope/daily-horoscope'
 import { logEvent } from '@/lib/logging/log-event'
+import { getAIErrorStatus } from '@/lib/ai/provider-errors'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,8 +13,8 @@ export const dynamic = 'force-dynamic'
  *
  * Design:
  * - Auth + Firestore failures still return proper error codes.
- * - Horoscope engine failures fall back to a safe canned message
- *   but STILL return success: true so the UI can always render something.
+ * - Personalized horoscope requires the canonical, current Kundali.
+ * - AI failures return explicit retryable error semantics.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -39,80 +40,108 @@ export async function GET(request: NextRequest) {
     }
 
     const userData = userSnap.data()
-    const rashi = userData?.rashi
-
-    if (!rashi) {
+    if (userData?.derivedAstrologyStatus === 'stale') {
       return NextResponse.json(
-        { error: 'Rashi not found. Please complete onboarding.' },
-        { status: 400 }
+        {
+          success: false,
+          error: 'KUNDALI_STALE',
+          message: 'Your birth details changed. Regenerate your Kundali before requesting a personalized horoscope.',
+        },
+        { status: 409 }
       )
     }
 
-    // Get Kundali for additional signs (non-fatal)
-    let moonSign: string | undefined = rashi
-    let sunSign: string | undefined = undefined
-    let ascendant: string | undefined = undefined
+    const kundaliRef = adminDb.collection('kundali').doc(uid)
+    const [kundaliSnap, D1Snap] = await Promise.all([
+      kundaliRef.get(),
+      kundaliRef.collection('D1').doc('chart').get(),
+    ])
 
-    try {
-      const kundaliRef = adminDb.collection('kundali').doc(uid)
-      const kundaliSnap = await kundaliRef.get()
-
-      if (kundaliSnap.exists) {
-        const D1Snap = await kundaliRef.collection('D1').doc('chart').get()
-        if (D1Snap.exists) {
-          const D1Data = D1Snap.data()
-          moonSign = D1Data?.grahas?.moon?.sign || rashi
-          sunSign = D1Data?.grahas?.sun?.sign
-          ascendant = D1Data?.lagna?.sign
-        }
-      }
-    } catch (kundaliError: any) {
-      console.warn('Horoscope: failed to read Kundali chart, falling back to rashi only:', kundaliError)
-      // Non-fatal – we can still generate using rashi alone.
+    if (!kundaliSnap.exists || kundaliSnap.data()?.meta?.stale === true) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'KUNDALI_REQUIRED',
+          message: 'Generate your Kundali before requesting a personalized horoscope.',
+        },
+        { status: 409 }
+      )
     }
 
-    // Generate horoscope with graceful fallback
-    let horoscopeText =
-      'Horoscope engine is warming up. Try again later — dev mode fallback.'
-    let mode: 'live' | 'fallback' = 'fallback'
+    if (!D1Snap.exists) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'KUNDALI_INCOMPLETE',
+          message: 'Your Kundali is incomplete. Regenerate it before requesting a personalized horoscope.',
+        },
+        { status: 409 }
+      )
+    }
+
+    const D1Data = D1Snap.data()
+    const moonSign = D1Data?.grahas?.moon?.sign
+    const sunSign = D1Data?.grahas?.sun?.sign
+    const ascendant = D1Data?.lagna?.sign
+    const rashiPreference = userData?.rashiPreferred || 'moon'
+    const rashi =
+      rashiPreference === 'sun'
+        ? sunSign
+        : rashiPreference === 'ascendant'
+          ? ascendant
+          : moonSign
+
+    if (!rashi || !moonSign) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'KUNDALI_INCOMPLETE',
+          message: 'Your Kundali is missing required sign data. Regenerate it before requesting a personalized horoscope.',
+        },
+        { status: 409 }
+      )
+    }
 
     try {
       const generated = await generateDailyHoroscope(rashi, moonSign, sunSign, ascendant)
-      if (generated && typeof generated === 'string') {
-        horoscopeText = generated
-        mode = 'live'
-      }
+      return NextResponse.json({
+        success: true,
+        mode: 'live',
+        horoscope: generated,
+      })
     } catch (engineError: any) {
       console.error('Daily horoscope generation error:', engineError)
-      // Log but do not break the API contract
       try {
         await logEvent(
           'horoscope.error',
           {
             endpoint: '/api/horoscope/today',
-            error: engineError?.message || 'Unknown error',
+            errorCode: engineError?.code || 'UNKNOWN',
           },
           uid
         )
       } catch (logErr) {
         console.error('Failed to log horoscope error:', logErr)
       }
-    }
 
-    return NextResponse.json({
-      success: true,
-      mode,
-      horoscope: horoscopeText,
-    })
+      return NextResponse.json(
+        {
+          success: false,
+          error: engineError?.code || 'HOROSCOPE_GENERATION_FAILED',
+          message: engineError?.clientMessage || 'Daily horoscope generation is temporarily unavailable. Please retry.',
+        },
+        { status: getAIErrorStatus(engineError) }
+      )
+    }
   } catch (error: any) {
     console.error('Get horoscope error (outer):', error)
     return NextResponse.json(
       {
         success: false,
-        horoscope:
-          'Horoscope engine is warming up. Try again later — dev mode fallback.',
+        error: 'HOROSCOPE_UNAVAILABLE',
+        message: 'Daily horoscope is temporarily unavailable. Please retry.',
       },
-      { status: 200 }
+      { status: 500 }
     )
   }
 }
