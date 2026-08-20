@@ -15,7 +15,6 @@ import {
   Settings,
   Sparkles,
   User,
-  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/store/user-store';
@@ -30,9 +29,7 @@ const primaryNav = [
 
 const secondaryNav = [
   { href: '/timeline', label: 'Timeline', icon: ScrollText },
-  { href: '/compatibility', label: 'Compatibility', icon: Users },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/numerology', label: 'Numerology', icon: MoonStar },
   { href: '/rituals', label: 'Rituals', icon: Sparkles },
   { href: '/profile', label: 'Profile', icon: User },
   { href: '/settings', label: 'Settings', icon: Settings },

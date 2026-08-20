@@ -806,10 +806,7 @@ function PlanUsage({ tickets }: { tickets: RequestState<TicketSummary> }) {
 
 function MoreInsights({ festival }: { festival: any }) {
   const groups = [
-    { title: 'Life', links: [['Career', '/career'], ['Business', '/business']] },
-    { title: 'Relationships', links: [['Compatibility', '/compatibility']] },
     { title: 'Spiritual', links: [['Rituals', '/rituals'], ['Calendar', '/calendar']] },
-    { title: 'Self-discovery', links: [['Numerology', '/numerology'], ['Palmistry', '/palmistry'], ['Aura', '/aura']] },
   ]
   return (
     <Card>
@@ -838,6 +835,16 @@ function MoreInsights({ festival }: { festival: any }) {
               </div>
             </div>
           ))}
+          <div>
+            <p className="text-sm font-semibold text-primary">Coming later</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {['Career', 'Business', 'Compatibility', 'Numerology', 'Palmistry', 'Aura', 'Face'].map((label) => (
+                <Badge key={label} variant="secondary">
+                  {label}
+                </Badge>
+              ))}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

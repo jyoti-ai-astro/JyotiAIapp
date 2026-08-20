@@ -3,12 +3,16 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import {
+  formatAstrologyDisplayValue,
+  nullableAstrologyDisplay,
+} from '@/lib/astrology/display-formatters'
 
 export type KundaliGraha = {
-  planet?: string
-  sign?: string
+  planet?: unknown
+  sign?: unknown
   house?: number
-  nakshatra?: string
+  nakshatra?: unknown
   pada?: number
   longitude?: number
   degreesInSign?: number
@@ -17,14 +21,14 @@ export type KundaliGraha = {
 
 export type KundaliBhava = {
   houseNumber?: number
-  sign?: string
-  planets?: string[]
+  sign?: unknown
+  planets?: unknown[]
   cuspLongitude?: number
 }
 
 type ChartHouse = {
   houseNumber: number
-  sign?: string
+  sign?: string | null
   planets: KundaliGraha[]
 }
 
@@ -46,7 +50,7 @@ function buildHouses(grahas: Record<string, KundaliGraha>, bhavas: Record<string
     const bhava = Object.values(bhavas).find((item) => Number(item?.houseNumber) === houseNumber)
     byHouse.set(houseNumber, {
       houseNumber,
-      sign: bhava?.sign,
+      sign: nullableAstrologyDisplay(bhava?.sign) || null,
       planets: [],
     })
   }
@@ -58,9 +62,11 @@ function buildHouses(grahas: Record<string, KundaliGraha>, bhavas: Record<string
     if (!house) return
     house.planets.push({
       ...graha,
-      planet: graha.planet || key,
+      planet: formatAstrologyDisplayValue(graha.planet, key),
+      sign: nullableAstrologyDisplay(graha.sign) || undefined,
     })
-    if (!house.sign && graha.sign) house.sign = graha.sign
+    const sign = nullableAstrologyDisplay(graha.sign)
+    if (!house.sign && sign) house.sign = sign
   })
 
   return byHouse
@@ -154,14 +160,14 @@ export function KundaliChart2D({
                           planet.retrograde && 'border-warning/35 bg-warning/10'
                         )}
                         title={[
-                          planet.sign,
+                          formatAstrologyDisplayValue(planet.sign, ''),
                           formatDegree(planet.degreesInSign),
                           planet.retrograde ? 'retrograde' : null,
                         ]
                           .filter(Boolean)
                           .join(' · ')}
                       >
-                        {planet.planet}
+                        {formatAstrologyDisplayValue(planet.planet, 'Planet')}
                         {planet.retrograde ? ' Rx' : ''}
                       </span>
                     ))
@@ -180,7 +186,7 @@ export function KundaliChart2D({
               House {house.houseNumber}
               {house.sign ? ` in ${house.sign}` : ''}:{' '}
               {house.planets.length
-                ? house.planets.map((planet) => planet.planet).join(', ')
+                ? house.planets.map((planet) => formatAstrologyDisplayValue(planet.planet, 'Planet')).join(', ')
                 : 'no planets'}
             </p>
           ))}

@@ -1,5 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import {
+  nullableAstrologyDisplay,
+  nullableNakshatraDisplay,
+} from '@/lib/astrology/display-formatters'
 
 export type SubscriptionTier = 'free' | 'starter' | 'advanced' | 'supreme'
 
@@ -52,10 +56,19 @@ interface UserState {
   updateUser: (updates: Partial<User>) => void
   clearUser: () => void
   decrementLocalTicket: (type: 'ai_questions' | 'kundali_basic') => void
-  // Smart function to consume a credit
-  consumeGuruCredit: () => void
   // Helper to check if user can chat
   canChat: () => boolean
+}
+
+function normalizeClientUser(user: User): User {
+  return {
+    ...user,
+    rashi: nullableAstrologyDisplay(user.rashi),
+    rashiMoon: nullableAstrologyDisplay(user.rashiMoon) || undefined,
+    rashiSun: nullableAstrologyDisplay(user.rashiSun) || undefined,
+    ascendant: nullableAstrologyDisplay(user.ascendant) || undefined,
+    nakshatra: nullableNakshatraDisplay(user.nakshatra),
+  }
 }
 
 export const useUserStore = create<UserState>()(
@@ -85,11 +98,14 @@ export const useUserStore = create<UserState>()(
         if (user && !user.dailyUsage) {
           user.dailyUsage = { count: 0, date: new Date().toISOString().split('T')[0] }
         }
+        if (user) {
+          user = normalizeClientUser(user)
+        }
         set({ user })
       },
       updateUser: (updates) =>
         set((state) => ({
-          user: state.user ? { ...state.user, ...updates } : null,
+          user: state.user ? normalizeClientUser({ ...state.user, ...updates }) : null,
         })),
       clearUser: () => set({ user: null }),
       decrementLocalTicket: (type) =>
@@ -106,36 +122,6 @@ export const useUserStore = create<UserState>()(
               },
             },
           }
-        }),
-      consumeGuruCredit: () =>
-        set((state) => {
-          if (!state.user) return {}
-
-          const today = new Date().toISOString().split('T')[0]
-
-          // 1. Priority: If Unlimited, do nothing (or just track stats)
-          if (['advanced', 'supreme'].includes(state.user.subscription)) {
-            return {}
-          }
-
-          // 2. Priority: Use Tickets (Quick/Deep packs)
-          if (state.user.tickets > 0) {
-            return { user: { ...state.user, tickets: state.user.tickets - 1 } }
-          }
-
-          // 3. Priority: Daily Quota (Starter)
-          if (state.user.subscription === 'starter') {
-            const isNewDay = state.user.dailyUsage?.date !== today
-            const newCount = isNewDay ? 1 : (state.user.dailyUsage?.count || 0) + 1
-            return {
-              user: {
-                ...state.user,
-                dailyUsage: { count: newCount, date: today },
-              },
-            }
-          }
-
-          return {}
         }),
       canChat: () => {
         const { user } = get()

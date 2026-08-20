@@ -24,6 +24,12 @@ import { KundaliChart2D, type KundaliBhava, type KundaliGraha } from '@/componen
 import { KundaliWheel3D } from '@/components/organisms/kundali-wheel-3d'
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 import { useTicketAccess } from '@/lib/access/useTicketAccess'
+import {
+  formatAstrologyDisplayValue,
+  formatNakshatraDisplay,
+  nullableAstrologyDisplay,
+  nullableNakshatraDisplay,
+} from '@/lib/astrology/display-formatters'
 import { useUserStore } from '@/store/user-store'
 
 type DashaPeriod = {
@@ -78,8 +84,20 @@ function formatDegree(value?: number) {
   return typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(2)}°` : 'Not available'
 }
 
-function firstValue(...values: Array<string | null | undefined>) {
-  return values.find((value) => value && value !== 'Unknown') || null
+function firstValue(...values: unknown[]) {
+  for (const value of values) {
+    const formatted = nullableAstrologyDisplay(value)
+    if (formatted) return formatted
+  }
+  return null
+}
+
+function firstNakshatraValue(...values: unknown[]) {
+  for (const value of values) {
+    const formatted = nullableNakshatraDisplay(value)
+    if (formatted) return formatted
+  }
+  return null
 }
 
 function getPlanetsByHouse(grahas: Record<string, KundaliGraha>, houseNumber?: number) {
@@ -154,18 +172,18 @@ export default function KundaliPage() {
     () => ({
       lagna: firstValue(lagna?.sign, user?.ascendant),
       rashi: firstValue(user?.rashiMoon, user?.rashi, grahas.Moon?.sign, grahas.Chandra?.sign),
-      nakshatra: firstValue(user?.nakshatra, grahas.Moon?.nakshatra, grahas.Chandra?.nakshatra, lagna?.nakshatra),
-      mahadasha: dasha?.currentMahadasha?.planet || null,
-      antardasha: dasha?.currentAntardasha?.planet || null,
-      birthPlace: user?.pob || kundali?.meta?.birthDetails?.pob || null,
+      nakshatra: firstNakshatraValue(user?.nakshatra, grahas.Moon?.nakshatra, grahas.Chandra?.nakshatra, lagna?.nakshatra),
+      mahadasha: firstValue(dasha?.currentMahadasha?.planet),
+      antardasha: firstValue(dasha?.currentAntardasha?.planet),
+      birthPlace: firstValue(user?.pob, kundali?.meta?.birthDetails?.pob),
     }),
     [dasha, grahas, kundali?.meta?.birthDetails?.pob, lagna, user]
   )
 
   const grahaPositions = Object.entries(grahas).map(([planetName, graha]) => ({
-    planet: graha.planet || planetName,
+    planet: formatAstrologyDisplayValue(graha.planet, planetName),
     degrees: graha.degreesInSign || 0,
-    sign: graha.sign || 'Unknown',
+    sign: formatAstrologyDisplayValue(graha.sign, 'Unknown'),
     house: graha.house || 0,
     longitude: graha.longitude || 0,
     latitude: 0,
@@ -562,8 +580,10 @@ function DashaCard({ dasha }: { dasha: KundaliData['dasha'] }) {
       </CardHeader>
       <CardContent className="space-y-5">
         <p className="text-base leading-7 text-primary">
-          You are currently in the {mahadasha?.planet || 'available'} Mahadasha
-          {antardasha?.planet ? `, with ${antardasha.planet} Antardasha active.` : '.'}
+          You are currently in the {formatAstrologyDisplayValue(mahadasha?.planet, 'available')} Mahadasha
+          {nullableAstrologyDisplay(antardasha?.planet)
+            ? `, with ${formatAstrologyDisplayValue(antardasha?.planet)} Antardasha active.`
+            : '.'}
         </p>
         <div className="grid gap-4 md:grid-cols-3">
           <DashaPeriodCard label="Mahadasha" period={mahadasha} />
@@ -579,7 +599,9 @@ function DashaPeriodCard({ label, period }: { label: string; period?: DashaPerio
   return (
     <div className="rounded-lg border border-border bg-surface-raised p-4">
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 font-heading text-xl font-semibold text-primary">{period?.planet || 'Not available'}</p>
+      <p className="mt-1 font-heading text-xl font-semibold text-primary">
+        {formatAstrologyDisplayValue(period?.planet)}
+      </p>
       <p className="mt-2 text-xs text-muted-foreground">
         {formatDate(period?.startDate)} - {formatDate(period?.endDate)}
       </p>
@@ -601,11 +623,11 @@ function PlanetSummary({ grahas }: { grahas: Record<string, KundaliGraha> }) {
           planets.map(([key, graha]) => (
             <div key={key} className="flex items-start justify-between gap-4 border-b border-border/70 pb-3 last:border-0">
               <div>
-                <p className="font-medium text-primary">{graha.planet || key}</p>
+                <p className="font-medium text-primary">{formatAstrologyDisplayValue(graha.planet, key)}</p>
                 <p className="text-sm text-muted-foreground">
-                  {graha.sign || 'Unknown sign'}
+                  {formatAstrologyDisplayValue(graha.sign, 'Unknown sign')}
                   {graha.house ? `, House ${graha.house}` : ''}
-                  {graha.nakshatra ? `, ${graha.nakshatra}` : ''}
+                  {nullableNakshatraDisplay(graha.nakshatra) ? `, ${formatNakshatraDisplay(graha.nakshatra)}` : ''}
                 </p>
               </div>
               {graha.retrograde && <Badge variant="warning">Retrograde</Badge>}
@@ -643,10 +665,14 @@ function HouseSummary({
               <div key={bhava.houseNumber} className="rounded-lg border border-border bg-secondary/40 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-medium text-primary">House {bhava.houseNumber}</p>
-                  {bhava.sign && <Badge variant="outline">{bhava.sign}</Badge>}
+                  {nullableAstrologyDisplay(bhava.sign) && (
+                    <Badge variant="outline">{formatAstrologyDisplayValue(bhava.sign)}</Badge>
+                  )}
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {planets.length ? planets.map((planet) => planet.planet).join(', ') : 'No planets recorded'}
+                  {planets.length
+                    ? planets.map((planet) => formatAstrologyDisplayValue(planet.planet, 'Planet')).join(', ')
+                    : 'No planets recorded'}
                 </p>
               </div>
             )
@@ -692,11 +718,11 @@ function AdvancedDetails({ kundali }: { kundali: KundaliData }) {
                 <tbody>
                   {grahas.map(([key, graha]) => (
                     <tr key={key} className="border-b border-border/70">
-                      <td className="p-2 font-medium text-primary">{graha.planet || key}</td>
-                      <td className="p-2">{graha.sign || '-'}</td>
+                      <td className="p-2 font-medium text-primary">{formatAstrologyDisplayValue(graha.planet, key)}</td>
+                      <td className="p-2">{formatAstrologyDisplayValue(graha.sign, '-')}</td>
                       <td className="p-2">{graha.house || '-'}</td>
-                      <td className="p-2">{graha.nakshatra || '-'}</td>
-                      <td className="p-2">{graha.pada || '-'}</td>
+                      <td className="p-2">{formatNakshatraDisplay(graha.nakshatra, '-')}</td>
+                      <td className="p-2">{formatAstrologyDisplayValue(graha.pada, '-')}</td>
                       <td className="p-2">{formatDegree(graha.longitude)}</td>
                       <td className="p-2">{formatDegree(graha.degreesInSign)}</td>
                       <td className="p-2">{graha.retrograde ? 'Yes' : 'No'}</td>
@@ -709,7 +735,7 @@ function AdvancedDetails({ kundali }: { kundali: KundaliData }) {
               {bhavas.map((bhava) => (
                 <div key={bhava.houseNumber} className="rounded-lg border border-border p-3 text-sm">
                   <p className="font-medium text-primary">House {bhava.houseNumber}</p>
-                  <p className="text-muted-foreground">Sign: {bhava.sign || '-'}</p>
+                  <p className="text-muted-foreground">Sign: {formatAstrologyDisplayValue(bhava.sign, '-')}</p>
                   <p className="text-muted-foreground">Cusp: {formatDegree(bhava.cuspLongitude)}</p>
                 </div>
               ))}
@@ -719,7 +745,7 @@ function AdvancedDetails({ kundali }: { kundali: KundaliData }) {
                 <p className="font-medium text-primary">Aspects</p>
                 {aspects.map((aspect, index) => (
                   <div key={`${aspect.fromPlanet}-${aspect.toPlanet}-${index}`} className="rounded-lg border border-border p-3 text-sm">
-                    {aspect.fromPlanet || '-'} to {aspect.toPlanet || '-'} · {aspect.type || '-'} · {formatDegree(aspect.angle)}
+                    {formatAstrologyDisplayValue(aspect.fromPlanet, '-')} to {formatAstrologyDisplayValue(aspect.toPlanet, '-')} · {formatAstrologyDisplayValue(aspect.type, '-')} · {formatDegree(aspect.angle)}
                   </div>
                 ))}
               </div>

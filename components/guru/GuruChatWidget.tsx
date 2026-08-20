@@ -31,7 +31,7 @@ export const GuruChatWidget = () => {
   // UI State: 'guest' | 'chat' | 'blocked'
   const [viewState, setViewState] = useState<'guest' | 'chat' | 'blocked'>('guest')
 
-  const { user, canChat, consumeGuruCredit } = useUserStore()
+  const { user, canChat, updateUser } = useUserStore()
   const router = useRouter()
   const { messages, sendMessage, isLoading, isTyping } = useGuruChat(
     user && viewState === 'chat' ? `session-${user.uid}` : undefined
@@ -80,10 +80,30 @@ export const GuruChatWidget = () => {
     if (canChat()) {
       const msg = input
       setInput('')
-      consumeGuruCredit() // Decrement ticket or daily count
-      await sendMessage(msg)
+      const success = await sendMessage(msg)
+      if (success) {
+        await refreshCanonicalTickets()
+      }
     } else {
       setViewState('blocked')
+    }
+  }
+
+  const refreshCanonicalTickets = async () => {
+    try {
+      const response = await fetch('/api/user/tickets', { credentials: 'include' })
+      if (!response.ok) return
+      const data = await response.json().catch(() => null)
+      if (!data?.tickets) return
+
+      updateUser({
+        tickets: data.tickets.aiGuruTickets || 0,
+        aiGuruTickets: data.tickets.aiGuruTickets || 0,
+        kundaliTickets: data.tickets.kundaliTickets || 0,
+        lifetimePredictions: data.tickets.lifetimePredictions || 0,
+      })
+    } catch (error) {
+      console.error('Guru widget ticket refresh failed:', error)
     }
   }
 

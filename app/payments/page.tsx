@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { CreditCard, RefreshCw } from 'lucide-react'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState, LoadingState, RetryButton } from '@/components/ui/feedback-state'
 import { getSubscriptionPlan, type SubscriptionPlanId } from '@/lib/pricing/plans'
+import { useUserStore } from '@/store/user-store'
 
 interface SubscriptionStatusResponse {
   active: boolean
@@ -19,12 +21,14 @@ interface SubscriptionStatusResponse {
 }
 
 export default function PaymentsPage() {
+  const router = useRouter()
+  const { user } = useUserStore()
   const [status, setStatus] = useState<SubscriptionStatusResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchStatus = async (refresh = false) => {
+  const fetchStatus = useCallback(async (refresh = false) => {
     try {
       refresh ? setRefreshing(true) : setLoading(true)
       setError(null)
@@ -46,11 +50,20 @@ export default function PaymentsPage() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
     fetchStatus()
-  }, [])
+  }, [fetchStatus, router, user])
+
+  if (!user) {
+    return null
+  }
 
   const plan = status?.planId ? getSubscriptionPlan(status.planId) : null
   const statusLabel = status?.status || 'none'

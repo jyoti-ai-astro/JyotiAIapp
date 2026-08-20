@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
+import {
+  nullableAstrologyDisplay,
+  nullableNakshatraDisplay,
+} from '@/lib/astrology/display-formatters'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,8 +83,8 @@ export async function POST(request: NextRequest) {
       dob: userData?.dob || null,
       tob: userData?.tob || null,
       pob: userData?.pob || null,
-      rashi: userData?.rashi || null,
-      nakshatra: userData?.nakshatra || null,
+      rashi: nullableAstrologyDisplay(userData?.rashi),
+      nakshatra: nullableNakshatraDisplay(userData?.nakshatra),
       subscription: normalizeSubscriptionTier(userData),
       subscriptionExpiry: userData?.subscriptionExpiry?.toDate?.()?.toISOString?.() ?? userData?.subscriptionExpiry ?? null,
       onboarded: userData?.onboarded || false,
@@ -98,4 +102,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
