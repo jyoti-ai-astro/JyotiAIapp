@@ -118,8 +118,8 @@ export default function ReportsPage() {
 
   return (
     <DashboardPageShell
-      title="Your Cosmic Reports"
-      subtitle="Download detailed PDF analysis of your destiny, karma, and life path"
+      title="Your Reports"
+      subtitle="Your saved Kundali, prediction, and timeline reports"
     >
         {/* Header Section */}
         <motion.div
@@ -127,12 +127,12 @@ export default function ReportsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center space-y-4 max-w-3xl mx-auto"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cosmic-purple/20 border border-cosmic-purple/40 text-gold text-sm mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F28C28]/10 border border-[#C9A24A]/30 text-[#8A5A16] text-sm mb-4">
             <Sparkles className="w-4 h-4" />
-            <span>Sacred Knowledge Vault</span>
+            <span>Personal Astrology Library</span>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-display font-bold bg-gradient-to-r from-white via-gold to-white bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-display font-semibold text-[#07131F]">
             Your Cosmic Reports
           </h1>
           {errorMessage && (
@@ -142,7 +142,7 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
           )}
-          <p className="text-lg text-white/60 font-light">
+          <p className="text-lg text-[#56666A]">
             Download detailed PDF analysis of your destiny, karma, and life path.
           </p>
         </motion.div>
@@ -150,21 +150,21 @@ export default function ReportsPage() {
         {/* Mega Build 3 - Report Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {/* Kundali Report Card */}
-          <Card className="bg-cosmic-indigo/40 border-white/10 hover:border-gold/30 transition-all backdrop-blur-xl">
+          <Card className="bg-[#FFFDF4] border-[#D8B56A]/35 hover:border-[#C9A24A]/65 transition-all shadow-sm">
             <CardHeader>
-              <CardTitle className="text-gold">Full Kundali Report</CardTitle>
-              <CardDescription className="text-white/60">
+              <CardTitle className="text-[#8A5A16]">Full Kundali Report</CardTitle>
+              <CardDescription className="text-[#56666A]">
                 Complete birth chart analysis with planetary positions, dasha periods, and life themes
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Badge className="mb-4 bg-gold/20 text-gold border-gold/50">
+              <Badge className="mb-4 bg-[#F28C28]/10 text-[#8A5A16] border-[#C9A24A]/35">
                 Included in Supreme Plan
               </Badge>
               <Button
                 onClick={() => handleGenerate('kundali')}
                 disabled={generating}
-                className="w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+                className="min-h-11 w-full bg-[#F28C28] text-[#07131F] border border-[#F28C28] hover:bg-[#E57E1D] font-semibold"
               >
                 {generating ? (
                   <>
@@ -182,21 +182,21 @@ export default function ReportsPage() {
           </Card>
 
           {/* Predictions Report Card */}
-          <Card className="bg-cosmic-indigo/40 border-white/10 hover:border-gold/30 transition-all backdrop-blur-xl">
+          <Card className="bg-[#FFFDF4] border-[#D8B56A]/35 hover:border-[#C9A24A]/65 transition-all shadow-sm">
             <CardHeader>
-              <CardTitle className="text-gold">12-Month Predictions</CardTitle>
-              <CardDescription className="text-white/60">
+              <CardTitle className="text-[#8A5A16]">12-Month Predictions</CardTitle>
+              <CardDescription className="text-[#56666A]">
                 Detailed forecasts for career, love, money, health, and spiritual growth
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Badge className="mb-4 bg-gold/20 text-gold border-gold/50">
+              <Badge className="mb-4 bg-[#F28C28]/10 text-[#8A5A16] border-[#C9A24A]/35">
                 Paid · ₹299
               </Badge>
               <Button
                 onClick={() => handleGenerate('predictions')}
                 disabled={generating}
-                className="w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+                className="min-h-11 w-full bg-[#F28C28] text-[#07131F] border border-[#F28C28] hover:bg-[#E57E1D] font-semibold"
               >
                 {generating ? (
                   <>
@@ -214,21 +214,21 @@ export default function ReportsPage() {
           </Card>
 
           {/* Timeline Report Card */}
-          <Card className="bg-cosmic-indigo/40 border-white/10 hover:border-gold/30 transition-all backdrop-blur-xl">
+          <Card className="bg-[#FFFDF4] border-[#D8B56A]/35 hover:border-[#C9A24A]/65 transition-all shadow-sm">
             <CardHeader>
-              <CardTitle className="text-gold">12-Month Timeline</CardTitle>
-              <CardDescription className="text-white/60">
+              <CardTitle className="text-[#8A5A16]">12-Month Timeline</CardTitle>
+              <CardDescription className="text-[#56666A]">
                 Month-by-month cosmic journey with themes, intensity, and focus areas
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Badge className="mb-4 bg-gold/20 text-gold border-gold/50">
+              <Badge className="mb-4 bg-[#F28C28]/10 text-[#8A5A16] border-[#C9A24A]/35">
                 Paid · ₹299
               </Badge>
               <Button
                 onClick={() => handleGenerate('timeline')}
                 disabled={generating}
-                className="w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+                className="min-h-11 w-full bg-[#F28C28] text-[#07131F] border border-[#F28C28] hover:bg-[#E57E1D] font-semibold"
               >
                 {generating ? (
                   <>
@@ -287,14 +287,14 @@ export default function ReportsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="group relative overflow-hidden bg-cosmic-indigo/40 border-white/10 hover:border-gold/30 transition-all duration-500 h-full backdrop-blur-xl">
+                  <Card className="group relative overflow-hidden bg-[#FFFDF4] border-[#D8B56A]/35 hover:border-[#C9A24A]/65 transition-all duration-300 h-full shadow-sm">
                     {/* Hover Glow Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-cosmic-purple/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#F28C28]/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                     {/* Report Image / Preview */}
-                    <div className="relative h-48 w-full bg-cosmic-navy/50 overflow-hidden">
+                    <div className="relative h-40 w-full bg-[#07131F] overflow-hidden">
                       {/* Fallback pattern if no image */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-cosmic-purple/20 via-cosmic-indigo/30 to-cosmic-navy/50 opacity-60 group-hover:scale-105 transition-transform duration-700" />
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(242,140,40,0.32),transparent_32%),radial-gradient(circle_at_75%_55%,rgba(47,125,126,0.22),transparent_30%),linear-gradient(135deg,#07131F,#0B1D2C)] opacity-100 group-hover:scale-105 transition-transform duration-700" />
 
                       <div className="absolute top-4 right-4">
                         <Badge
@@ -302,8 +302,8 @@ export default function ReportsPage() {
                           className={cn(
                             'backdrop-blur-md border-0',
                             report.type === 'kundali'
-                              ? 'bg-gold/20 text-gold'
-                              : 'bg-blue-500/20 text-blue-200'
+                              ? 'bg-[#F28C28]/20 text-[#FFF8E6]'
+                              : 'bg-[#2F7D7E]/25 text-[#E6FFFF]'
                           )}
                         >
                           {report.status === 'ready' ? report.type : report.status}
@@ -322,16 +322,16 @@ export default function ReportsPage() {
                     <div className="p-6 space-y-6 relative z-10">
                       <div className="space-y-2">
                         <div className="flex justify-between items-start">
-                          <h3 className="text-xl font-display font-semibold text-white group-hover:text-gold transition-colors">
+                          <h3 className="text-xl font-display font-semibold text-[#07131F] group-hover:text-[#8A5A16] transition-colors">
                             {report.title}
                           </h3>
                           {report.status === 'failed' ? (
-                            <Lock className="w-5 h-5 text-red-300" />
+                            <Lock className="w-5 h-5 text-[#C04A3A]" />
                           ) : (
-                            <FileText className="w-5 h-5 text-aura-cyan" />
+                            <FileText className="w-5 h-5 text-[#2F7D7E]" />
                           )}
                         </div>
-                        <p className="text-sm text-white/50">
+                        <p className="text-sm text-[#6B777A]">
                           {report.status === 'ready' ? 'Generated' : 'Requested'} on {formattedDate}
                         </p>
                         {report.outdated && (
@@ -340,7 +340,7 @@ export default function ReportsPage() {
                           </p>
                         )}
                         {report.status === 'failed' && (
-                          <p className="text-sm text-red-200">
+                          <p className="text-sm text-[#A33D31]">
                             {report.failureReason || 'Report generation failed'}
                           </p>
                         )}
@@ -351,7 +351,7 @@ export default function ReportsPage() {
                         {report.status === 'failed' ? (
                           <Button
                             onClick={() => handleGenerate(report.type)}
-                            className="min-h-11 w-full bg-gradient-to-r from-gold/80 to-gold text-cosmic-navy font-semibold hover:brightness-110"
+                            className="min-h-11 w-full bg-[#F28C28] text-[#07131F] font-semibold hover:bg-[#E57E1D]"
                           >
                             Retry
                           </Button>
@@ -362,14 +362,14 @@ export default function ReportsPage() {
                                 <Link href={`/reports/${report.reportId}`} className="flex-1">
                                   <Button
                                     variant="outline"
-                                    className="min-h-11 w-full border-white/10 hover:bg-white/5 text-white"
+                                    className="min-h-11 w-full border-[#D8B56A]/45 text-[#07131F] hover:bg-[#F5EAD0]"
                                   >
                                     <Eye className="w-4 h-4 mr-2" />
                                     View
                                   </Button>
                                 </Link>
                                 <a href={report.pdfUrl} download className="flex-1">
-                                  <Button className="min-h-11 w-full bg-cosmic-purple/80 hover:bg-cosmic-purple text-white">
+                                  <Button className="min-h-11 w-full bg-[#2F7D7E] hover:bg-[#286B6C] text-white">
                                     <Download className="w-4 h-4 mr-2" />
                                     PDF
                                   </Button>
@@ -378,7 +378,7 @@ export default function ReportsPage() {
                             ) : (
                               <Button
                                 variant="outline"
-                                className="w-full border-white/10 hover:bg-white/5 text-white"
+                                className="w-full border-[#D8B56A]/45 text-[#07131F] hover:bg-[#F5EAD0]"
                                 disabled
                               >
                                 {report.status === 'queued' ? 'Queued...' : 'Generating...'}
@@ -407,16 +407,16 @@ export default function ReportsPage() {
               >
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                   {generating ? (
-                    <RefreshCw className="w-8 h-8 text-gold animate-spin" />
+                    <RefreshCw className="w-8 h-8 text-[#F28C28] animate-spin" />
                   ) : (
-                    <Sparkles className="w-8 h-8 text-gold" />
+                    <Sparkles className="w-8 h-8 text-[#F28C28]" />
                   )}
                 </div>
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold text-white group-hover:text-gold">
+                  <h3 className="text-lg font-semibold text-[#07131F] group-hover:text-[#8A5A16]">
                     Generate New Report
                   </h3>
-                  <p className="text-sm text-white/50">Detailed Life & Destiny Analysis</p>
+                  <p className="text-sm text-[#6B777A]">Detailed Life & Destiny Analysis</p>
                 </div>
               </button>
             </motion.div>
