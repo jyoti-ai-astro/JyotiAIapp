@@ -34,7 +34,7 @@ type SummaryData = {
     name: string
     photo: string | null
     rashi: string | null
-    nakshatra: string | null
+    nakshatra: unknown
     lagna: string | null
     lagnaDetails: any
   }
@@ -138,8 +138,45 @@ function formatDate(date = new Date()) {
   }).format(date)
 }
 
-function firstValue(...values: Array<string | null | undefined>) {
-  return values.find((value) => value && value !== 'Unknown') || null
+function formatDisplayValue(value: unknown): string | null {
+  if (!value) return null
+  if (typeof value === 'string') return value === 'Unknown' ? null : value
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return null
+}
+
+function formatNakshatraForDisplay(value: unknown): string | null {
+  const direct = formatDisplayValue(value)
+  if (direct) return direct
+  if (!value || typeof value !== 'object') return null
+
+  const record = value as Record<string, unknown>
+  const name = formatDisplayValue(record.nakshatra) || formatDisplayValue(record.name) || formatDisplayValue(record.label)
+  if (!name) return null
+
+  const rawPada = record.pada
+  if (typeof rawPada === 'number' && Number.isFinite(rawPada) && rawPada > 0) {
+    return `${name} · Pada ${rawPada}`
+  }
+
+  const pada = formatDisplayValue(rawPada)
+  return pada && pada !== '0' ? `${name} · Pada ${pada}` : name
+}
+
+function firstDisplayValue(...values: unknown[]) {
+  for (const value of values) {
+    const formatted = formatDisplayValue(value)
+    if (formatted) return formatted
+  }
+  return null
+}
+
+function firstNakshatraValue(...values: unknown[]) {
+  for (const value of values) {
+    const formatted = formatNakshatraForDisplay(value)
+    if (formatted) return formatted
+  }
+  return null
 }
 
 function reportTypeLabel(type: string | null) {
@@ -353,9 +390,9 @@ export default function DashboardPage() {
         .join(' / ')
     : null
   const kundaliIdentity = {
-    rashi: firstValue(summary.data?.user.rashi, user.rashi, user.rashiMoon),
-    lagna: firstValue(summary.data?.user.lagna, user.ascendant),
-    nakshatra: firstValue(summary.data?.user.nakshatra, user.nakshatra),
+    rashi: firstDisplayValue(summary.data?.user.rashi, user.rashi, user.rashiMoon),
+    lagna: firstDisplayValue(summary.data?.user.lagna, user.ascendant),
+    nakshatra: firstNakshatraValue(summary.data?.user.nakshatra, user.nakshatra),
     mahadasha: summary.data?.dasha?.mahadasha?.planet || null,
     antardasha: summary.data?.dasha?.antardasha?.planet || null,
     place: user.pob || null,

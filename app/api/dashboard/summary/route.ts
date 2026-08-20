@@ -3,6 +3,34 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 
 export const dynamic = 'force-dynamic'
 
+function formatNakshatraForDisplay(value: any): string | null {
+  if (!value) return null
+  if (typeof value === 'string') return value
+  if (typeof value !== 'object') return null
+
+  const name =
+    typeof value.nakshatra === 'string'
+      ? value.nakshatra.trim()
+      : typeof value.name === 'string'
+        ? value.name.trim()
+        : typeof value.label === 'string'
+          ? value.label.trim()
+          : null
+
+  if (!name) return null
+
+  const pada = value.pada
+  if (typeof pada === 'number' && Number.isFinite(pada) && pada > 0) {
+    return `${name} · Pada ${pada}`
+  }
+
+  if (typeof pada === 'string' && pada.trim() && pada.trim() !== '0') {
+    return `${name} · Pada ${pada.trim()}`
+  }
+
+  return name
+}
+
 /**
  * Dashboard Summary API
  * Part B - Section 4: Milestone 3 - Step 1
@@ -80,7 +108,7 @@ export async function GET(request: NextRequest) {
       userData?.tob &&
       userData?.pob &&
       userData?.rashi &&
-      userData?.nakshatra
+      formatNakshatraForDisplay(userData?.nakshatra)
 
     return NextResponse.json({
       success: true,
@@ -88,7 +116,7 @@ export async function GET(request: NextRequest) {
         name: userData?.name || 'User',
         photo: userData?.photo || null,
         rashi: userData?.rashi || null,
-        nakshatra: userData?.nakshatra || null,
+        nakshatra: formatNakshatraForDisplay(userData?.nakshatra),
         lagna: lagna?.sign || null,
         lagnaDetails: lagna,
       },
