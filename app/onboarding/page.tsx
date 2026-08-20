@@ -28,6 +28,7 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [rashiData, setRashiData] = useState<RashiData | null>(null);
   const [selectedRashi, setSelectedRashi] = useState<'moon' | 'sun' | 'ascendant'>('moon');
 
@@ -89,7 +90,11 @@ export default function OnboardingPage() {
         nakshSrc.name ??
         nakshSrc.label ??
         nakshSrc.nakshatra ??
-        JSON.stringify(nakshSrc);
+        '';
+
+      if (nakshatra && nakshSrc.pada) {
+        nakshatra = `${nakshatra} · Pada ${nakshSrc.pada}`;
+      }
     }
 
     return {
@@ -103,6 +108,7 @@ export default function OnboardingPage() {
   // Step 1: Save birth details with geocoding
   const handleBirthDetailsSubmit = async () => {
     setLoading(true);
+    setErrorMessage(null);
 
     try {
       const response = await fetch('/api/onboarding/birth-details', {
@@ -123,28 +129,23 @@ export default function OnboardingPage() {
         throw new Error(error.error || 'Failed to save birth details');
       }
 
+      const data = await response.json().catch(() => ({}));
+
       // Update local store
       updateUser({
         dob: formData.dob,
         tob: formData.tob,
         pob: formData.pob,
-        lat: formData.lat,
-        lng: formData.lng,
+        lat: data.geocode?.lat ?? formData.lat,
+        lng: data.geocode?.lng ?? formData.lng,
+        timezone: data.geocode?.timezone,
       });
 
       // Calculate Rashi and move to Step 2
       await calculateRashi();
-
-      // Generate the first onboarding Kundali in the canonical Kundali store.
-      fetch('/api/kundali/generate-full', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ source: 'onboarding' }),
-      }).catch((err) => console.error('Kundali generation error:', err));
     } catch (error: any) {
       console.error('Birth details error:', error);
-      alert(error.message || 'Failed to save birth details');
+      setErrorMessage(error.message || 'Failed to save birth details');
     } finally {
       setLoading(false);
     }
@@ -170,13 +171,14 @@ export default function OnboardingPage() {
       setStep(2); // Move to Rashi confirmation step
     } catch (error: any) {
       console.error('Rashi calculation error:', error);
-      alert(error.message || 'Failed to calculate Rashi. Please try again.');
+      setErrorMessage(error.message || 'Failed to calculate Rashi. Please try again.');
     }
   };
 
   // Step 2: Confirm Rashi selection
   const handleRashiConfirm = async () => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const response = await fetch('/api/onboarding/confirm-rashi', {
         method: 'POST',
@@ -200,7 +202,7 @@ export default function OnboardingPage() {
       setStep(3); // Move to numerology / completion step
     } catch (error: any) {
       console.error('Rashi confirmation error:', error);
-      alert(error.message || 'Failed to confirm Rashi. Please try again.');
+      setErrorMessage(error.message || 'Failed to confirm Rashi. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -209,6 +211,7 @@ export default function OnboardingPage() {
   // Step 3: Complete onboarding
   const handleComplete = async () => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const kundaliResponse = await fetch('/api/kundali/generate-full', {
         method: 'POST',
@@ -243,7 +246,7 @@ export default function OnboardingPage() {
       router.push('/dashboard');
     } catch (error: any) {
       console.error('Onboarding completion error:', error);
-      alert(error.message || 'Failed to complete onboarding. Please try again.');
+      setErrorMessage(error.message || 'Failed to complete onboarding. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -262,6 +265,7 @@ export default function OnboardingPage() {
       onRashiBack={() => setStep(1)}
       onComplete={handleComplete}
       loading={loading}
+      errorMessage={errorMessage}
     />
   );
 }

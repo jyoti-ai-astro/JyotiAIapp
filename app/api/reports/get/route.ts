@@ -11,6 +11,26 @@ function toIso(value: any): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 
+function toDate(value: any): Date | null {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value?.toDate === 'function') return value.toDate()
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function getStaleStatus(data: any, birthDetailsUpdatedAt: Date | null, derivedAstrologyStatus?: string) {
+  const generatedAt = toDate(data?.generatedAt ?? data?.metadata?.generatedAt)
+  const outdatedByBirthChange =
+    !!generatedAt && !!birthDetailsUpdatedAt && generatedAt.getTime() < birthDetailsUpdatedAt.getTime()
+
+  return {
+    staleStatus:
+      derivedAstrologyStatus === 'stale' || outdatedByBirthChange ? 'outdated_after_birth_change' : 'current',
+    outdated: derivedAstrologyStatus === 'stale' || outdatedByBirthChange,
+  }
+}
+
 /**
  * Get Report
  * Part B - Section 6: Reports Engine
@@ -46,6 +66,13 @@ export async function GET(request: NextRequest) {
     }
 
     const reportData = reportSnap.data()
+    const userSnap = await adminDb.collection('users').doc(uid).get()
+    const userData = userSnap.exists ? userSnap.data() : null
+    const stale = getStaleStatus(
+      reportData,
+      toDate(userData?.birthDetailsUpdatedAt),
+      userData?.derivedAstrologyStatus
+    )
 
     return NextResponse.json({
       success: true,
@@ -63,6 +90,8 @@ export async function GET(request: NextRequest) {
         generatedAt: toIso(reportData?.generatedAt ?? reportData?.metadata?.generatedAt),
         createdAt: toIso(reportData?.createdAt),
         updatedAt: toIso(reportData?.updatedAt),
+        staleStatus: stale.staleStatus,
+        outdated: stale.outdated,
       },
     })
   } catch (error: any) {

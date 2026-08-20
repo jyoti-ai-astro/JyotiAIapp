@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { calculatePlanetPositions, longitudeToRashi, longitudeToNakshatra } from '@/lib/engines/kundali/swisseph-wrapper'
+import { isValidCoordinate, isValidTimezone } from '@/lib/services/geocoding'
 
 export const dynamic = 'force-dynamic'
+
+function parseBirthTime(value: unknown): { hours: number; minutes: number } | null {
+  if (typeof value !== 'string') return null
+  const match = value.match(/^([01]\d|2[0-3]):([0-5]\d)$/)
+  if (!match) return null
+  return {
+    hours: Number(match[1]),
+    minutes: Number(match[2]),
+  }
+}
 
 /**
  * Calculate Rashi and Nakshatra from birth details
@@ -33,27 +44,38 @@ export async function POST(request: NextRequest) {
     }
 
     const userData = userSnap.data()
-    if (!userData?.dob || !userData?.tob || !userData?.lat || !userData?.lng) {
+    const dob = new Date(userData?.dob)
+    const time = parseBirthTime(userData?.tob)
+    const hasValidBirthData =
+      userData?.dob &&
+      !Number.isNaN(dob.getTime()) &&
+      dob <= new Date() &&
+      time &&
+      isValidCoordinate(userData?.lat, userData?.lng) &&
+      isValidTimezone(userData?.timezone) &&
+      userData?.locationVerified !== false
+
+    if (!hasValidBirthData) {
       return NextResponse.json(
-        { error: 'Birth details not found. Please complete birth details first.' },
+        {
+          code: 'BIRTH_DETAILS_NOT_VERIFIED',
+          error: 'Verified birth details are required before calculating Rashi.',
+        },
         { status: 400 }
       )
     }
 
     // Parse birth details
-    const dob = new Date(userData.dob)
-    const [hours, minutes] = userData.tob.split(':').map(Number)
-
     const birthDetails = {
       year: dob.getFullYear(),
       month: dob.getMonth() + 1,
       day: dob.getDate(),
-      hour: hours,
-      minute: minutes,
+      hour: time.hours,
+      minute: time.minutes,
       second: 0,
       lat: userData.lat,
       lng: userData.lng,
-      timezone: userData.timezone || 'Asia/Kolkata',
+      timezone: userData.timezone,
     }
 
     // Calculate planet positions
@@ -96,4 +118,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

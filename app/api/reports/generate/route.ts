@@ -13,6 +13,7 @@ import {
   generateTimelineReportPdf,
 } from '@/lib/report-engine'
 import { sendReportEmail } from '@/lib/email/sendReportEmail'
+import { AstroContextError } from '@/lib/engines/astro-context-builder'
 
 type LaunchReportType = 'kundali' | 'predictions' | 'timeline'
 type ReportStatus = 'queued' | 'generating' | 'ready' | 'failed'
@@ -321,6 +322,19 @@ export async function POST(request: NextRequest) {
           error: 'Report access requires an active subscription or available tickets.',
         },
         { status: 403 }
+      )
+    }
+
+    if (error instanceof AstroContextError || error?.message === 'NO_ASTRO_CONTEXT') {
+      return NextResponse.json(
+        {
+          success: false,
+          code: error instanceof AstroContextError ? error.code : 'KUNDALI_REQUIRED',
+          error:
+            error?.message ||
+            'Complete your birth profile and generate Kundali before creating this report.',
+        },
+        { status: 409 }
       )
     }
 

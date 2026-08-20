@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
+import {
+  GeocodingError,
+  isValidCoordinate,
+  isValidTimezone,
+  resolveTimezoneForCoordinates,
+} from '@/lib/services/geocoding'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,12 +44,7 @@ export async function POST(request: NextRequest) {
       'lat',
       'lng',
       'timezone',
-      'rashi',
       'rashiPreferred',
-      'rashiMoon',
-      'rashiSun',
-      'ascendant',
-      'nakshatra',
       'onboarded',
       'settings',
     ]
@@ -104,13 +105,62 @@ export async function POST(request: NextRequest) {
     })
 
     if (birthDataChanged) {
+      const pobChanged = filteredUpdates.pob !== undefined && filteredUpdates.pob !== userData.pob
+      const coordinatesChanged =
+        filteredUpdates.lat !== undefined ||
+        filteredUpdates.lng !== undefined ||
+        filteredUpdates.timezone !== undefined
+
+      if (pobChanged || coordinatesChanged) {
+        if (pobChanged && (filteredUpdates.lat === undefined || filteredUpdates.lng === undefined)) {
+          return NextResponse.json(
+            {
+              code: 'LOCATION_NOT_VERIFIED',
+              error: 'Choose a verified birth location from suggestions before saving.',
+            },
+            { status: 400 }
+          )
+        }
+
+        const nextLat = filteredUpdates.lat ?? userData.lat
+        const nextLng = filteredUpdates.lng ?? userData.lng
+
+        if (!isValidCoordinate(nextLat, nextLng)) {
+          return NextResponse.json(
+            {
+              code: 'LOCATION_NOT_VERIFIED',
+              error: 'Choose a verified birth location from suggestions before saving.',
+            },
+            { status: 400 }
+          )
+        }
+
+        try {
+          filteredUpdates.timezone = await resolveTimezoneForCoordinates(nextLat, nextLng)
+          filteredUpdates.locationVerified = true
+          filteredUpdates.locationVerifiedAt = new Date()
+          filteredUpdates.geocodingProvider = 'client_coordinates'
+        } catch (error: any) {
+          const code = error instanceof GeocodingError ? error.code : 'TIMEZONE_NOT_VERIFIED'
+          return NextResponse.json(
+            {
+              code,
+              error:
+                error?.message ||
+                'Could not verify timezone for this birth location. Please select a different suggestion.',
+            },
+            { status: code === 'INVALID_COORDINATES' ? 400 : 422 }
+          )
+        }
+      } else if (filteredUpdates.timezone !== undefined && !isValidTimezone(filteredUpdates.timezone)) {
+        return NextResponse.json(
+          { code: 'TIMEZONE_NOT_VERIFIED', error: 'Invalid birth timezone.' },
+          { status: 400 }
+        )
+      }
+
       filteredUpdates.derivedAstrologyStatus = 'stale'
       filteredUpdates.birthDetailsUpdatedAt = new Date()
-
-      if (filteredUpdates.pob !== undefined && updates.lat === undefined && updates.lng === undefined) {
-        filteredUpdates.lat = null
-        filteredUpdates.lng = null
-      }
     }
 
     await userRef.update(filteredUpdates)

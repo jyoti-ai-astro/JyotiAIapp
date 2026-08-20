@@ -22,6 +22,7 @@ interface OnboardingStepProps {
   onSubmit: () => void;
   loading: boolean;
   onBack?: () => void;
+  errorMessage?: string | null;
 }
 
 interface NakshatraObj {
@@ -50,6 +51,7 @@ const BirthDetailsStep: React.FC<OnboardingStepProps> = ({
   setFormData,
   onSubmit,
   loading,
+  errorMessage,
 }) => {
   const timeInputId = useId();
 
@@ -81,19 +83,12 @@ const BirthDetailsStep: React.FC<OnboardingStepProps> = ({
         onSubmit={(e) => {
           e.preventDefault();
           if (!formData.dob || !formData.tob || !formData.pob) {
-            alert(
-              'Please fill in all fields: Date of Birth, Time of Birth, and Place of Birth'
-            );
             return;
           }
           if (!formData.dob.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            alert('Please enter a valid date of birth');
             return;
           }
           if (!formData.tob.match(/^\d{2}:\d{2}$/)) {
-            alert(
-              'Please enter a valid time of birth (24-hour format, e.g., 14:30)'
-            );
             return;
           }
           onSubmit();
@@ -162,6 +157,15 @@ const BirthDetailsStep: React.FC<OnboardingStepProps> = ({
             Start typing to search for your city
           </p>
         </motion.div>
+
+        {errorMessage && (
+          <div
+            role="alert"
+            className="rounded-lg border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+          >
+            {errorMessage}
+          </div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -413,6 +417,7 @@ export interface CosmicOnboardingProps {
   onRashiBack: () => void;
   onComplete: () => void;
   loading: boolean;
+  errorMessage?: string | null;
 }
 
 export const CosmicOnboarding: React.FC<CosmicOnboardingProps> = ({
@@ -427,6 +432,7 @@ export const CosmicOnboarding: React.FC<CosmicOnboardingProps> = ({
   onRashiBack,
   onComplete,
   loading,
+  errorMessage,
 }) => {
   return (
     <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
@@ -463,20 +469,41 @@ export const CosmicOnboarding: React.FC<CosmicOnboardingProps> = ({
                     setFormData={setFormData}
                     onSubmit={onBirthDetailsSubmit}
                     loading={loading}
+                    errorMessage={errorMessage}
                   />
                 )}
                 {step === 2 && rashiData && (
-                  <RashiConfirmationStep
-                    rashiData={rashiData}
-                    selectedRashi={selectedRashi}
-                    setSelectedRashi={setSelectedRashi}
-                    onConfirm={onRashiConfirm}
-                    onBack={onRashiBack}
-                    loading={loading}
-                  />
+                  <>
+                    {errorMessage && (
+                      <div
+                        role="alert"
+                        className="mb-4 rounded-lg border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+                      >
+                        {errorMessage}
+                      </div>
+                    )}
+                    <RashiConfirmationStep
+                      rashiData={rashiData}
+                      selectedRashi={selectedRashi}
+                      setSelectedRashi={setSelectedRashi}
+                      onConfirm={onRashiConfirm}
+                      onBack={onRashiBack}
+                      loading={loading}
+                    />
+                  </>
                 )}
                 {step === 3 && (
-                  <CompletionStep onComplete={onComplete} loading={loading} />
+                  <>
+                    {errorMessage && (
+                      <div
+                        role="alert"
+                        className="mb-4 rounded-lg border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+                      >
+                        {errorMessage}
+                      </div>
+                    )}
+                    <CompletionStep onComplete={onComplete} loading={loading} />
+                  </>
                 )}
               </AnimatePresence>
             </CardContent>

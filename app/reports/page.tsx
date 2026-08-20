@@ -34,6 +34,7 @@ export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) {
@@ -64,6 +65,7 @@ export default function ReportsPage() {
 
   const handleGenerate = async (type: 'kundali' | 'predictions' | 'timeline') => {
     setGenerating(true)
+    setErrorMessage(null)
 
     try {
       if (!user) {
@@ -84,7 +86,7 @@ export default function ReportsPage() {
       if (!response.ok) {
         const error = await response.json().catch(() => ({}))
         if (error.code === 'NO_TICKETS') {
-          router.push(type === 'kundali' ? '/pay/199' : '/pay/199')
+          router.push(type === 'kundali' ? '/pay/199' : '/pay/299')
           return
         }
         throw new Error(error.error || error.message || 'Failed to generate report')
@@ -99,7 +101,7 @@ export default function ReportsPage() {
       loadReports()
     } catch (error: any) {
       console.error('Generate report error:', error)
-      alert(error.message || 'Failed to generate report')
+      setErrorMessage(error.message || 'Failed to generate report')
     } finally {
       setGenerating(false)
     }
@@ -130,6 +132,13 @@ export default function ReportsPage() {
           <h1 className="text-4xl md:text-6xl font-display font-bold bg-gradient-to-r from-white via-gold to-white bg-clip-text text-transparent">
             Your Cosmic Reports
           </h1>
+          {errorMessage && (
+            <Card className="border-destructive">
+              <CardContent className="pt-6">
+                <p className="text-sm text-destructive">{errorMessage}</p>
+              </CardContent>
+            </Card>
+          )}
           <p className="text-lg text-white/60 font-light">
             Download detailed PDF analysis of your destiny, karma, and life path.
           </p>
@@ -179,7 +188,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <Badge className="mb-4 bg-gold/20 text-gold border-gold/50">
-                Paid · ₹199
+                Paid · ₹299
               </Badge>
               <Button
                 onClick={() => handleGenerate('predictions')}
@@ -211,7 +220,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <Badge className="mb-4 bg-gold/20 text-gold border-gold/50">
-                Paid · ₹199
+                Paid · ₹299
               </Badge>
               <Button
                 onClick={() => handleGenerate('timeline')}

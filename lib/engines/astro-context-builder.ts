@@ -10,6 +10,7 @@ import type { KundaliData } from '@/lib/engines/kundali-engine'
 import { predictionEngine, type DailyPrediction } from '@/lib/engines/prediction-engine'
 import { timelineEngine, type MonthTimeline } from '@/lib/engines/timeline-engine'
 import { Timestamp } from 'firebase-admin/firestore'
+import { isValidCoordinate, isValidTimezone } from '@/lib/services/geocoding'
 import type {
   AstroContext,
   AstroBirthData,
@@ -52,17 +53,25 @@ async function loadBirthData(userId: string): Promise<AstroBirthData | null> {
   }
 
   const userData = userSnap.data()
-  if (!userData?.dob || !userData?.tob || !userData?.pob) {
+  if (
+    !userData?.dob ||
+    !userData?.tob ||
+    !userData?.pob ||
+    !isValidCoordinate(userData?.lat, userData?.lng) ||
+    !isValidTimezone(userData?.timezone) ||
+    userData?.derivedAstrologyStatus === 'stale' ||
+    userData?.locationVerified === false
+  ) {
     return null
   }
 
   return {
     dateOfBirth: userData.dob,
     timeOfBirth: userData.tob,
-    timezone: userData.timezone || 'Asia/Kolkata',
+    timezone: userData.timezone,
     placeName: userData.pob,
-    latitude: userData.lat || 0,
-    longitude: userData.lng || 0,
+    latitude: userData.lat,
+    longitude: userData.lng,
   }
 }
 
@@ -605,6 +614,17 @@ export async function getCachedAstroContext(userId: string): Promise<AstroContex
     }
 
     if (data.stale === true) {
+      return null
+    }
+
+    const userSnap = await adminDb.collection('users').doc(userId).get()
+    const userData = userSnap.exists ? userSnap.data() : null
+    if (
+      userData?.derivedAstrologyStatus === 'stale' ||
+      userData?.locationVerified === false ||
+      !isValidCoordinate(userData?.lat, userData?.lng) ||
+      !isValidTimezone(userData?.timezone)
+    ) {
       return null
     }
 

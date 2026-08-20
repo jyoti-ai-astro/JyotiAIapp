@@ -6,8 +6,68 @@ import { generateFullKundali } from '@/lib/engines/kundali/generator';
 import type { BirthDetails } from '@/lib/engines/kundali/swisseph-wrapper';
 import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket-service';
 import type { FeatureKey } from '@/lib/payments/feature-access';
+import { isValidCoordinate, isValidTimezone } from '@/lib/services/geocoding';
 
 export const dynamic = 'force-dynamic';
+
+function isValidBirthDate(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const date = new Date(value);
+  return !Number.isNaN(date.getTime()) && date <= new Date();
+}
+
+function parseBirthTime(value: unknown): { hours: number; minutes: number } | null {
+  if (typeof value !== 'string') return null;
+  const match = value.match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+  if (!match) return null;
+  return {
+    hours: Number(match[1]),
+    minutes: Number(match[2]),
+  };
+}
+
+function isLikelyDelhiFallback(userData: any): boolean {
+  const pob = String(userData?.pob || '').toLowerCase();
+  const lat = Number(userData?.lat);
+  const lng = Number(userData?.lng);
+  const isDelhiCoords = Math.abs(lat - 28.7041) < 0.0002 && Math.abs(lng - 77.1025) < 0.0002;
+  return isDelhiCoords && !pob.includes('delhi');
+}
+
+function validateKundaliBirthData(userData: any):
+  | { ok: true; dob: Date; hours: number; minutes: number; lat: number; lng: number; timezone: string }
+  | { ok: false; code: string; message: string } {
+  if (!isValidBirthDate(userData?.dob)) {
+    return { ok: false, code: 'INVALID_BIRTH_DATE', message: 'A valid date of birth is required before generating Kundali.' };
+  }
+
+  const time = parseBirthTime(userData?.tob);
+  if (!time) {
+    return { ok: false, code: 'INVALID_BIRTH_TIME', message: 'A valid birth time is required before generating Kundali.' };
+  }
+
+  if (!isValidCoordinate(userData?.lat, userData?.lng)) {
+    return { ok: false, code: 'INVALID_COORDINATES', message: 'Verified birth coordinates are required before generating Kundali.' };
+  }
+
+  if (!isValidTimezone(userData?.timezone)) {
+    return { ok: false, code: 'TIMEZONE_NOT_VERIFIED', message: 'A verified birth timezone is required before generating Kundali.' };
+  }
+
+  if (userData?.locationVerified === false || isLikelyDelhiFallback(userData)) {
+    return { ok: false, code: 'LOCATION_NOT_VERIFIED', message: 'Please verify your birth location before generating Kundali.' };
+  }
+
+  return {
+    ok: true,
+    dob: new Date(userData.dob),
+    hours: time.hours,
+    minutes: time.minutes,
+    lat: userData.lat,
+    lng: userData.lng,
+    timezone: userData.timezone,
+  };
+}
 
 /**
  * Generate Full Kundali
@@ -83,27 +143,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!userData?.dob || !userData?.tob || !userData?.lat || !userData?.lng) {
+    const birthValidation = validateKundaliBirthData(userData);
+    if (!birthValidation.ok) {
       return NextResponse.json(
-        { error: 'Birth details incomplete. Please complete onboarding first.' },
+        {
+          success: false,
+          code: birthValidation.code,
+          error: birthValidation.message,
+        },
         { status: 400 }
       );
     }
 
-    // Parse birth details
-    const dob = new Date(userData.dob);
-    const [hours, minutes] = String(userData.tob).split(':').map(Number);
-
     const birthDetails: BirthDetails = {
-      year: dob.getFullYear(),
-      month: dob.getMonth() + 1,
-      day: dob.getDate(),
-      hour: hours || 0,
-      minute: minutes || 0,
+      year: birthValidation.dob.getFullYear(),
+      month: birthValidation.dob.getMonth() + 1,
+      day: birthValidation.dob.getDate(),
+      hour: birthValidation.hours,
+      minute: birthValidation.minutes,
       second: 0,
-      lat: userData.lat,
-      lng: userData.lng,
-      timezone: userData.timezone || 'Asia/Kolkata',
+      lat: birthValidation.lat,
+      lng: birthValidation.lng,
+      timezone: birthValidation.timezone,
     };
 
     // Generate full kundali (defensive)
