@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ShieldCheck, Zap, Crown, Check, Loader2, AlertCircle, Sparkles } from 'lucide-react'
+import { ShieldCheck, Zap, Crown, Check, AlertCircle, MessageCircle, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useUserStore } from '@/store/user-store'
@@ -141,25 +141,26 @@ export default function PaymentPage() {
 
   const iconMap: Record<string, any> = {
     quick_99: Zap,
-    deep_199: Sparkles,
+    deep_199: MessageCircle,
     supreme_299: Crown,
   }
 
-  const Icon = iconMap[product.id] || Sparkles
+  const Icon = iconMap[product.id] || Ticket
 
   return (
-    <DashboardPageShell title="Complete Payment" subtitle={`${product.name} - ${product.label}`}>
+    <DashboardPageShell title="Complete payment" subtitle="Review your reading pack before continuing to Razorpay.">
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         onLoad={() => setRazorpayLoaded(true)}
       />
 
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         {isPaymentsDisabled && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-200 p-4 rounded-lg flex items-center gap-3"
+            className="rounded-lg border border-warning/35 bg-warning/10 p-4 text-primary lg:col-span-2"
+            role="status"
           >
             <AlertCircle className="w-5 h-5" />
             <span>Payments are currently disabled. Please try again later.</span>
@@ -169,69 +170,103 @@ export default function PaymentPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-red-500/10 border border-red-500/30 text-red-200 p-4 rounded-lg flex items-center gap-3"
+            className="rounded-lg border border-danger/35 bg-danger/10 p-4 text-primary lg:col-span-2"
+            role="alert"
           >
             <AlertCircle className="w-5 h-5" />
             <span>{error}</span>
           </motion.div>
         )}
 
-        <Card className="bg-cosmic-indigo/60 backdrop-blur-xl border-white/10 p-8">
-          <div className="space-y-6">
+        <Card className="bg-card p-6 md:p-8">
+          <div className="space-y-7">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gold to-gold/60 flex items-center justify-center">
-                <Icon className="w-8 h-8 text-black" />
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-saffron/35 bg-saffron/12">
+                <Icon className="h-8 w-8 text-saffron" aria-hidden="true" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">{product.name}</h2>
-                <p className="text-gold text-lg font-semibold">{product.label}</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-saffron">Selected product</p>
+                <h2 className="mt-1 font-heading text-2xl font-semibold text-primary">{product.name}</h2>
+                <p className="text-muted-foreground">{product.label}</p>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-white/10">
-              <p className="text-white/80 mb-4">{product.description}</p>
-              <ul className="space-y-2">
+            <div className="border-t border-border pt-5">
+              <p className="mb-4 leading-7 text-muted-foreground">{product.description}</p>
+              <ul className="space-y-3">
                 {product.bullets.map((bullet, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-white/70">
-                    <Check className="w-4 h-4 text-gold" />
+                  <li key={idx} className="flex gap-2 text-sm leading-6 text-muted-foreground">
+                    <Check className="mt-1 h-4 w-4 shrink-0 text-saffron" aria-hidden="true" />
                     <span>{bullet}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="pt-4 border-t border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-white/60">Total Amount</span>
-                <span className="text-3xl font-bold text-gold">₹{product.amountInINR}</span>
+            <div className="border-t border-border pt-5">
+              <div className="mb-5 flex items-center justify-between gap-4 rounded-lg bg-surface-sunken px-4 py-3">
+                <span className="text-sm font-medium text-muted-foreground">Total amount</span>
+                <span className="font-heading text-3xl font-semibold text-primary">₹{product.amountInINR}</span>
               </div>
             </div>
 
             <Button
               onClick={handlePayment}
               disabled={loading || !razorpayLoaded || isPaymentsDisabled}
-              className="w-full gold-btn py-6 text-lg"
+              fullWidth
+              size="xl"
+              loading={loading}
             >
               {isPaymentsDisabled ? (
-                'Payments Temporarily Disabled'
+                'Payments temporarily disabled'
               ) : loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
-                </>
+                'Processing...'
               ) : (
                 <>
-                  <ShieldCheck className="w-5 h-5 mr-2" />
-                  Pay ₹{product.amountInINR} Securely
+                  <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+                  Pay ₹{product.amountInINR} securely
                 </>
               )}
             </Button>
 
-            <p className="text-xs text-white/50 text-center">
+            <p className="text-center text-xs leading-5 text-muted-foreground">
               Secure payment powered by Razorpay. Your payment information is encrypted and secure.
             </p>
           </div>
         </Card>
+
+        <aside className="space-y-4">
+          <Card className="bg-[#07131F] p-6 text-[#FFF7E8]">
+            <h3 className="font-heading text-xl font-semibold text-[#FFF7E8]">Account</h3>
+            <dl className="mt-4 space-y-3 text-sm text-[#B9C2BF]">
+              <div>
+                <dt className="font-medium text-[#FFF7E8]">Signed in as</dt>
+                <dd className="mt-1 break-words">{user?.email || user?.name || 'Authenticated user'}</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-[#FFF7E8]">Fulfillment</dt>
+                <dd className="mt-1">Credits are added after payment verification.</dd>
+              </div>
+            </dl>
+          </Card>
+          <Card className="bg-surface-sunken p-6">
+            <h3 className="font-heading text-xl font-semibold text-primary">Before you pay</h3>
+            <ul className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
+              <li className="flex gap-2">
+                <Check className="mt-1 h-4 w-4 shrink-0 text-saffron" aria-hidden="true" />
+                <span>You will complete payment in Razorpay.</span>
+              </li>
+              <li className="flex gap-2">
+                <Check className="mt-1 h-4 w-4 shrink-0 text-saffron" aria-hidden="true" />
+                <span>JyotiAI verifies the payment before granting access.</span>
+              </li>
+              <li className="flex gap-2">
+                <Check className="mt-1 h-4 w-4 shrink-0 text-saffron" aria-hidden="true" />
+                <span>If verification fails, no access is shown as granted on this page.</span>
+              </li>
+            </ul>
+          </Card>
+        </aside>
       </div>
     </DashboardPageShell>
   )
