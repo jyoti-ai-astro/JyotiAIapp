@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 const defaultShaderSource = `#version 300 es
 /*********
@@ -68,7 +69,7 @@ void main(void) {
   O=vec4(col,1);
 }`;
 
-const useShaderBackground = () => {
+const useShaderBackground = (enabled: boolean) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
   const rendererRef = useRef<WebGLRenderer | null>(null);
@@ -341,6 +342,7 @@ void main(){gl_Position=position;}`;
   };
 
   useEffect(() => {
+    if (!enabled) return;
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
@@ -366,10 +368,20 @@ void main(){gl_Position=position;}`;
 
     loop(0);
 
+    const handleContextLost = (event: Event) => {
+      event.preventDefault();
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      console.warn("Global shader WebGL context lost; animation loop stopped.");
+    };
+
     window.addEventListener("resize", resize);
+    canvas.addEventListener("webglcontextlost", handleContextLost);
 
     return () => {
       window.removeEventListener("resize", resize);
+      canvas.removeEventListener("webglcontextlost", handleContextLost);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -377,13 +389,28 @@ void main(){gl_Position=position;}`;
         rendererRef.current.reset();
       }
     };
-  }, []);
+  }, [enabled]);
 
   return canvasRef;
 };
 
 export function GlobalShaderBackground() {
-  const canvasRef = useShaderBackground();
+  const pathname = usePathname();
+  const disabledForRoute = pathname === "/timeline";
+  const canvasRef = useShaderBackground(!disabledForRoute);
+
+  if (disabledForRoute) {
+    return (
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 50%, rgba(10, 15, 31, 0.4) 0%, rgba(5, 5, 10, 0.92) 100%)",
+        }}
+        aria-hidden="true"
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none">

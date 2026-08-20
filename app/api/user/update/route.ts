@@ -130,6 +130,14 @@ export async function POST(request: NextRequest) {
           { merge: true }
         ),
         userRef.collection('astroContext').doc('current').set(stalePayload, { merge: true }),
+        userRef.collection('timeline').doc('current').set(
+          {
+            status: 'stale',
+            failureReason: 'Birth details changed. Regenerate Kundali before creating a new timeline.',
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        ),
       ])
     }
 

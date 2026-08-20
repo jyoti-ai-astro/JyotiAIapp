@@ -604,6 +604,10 @@ export async function getCachedAstroContext(userId: string): Promise<AstroContex
       return null
     }
 
+    if (data.stale === true) {
+      return null
+    }
+
     // Check if cache is still valid
     const cachedAt = data.cachedAt?.toDate?.() || new Date(data.cachedAt || 0)
     const age = Date.now() - cachedAt.getTime()

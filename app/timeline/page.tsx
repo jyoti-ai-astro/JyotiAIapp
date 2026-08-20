@@ -13,30 +13,21 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
-import { useTimeline } from '@/lib/hooks/useTimeline';
 import { motion } from 'framer-motion';
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SkeletonCard } from '@/components/ui/skeleton';
-import { ErrorBoundary } from '@/components/global/ErrorBoundary';
-import { Calendar, Sparkles, ChevronRight, Download, RefreshCw } from 'lucide-react';
+import { Calendar, Download, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
-import { MonthDetailModal } from '@/components/timeline/MonthDetailModal';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
-import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
-import { decrementTicket } from '@/lib/access/ticket-access';
-import type { AstroContext } from '@/lib/engines/astro-types';
 import type { TimelineEngineResult } from '@/lib/engines/timeline-engine-v2';
 import React from 'react';
 
 export default function TimelinePage() {
   const router = useRouter();
   const { user } = useUserStore();
-  const { timeline, loading, error, refetch } = useTimeline();
-  const [selectedMonth, setSelectedMonth] = React.useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [astro, setAstro] = React.useState<AstroContext | null>(null);
+  const [loadingPersistedTimeline, setLoadingPersistedTimeline] = React.useState(false);
   
   // Mega Build 2 - 12-month timeline state
   const [timelineResult, setTimelineResult] = React.useState<TimelineEngineResult | null>(null);
@@ -50,37 +41,40 @@ export default function TimelinePage() {
     if (!user) {
       router.push('/login');
     } else {
-      fetchAstroContext();
+      fetchPersistedTimeline();
     }
   }, [user, router]);
 
-  const fetchAstroContext = async () => {
-    if (!user?.uid) return;
+  const fetchPersistedTimeline = async () => {
     try {
-      const response = await fetch('/api/astro/context', {
+      setLoadingPersistedTimeline(true);
+      const response = await fetch('/api/timeline', {
         credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();
-        setAstro(data.astro);
+        if (data.data) {
+          setTimelineResult(data.data);
+        }
+        return;
       }
-    } catch (err) {
-      console.error('Error fetching astro context:', err);
+
+      if (response.status !== 404) {
+        const data = await response.json().catch(() => ({}));
+        if (data.code === 'TIMELINE_STALE' || data.code === 'KUNDALI_REQUIRED' || data.code === 'ASTRO_CONTEXT_MISSING') {
+          setTimelineError(data.message || 'Regenerate Kundali before creating a new timeline.');
+        }
+      }
+    } catch (err: any) {
+      console.error('Error fetching persisted timeline:', err);
+    } finally {
+      setLoadingPersistedTimeline(false);
     }
   };
 
   // Mega Build 2 - Generate 12-month timeline
   const handleGenerateTimeline = async () => {
     if (!user) return;
-
-    // Check feature access
-    const accessCheck = await checkFeatureAccess(user, 'predictions');
-    if (!accessCheck.allowed) {
-      if (accessCheck.redirectTo) {
-        router.push(accessCheck.redirectTo);
-      }
-      return;
-    }
 
     setTimelineLoading(true);
     setTimelineError(null);
@@ -102,11 +96,6 @@ export default function TimelinePage() {
 
       const data = await response.json();
       setTimelineResult(data.data);
-
-      // Decrement ticket if needed
-      if (accessCheck.decrementTicket) {
-        await decrementTicket('ai_questions');
-      }
     } catch (err: any) {
       console.error('Error generating timeline:', err);
       setTimelineError(err.message || 'Failed to generate timeline. Please try again.');
@@ -118,15 +107,6 @@ export default function TimelinePage() {
   // Mega Build 3 - Download PDF Report
   const handleDownloadReport = async () => {
     if (!user) return;
-
-    // Check feature access
-    const accessCheck = await checkFeatureAccess(user, 'predictions');
-    if (!accessCheck.allowed) {
-      if (accessCheck.redirectTo) {
-        router.push(accessCheck.redirectTo);
-      }
-      return;
-    }
 
     setDownloadingReport(true);
 
@@ -181,55 +161,6 @@ export default function TimelinePage() {
             ctaHref="/pay/199"
           />
         </div>
-
-        {/* Astro Summary Block */}
-        {astro && (
-          <div className="glass-card p-6 mb-10 rounded-2xl border border-gold/20">
-            <h3 className="text-gold font-heading text-xl mb-2">Astro Summary</h3>
-            <p className="text-white/80 text-sm">Sun Sign: {astro.coreChart?.sunSign || 'N/A'}</p>
-            <p className="text-white/80 text-sm">Moon Sign: {astro.coreChart?.moonSign || 'N/A'}</p>
-            <p className="text-white/80 text-sm">Ascendant: {astro.coreChart?.ascendantSign || 'N/A'}</p>
-            <p className="text-white/80 text-sm mt-4">Next Major Dasha: {astro.dasha?.currentMahadasha?.planet || 'N/A'}</p>
-            
-            {/* Super Phase B - Enhanced Dasha Timeline */}
-            {astro.dashaTimeline && astro.dashaTimeline.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-gold/20">
-                <h4 className="text-gold font-heading text-lg mb-3">Upcoming Dasha Periods</h4>
-                <div className="space-y-3">
-                  {astro.dashaTimeline.slice(0, 3).map((period, idx) => (
-                    <div key={idx} className="bg-white/5 p-3 rounded-lg border border-white/10">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gold font-semibold">{period.planet} Period</span>
-                        <span className="text-xs text-white/60">Strength: {period.strength}/10</span>
-                      </div>
-                      <p className="text-xs text-white/70">{new Date(period.start).toLocaleDateString()} - {new Date(period.end).toLocaleDateString()}</p>
-                      {period.notes && <p className="text-xs text-white/60 mt-1">{period.notes}</p>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Super Phase B - Transit Events */}
-            {astro.transitEvents && astro.transitEvents.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-gold/20">
-                <h4 className="text-gold font-heading text-lg mb-3">Key Transit Events</h4>
-                <div className="space-y-3">
-                  {astro.transitEvents.slice(0, 3).map((event, idx) => (
-                    <div key={idx} className="bg-white/5 p-3 rounded-lg border border-white/10">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gold font-semibold">{event.planet} in House {event.house}</span>
-                        <span className="text-xs text-white/60">Intensity: {event.intensity}/5</span>
-                      </div>
-                      <p className="text-xs text-white/70">{new Date(event.start).toLocaleDateString()} - {new Date(event.end).toLocaleDateString()}</p>
-                      <p className="text-xs text-white/60 mt-1">{event.theme}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -442,158 +373,36 @@ export default function TimelinePage() {
             </div>
           )}
 
-              {loading && timeline.length === 0 ? (
-                <SkeletonCard />
-              ) : timeline.length > 0 ? (
-                <ErrorBoundary>
-                  <div className="space-y-4">
-                    {timeline.map((month, index) => {
-                      const energyColors = {
-                        high: 'bg-green-500/20 border-green-500/50',
-                        medium: 'bg-yellow-500/20 border-yellow-500/50',
-                        low: 'bg-red-500/20 border-red-500/50',
-                      };
-
-                      const getEventColor = (type: string, impact: string) => {
-                        if (type === 'auspicious' || impact === 'positive') return 'bg-green-500/20 border-green-500/50';
-                        if (type === 'challenging' || impact === 'challenging') return 'bg-red-500/20 border-red-500/50';
-                        return 'bg-yellow-500/20 border-yellow-500/50';
-                      };
-
-                      return (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1, duration: 0.5 }}
-                        >
-                          <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            className="cursor-pointer"
-                            onClick={() => {
-                              setSelectedMonth(month);
-                              setIsModalOpen(true);
-                            }}
-                          >
-                            <Card className={`bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white hover:border-gold/50 transition-all ${energyColors[month.overallEnergy]}`}>
-                              <CardHeader>
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <CardTitle className="text-gold flex items-center gap-2">
-                                      <Calendar className="h-5 w-5" />
-                                      {month.month} {month.year}
-                                    </CardTitle>
-                                    <CardDescription className="text-white/70 mt-2">
-                                      <div className="flex items-center gap-4 flex-wrap">
-                                        <span>Energy: <span className={`font-semibold ${
-                                          month.overallEnergy === 'high' ? 'text-green-400' :
-                                          month.overallEnergy === 'medium' ? 'text-yellow-400' :
-                                          'text-red-400'
-                                        }`}>{month.overallEnergy.toUpperCase()}</span></span>
-                                        <span>Focus: {month.focusAreas?.join(', ') || 'N/A'}</span>
-                                      </div>
-                                    </CardDescription>
-                                  </div>
-                                  <ChevronRight className="h-5 w-5 text-gold" />
-                                </div>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                <p className="text-white/80">{month.prediction}</p>
-                                
-                                {/* Color-coded timeline bars */}
-                                {month.events && month.events.length > 0 && (
-                                  <div>
-                                    <p className="text-sm font-semibold text-gold mb-2">Key Events ({month.events.length})</p>
-                                    <div className="space-y-2">
-                                      {month.events.slice(0, 3).map((event: any, i: number) => (
-                                        <div
-                                          key={i}
-                                          className={`p-2 rounded-lg border ${getEventColor(event.type || 'transit', event.impact || 'neutral')}`}
-                                        >
-                                          <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                              {event.planet && (
-                                                <p className="text-xs text-white/60 mb-1">{event.planet}</p>
-                                              )}
-                                              <p className="text-sm text-white/80 font-medium">{event.event || 'N/A'}</p>
-                                              <p className="text-xs text-white/70 mt-1 line-clamp-1">{event.description || ''}</p>
-                                            </div>
-                                            <div className={`px-2 py-1 rounded text-xs font-medium ${
-                                              event.type === 'auspicious' || event.impact === 'positive' ? 'bg-green-500/30 text-green-300' :
-                                              event.type === 'challenging' || event.impact === 'challenging' ? 'bg-red-500/30 text-red-300' :
-                                              'bg-yellow-500/30 text-yellow-300'
-                                            }`}>
-                                              {event.type || 'transit'}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                      {month.events.length > 3 && (
-                                        <p className="text-xs text-gold mt-2">+{month.events.length - 3} more events</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Auspicious/Challenging periods preview */}
-                                {(month.auspiciousPeriods?.length > 0 || month.challengingPeriods?.length > 0) && (
-                                  <div className="flex gap-2">
-                                    {month.auspiciousPeriods && month.auspiciousPeriods.length > 0 && (
-                                      <div className="flex-1 p-2 bg-green-500/10 border border-green-500/30 rounded">
-                                        <p className="text-xs text-green-400 font-semibold mb-1">Auspicious</p>
-                                        <p className="text-xs text-white/70">{month.auspiciousPeriods.length} period(s)</p>
-                                      </div>
-                                    )}
-                                    {month.challengingPeriods && month.challengingPeriods.length > 0 && (
-                                      <div className="flex-1 p-2 bg-red-500/10 border border-red-500/30 rounded">
-                                        <p className="text-xs text-red-400 font-semibold mb-1">Challenging</p>
-                                        <p className="text-xs text-white/70">{month.challengingPeriods.length} period(s)</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                <p className="text-xs text-gold mt-2 flex items-center gap-1">
-                                  Click for full details <ChevronRight className="h-3 w-3" />
-                                </p>
-                              </CardContent>
-                            </Card>
-                          </motion.div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </ErrorBoundary>
-              ) : !loading && timeline.length === 0 ? (
-                <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
-                  <CardContent className="pt-12 pb-12 text-center space-y-4">
-                    <Calendar className="w-16 h-16 text-[#FFD57A]/40 mx-auto" />
-                    <h3 className="text-2xl font-display font-semibold text-white">No Timeline Yet</h3>
-                    <p className="text-white/60 max-w-md mx-auto">
-                      Your cosmic timeline will appear here once generated. Click &quot;Generate 12-Month Timeline&quot; to create your personalized astrological journey.
-                    </p>
-                    <Button
-                      onClick={handleGenerateTimeline}
-                      disabled={timelineLoading}
-                      className="mt-4 bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#05050A]"
-                    >
-                      {timelineLoading ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Generate Timeline
-                        </>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <SkeletonCard />
-              )}
+          {(loadingPersistedTimeline || timelineLoading) && !timelineResult ? (
+            <SkeletonCard />
+          ) : !timelineResult ? (
+            <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
+              <CardContent className="pt-12 pb-12 text-center space-y-4">
+                <Calendar className="w-16 h-16 text-[#FFD57A]/40 mx-auto" />
+                <h3 className="text-2xl font-display font-semibold text-white">No Timeline Yet</h3>
+                <p className="text-white/60 max-w-md mx-auto">
+                  Generate a timeline after completing your birth profile and Kundali.
+                </p>
+                <Button
+                  onClick={handleGenerateTimeline}
+                  disabled={timelineLoading}
+                  className="mt-4 bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#05050A]"
+                >
+                  {timelineLoading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Generate Timeline
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
 
           {/* Mega Build 3 - Download Report Section */}
           <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white mt-8">
@@ -624,18 +433,6 @@ export default function TimelinePage() {
             </CardContent>
           </Card>
 
-          {/* Ask Guru With Context Button */}
-          {astro && (
-            <div className="text-center mb-4">
-              <Button
-                onClick={() => router.push(`/guru?context=${encodeURIComponent(JSON.stringify(astro))}`)}
-                className="gold-btn"
-              >
-                Ask Guru With My Birth Context
-              </Button>
-            </div>
-          )}
-
           <div className="text-center">
             <Link href="/dashboard">
               <Button variant="ghost" className="border border-cosmic-purple/50 text-white/80 hover:bg-cosmic-purple/20">
@@ -645,14 +442,6 @@ export default function TimelinePage() {
           </div>
         </motion.div>
 
-        <MonthDetailModal
-          month={selectedMonth}
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedMonth(null);
-          }}
-        />
     </DashboardPageShell>
   );
 }
