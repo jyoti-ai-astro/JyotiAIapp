@@ -32,7 +32,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [settings, setSettings] = useState({
     notifications: initialSettings?.notifications ?? true,
     emailUpdates: initialSettings?.emailUpdates ?? true,
-    soundEnabled: initialSettings?.soundEnabled ?? true,
+    soundEnabled: initialSettings?.soundEnabled ?? false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -40,7 +40,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     setSettings({
       notifications: initialSettings?.notifications ?? true,
       emailUpdates: initialSettings?.emailUpdates ?? true,
-      soundEnabled: initialSettings?.soundEnabled ?? true,
+      soundEnabled: initialSettings?.soundEnabled ?? false,
     });
   }, [initialSettings]);
 

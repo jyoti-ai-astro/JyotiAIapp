@@ -25,7 +25,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState({
     notifications: true,
     emailUpdates: true,
-    soundEnabled: true,
+    soundEnabled: false,
   });
 
   useEffect(() => {

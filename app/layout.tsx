@@ -8,7 +8,6 @@ import { GlobalErrorBoundary } from '@/components/error-boundaries/GlobalErrorBo
 
 import { AudioProvider } from '@/providers/audio-provider'
 
-import { GlobalShaderBackground } from '@/src/ui/background/GlobalShaderBackground'
 import { Header } from '@/src/ui/layout/Header'
 import { Footer } from '@/src/ui/layout/Footer'
 import { MotionProvider } from '@/components/providers/MotionProvider'
@@ -94,8 +93,14 @@ export default function RootLayout({
             <AudioProvider>
 
               <GlobalProviders>
-                {/* GLOBAL SHADER BACKGROUND */}
-                <GlobalShaderBackground />
+                <div
+                  aria-hidden="true"
+                  className="fixed inset-0 z-0 pointer-events-none bg-[#05050A]"
+                  style={{
+                    background:
+                      'radial-gradient(circle at 20% 10%, rgba(88, 70, 160, 0.16), transparent 32%), radial-gradient(circle at 82% 4%, rgba(255, 213, 122, 0.08), transparent 28%), linear-gradient(180deg, #05050A 0%, #0A0F1F 52%, #05050A 100%)',
+                  }}
+                />
 
                 {/* GLOBAL HEADER */}
                 <Header />

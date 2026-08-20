@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         settings: {
           notifications: userData.settings?.notifications ?? true,
           emailUpdates: userData.settings?.emailUpdates ?? true,
-          soundEnabled: userData.settings?.soundEnabled ?? true,
+          soundEnabled: userData.settings?.soundEnabled ?? false,
         },
         entitlements: entitlementSummary
           ? {
