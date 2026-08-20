@@ -5,7 +5,7 @@
  * Intelligent Guru chat with context-aware, DOB-aware, module-aware responses
  */
 
-import { buildAstroContext } from './astro-context-builder'
+import { AstroContextError, buildAstroContext } from './astro-context-builder'
 import { buildGuruContext, deriveGuruMode, type GuruMode } from '@/lib/guru/guru-context'
 import type { AstroContext } from './astro-types'
 
@@ -94,7 +94,7 @@ export async function runGuruBrain(params: {
   let ragChunks: GuruRagChunk[] = []
   let ragContext = ''
 
-  // 1. Load AstroContext if userId present (graceful degradation)
+  // 1. Load AstroContext if userId present. Personalized Guru must never use mock chart data.
   if (userId) {
     try {
       astroContext = await buildAstroContext(userId, { forceRefresh: true })
@@ -102,10 +102,27 @@ export async function runGuruBrain(params: {
         usedAstroContext = true
         astroSummary = buildGuruContext({ userId, astroContext, userName, gender })
       }
-    } catch (error) {
-      console.error('Error loading astro context (degrading gracefully):', error)
-      // Continue without astro context
-      status = 'degraded'
+    } catch (error: any) {
+      if (error instanceof AstroContextError || error?.code === 'KUNDALI_REQUIRED' || error?.code === 'ASTRO_CONTEXT_MISSING') {
+        return {
+          status: 'error',
+          mode: 'GeneralSeer',
+          usedAstroContext: false,
+          usedRag: false,
+          errorCode: error.code,
+          errorMessage: error.message,
+        }
+      }
+
+      console.error('Error loading astro context:', error)
+      return {
+        status: 'error',
+        mode: 'GeneralSeer',
+        usedAstroContext: false,
+        usedRag: false,
+        errorCode: 'ASTRO_CONTEXT_MISSING',
+        errorMessage: 'Unable to load your birth profile. Please try again.',
+      }
     }
   }
 

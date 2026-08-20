@@ -304,6 +304,10 @@ export const CosmicGuruChat = () => {
                       ? 'Knowledge vault is temporarily offline'
                       : errorCode === 'NETWORK'
                       ? 'Network error'
+                      : errorCode === 'KUNDALI_REQUIRED' || errorCode === 'ASTRO_CONTEXT_MISSING'
+                      ? 'Kundali required'
+                      : errorCode === 'TICKET_CONSUMPTION_FAILED'
+                      ? 'Credit confirmation failed'
                       : 'Something went wrong'}
                   </span>
                 </div>
@@ -317,6 +321,19 @@ export const CosmicGuruChat = () => {
                         Go to Login
                       </Button>
                     </Link>
+                  ) : errorCode === 'KUNDALI_REQUIRED' || errorCode === 'ASTRO_CONTEXT_MISSING' ? (
+                    <>
+                      <Link href="/onboarding">
+                        <Button size="sm" variant="outline" className="text-xs">
+                          Complete Onboarding
+                        </Button>
+                      </Link>
+                      <Link href="/kundali">
+                        <Button size="sm" variant="outline" className="text-xs">
+                          Generate Kundali
+                        </Button>
+                      </Link>
+                    </>
                   ) : (
                     <Button
                       size="sm"
@@ -429,4 +446,3 @@ export const CosmicGuruChat = () => {
     </>
   )
 }
-

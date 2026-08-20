@@ -239,11 +239,32 @@ export async function POST(request: NextRequest) {
           const consumed = await consumeTickets(userId, { aiGuruTickets: 1 });
           if (!consumed) {
             console.warn('Failed to consume ticket for user:', userId);
+            return NextResponse.json(
+              {
+                status: 'error',
+                code: 'TICKET_CONSUMPTION_FAILED',
+                message: 'Guru could not confirm your credit usage. Please retry.',
+              },
+              {
+                status: 409,
+                headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
+              }
+            )
           }
         }
       } catch (ticketError: any) {
-        // Log but don't fail the request if ticket consumption fails
         console.error('Ticket consumption error:', ticketError);
+        return NextResponse.json(
+          {
+            status: 'error',
+            code: 'TICKET_CONSUMPTION_FAILED',
+            message: 'Guru could not confirm your credit usage. Please retry.',
+          },
+          {
+            status: 500,
+            headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
+          }
+        )
       }
     }
 
@@ -269,6 +290,12 @@ export async function POST(request: NextRequest) {
 
     // Map result status to HTTP response
     if (result.status === 'error') {
+      const statusByCode: Record<string, number> = {
+        KUNDALI_REQUIRED: 409,
+        ASTRO_CONTEXT_MISSING: 409,
+        GURU_TIMEOUT: 504,
+      }
+
       return NextResponse.json(
         {
           status: 'error',
@@ -276,7 +303,7 @@ export async function POST(request: NextRequest) {
           message: result.errorMessage || 'An error occurred.',
         },
         {
-          status: result.errorCode === 'GURU_TIMEOUT' ? 504 : 500,
+          status: statusByCode[result.errorCode || ''] || 500,
           headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
         }
       )

@@ -6,7 +6,7 @@
  */
 
 import { adminDb } from '@/lib/firebase/admin'
-import { kundaliEngine, type KundaliData } from '@/lib/engines/kundali-engine'
+import type { KundaliData } from '@/lib/engines/kundali-engine'
 import { predictionEngine, type DailyPrediction } from '@/lib/engines/prediction-engine'
 import { timelineEngine, type MonthTimeline } from '@/lib/engines/timeline-engine'
 import { Timestamp } from 'firebase-admin/firestore'
@@ -25,6 +25,16 @@ import type {
 } from './astro-types'
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+
+export class AstroContextError extends Error {
+  code: 'ASTRO_CONTEXT_MISSING' | 'KUNDALI_REQUIRED'
+
+  constructor(code: 'ASTRO_CONTEXT_MISSING' | 'KUNDALI_REQUIRED', message: string) {
+    super(message)
+    this.name = 'AstroContextError'
+    this.code = code
+  }
+}
 
 /**
  * Load birth data from Firestore user profile
@@ -331,7 +341,10 @@ export async function buildAstroContext(
   // Load birth data
   const birthData = await loadBirthData(userId)
   if (!birthData) {
-    return null // User hasn't completed onboarding
+    throw new AstroContextError(
+      'ASTRO_CONTEXT_MISSING',
+      'Complete your birth profile before asking Jyoti Guru personalized questions.'
+    )
   }
 
   // Get user's rashi for context
@@ -340,13 +353,13 @@ export async function buildAstroContext(
   const userData = userSnap.exists ? userSnap.data() : null
   const rashi = userData?.rashi || userData?.rashiMoon || ''
 
-  const kundali =
-    (await loadCanonicalKundali(userId)) ||
-    (await kundaliEngine.generateKundali(
-      birthData.dateOfBirth,
-      birthData.timeOfBirth,
-      birthData.placeName
-    ))
+  const kundali = await loadCanonicalKundali(userId)
+  if (!kundali) {
+    throw new AstroContextError(
+      'KUNDALI_REQUIRED',
+      'Complete your birth profile and generate your Kundali before asking Jyoti Guru personalized questions.'
+    )
+  }
 
   const predictions = await predictionEngine.getDailyPrediction(rashi || 'Aries')
 

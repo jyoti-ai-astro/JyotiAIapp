@@ -26,6 +26,9 @@ export type GuruErrorCode =
   | 'NETWORK'
   | 'UNKNOWN'
   | 'NO_TICKETS'
+  | 'KUNDALI_REQUIRED'
+  | 'ASTRO_CONTEXT_MISSING'
+  | 'TICKET_CONSUMPTION_FAILED'
 
 export function useGuruChat(sessionId?: string) {
   const { user } = useUserStore()
