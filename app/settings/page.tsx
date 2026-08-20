@@ -88,7 +88,7 @@ export default function SettingsPage() {
 
           <div className="text-center">
             <Link href="/dashboard">
-              <Button variant="outline" className="min-h-11 border-cosmic-purple/50 text-white/80 hover:bg-cosmic-purple/20">
+              <Button variant="outline" className="min-h-11">
                 Back to Dashboard
               </Button>
             </Link>

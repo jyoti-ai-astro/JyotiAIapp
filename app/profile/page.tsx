@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LocationAutocomplete } from '@/components/auth/LocationAutocomplete'
 import Link from 'next/link'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 
 interface ProfileData {
   name: string
@@ -219,27 +220,37 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-mystic border-t-transparent mx-auto"></div>
-          <p className="text-muted-foreground">Loading profile...</p>
-        </div>
-      </div>
+      <DashboardPageShell
+        title="Account"
+        subtitle="Profile, birth details, plan, and credits"
+      >
+        <Card>
+          <CardContent className="flex min-h-48 items-center justify-center p-6">
+            <div className="space-y-4 text-center">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-saffron/25 border-t-saffron" />
+              <p className="text-sm text-muted-foreground">Loading profile...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </DashboardPageShell>
     )
   }
 
   if (!profile || !form) {
     return (
-      <div className="container mx-auto p-6">
+      <DashboardPageShell
+        title="Account"
+        subtitle="Profile, birth details, plan, and credits"
+      >
         <Card>
-          <CardContent className="pt-6 text-center">
-            <p className="text-destructive">{error || 'Failed to load profile'}</p>
-            <Button onClick={fetchProfile} className="mt-4">
+          <CardContent className="p-6 text-center">
+            <p className="text-sm text-danger">{error || 'Failed to load profile'}</p>
+            <Button onClick={fetchProfile} className="mt-4 min-h-11">
               Retry
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </DashboardPageShell>
     )
   }
 
@@ -247,25 +258,32 @@ export default function ProfilePage() {
   const tickets = entitlements?.tickets
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-4xl font-display font-bold">Account</h1>
-          <p className="text-sm text-muted-foreground">Profile, birth details, plan, and credits</p>
-        </div>
-        <div className="flex gap-2">
+    <DashboardPageShell
+      title="Account"
+      subtitle="Profile, birth details, plan, and credits"
+      rightActions={
+        <div className="flex flex-wrap gap-2">
           <Link href="/dashboard">
-            <Button variant="outline">Back to Dashboard</Button>
+            <Button variant="outline" className="min-h-11">
+              Back to Dashboard
+            </Button>
           </Link>
-          <Button variant="outline" onClick={handleLogout} disabled={loggingOut}>
-            <LogOut className="mr-2 h-4 w-4" />
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="min-h-11"
+          >
+            <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
             {loggingOut ? 'Logging out...' : 'Logout'}
           </Button>
         </div>
-      </div>
+      }
+    >
+      <div className="space-y-6">
 
       {(error || message) && (
-        <Card className={error ? 'border-destructive' : 'border-green-500/50'}>
+        <Card className={error ? 'border-danger/30 bg-danger/5' : 'border-success/30 bg-success/5'}>
           <CardContent className="flex items-start gap-3 pt-6">
             <AlertCircle className="mt-0.5 h-4 w-4" />
             <p className="text-sm">{error || message}</p>
@@ -358,7 +376,7 @@ export default function ProfilePage() {
           </div>
 
           {birthDataChanged && (
-            <p className="text-sm text-amber-600">
+            <p className="rounded-xl border border-warning/25 bg-warning/10 px-4 py-3 text-sm leading-6 text-primary">
               Changing birth details requires your Kundali and personalized astrology to be refreshed before Guru, Timeline, Predictions, and Reports are current again.
             </p>
           )}
@@ -369,7 +387,7 @@ export default function ProfilePage() {
         <CardHeader>
           <CardTitle>Astrology State</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
+        <CardContent className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
           <div>
             <p className="text-sm font-medium">Onboarded</p>
             <p className="text-sm">{profile.onboarded ? 'Yes' : 'No'}</p>
@@ -390,7 +408,7 @@ export default function ProfilePage() {
           <CardTitle>Plan and Entitlements</CardTitle>
           <CardDescription>Read from the canonical server-side entitlement service.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-4">
+        <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div>
             <p className="text-sm font-medium">Plan</p>
             <p className="text-sm capitalize">
@@ -413,16 +431,17 @@ export default function ProfilePage() {
       </Card>
 
       <div className="flex flex-col gap-3 md:flex-row">
-        <Button onClick={handleSave} disabled={saving} className="md:w-auto">
+        <Button onClick={handleSave} disabled={saving} className="min-h-11 md:w-auto">
           <Save className="mr-2 h-4 w-4" />
           {saving ? 'Saving...' : 'Save Profile'}
         </Button>
         <Link href="/kundali">
-          <Button variant="outline" className="w-full md:w-auto">
+          <Button variant="outline" className="min-h-11 w-full md:w-auto">
             Regenerate Kundali
           </Button>
         </Link>
       </div>
-    </div>
+      </div>
+    </DashboardPageShell>
   )
 }

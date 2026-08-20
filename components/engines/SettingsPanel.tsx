@@ -9,7 +9,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -75,89 +74,105 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }
   };
 
-  const createRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const button = e.currentTarget;
-    const ripple = document.createElement('span');
-    const rect = button.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    ripple.style.width = ripple.style.height = `${size}px`;
-    ripple.style.left = `${x}px`;
-    ripple.style.top = `${y}px`;
-    ripple.className = 'absolute rounded-full bg-gold/30 animate-ping pointer-events-none';
-    button.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 600);
-  };
-
   return (
-    <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white shadow-cosmic-glow">
-      <CardHeader>
-        <CardTitle className="text-2xl font-display text-aura-cyan flex items-center gap-2">
-          <Settings className="h-6 w-6" />
-          Preferences
-        </CardTitle>
-        <CardDescription className="text-white/70">Customize your experience</CardDescription>
+    <Card className="overflow-hidden border-border bg-card shadow-sm">
+      <CardHeader className="border-b border-border bg-surface-raised">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-saffron/25 bg-saffron/10 text-saffron">
+            <Settings className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <CardTitle className="font-heading text-2xl text-primary">
+              Preferences
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Choose how JyotiAI communicates with you and behaves on this device.
+            </CardDescription>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+
+      <CardContent className="space-y-6 p-5 md:p-6">
         {(message || errorMessage) && (
           <div
             role={errorMessage ? 'alert' : 'status'}
-            className={`rounded-lg border px-4 py-3 text-sm ${
+            className={
               errorMessage
-                ? 'border-red-400/40 bg-red-500/10 text-red-100'
-                : 'border-green-400/40 bg-green-500/10 text-green-100'
-            }`}
+                ? 'rounded-xl border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-primary'
+                : 'rounded-xl border border-success/25 bg-success/10 px-4 py-3 text-sm text-primary'
+            }
           >
             {errorMessage || message}
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-white/80">Push Notifications</Label>
-            <p className="text-sm text-white/60">Receive notifications on your device</p>
+        <div className="divide-y divide-border rounded-xl border border-border bg-surface-raised">
+          <div className="flex min-h-20 items-center justify-between gap-4 p-4">
+            <div className="min-w-0">
+              <Label htmlFor="notifications" className="font-medium text-primary">
+                Push Notifications
+              </Label>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Receive notifications on your device.
+              </p>
+            </div>
+            <Switch
+              id="notifications"
+              checked={settings.notifications}
+              onCheckedChange={(checked) =>
+                setSettings({ ...settings, notifications: checked })
+              }
+            />
           </div>
-          <Switch
-            checked={settings.notifications}
-            onCheckedChange={(checked) => setSettings({ ...settings, notifications: checked })}
-          />
+
+          <div className="flex min-h-20 items-center justify-between gap-4 p-4">
+            <div className="min-w-0">
+              <Label htmlFor="emailUpdates" className="font-medium text-primary">
+                Email Updates
+              </Label>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Receive email updates and newsletters.
+              </p>
+            </div>
+            <Switch
+              id="emailUpdates"
+              checked={settings.emailUpdates}
+              onCheckedChange={(checked) =>
+                setSettings({ ...settings, emailUpdates: checked })
+              }
+            />
+          </div>
+
+          <div className="flex min-h-20 items-center justify-between gap-4 p-4">
+            <div className="min-w-0">
+              <Label htmlFor="soundEnabled" className="font-medium text-primary">
+                Sound Effects
+              </Label>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Enable sound effects and ambient sounds.
+              </p>
+            </div>
+            <Switch
+              id="soundEnabled"
+              checked={settings.soundEnabled}
+              onCheckedChange={(checked) =>
+                setSettings({ ...settings, soundEnabled: checked })
+              }
+            />
+          </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-white/80">Email Updates</Label>
-            <p className="text-sm text-white/60">Receive email updates and newsletters</p>
-          </div>
-          <Switch
-            checked={settings.emailUpdates}
-            onCheckedChange={(checked) => setSettings({ ...settings, emailUpdates: checked })}
-          />
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSave}
+            disabled={loading}
+            className="min-h-11 w-full sm:w-auto"
+          >
+            <Save className="mr-2 h-4 w-4" aria-hidden="true" />
+            {loading ? 'Saving...' : 'Save Settings'}
+          </Button>
         </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-white/80">Sound Effects</Label>
-            <p className="text-sm text-white/60">Enable sound effects and ambient sounds</p>
-          </div>
-          <Switch
-            checked={settings.soundEnabled}
-            onCheckedChange={(checked) => setSettings({ ...settings, soundEnabled: checked })}
-          />
-        </div>
-
-        <Button
-          onClick={(e) => {
-            createRipple(e);
-            handleSave();
-          }}
-          disabled={loading}
-          className="min-h-11 w-full spiritual-gradient relative overflow-hidden"
-        >
-          <Save className="inline-block mr-2 h-4 w-4" />
-          {loading ? 'Saving...' : 'Save Settings'}
-        </Button>
       </CardContent>
     </Card>
-  );
+  )
 };
