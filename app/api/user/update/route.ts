@@ -9,6 +9,42 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+async function hasCurrentCanonicalKundali(uid: string, userData: any): Promise<boolean> {
+  if (!adminDb) return false
+
+  if (
+    userData?.locationVerified !== true ||
+    !isValidCoordinate(userData?.lat, userData?.lng) ||
+    !isValidTimezone(userData?.timezone) ||
+    userData?.derivedAstrologyStatus === 'stale'
+  ) {
+    return false
+  }
+
+  const kundaliRef = adminDb.collection('kundali').doc(uid)
+  const [kundaliSnap, d1Snap, dashaSnap] = await Promise.all([
+    kundaliRef.get(),
+    kundaliRef.collection('D1').doc('chart').get(),
+    kundaliRef.collection('dasha').doc('vimshottari').get(),
+  ])
+
+  const kundaliData = kundaliSnap.data()
+  const d1Data = d1Snap.data()
+  const dashaData = dashaSnap.data()
+
+  return (
+    kundaliSnap.exists &&
+    d1Snap.exists &&
+    dashaSnap.exists &&
+    kundaliData?.meta?.stale !== true &&
+    !!d1Data?.grahas &&
+    !!d1Data?.bhavas &&
+    !!d1Data?.lagna &&
+    !!dashaData?.currentMahadasha &&
+    !!dashaData?.currentAntardasha
+  )
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Get session cookie
@@ -161,6 +197,23 @@ export async function POST(request: NextRequest) {
 
       filteredUpdates.derivedAstrologyStatus = 'stale'
       filteredUpdates.birthDetailsUpdatedAt = new Date()
+    }
+
+    if (filteredUpdates.onboarded === true) {
+      const nextUserData = {
+        ...userData,
+        ...filteredUpdates,
+      }
+
+      if (birthDataChanged || !(await hasCurrentCanonicalKundali(uid, nextUserData))) {
+        return NextResponse.json(
+          {
+            code: 'KUNDALI_REQUIRED',
+            error: 'Generate a verified Kundali before completing onboarding.',
+          },
+          { status: 409 }
+        )
+      }
     }
 
     await userRef.update(filteredUpdates)

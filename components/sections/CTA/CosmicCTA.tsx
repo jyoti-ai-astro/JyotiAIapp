@@ -60,7 +60,7 @@ const defaultCTAs = {
     },
     secondaryCTA: {
       label: 'Explore Features',
-      href: '/cosmos',
+      href: '/features',
     },
   },
   astro: {
@@ -82,11 +82,11 @@ const defaultCTAs = {
     description: 'Discover all spiritual engines: Kundali, Numerology, Aura Scan, Palmistry, AI Guru, and Predictions. Your complete spiritual operating system.',
     primaryCTA: {
       label: 'Explore All Features',
-      href: '/cosmos',
+      href: '/features',
     },
     secondaryCTA: {
       label: 'View Pricing',
-      href: '/premium',
+      href: '/pricing',
     },
   },
   premium: {
@@ -95,11 +95,11 @@ const defaultCTAs = {
     description: 'Access unlimited readings, advanced predictions, detailed reports, and priority AI Guru guidance. Your destiny, fully unlocked.',
     primaryCTA: {
       label: 'Upgrade to Unlock Destiny',
-      href: '/premium#pricing',
+      href: '/pricing',
     },
     secondaryCTA: {
       label: 'View Plans',
-      href: '/premium',
+      href: '/pricing',
     },
   },
   about: {
@@ -138,7 +138,7 @@ const defaultCTAs = {
     },
     secondaryCTA: {
       label: 'View Features',
-      href: '/cosmos',
+      href: '/features',
     },
   },
 };
@@ -566,4 +566,3 @@ function CTAButton({ label, href, variant, glowIntensity, variantType }: CTAButt
     </Link>
   );
 }
-

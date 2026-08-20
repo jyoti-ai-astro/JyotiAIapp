@@ -34,6 +34,19 @@ function isLikelyDelhiFallback(userData: any): boolean {
   return isDelhiCoords && !pob.includes('delhi');
 }
 
+function dateFromFirestore(value: any): Date | null {
+  if (!value) return null;
+  if (typeof value?.toDate === 'function') return value.toDate();
+  if (value instanceof Date) return value;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function isFreshOnboardingClaim(value: any): boolean {
+  const claimedAt = dateFromFirestore(value);
+  return !!claimedAt && Date.now() - claimedAt.getTime() < 10 * 60 * 1000;
+}
+
 function validateKundaliBirthData(userData: any):
   | { ok: true; dob: Date; hours: number; minutes: number; lat: number; lng: number; timezone: string }
   | { ok: false; code: string; message: string } {
@@ -54,7 +67,7 @@ function validateKundaliBirthData(userData: any):
     return { ok: false, code: 'TIMEZONE_NOT_VERIFIED', message: 'A verified birth timezone is required before generating Kundali.' };
   }
 
-  if (userData?.locationVerified === false || isLikelyDelhiFallback(userData)) {
+  if (userData?.locationVerified !== true || isLikelyDelhiFallback(userData)) {
     return { ok: false, code: 'LOCATION_NOT_VERIFIED', message: 'Please verify your birth location before generating Kundali.' };
   }
 
@@ -74,6 +87,9 @@ function validateKundaliBirthData(userData: any):
  * Part B - Section 4: Step 8
  */
 export async function POST(request: NextRequest) {
+  let claimedFirstOnboardingKundali = false;
+  let claimUserRef: FirebaseFirestore.DocumentReference | null = null;
+
   try {
     // Verify session
     const sessionCookie = request.cookies.get('session')?.value;
@@ -104,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     const userData = userSnap.data();
     const hasFreeOnboardingKundali = !!userData?.freeOnboardingKundaliGeneratedAt;
-    const isFirstOnboardingKundali =
+    let isFirstOnboardingKundali =
       isOnboardingRequest && !kundaliSnap.exists && !hasFreeOnboardingKundali;
 
     if (isOnboardingRequest && (kundaliSnap.exists || hasFreeOnboardingKundali)) {
@@ -113,6 +129,70 @@ export async function POST(request: NextRequest) {
         reused: true,
         source: 'onboarding',
       });
+    }
+
+    const birthValidation = validateKundaliBirthData(userData);
+    if (!birthValidation.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: birthValidation.code,
+          error: birthValidation.message,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (isFirstOnboardingKundali) {
+      const claimResult = await adminDb.runTransaction(async (transaction) => {
+        const [freshUserSnap, freshKundaliSnap] = await Promise.all([
+          transaction.get(userRef),
+          transaction.get(kundaliRef),
+        ]);
+
+        const freshUserData = freshUserSnap.data() || {};
+        if (freshKundaliSnap.exists || freshUserData.freeOnboardingKundaliGeneratedAt) {
+          return 'reused' as const;
+        }
+
+        if (isFreshOnboardingClaim(freshUserData.freeOnboardingKundaliClaimedAt)) {
+          return 'in_progress' as const;
+        }
+
+        transaction.set(
+          userRef,
+          {
+            freeOnboardingKundaliClaimedAt: new Date(),
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        );
+
+        return 'claimed' as const;
+      });
+
+      if (claimResult === 'reused') {
+        return NextResponse.json({
+          success: true,
+          reused: true,
+          source: 'onboarding',
+        });
+      }
+
+      if (claimResult === 'in_progress') {
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'KUNDALI_GENERATION_IN_PROGRESS',
+            message: 'Your first Kundali is already being generated. Please wait a moment and refresh.',
+          },
+          { status: 409 }
+        );
+      }
+
+      claimedFirstOnboardingKundali = true;
+      claimUserRef = userRef;
+      isFirstOnboardingKundali = true;
     }
 
     if (!isFirstOnboardingKundali) {
@@ -141,18 +221,6 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
-    }
-
-    const birthValidation = validateKundaliBirthData(userData);
-    if (!birthValidation.ok) {
-      return NextResponse.json(
-        {
-          success: false,
-          code: birthValidation.code,
-          error: birthValidation.message,
-        },
-        { status: 400 }
-      );
     }
 
     const birthDetails: BirthDetails = {
@@ -261,6 +329,7 @@ export async function POST(request: NextRequest) {
       await userRef.set(
         {
           freeOnboardingKundaliGeneratedAt: new Date(),
+          freeOnboardingKundaliClaimedAt: null,
           derivedAstrologyStatus: 'current',
           updatedAt: new Date(),
         },
@@ -292,6 +361,20 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
+    if (claimedFirstOnboardingKundali && claimUserRef) {
+      await claimUserRef
+        .set(
+          {
+            freeOnboardingKundaliClaimedAt: null,
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        )
+        .catch((claimError: any) => {
+          console.error('[kundali] failed to clear onboarding claim', claimError);
+        });
+    }
+
     console.error('[kundali] generate-full error', error);
     return NextResponse.json(
       { success: false, message: 'Kundali generation failed' },

@@ -60,7 +60,7 @@ async function loadBirthData(userId: string): Promise<AstroBirthData | null> {
     !isValidCoordinate(userData?.lat, userData?.lng) ||
     !isValidTimezone(userData?.timezone) ||
     userData?.derivedAstrologyStatus === 'stale' ||
-    userData?.locationVerified === false
+    userData?.locationVerified !== true
   ) {
     return null
   }
@@ -621,7 +621,7 @@ export async function getCachedAstroContext(userId: string): Promise<AstroContex
     const userData = userSnap.exists ? userSnap.data() : null
     if (
       userData?.derivedAstrologyStatus === 'stale' ||
-      userData?.locationVerified === false ||
+      userData?.locationVerified !== true ||
       !isValidCoordinate(userData?.lat, userData?.lng) ||
       !isValidTimezone(userData?.timezone)
     ) {

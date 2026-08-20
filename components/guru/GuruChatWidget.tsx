@@ -42,7 +42,7 @@ export const GuruChatWidget = () => {
     '/signup',
     '/magic-link',
     '/onboarding',
-    '/profile-setup',
+    '/onboarding',
     '/guru',
     '/report',
     '/reports/',

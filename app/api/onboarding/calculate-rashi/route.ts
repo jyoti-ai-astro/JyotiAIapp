@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       time &&
       isValidCoordinate(userData?.lat, userData?.lng) &&
       isValidTimezone(userData?.timezone) &&
-      userData?.locationVerified !== false
+      userData?.locationVerified === true
 
     if (!hasValidBirthData) {
       return NextResponse.json(

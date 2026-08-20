@@ -11,7 +11,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, XCircle, Loader2, AlertCircle } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 
 interface TestResult {
@@ -20,6 +20,14 @@ interface TestResult {
 }
 
 export default function SmokeTestPage() {
+  if (process.env.NODE_ENV === 'production') {
+    return (
+      <DashboardPageShell title="Not available" subtitle="This diagnostic page is disabled in production">
+        <div className="text-sm text-gray-500">Smoke tests are available only in development.</div>
+      </DashboardPageShell>
+    )
+  }
+
   const [results, setResults] = useState<Record<string, TestResult>>({
     auth: { status: 'idle' },
     tickets: { status: 'idle' },
@@ -158,4 +166,3 @@ export default function SmokeTestPage() {
     </DashboardPageShell>
   )
 }
-

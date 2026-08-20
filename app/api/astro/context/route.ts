@@ -1,18 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  // Temporary stub so dashboard doesn't break
   return NextResponse.json(
-  {
-    success: true,
-    astro: {
-      sunSign: null,
-      moonSign: null,
-      ascendant: null,
-      dominantElement: null,
-      dominantPlanet: null,
+    {
+      success: false,
+      code: 'LEGACY_ASTRO_CONTEXT_DISABLED',
+      message:
+        'Legacy astro context is disabled for Launch v1. Use canonical feature APIs backed by verified Kundali data.',
     },
-  },
-  { status: 200 }
-);
+    { status: 410 }
+  );
 }

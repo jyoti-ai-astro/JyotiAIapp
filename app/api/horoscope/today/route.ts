@@ -3,6 +3,7 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { generateDailyHoroscope } from '@/lib/engines/horoscope/daily-horoscope'
 import { logEvent } from '@/lib/logging/log-event'
 import { getAIErrorStatus } from '@/lib/ai/provider-errors'
+import { isValidCoordinate, isValidTimezone } from '@/lib/services/geocoding'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +47,21 @@ export async function GET(request: NextRequest) {
           success: false,
           error: 'KUNDALI_STALE',
           message: 'Your birth details changed. Regenerate your Kundali before requesting a personalized horoscope.',
+        },
+        { status: 409 }
+      )
+    }
+
+    if (
+      userData?.locationVerified !== true ||
+      !isValidCoordinate(userData?.lat, userData?.lng) ||
+      !isValidTimezone(userData?.timezone)
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'LOCATION_NOT_VERIFIED',
+          message: 'Verify your birth location before requesting a personalized horoscope.',
         },
         { status: 409 }
       )
