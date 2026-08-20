@@ -10,20 +10,21 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useUserStore } from '@/store/user-store'
-import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
-import { decrementTicket } from '@/lib/access/ticket-access'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 
 interface Report {
+  id?: string
   reportId: string
-  type: string
+  type: 'kundali' | 'predictions' | 'timeline'
   title: string
-  pdfUrl?: string
+  pdfUrl?: string | null
+  storagePath?: string | null
+  failureReason?: string | null
   generatedAt?: string
   createdAt: string
-  status?: 'ready' | 'locked' | 'generating'
+  status?: 'queued' | 'generating' | 'ready' | 'failed'
   image?: string
 }
 
@@ -52,12 +53,7 @@ export default function ReportsPage() {
 
       if (response.ok) {
         const result = await response.json()
-        const formattedReports = (result.reports || []).map((report: any) => ({
-          ...report,
-          status: report.pdfUrl ? 'ready' : 'locked',
-          type: report.type === 'premium' ? 'Premium' : 'Standard',
-        }))
-        setReports(formattedReports)
+        setReports(result.reports || [])
       }
     } catch (error) {
       console.error('Load reports error:', error)
@@ -70,29 +66,12 @@ export default function ReportsPage() {
     setGenerating(true)
 
     try {
-      // Check feature access
       if (!user) {
         router.push('/login')
         return
       }
 
-      const featureMap: Record<string, 'kundali' | 'predictions'> = {
-        kundali: 'kundali',
-        predictions: 'predictions',
-        timeline: 'predictions',
-      }
-
-      const feature = featureMap[type]
-      const accessCheck = await checkFeatureAccess(user, feature)
-
-      if (!accessCheck.allowed) {
-        if (accessCheck.redirectTo) {
-          router.push(accessCheck.redirectTo)
-        }
-        return
-      }
-
-      const response = await fetch('/api/report/generate', {
+      const response = await fetch('/api/reports/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -103,24 +82,18 @@ export default function ReportsPage() {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to generate report')
+        const error = await response.json().catch(() => ({}))
+        if (error.code === 'NO_TICKETS') {
+          router.push(type === 'kundali' ? '/pay/199' : '/pay/199')
+          return
+        }
+        throw new Error(error.error || error.message || 'Failed to generate report')
       }
 
-      // Download PDF
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${type}-report-${new Date().toISOString().split('T')[0]}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-
-      // Decrement ticket if needed
-      if (accessCheck.decrementTicket) {
-        await decrementTicket(feature === 'kundali' ? 'kundali_basic' : 'ai_questions')
+      const result = await response.json()
+      if (result.report?.reportId) {
+        router.push(`/reports/${result.report.reportId}`)
+        return
       }
 
       loadReports()
@@ -132,49 +105,11 @@ export default function ReportsPage() {
     }
   }
 
-  const handleUnlock = (report: Report) => {
-    // Redirect to payment or show payment modal
-    router.push('/pricing')
-  }
-
   if (!user) {
     return null
   }
 
-  // Mock data for empty state (remove in production if not needed)
-  const displayReports = reports.length
-    ? reports
-    : loading
-      ? []
-      : [
-          {
-            reportId: '1',
-            title: 'Detailed Kundali Analysis',
-            type: 'Premium',
-            generatedAt: new Date().toISOString(),
-            status: 'ready' as const,
-            image: '/content/astro-1.png',
-            createdAt: new Date().toISOString(),
-          },
-          {
-            reportId: '2',
-            title: '2024 Career Forecast',
-            type: 'Standard',
-            generatedAt: new Date().toISOString(),
-            status: 'ready' as const,
-            image: '/content/astro-2.png',
-            createdAt: new Date().toISOString(),
-          },
-          {
-            reportId: '3',
-            title: 'Relationship Compatibility',
-            type: 'Premium',
-            generatedAt: new Date().toISOString(),
-            status: 'locked' as const,
-            image: '/content/astro-3.png',
-            createdAt: new Date().toISOString(),
-          },
-        ]
+  const displayReports = reports
 
   return (
     <DashboardPageShell
@@ -335,15 +270,15 @@ export default function ReportsPage() {
 
                       <div className="absolute top-4 right-4">
                         <Badge
-                          variant={report.type === 'Premium' ? 'premium' : 'default'}
+                          variant={report.type === 'kundali' ? 'premium' : 'default'}
                           className={cn(
                             'backdrop-blur-md border-0',
-                            report.type === 'Premium'
+                            report.type === 'kundali'
                               ? 'bg-gold/20 text-gold'
                               : 'bg-blue-500/20 text-blue-200'
                           )}
                         >
-                          {report.type}
+                          {report.status === 'ready' ? report.type : report.status}
                         </Badge>
                       </div>
                     </div>
@@ -355,27 +290,34 @@ export default function ReportsPage() {
                           <h3 className="text-xl font-display font-semibold text-white group-hover:text-gold transition-colors">
                             {report.title}
                           </h3>
-                          {report.status === 'locked' ? (
-                            <Lock className="w-5 h-5 text-white/40" />
+                          {report.status === 'failed' ? (
+                            <Lock className="w-5 h-5 text-red-300" />
                           ) : (
                             <FileText className="w-5 h-5 text-aura-cyan" />
                           )}
                         </div>
-                        <p className="text-sm text-white/50">Generated on {formattedDate}</p>
+                        <p className="text-sm text-white/50">
+                          {report.status === 'ready' ? 'Generated' : 'Requested'} on {formattedDate}
+                        </p>
+                        {report.status === 'failed' && (
+                          <p className="text-sm text-red-200">
+                            {report.failureReason || 'Report generation failed'}
+                          </p>
+                        )}
                       </div>
 
                       {/* Action Buttons */}
                       <div className="flex gap-3 pt-2">
-                        {report.status === 'locked' ? (
+                        {report.status === 'failed' ? (
                           <Button
-                            onClick={() => handleUnlock(report)}
+                            onClick={() => handleGenerate(report.type)}
                             className="w-full bg-gradient-to-r from-gold/80 to-gold text-cosmic-navy font-semibold hover:brightness-110"
                           >
-                            Unlock Report
+                            Retry
                           </Button>
                         ) : (
                           <>
-                            {report.pdfUrl ? (
+                            {report.status === 'ready' && report.pdfUrl ? (
                               <>
                                 <Link href={`/reports/${report.reportId}`} className="flex-1">
                                   <Button
@@ -399,7 +341,7 @@ export default function ReportsPage() {
                                 className="w-full border-white/10 hover:bg-white/5 text-white"
                                 disabled
                               >
-                                Processing...
+                                {report.status === 'queued' ? 'Queued...' : 'Generating...'}
                               </Button>
                             )}
                           </>

@@ -13,8 +13,10 @@ interface Report {
   reportId: string
   type: string
   title: string
-  pdfUrl: string
-  generatedAt: string
+  status: 'queued' | 'generating' | 'ready' | 'failed'
+  pdfUrl?: string | null
+  failureReason?: string | null
+  generatedAt?: string | null
   createdAt: string
 }
 
@@ -92,31 +94,47 @@ export default function ReportDetailPage() {
         <div>
           <h1 className="text-4xl font-display font-bold">{report.title}</h1>
           <p className="text-muted-foreground">
-            Generated on {new Date(report.generatedAt || report.createdAt).toLocaleDateString()}
+            {report.status === 'ready' ? 'Generated' : 'Requested'} on{' '}
+            {new Date(report.generatedAt || report.createdAt).toLocaleDateString()}
           </p>
         </div>
         <div className="flex gap-2">
           <Link href="/reports">
             <Button variant="outline">Back to Reports</Button>
           </Link>
-          <a href={report.pdfUrl} download>
-            <Button>Download PDF</Button>
-          </a>
+          {report.status === 'ready' && report.pdfUrl && (
+            <a href={report.pdfUrl} download>
+              <Button>Download PDF</Button>
+            </a>
+          )}
         </div>
       </div>
 
       <Card>
         <CardContent className="pt-6">
-          <div className="aspect-[8.5/11] w-full">
-            <iframe
-              src={report.pdfUrl}
-              className="w-full h-full border rounded-lg"
-              title={report.title}
-            />
-          </div>
+          {report.status === 'ready' && report.pdfUrl ? (
+            <div className="aspect-[8.5/11] w-full">
+              <iframe
+                src={report.pdfUrl}
+                className="w-full h-full border rounded-lg"
+                title={report.title}
+              />
+            </div>
+          ) : report.status === 'failed' ? (
+            <div className="py-12 text-center">
+              <p className="text-destructive">
+                {report.failureReason || 'Report generation failed.'}
+              </p>
+            </div>
+          ) : (
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground">
+                Your report is {report.status}. Refresh this page shortly.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   )
 }
-

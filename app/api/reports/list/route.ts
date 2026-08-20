@@ -3,6 +3,14 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 
 export const dynamic = 'force-dynamic'
 
+function toIso(value: any): string | null {
+  if (!value) return null
+  if (value instanceof Date) return value.toISOString()
+  if (typeof value?.toDate === 'function') return value.toDate().toISOString()
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date.toISOString()
+}
+
 /**
  * List Reports
  * Part B - Section 6: Reports Engine
@@ -32,10 +40,19 @@ export async function GET(request: NextRequest) {
     const reports = reportsSnap.docs.map((doc) => {
       const data = doc.data()
       return {
+        id: data?.id || doc.id,
         reportId: doc.id,
-        ...data,
-        generatedAt: data?.metadata?.generatedAt?.toDate?.()?.toISOString() || null,
-        createdAt: data?.createdAt?.toDate?.()?.toISOString() || null,
+        uid: data?.uid || uid,
+        type: data?.type || null,
+        title: data?.title || 'Untitled Report',
+        status: data?.status || (data?.pdfUrl ? 'ready' : 'failed'),
+        pdfUrl: data?.pdfUrl || null,
+        storagePath: data?.storagePath || null,
+        failureReason: data?.failureReason || null,
+        entitlement: data?.entitlement || null,
+        generatedAt: toIso(data?.generatedAt ?? data?.metadata?.generatedAt),
+        createdAt: toIso(data?.createdAt),
+        updatedAt: toIso(data?.updatedAt),
       }
     })
 
@@ -51,4 +68,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

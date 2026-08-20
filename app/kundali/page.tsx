@@ -18,7 +18,6 @@ import { KundaliWheel3D } from '@/components/organisms/kundali-wheel-3d'
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 import { useTicketAccess } from '@/lib/access/useTicketAccess'
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
-import { decrementTicket } from '@/lib/access/ticket-access'
 import Link from 'next/link'
 import type { AstroContext } from '@/lib/engines/astro-types'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
@@ -141,7 +140,7 @@ export default function KundaliPage() {
     setDownloadingReport(true)
 
     try {
-      const response = await fetch('/api/report/generate', {
+      const response = await fetch('/api/reports/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,23 +154,14 @@ export default function KundaliPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to generate report')
+        throw new Error(errorData.error || errorData.message || 'Failed to generate report')
       }
 
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `Kundali-Report-${new Date()
-        .toISOString()
-        .split('T')[0]}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-
-      if (accessCheck.decrementTicket) {
-        await decrementTicket('kundali_basic')
+      const result = await response.json()
+      if (result.report?.pdfUrl) {
+        window.location.href = result.report.pdfUrl
+      } else if (result.report?.reportId) {
+        router.push(`/reports/${result.report.reportId}`)
       }
     } catch (err: any) {
       console.error('Error downloading report:', err)
