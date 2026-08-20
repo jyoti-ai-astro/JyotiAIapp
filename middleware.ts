@@ -57,13 +57,44 @@ function atobUrl(value: string) {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Canonicalize retired Launch-v0 page aliases before React renders.
+  const legacyRedirects: Record<string, string> = {
+    '/home': '/',
+    '/premium': '/pricing',
+    '/profile-setup': '/onboarding',
+    '/rasi-confirmation': '/onboarding',
+    '/report': '/reports',
+  }
+
+  const legacyDestination = legacyRedirects[pathname]
+  if (legacyDestination) {
+    return NextResponse.redirect(new URL(legacyDestination, request.url))
+  }
+
   // Public auth routes (always allow)
   const publicAuthRoutes = ['/login', '/signup', '/reset-password', '/magic-link']
   const isPublicAuthRoute = publicAuthRoutes.some((route) => pathname === route)
 
-  // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/onboarding', '/scan', '/insights', '/reports', '/guru', '/settings']
-  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
+  // Canonical Launch v1 routes that require an authenticated user session.
+  const protectedRoutes = [
+    '/dashboard',
+    '/onboarding',
+    '/kundali',
+    '/guru',
+    '/predictions',
+    '/timeline',
+    '/reports',
+    '/profile',
+    '/settings',
+    '/payments',
+    '/pay',
+    '/scan',
+    '/insights',
+  ]
+
+  const isProtectedRoute = protectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  )
 
   // Admin routes
   const adminRoutes = ['/admin']
