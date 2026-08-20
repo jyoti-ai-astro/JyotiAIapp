@@ -35,6 +35,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     soundEnabled: initialSettings?.soundEnabled ?? false,
   });
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setSettings({
@@ -47,6 +49,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const handleSave = async () => {
     try {
       setLoading(true);
+      setMessage(null);
+      setErrorMessage(null);
       if (onSave) {
         await onSave(settings);
       } else {
@@ -62,10 +66,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           throw new Error(data.error || 'Failed to save settings');
         }
       }
-      alert('Settings saved successfully');
-    } catch (error) {
+      setMessage('Settings saved.');
+    } catch (error: any) {
       console.error('Save settings error:', error);
-      alert('Failed to save settings');
+      setErrorMessage(error?.message || 'Failed to save settings');
     } finally {
       setLoading(false);
     }
@@ -96,6 +100,19 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <CardDescription className="text-white/70">Customize your experience</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {(message || errorMessage) && (
+          <div
+            role={errorMessage ? 'alert' : 'status'}
+            className={`rounded-lg border px-4 py-3 text-sm ${
+              errorMessage
+                ? 'border-red-400/40 bg-red-500/10 text-red-100'
+                : 'border-green-400/40 bg-green-500/10 text-green-100'
+            }`}
+          >
+            {errorMessage || message}
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
             <Label className="text-white/80">Push Notifications</Label>
@@ -135,7 +152,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             handleSave();
           }}
           disabled={loading}
-          className="w-full spiritual-gradient relative overflow-hidden"
+          className="min-h-11 w-full spiritual-gradient relative overflow-hidden"
         >
           <Save className="inline-block mr-2 h-4 w-4" />
           {loading ? 'Saving...' : 'Save Settings'}

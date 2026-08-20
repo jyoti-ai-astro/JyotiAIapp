@@ -21,7 +21,6 @@ import Link from 'next/link';
 export default function SettingsPage() {
   const router = useRouter();
   const { user, updateUser } = useUserStore();
-  const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState({
     notifications: true,
     emailUpdates: true,
@@ -52,7 +51,6 @@ export default function SettingsPage() {
 
   const handleSave = async (newSettings = settings) => {
     try {
-      setLoading(true);
       const response = await fetch('/api/user/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,12 +63,9 @@ export default function SettingsPage() {
       }
       setSettings(newSettings);
       updateUser({ settings: newSettings } as any);
-      alert('Settings saved successfully');
     } catch (error) {
       console.error('Save settings error:', error);
-      alert('Failed to save settings');
-    } finally {
-      setLoading(false);
+      throw error;
     }
   };
 
@@ -93,7 +88,7 @@ export default function SettingsPage() {
 
           <div className="text-center">
             <Link href="/dashboard">
-              <Button variant="outline" className="border-cosmic-purple/50 text-white/80 hover:bg-cosmic-purple/20">
+              <Button variant="outline" className="min-h-11 border-cosmic-purple/50 text-white/80 hover:bg-cosmic-purple/20">
                 Back to Dashboard
               </Button>
             </Link>

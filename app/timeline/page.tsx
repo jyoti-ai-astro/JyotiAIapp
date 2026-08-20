@@ -10,14 +10,14 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { motion } from 'framer-motion';
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { SkeletonCard } from '@/components/ui/skeleton';
+import { EmptyState, LoadingState } from '@/components/ui/feedback-state';
 import { Calendar, Download, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
@@ -109,6 +109,7 @@ export default function TimelinePage() {
     if (!user) return;
 
     setDownloadingReport(true);
+    setTimelineError(null);
 
     try {
       const response = await fetch('/api/reports/generate', {
@@ -136,7 +137,7 @@ export default function TimelinePage() {
       }
     } catch (err: any) {
       console.error('Error downloading report:', err);
-      alert(err.message || 'Failed to download report. Please try again.');
+      setTimelineError(err.message || 'Failed to generate timeline report. Please try again.');
     } finally {
       setDownloadingReport(false);
     }
@@ -156,9 +157,9 @@ export default function TimelinePage() {
           <OneTimeOfferBanner
             title="Unlock Full Insights"
             description="This module uses your birth chart & predictions powered by Guru Brain."
-            priceLabel="₹199"
+            priceLabel="₹299"
             ctaLabel="Unlock Now"
-            ctaHref="/pay/199"
+            ctaHref="/pay/299"
           />
         </div>
 
@@ -374,32 +375,27 @@ export default function TimelinePage() {
           )}
 
           {(loadingPersistedTimeline || timelineLoading) && !timelineResult ? (
-            <SkeletonCard />
+            <Card>
+              <CardContent>
+                <LoadingState
+                  title={timelineLoading ? 'Generating timeline' : 'Loading timeline'}
+                  description="We are checking your saved timeline state."
+                />
+              </CardContent>
+            </Card>
           ) : !timelineResult ? (
-            <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
-              <CardContent className="pt-12 pb-12 text-center space-y-4">
-                <Calendar className="w-16 h-16 text-[#FFD57A]/40 mx-auto" />
-                <h3 className="text-2xl font-display font-semibold text-white">No Timeline Yet</h3>
-                <p className="text-white/60 max-w-md mx-auto">
-                  Generate a timeline after completing your birth profile and Kundali.
-                </p>
-                <Button
-                  onClick={handleGenerateTimeline}
-                  disabled={timelineLoading}
-                  className="mt-4 bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#05050A]"
-                >
-                  {timelineLoading ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
+            <Card>
+              <CardContent>
+                <EmptyState
+                  title="No timeline yet"
+                  description="Generate a timeline after completing your verified birth profile and Kundali."
+                  action={
+                    <Button onClick={handleGenerateTimeline} disabled={timelineLoading} className="min-h-11">
                       <Calendar className="h-4 w-4 mr-2" />
                       Generate Timeline
-                    </>
-                  )}
-                </Button>
+                    </Button>
+                  }
+                />
               </CardContent>
             </Card>
           ) : null}
@@ -416,7 +412,7 @@ export default function TimelinePage() {
               <Button
                 onClick={handleDownloadReport}
                 disabled={downloadingReport}
-                className="w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+                className="min-h-11 w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
               >
                 {downloadingReport ? (
                   <>

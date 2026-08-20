@@ -1,154 +1,161 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import {
-  getSubscriptionPlan,
-  type SubscriptionPlanId,
-} from "@/lib/pricing/plans";
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { CreditCard, RefreshCw } from 'lucide-react'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ErrorState, LoadingState, RetryButton } from '@/components/ui/feedback-state'
+import { getSubscriptionPlan, type SubscriptionPlanId } from '@/lib/pricing/plans'
 
 interface SubscriptionStatusResponse {
-  active: boolean;
-  planId: SubscriptionPlanId | null;
-  productId: string | null;
-  razorpaySubscriptionId: string | null;
-  status: string | null;
+  active: boolean
+  planId: SubscriptionPlanId | null
+  productId: string | null
+  razorpaySubscriptionId: string | null
+  status: string | null
 }
 
 export default function PaymentsPage() {
-  const [status, setStatus] = useState<SubscriptionStatusResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<SubscriptionStatusResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchStatus = async (refresh = false) => {
+    try {
+      refresh ? setRefreshing(true) : setLoading(true)
+      setError(null)
+
+      const res = await fetch(`/api/subscriptions/status${refresh ? '?refresh=true' : ''}`, {
+        cache: 'no-store',
+        credentials: 'include',
+      })
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(json.error || `Status ${res.status}`)
+      }
+
+      setStatus(json as SubscriptionStatusResponse)
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load subscription')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    fetchStatus()
+  }, [])
 
-        const res = await fetch("/api/subscriptions/status", {
-          cache: "no-store",
-        });
-
-        if (!res.ok) {
-          throw new Error(`Status ${res.status}`);
-        }
-
-        const json = (await res.json()) as SubscriptionStatusResponse;
-        setStatus(json);
-      } catch (err: any) {
-        setError(err?.message || "Failed to load subscription");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStatus();
-  }, []);
-
-  const plan =
-    status?.planId && typeof status.planId === "string"
-      ? getSubscriptionPlan(status.planId)
-      : null;
-
-  const hasAnySubscription = !!plan;
+  const plan = status?.planId ? getSubscriptionPlan(status.planId) : null
+  const statusLabel = status?.status || 'none'
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto flex max-w-4xl flex-col gap-8 px-4 py-8">
-        <header>
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Payments
-          </h1>
-          <p className="mt-2 text-sm text-slate-300">
-            Manage your subscription and payments
-          </p>
-        </header>
-
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg shadow-slate-950/40">
-          <h2 className="text-xl font-medium">Current Subscription</h2>
-          <p className="mt-1 text-sm text-slate-400">
-            Your active subscription plan
-          </p>
-
-          {loading && (
-            <p className="mt-4 text-sm text-slate-300">
-              Checking your subscription…
-            </p>
-          )}
-
-          {!loading && error && (
-            <p className="mt-4 text-sm text-red-400">
-              {error} – we couldn&apos;t load your subscription right now.
-            </p>
-          )}
-
-          {!loading && !error && !hasAnySubscription && (
-            <p className="mt-4 text-sm text-slate-300">
-              No active subscription
-            </p>
-          )}
-
-          {!loading && !error && hasAnySubscription && plan && status && (
-            <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900/80 p-4">
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide">
-                    {status.active ? (
-                      <span className="text-emerald-400">Active</span>
-                    ) : (
-                      <span className="text-amber-300">
-                        Not active yet ({status.status || "pending"})
-                      </span>
+    <DashboardPageShell
+      title="Payments"
+      subtitle="Current plan, subscription status, and purchase options"
+      rightActions={
+        <Button variant="outline" onClick={() => fetchStatus(true)} disabled={refreshing} className="min-h-11">
+          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      }
+    >
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Current Subscription
+            </CardTitle>
+            <CardDescription>
+              Read from `/api/subscriptions/status`; Razorpay `created` is shown as pending and does not grant active access.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <LoadingState title="Checking subscription" description="Loading your canonical subscription state." />
+            ) : error ? (
+              <ErrorState
+                title="Subscription unavailable"
+                description={error}
+                action={<RetryButton onClick={() => fetchStatus()} />}
+              />
+            ) : !status?.active ? (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <Badge variant="secondary" className="mb-2">No active subscription</Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Current Razorpay status: <span className="font-mono">{statusLabel}</span>
+                    </p>
+                    {status?.planId && plan && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Pending plan: {plan.name} · {plan.priceLabel}{plan.period}
+                      </p>
                     )}
                   </div>
-
-                  <div className="mt-1 text-lg font-semibold">
-                    {plan.name} • {plan.priceLabel}
-                    <span className="ml-1 text-sm font-normal text-slate-400">
-                      {plan.period}
-                    </span>
-                  </div>
-
-                  <p className="mt-1 text-sm text-slate-300">
-                    {plan.description}
-                  </p>
-
-                  {!status.active && (
-                    <p className="mt-2 text-xs text-slate-400">
-                      We can see a subscription for this plan in Razorpay, but
-                      it&apos;s not marked as active yet. If you just paid,
-                      Razorpay may take a short time to update the status. You
-                      can refresh this page after a while, or try the payment
-                      again if it remains in the{" "}
-                      <span className="font-mono">{status.status}</span> state.
-                    </p>
-                  )}
+                  <Link href="/pricing">
+                    <Button className="min-h-11 w-full sm:w-auto">View Plans</Button>
+                  </Link>
                 </div>
-
-                <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-400">
-                  <div className="font-semibold text-slate-200">
-                    Technical details
-                  </div>
-                  <div className="mt-1 break-all font-mono">
-                    Status: {status.status || "unknown"}
-                  </div>
+              </div>
+            ) : plan ? (
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <Badge variant="success" className="mb-3">Active</Badge>
+                  <h2 className="text-xl font-semibold">
+                    {plan.name} · {plan.priceLabel}
+                    <span className="ml-1 text-sm font-normal text-muted-foreground">{plan.period}</span>
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground">
+                  <p className="font-semibold text-foreground">Subscription details</p>
+                  <p className="mt-2 break-all font-mono">Status: {status.status || 'unknown'}</p>
                   {status.razorpaySubscriptionId && (
-                    <div className="mt-1 break-all font-mono">
-                      Sub ID: {status.razorpaySubscriptionId}
-                    </div>
+                    <p className="mt-1 break-all font-mono">Sub ID: {status.razorpaySubscriptionId}</p>
                   )}
                   {status.productId && (
-                    <div className="mt-1 break-all font-mono">
-                      Plan Product: {status.productId}
-                    </div>
+                    <p className="mt-1 break-all font-mono">Product: {status.productId}</p>
                   )}
                 </div>
               </div>
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
+            ) : (
+              <ErrorState
+                title="Unknown plan"
+                description="Your subscription is active, but its plan metadata could not be resolved."
+                action={<Link href="/support"><Button variant="outline">Contact Support</Button></Link>}
+              />
+            )}
+          </CardContent>
+        </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>One-Time Purchases</CardTitle>
+            <CardDescription>
+              One-time products add tickets or prediction credits. They are separate from monthly subscriptions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-3">
+            <Link href="/pay/99">
+              <Button variant="outline" className="min-h-11 w-full">Quick Reading · ₹99</Button>
+            </Link>
+            <Link href="/pay/199">
+              <Button variant="outline" className="min-h-11 w-full">Deep Insight · ₹199</Button>
+            </Link>
+            <Link href="/pay/299">
+              <Button variant="outline" className="min-h-11 w-full">Predictions Credit · ₹299</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardPageShell>
+  )
+}

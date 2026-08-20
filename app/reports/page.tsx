@@ -9,6 +9,7 @@ import { FileText, Download, Sparkles, Lock, RefreshCw, Eye } from 'lucide-react
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { EmptyState, LoadingState } from '@/components/ui/feedback-state'
 import { useUserStore } from '@/store/user-store'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -25,6 +26,8 @@ interface Report {
   generatedAt?: string
   createdAt: string
   status?: 'queued' | 'generating' | 'ready' | 'failed'
+  outdated?: boolean
+  staleStatus?: 'current' | 'outdated_after_birth_change'
   image?: string
 }
 
@@ -245,10 +248,26 @@ export default function ReportsPage() {
 
         {/* Reports Grid */}
         {loading ? (
-          <div className="text-center py-12">
-            <RefreshCw className="w-8 h-8 text-gold animate-spin mx-auto mb-4" />
-            <p className="text-white/60">Loading your cosmic reports...</p>
-          </div>
+          <Card>
+            <CardContent>
+              <LoadingState title="Loading reports" description="Checking your persisted report library." />
+            </CardContent>
+          </Card>
+        ) : displayReports.length === 0 ? (
+          <Card>
+            <CardContent>
+              <EmptyState
+                title="No reports yet"
+                description="Generate your first Launch v1 report from Kundali, Predictions, or Timeline."
+                action={
+                  <Button onClick={() => handleGenerate('kundali')} disabled={generating} className="min-h-11">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Kundali Report
+                  </Button>
+                }
+              />
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {displayReports.map((report, index) => {
@@ -290,6 +309,13 @@ export default function ReportsPage() {
                           {report.status === 'ready' ? report.type : report.status}
                         </Badge>
                       </div>
+                      {report.outdated && (
+                        <div className="absolute left-4 top-4">
+                          <Badge className="bg-amber-500/20 text-amber-100 border border-amber-300/40">
+                            Outdated
+                          </Badge>
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}
@@ -308,6 +334,11 @@ export default function ReportsPage() {
                         <p className="text-sm text-white/50">
                           {report.status === 'ready' ? 'Generated' : 'Requested'} on {formattedDate}
                         </p>
+                        {report.outdated && (
+                          <p className="text-sm text-amber-100">
+                            Birth details changed after this report. Keep it for records, but regenerate for current astrology.
+                          </p>
+                        )}
                         {report.status === 'failed' && (
                           <p className="text-sm text-red-200">
                             {report.failureReason || 'Report generation failed'}
@@ -320,7 +351,7 @@ export default function ReportsPage() {
                         {report.status === 'failed' ? (
                           <Button
                             onClick={() => handleGenerate(report.type)}
-                            className="w-full bg-gradient-to-r from-gold/80 to-gold text-cosmic-navy font-semibold hover:brightness-110"
+                            className="min-h-11 w-full bg-gradient-to-r from-gold/80 to-gold text-cosmic-navy font-semibold hover:brightness-110"
                           >
                             Retry
                           </Button>
@@ -331,14 +362,14 @@ export default function ReportsPage() {
                                 <Link href={`/reports/${report.reportId}`} className="flex-1">
                                   <Button
                                     variant="outline"
-                                    className="w-full border-white/10 hover:bg-white/5 text-white"
+                                    className="min-h-11 w-full border-white/10 hover:bg-white/5 text-white"
                                   >
                                     <Eye className="w-4 h-4 mr-2" />
                                     View
                                   </Button>
                                 </Link>
                                 <a href={report.pdfUrl} download className="flex-1">
-                                  <Button className="w-full bg-cosmic-purple/80 hover:bg-cosmic-purple text-white">
+                                  <Button className="min-h-11 w-full bg-cosmic-purple/80 hover:bg-cosmic-purple text-white">
                                     <Download className="w-4 h-4 mr-2" />
                                     PDF
                                   </Button>
@@ -390,40 +421,6 @@ export default function ReportsPage() {
               </button>
             </motion.div>
           </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && reports.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-12"
-          >
-            <Sparkles className="w-16 h-16 text-gold/40 mx-auto mb-4" />
-            <h3 className="text-2xl font-display font-semibold text-white mb-2">
-              No Reports Yet
-            </h3>
-            <p className="text-white/60 mb-6">
-              Generate your first cosmic report to unlock insights into your destiny.
-            </p>
-            <Button
-              onClick={() => handleGenerate('kundali')}
-              disabled={generating}
-              className="bg-gradient-to-r from-gold/80 to-gold text-cosmic-navy font-semibold hover:brightness-110"
-            >
-              {generating ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate First Report
-                </>
-              )}
-            </Button>
-          </motion.div>
         )}
     </DashboardPageShell>
   )

@@ -300,7 +300,7 @@ export default function ProfilePage() {
         <CardHeader>
           <CardTitle>Birth Details</CardTitle>
           <CardDescription>
-            Changing birth data marks existing Kundali, dasha, timeline, Guru context, and reports as stale.
+            Changing birth details requires your Kundali and personalized astrology to be refreshed.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -344,7 +344,7 @@ export default function ProfilePage() {
               <Input
                 id="timezone"
                 value={form.timezone}
-                onChange={(event) => setForm({ ...form, timezone: event.target.value })}
+                disabled
               />
             </div>
             <div className="space-y-2">
@@ -359,7 +359,7 @@ export default function ProfilePage() {
 
           {birthDataChanged && (
             <p className="text-sm text-amber-600">
-              Saving these changes will require Kundali regeneration before personalized Guru guidance.
+              Changing birth details requires your Kundali and personalized astrology to be refreshed before Guru, Timeline, Predictions, and Reports are current again.
             </p>
           )}
         </CardContent>
