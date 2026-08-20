@@ -2,15 +2,34 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useUserStore } from '@/store/user-store'
-import { CosmicDashboard } from '@/components/dashboard/CosmicDashboard'
-import type { AstroContext } from '@/lib/engines/astro-types'
+import {
+  ArrowRight,
+  Bell,
+  CalendarDays,
+  FileText,
+  RefreshCw,
+  ScrollText,
+} from 'lucide-react'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
-import { CreditsOverview } from '@/components/dashboard/CreditsOverview'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState, ErrorState, LoadingState, RetryButton } from '@/components/ui/feedback-state'
+import { useUserStore } from '@/store/user-store'
 
-interface DashboardData {
+type RequestState<T> = {
+  loading: boolean
+  data: T | null
+  error: string | null
+  code?: string | null
+}
+
+type SummaryData = {
+  success: boolean
   user: {
     name: string
     photo: string | null
@@ -24,264 +43,748 @@ interface DashboardData {
     generatedAt: string | null
   }
   dasha: {
-    mahadasha: {
-      planet: string
-      startDate: string
-      endDate: string
-    }
-    antardasha: {
-      planet: string
-      startDate: string
-      endDate: string
-    }
+    mahadasha?: { planet?: string | null; startDate?: string | null; endDate?: string | null }
+    antardasha?: { planet?: string | null; startDate?: string | null; endDate?: string | null }
   } | null
-  todayPrediction: {
-    summary: string
-    career: string
-    love: string
-    health: string
-    remedy: string
-  }
-  nextTransits: Array<{
-    planet: string
-    event: string
-    date: string
-    impact: string
-  }>
   profileComplete: boolean
+  derivedAstrologyStatus?: 'current' | 'stale'
+}
+
+type HoroscopeData = {
+  date: string
+  rashi: string
+  general: string
+  love: string
+  career: string
+  money: string
+  health: string
+  luckyColor: string
+  luckyNumber: number
+  dos: string[]
+  donts: string[]
+  energyLevel: 'low' | 'medium' | 'high'
+}
+
+type ReportRecord = {
+  id: string
+  reportId: string
+  type: string | null
+  title: string
+  status: 'queued' | 'generating' | 'ready' | 'failed'
+  createdAt: string | null
+  updatedAt: string | null
+  failureReason?: string | null
+}
+
+type TicketSummary = {
+  hasSubscription: boolean
+  subscriptionPlan?: string
+  subscriptionExpiry?: string
+  tickets: {
+    aiGuruTickets: number
+    kundaliTickets: number
+    lifetimePredictions: number
+  }
+}
+
+type TimelineState = {
+  status: 'ready' | 'empty' | 'generating' | 'failed' | 'stale' | 'error'
+  message?: string | null
+  data?: any
+}
+
+type RecommendedAction =
+  | {
+      title: string
+      description: string
+      label: string
+      href: string
+      onClick?: never
+    }
+  | {
+      title: string
+      description: string
+      label: string
+      onClick: () => void
+      href?: never
+    }
+
+const defaultRequestState = <T,>(): RequestState<T> => ({
+  loading: true,
+  data: null,
+  error: null,
+  code: null,
+})
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, { credentials: 'include' })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    const error = new Error(data.message || data.error || `Failed to load ${url}`) as Error & {
+      code?: string
+    }
+    error.code = data.code || data.error || null
+    throw error
+  }
+  return data
+}
+
+function formatDate(date = new Date()) {
+  return new Intl.DateTimeFormat('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+}
+
+function firstValue(...values: Array<string | null | undefined>) {
+  return values.find((value) => value && value !== 'Unknown') || null
+}
+
+function reportTypeLabel(type: string | null) {
+  if (!type) return 'Report'
+  return type.charAt(0).toUpperCase() + type.slice(1)
 }
 
 export default function DashboardPage() {
   const router = useRouter()
   const { user } = useUserStore()
-  const [loading, setLoading] = useState(true)
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [horoscope, setHoroscope] = useState<any>(null)
-  const [transits, setTransits] = useState<any[]>([])
-  const [festival, setFestival] = useState<any>(null)
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [astro, setAstro] = useState<AstroContext | null>(null) // Super Phase B
+  const [summary, setSummary] = useState<RequestState<SummaryData>>(defaultRequestState)
+  const [horoscope, setHoroscope] = useState<RequestState<HoroscopeData>>(defaultRequestState)
+  const [kundali, setKundali] = useState<RequestState<any>>(defaultRequestState)
+  const [timeline, setTimeline] = useState<RequestState<TimelineState>>(defaultRequestState)
+  const [reports, setReports] = useState<RequestState<ReportRecord[]>>(defaultRequestState)
+  const [tickets, setTickets] = useState<RequestState<TicketSummary>>(defaultRequestState)
+  const [festival, setFestival] = useState<RequestState<any>>(defaultRequestState)
+  const [notifications, setNotifications] = useState<RequestState<{ unreadCount: number }>>(defaultRequestState)
+
+  const loadDashboard = useCallback(async () => {
+    setSummary(defaultRequestState())
+    setHoroscope(defaultRequestState())
+    setKundali(defaultRequestState())
+    setTimeline(defaultRequestState())
+    setReports(defaultRequestState())
+    setTickets(defaultRequestState())
+    setFestival(defaultRequestState())
+    setNotifications(defaultRequestState())
+
+    const load = async <T,>(
+      setter: (state: RequestState<T>) => void,
+      url: string,
+      pick: (data: any) => T
+    ) => {
+      try {
+        const data = await fetchJson<any>(url)
+        setter({ loading: false, data: pick(data), error: null, code: null })
+      } catch (error: any) {
+        setter({
+          loading: false,
+          data: null,
+          error: error.message || 'Unable to load this section.',
+          code: error.code || null,
+        })
+      }
+    }
+
+    void load(setSummary, '/api/dashboard/summary', (data) => data)
+    void load(setHoroscope, '/api/horoscope/today', (data) => data.horoscope)
+    void load(setKundali, '/api/kundali/get', (data) => data.kundali)
+    void load(setReports, '/api/reports/list?limit=2', (data) => data.reports || [])
+    void load(setTickets, '/api/user/tickets', (data) => data)
+    void load(setFestival, '/api/festival/today', (data) => data)
+    void load(setNotifications, '/api/notifications/list?limit=1', (data) => ({
+      unreadCount: data.unreadCount || 0,
+    }))
+
+    try {
+      const data = await fetchJson<any>('/api/timeline')
+      setTimeline({
+        loading: false,
+        data: { status: 'ready', data: data.data, message: null },
+        error: null,
+        code: null,
+      })
+    } catch (error: any) {
+      const status =
+        error.code === 'TIMELINE_NOT_FOUND'
+          ? 'empty'
+          : error.code === 'TIMELINE_GENERATING'
+            ? 'generating'
+            : error.code === 'TIMELINE_STALE'
+              ? 'stale'
+              : error.code === 'TIMELINE_FAILED'
+                ? 'failed'
+                : 'error'
+      setTimeline({
+        loading: false,
+        data: { status, message: error.message },
+        error: status === 'error' ? error.message : null,
+        code: error.code || null,
+      })
+    }
+  }, [])
 
   useEffect(() => {
-    // Check if user is logged in
     if (!user) {
       router.push('/login')
       return
     }
 
-    // Check if user needs onboarding
-    if (!user.onboarded) {
-      router.push('/onboarding')
-      return
-    }
+    loadDashboard()
+  }, [loadDashboard, router, user])
 
-    // Fetch dashboard data
-    fetchDashboardData()
-    fetchHoroscope()
-    fetchTransits()
-    fetchFestival()
-    fetchUnreadCount()
-    fetchAstroContext() // Super Phase B
-  }, [user, router])
+  const birthFieldsMissing = !user?.dob || !user?.tob || !user?.pob
+  const profileIncomplete = user ? !user.onboarded || birthFieldsMissing : true
+  const astrologyStale =
+    user?.derivedAstrologyStatus === 'stale' ||
+    summary.data?.derivedAstrologyStatus === 'stale' ||
+    kundali.data?.meta?.meta?.stale === true
+  const canonicalKundaliMissing =
+    summary.loading || kundali.loading
+      ? false
+      : !summary.data?.kundali.available || kundali.code === 'Kundali not found' || kundali.code === 'KUNDALI_REQUIRED'
+  const hasGuruAccess =
+    tickets.data?.hasSubscription === true || (tickets.data?.tickets?.aiGuruTickets || 0) > 0
+  const readyReports = (reports.data || []).filter((report) => report.status === 'ready')
 
-  const fetchAstroContext = async () => {
-    if (!user?.uid) return
-    try {
-      const response = await fetch('/api/astro/context', {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setAstro(data.astro)
+  const recommendedAction = useMemo<RecommendedAction>(() => {
+    if (!user?.onboarded) {
+      return {
+        title: 'Complete your birth profile',
+        description: 'Save your birth date, time, and place before using personalized guidance.',
+        href: '/onboarding',
+        label: 'Complete birth profile',
       }
-    } catch (err) {
-      console.error('Error fetching astro context:', err)
     }
+
+    if (birthFieldsMissing) {
+      return {
+        title: 'Complete your birth profile',
+        description: 'Birth date, time, and place are required for your Kundali.',
+        href: '/profile',
+        label: 'Update birth details',
+      }
+    }
+
+    if (astrologyStale) {
+      return {
+        title: 'Regenerate your Kundali',
+        description: 'Your birth details changed, so chart-based guidance needs to be refreshed.',
+        href: '/kundali',
+        label: 'Regenerate Kundali',
+      }
+    }
+
+    if (canonicalKundaliMissing) {
+      return {
+        title: 'Generate your Kundali',
+        description: 'Create your canonical chart before using personalized guidance.',
+        href: '/kundali',
+        label: 'Generate Kundali',
+      }
+    }
+
+    if (horoscope.error) {
+      return {
+        title: 'Retry today’s guidance',
+        description: horoscope.error,
+        onClick: loadDashboard,
+        label: 'Retry guidance',
+      }
+    }
+
+    if (!tickets.loading && !hasGuruAccess) {
+      return {
+        title: 'Get Guru access',
+        description: 'Add Guru questions or choose a plan when you are ready to ask.',
+        href: '/pricing',
+        label: 'View Guru access',
+      }
+    }
+
+    if (!timeline.loading && timeline.data?.status === 'empty') {
+      return {
+        title: 'Generate your timeline',
+        description: 'Create a month-by-month view when you want a longer-range reading.',
+        href: '/timeline',
+        label: 'Open Timeline',
+      }
+    }
+
+    if (!reports.loading && readyReports.length === 0) {
+      return {
+        title: 'Generate a report',
+        description: 'Save a Kundali, prediction, or timeline report to your account.',
+        href: '/reports',
+        label: 'Open Reports',
+      }
+    }
+
+    return {
+      title: 'Ask Guru about your current Dasha',
+      description: 'Use your saved Kundali context for a focused question.',
+      href: '/guru?prompt=current-dasha',
+      label: 'Ask Guru',
+    }
+  }, [
+    astrologyStale,
+    birthFieldsMissing,
+    canonicalKundaliMissing,
+    hasGuruAccess,
+    horoscope.error,
+    loadDashboard,
+    readyReports.length,
+    reports.loading,
+    tickets.loading,
+    timeline.data?.status,
+    timeline.loading,
+    user?.onboarded,
+  ])
+
+  if (!user) {
+    return null
   }
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/dashboard/summary', {
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to load dashboard')
-      }
-
-      const result = await response.json()
-      setData(result)
-    } catch (err: any) {
-      console.error('Dashboard fetch error:', err)
-      setError(err.message || 'Failed to load dashboard')
-    } finally {
-      setLoading(false)
-    }
+  const displayName = user.name || summary.data?.user.name || 'there'
+  const dashaLabel = summary.data?.dasha
+    ? [summary.data.dasha.mahadasha?.planet, summary.data.dasha.antardasha?.planet]
+        .filter(Boolean)
+        .join(' / ')
+    : null
+  const kundaliIdentity = {
+    rashi: firstValue(summary.data?.user.rashi, user.rashi, user.rashiMoon),
+    lagna: firstValue(summary.data?.user.lagna, user.ascendant),
+    nakshatra: firstValue(summary.data?.user.nakshatra, user.nakshatra),
+    mahadasha: summary.data?.dasha?.mahadasha?.planet || null,
+    antardasha: summary.data?.dasha?.antardasha?.planet || null,
+    place: user.pob || null,
+    freshness: astrologyStale ? 'Stale' : summary.data?.kundali.available ? 'Current' : 'Missing',
   }
-
-  const fetchHoroscope = async () => {
-    try {
-      const response = await fetch('/api/horoscope/today', {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const result = await response.json()
-        setHoroscope(result.horoscope)
-      }
-    } catch (error) {
-      console.error('Fetch horoscope error:', error)
-    }
-  }
-
-  const fetchTransits = async () => {
-    try {
-      const response = await fetch('/api/transits/upcoming', {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const result = await response.json()
-        setTransits(result.transits || [])
-      }
-    } catch (error) {
-      console.error('Fetch transits error:', error)
-    }
-  }
-
-  const fetchFestival = async () => {
-    try {
-      const response = await fetch('/api/festival/today', {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const result = await response.json()
-        if (result.festival) {
-          setFestival(result)
-        }
-      }
-    } catch (error) {
-      console.error('Fetch festival error:', error)
-    }
-  }
-
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await fetch('/api/notifications/list?limit=1', {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const result = await response.json()
-        setUnreadCount(result.unreadCount || 0)
-      }
-    } catch (error) {
-      console.error('Fetch unread count error:', error)
-    }
-  }
-
-  // Transform data for CosmicDashboard
-  const dashboardData = data ? {
-    user: {
-      name: data.user.name,
-      photo: data.user.photo,
-      rashi: data.user.rashi || 'Unknown',
-      nakshatra: data.user.nakshatra || 'Unknown',
-      lagna: data.user.lagna || 'Unknown',
-    },
-    todayHoroscope: horoscope ? {
-      rashi: horoscope.rashi,
-      general: horoscope.general,
-      love: horoscope.love,
-      career: horoscope.career,
-      money: horoscope.money,
-      health: horoscope.health,
-      luckyColor: horoscope.luckyColor,
-      luckyNumber: horoscope.luckyNumber,
-    } : null,
-    quickInfo: {
-      rashi: data.user.rashi || 'Unknown',
-      lagna: data.user.lagna || 'Unknown',
-      nakshatra: data.user.nakshatra || 'Unknown',
-      dasha: data.dasha 
-        ? `${data.dasha.mahadasha.planet} / ${data.dasha.antardasha.planet}`
-        : 'Unknown',
-    },
-    transits: [
-      ...transits.map((t) => ({
-        planet: t.transit.planet,
-        event: t.transit.event,
-        date: t.transit.date,
-        impact: t.transit.impact,
-      })),
-      ...data.nextTransits.map((t) => ({
-        planet: t.planet,
-        event: t.event,
-        date: t.date,
-        impact: t.impact,
-      })),
-    ],
-  } : undefined;
 
   return (
     <DashboardPageShell
-      title="Your Cosmic Dashboard"
-      subtitle="All your charts, timelines, and predictions in one place."
+      title={`Namaste, ${displayName}`}
+      subtitle={formatDate()}
+      rightActions={
+        notifications.data?.unreadCount ? (
+          <Link href="/notifications">
+            <Button variant="outline" iconLeft={<Bell className="h-4 w-4" />}>
+              {notifications.data.unreadCount} unread
+            </Button>
+          </Link>
+        ) : null
+      }
     >
-      {/* Phase M: Credits Overview */}
-      <div className="mb-6">
-        <CreditsOverview />
+      <div className="grid gap-6">
+        <TodayCard
+          horoscope={horoscope}
+          onRetry={loadDashboard}
+          kundaliBlocked={profileIncomplete || astrologyStale || canonicalKundaliMissing}
+        />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recommended next action</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="font-medium text-primary">{recommendedAction.title}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{recommendedAction.description}</p>
+            </div>
+            {recommendedAction.href ? (
+              <Link href={recommendedAction.href}>
+                <Button iconRight={<ArrowRight className="h-4 w-4" />}>{recommendedAction.label}</Button>
+              </Link>
+            ) : (
+              <Button onClick={recommendedAction.onClick} iconLeft={<RefreshCw className="h-4 w-4" />}>
+                {recommendedAction.label}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1fr]">
+          <div className="lg:order-2">
+            <GuruLauncher hasAccess={hasGuruAccess} loading={tickets.loading} />
+          </div>
+          <div className="lg:order-1">
+            <KundaliIdentityCard identity={kundaliIdentity} dashaLabel={dashaLabel} />
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <PreviewCard
+            title="Predictions"
+            description="Open your prediction hub for deeper forecasts."
+            href="/predictions"
+            cta="View predictions"
+            icon={<ScrollText className="h-5 w-5" />}
+          />
+          <TimelinePreview timeline={timeline} />
+          <ReportsPreview reports={reports} />
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <PlanUsage tickets={tickets} />
+          <MoreInsights festival={festival.data} />
+        </div>
       </div>
+    </DashboardPageShell>
+  )
+}
 
-      {/* Super Phase B - Insights Section */}
-      {astro && (
-        <div className="fixed top-20 right-4 z-30 max-w-sm space-y-3">
-          {/* Insight 1: Next Major Dasha */}
-          {astro.dasha?.currentMahadasha && (
-            <div className="rounded-2xl border border-white/5 bg-white/5/10 backdrop-blur-xl p-4 shadow-[0_8px_32px_rgba(255,213,122,0.15)]">
-              <h4 className="text-[#FFD57A] font-heading text-sm mb-1">Next Major Dasha</h4>
-              <p className="text-white/80 text-xs">
-                {astro.dasha.currentMahadasha.planet} Period
-              </p>
-              {astro.dasha.currentMahadasha.theme && (
-                <p className="text-white/60 text-xs mt-1">{astro.dasha.currentMahadasha.theme}</p>
-              )}
-            </div>
-          )}
+function TodayCard({
+  horoscope,
+  onRetry,
+  kundaliBlocked,
+}: {
+  horoscope: RequestState<HoroscopeData>
+  onRetry: () => void
+  kundaliBlocked: boolean
+}) {
+  if (kundaliBlocked) {
+    return (
+      <Card>
+        <EmptyState
+          title="Today’s guidance needs your current Kundali"
+          description="Complete or refresh your birth chart before JyotiAI can show personalized daily guidance."
+          action={
+            <Link href="/kundali">
+              <Button>Open Kundali</Button>
+            </Link>
+          }
+        />
+      </Card>
+    )
+  }
 
-          {/* Insight 2: Strongest Life Theme */}
-          {astro.lifeThemes && astro.lifeThemes.length > 0 && (
-            <div className="rounded-2xl border border-white/5 bg-white/5/10 backdrop-blur-xl p-4 shadow-[0_8px_32px_rgba(255,213,122,0.15)]">
-              <h4 className="text-[#FFD57A] font-heading text-sm mb-1">Strongest Life Theme</h4>
-              <p className="text-white/80 text-xs capitalize">{astro.lifeThemes[0].area}</p>
-              <p className="text-white/60 text-xs mt-1">{astro.lifeThemes[0].summary}</p>
-              <div className="mt-2 w-full bg-white/10 rounded-full h-1.5">
-                <div 
-                  className="bg-[#FFD57A] h-1.5 rounded-full" 
-                  style={{ width: `${astro.lifeThemes[0].confidence}%` }}
-                />
-              </div>
-            </div>
-          )}
+  if (horoscope.loading) {
+    return (
+      <Card>
+        <LoadingState title="Loading today’s guidance" description="Reading your saved Kundali context." />
+      </Card>
+    )
+  }
 
-          {/* Insight 3: Warning/Watch Area */}
-          {astro.riskFlags && astro.riskFlags.length > 0 && (
-            <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 backdrop-blur-xl p-4">
-              <h4 className="text-yellow-400 font-heading text-sm mb-1">Watch Area</h4>
-              <p className="text-white/80 text-xs">
-                Be mindful of {astro.riskFlags[0].replace('_', ' ')} this month
-              </p>
+  if (horoscope.error || !horoscope.data) {
+    return (
+      <Card>
+        <ErrorState
+          title="Today’s guidance is unavailable"
+          description={horoscope.error || 'Please retry.'}
+          action={<RetryButton onClick={onRetry} />}
+        />
+      </Card>
+    )
+  }
+
+  const today = horoscope.data
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <Badge variant="premium">Rashi used: {today.rashi}</Badge>
+            <CardTitle className="mt-3">Today’s guidance</CardTitle>
+          </div>
+          <Badge variant="secondary">{today.date}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <p className="text-lg leading-8 text-primary">{today.general}</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[
+            ['Career', today.career],
+            ['Love', today.love],
+            ['Money', today.money],
+            ['Health', today.health],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-lg border border-border bg-secondary/50 p-4">
+              <p className="text-sm font-semibold text-primary">{label}</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{value}</p>
             </div>
+          ))}
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <InfoPill label="Lucky color" value={today.luckyColor} />
+          <InfoPill label="Lucky number" value={String(today.luckyNumber)} />
+          <InfoPill label="Energy level" value={today.energyLevel} />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <ListBlock title="Do" items={today.dos} />
+          <ListBlock title="Avoid" items={today.donts} />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function InfoPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface-raised p-4">
+      <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+      <p className="mt-1 font-medium capitalize text-primary">{value}</p>
+    </div>
+  )
+}
+
+function ListBlock({ title, items }: { title: string; items: string[] }) {
+  if (!items?.length) return null
+  return (
+    <div>
+      <p className="mb-2 text-sm font-semibold text-primary">{title}</p>
+      <ul className="space-y-2 text-sm text-muted-foreground">
+        {items.map((item) => (
+          <li key={item} className="rounded-lg bg-secondary/50 px-3 py-2">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function KundaliIdentityCard({
+  identity,
+  dashaLabel,
+}: {
+  identity: Record<string, string | null>
+  dashaLabel: string | null
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Kundali identity</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <IdentityRow label="Rashi / Moon sign" value={identity.rashi} />
+        <IdentityRow label="Lagna" value={identity.lagna} />
+        <IdentityRow label="Nakshatra" value={identity.nakshatra} />
+        <IdentityRow label="Current Dasha" value={dashaLabel} />
+        <IdentityRow label="Birth place" value={identity.place} />
+        <div className="pt-2">
+          <Badge variant={identity.freshness === 'Current' ? 'success' : 'warning'}>
+            {identity.freshness}
+          </Badge>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function IdentityRow({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-border/70 pb-3 last:border-0">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-right text-sm font-medium text-primary">{value || 'Not available'}</span>
+    </div>
+  )
+}
+
+function GuruLauncher({ hasAccess, loading }: { hasAccess: boolean; loading: boolean }) {
+  const prompts = [
+    'Ask about my current Dasha',
+    'What should I focus on today?',
+    'Ask about career',
+    'Ask about relationships',
+  ]
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Ask Guru</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm leading-6 text-muted-foreground">
+          Open the full Guru page with your saved Kundali context. Tickets are used only after you submit a question.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {prompts.map((prompt) => (
+            <Link key={prompt} href={`/guru?prompt=${encodeURIComponent(prompt)}`}>
+              <Badge clickable variant="outline">
+                {prompt}
+              </Badge>
+            </Link>
+          ))}
+        </div>
+        <div className="mt-5">
+          {loading || hasAccess ? (
+            <Link href="/guru">
+              <Button iconRight={<ArrowRight className="h-4 w-4" />}>Open Guru</Button>
+            </Link>
+          ) : (
+            <Link href="/pricing">
+              <Button variant="outline">Get Guru access</Button>
+            </Link>
           )}
         </div>
-      )}
-      
-      {/* Cosmic Dashboard */}
-      <CosmicDashboard
-        data={dashboardData}
-        loading={loading}
-        error={error}
-        onRetry={fetchDashboardData}
-      />
-    </DashboardPageShell>
+      </CardContent>
+    </Card>
+  )
+}
+
+function PreviewCard({
+  title,
+  description,
+  href,
+  cta,
+  icon,
+}: {
+  title: string
+  description: string
+  href: string
+  cta: string
+    icon: ReactNode
+  }) {
+  return (
+    <Card>
+      <CardContent className="space-y-4 pt-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-primary">
+          {icon}
+        </div>
+        <div>
+          <h3 className="font-heading text-xl font-semibold text-primary">{title}</h3>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+        </div>
+        <Link href={href}>
+          <Button variant="outline" fullWidth>
+            {cta}
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
+  )
+}
+
+function TimelinePreview({ timeline }: { timeline: RequestState<TimelineState> }) {
+  const status = timeline.loading ? 'Loading' : timeline.data?.status || 'Unavailable'
+  const message =
+    timeline.data?.status === 'ready'
+      ? 'Your timeline is ready.'
+      : timeline.data?.message || 'Generate your timeline when you want a longer-range view.'
+  return (
+    <PreviewCard
+      title={`Timeline: ${status}`}
+      description={message}
+      href="/timeline"
+      cta={timeline.data?.status === 'ready' ? 'Open timeline' : 'Manage timeline'}
+      icon={<CalendarDays className="h-5 w-5" />}
+    />
+  )
+}
+
+function ReportsPreview({ reports }: { reports: RequestState<ReportRecord[]> }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Latest reports</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {reports.loading && <LoadingState title="Loading reports" description="Checking your saved report library." />}
+        {!reports.loading && reports.error && (
+          <ErrorState title="Reports unavailable" description={reports.error} />
+        )}
+        {!reports.loading && !reports.error && (reports.data?.length || 0) === 0 && (
+          <EmptyState
+            title="No reports yet"
+            description="Generated reports will stay in your account for later."
+            action={
+              <Link href="/reports">
+                <Button variant="outline">Generate report</Button>
+              </Link>
+            }
+          />
+        )}
+        {(reports.data || []).slice(0, 2).map((report) => (
+          <Link
+            key={report.reportId}
+            href={report.status === 'ready' ? `/reports/${report.reportId}` : '/reports'}
+            className="block rounded-lg border border-border bg-secondary/40 p-4 transition-colors hover:bg-secondary"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-medium text-primary">{report.title}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{reportTypeLabel(report.type)}</p>
+              </div>
+              <Badge variant={report.status === 'ready' ? 'success' : report.status === 'failed' ? 'error' : 'warning'}>
+                {report.status}
+              </Badge>
+            </div>
+          </Link>
+        ))}
+      </CardContent>
+    </Card>
+  )
+}
+
+function PlanUsage({ tickets }: { tickets: RequestState<TicketSummary> }) {
+  const data = tickets.data
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Plan and usage</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {tickets.loading && <LoadingState title="Loading access" description="Checking your plan." />}
+        {!tickets.loading && tickets.error && <ErrorState title="Access unavailable" description={tickets.error} />}
+        {data && (
+          <div className="space-y-4">
+            <Badge variant={data.hasSubscription ? 'success' : 'secondary'}>
+              {data.hasSubscription ? 'Included in your plan' : 'Ticket access'}
+            </Badge>
+            {!data.hasSubscription && (
+              <div className="grid grid-cols-3 gap-3">
+                <InfoPill label="Guru" value={String(data.tickets.aiGuruTickets || 0)} />
+                <InfoPill label="Kundali" value={String(data.tickets.kundaliTickets || 0)} />
+                <InfoPill label="Predictions" value={String(data.tickets.lifetimePredictions || 0)} />
+              </div>
+            )}
+            <Link href="/payments">
+              <Button variant="outline">Manage plan</Button>
+            </Link>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function MoreInsights({ festival }: { festival: any }) {
+  const groups = [
+    { title: 'Life', links: [['Career', '/career'], ['Business', '/business']] },
+    { title: 'Relationships', links: [['Compatibility', '/compatibility']] },
+    { title: 'Spiritual', links: [['Rituals', '/rituals'], ['Calendar', '/calendar']] },
+    { title: 'Self-discovery', links: [['Numerology', '/numerology'], ['Palmistry', '/palmistry'], ['Aura', '/aura']] },
+  ]
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>More insights</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {festival?.festival && (
+          <div className="rounded-lg border border-jyoti-gold/30 bg-jyoti-gold/10 p-4">
+            <p className="text-sm font-semibold text-primary">{festival.festival.name}</p>
+            <p className="mt-1 text-sm text-muted-foreground">Today’s festival is available in your calendar context.</p>
+          </div>
+        )}
+        <div className="grid gap-4 md:grid-cols-2">
+          {groups.map((group) => (
+            <div key={group.title}>
+              <p className="text-sm font-semibold text-primary">{group.title}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {group.links.map(([label, href]) => (
+                  <Link key={href} href={href}>
+                    <Badge variant="outline" clickable>
+                      {label}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   )
 }

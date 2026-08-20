@@ -74,49 +74,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Placeholder for today's prediction (will be implemented in later milestone)
-    const todayPrediction = {
-      summary: 'Your daily prediction will appear here once the prediction engine is activated.',
-      career: 'Career insights coming soon...',
-      love: 'Relationship guidance coming soon...',
-      health: 'Health recommendations coming soon...',
-      remedy: 'Daily remedy suggestions coming soon...',
-    }
-
-    // Placeholder for next 5 transits (will be implemented in later milestone)
-    const nextTransits = [
-      {
-        planet: 'Jupiter',
-        event: 'Transit into new sign',
-        date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        impact: 'Positive',
-      },
-      {
-        planet: 'Saturn',
-        event: 'Transit aspect',
-        date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
-        impact: 'Neutral',
-      },
-      {
-        planet: 'Mars',
-        event: 'Transit into new house',
-        date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        impact: 'Moderate',
-      },
-      {
-        planet: 'Mercury',
-        event: 'Retrograde period',
-        date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-        impact: 'Caution',
-      },
-      {
-        planet: 'Venus',
-        event: 'Transit conjunction',
-        date: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(),
-        impact: 'Positive',
-      },
-    ]
-
     // Check profile completeness
     const profileComplete =
       userData?.dob &&
@@ -142,9 +99,8 @@ export async function GET(request: NextRequest) {
           : null,
       },
       dasha: dashaSummary,
-      todayPrediction,
-      nextTransits,
       profileComplete,
+      derivedAstrologyStatus: userData?.derivedAstrologyStatus || 'current',
     })
   } catch (error: any) {
     console.error('Dashboard summary error:', error)
@@ -154,4 +110,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-
