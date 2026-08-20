@@ -23,6 +23,12 @@ export interface User {
   subscription: SubscriptionTier
   subscriptionExpiry: Date | null
   onboarded: boolean
+  settings?: {
+    notifications: boolean
+    emailUpdates: boolean
+    soundEnabled: boolean
+  }
+  derivedAstrologyStatus?: 'current' | 'stale'
   // Consumable tickets (from Quick/Deep packs)
   tickets: number
   aiGuruTickets: number
@@ -157,4 +163,3 @@ export const useUserStore = create<UserState>()(
     }
   )
 )
-

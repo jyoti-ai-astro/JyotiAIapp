@@ -8,7 +8,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   });
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    setSettings({
+      notifications: initialSettings?.notifications ?? true,
+      emailUpdates: initialSettings?.emailUpdates ?? true,
+      soundEnabled: initialSettings?.soundEnabled ?? true,
+    });
+  }, [initialSettings]);
+
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -43,12 +51,16 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         await onSave(settings);
       } else {
         // Default save logic
-        await fetch('/api/user/update', {
+        const response = await fetch('/api/user/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ settings }),
         });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to save settings');
+        }
       }
       alert('Settings saved successfully');
     } catch (error) {
@@ -132,4 +144,3 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     </Card>
   );
 };
-

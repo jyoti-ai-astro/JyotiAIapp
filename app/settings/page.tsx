@@ -13,14 +13,8 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
-import { motion } from 'framer-motion';
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Settings, Save } from 'lucide-react';
 import { SettingsPanel } from '@/components/engines/SettingsPanel';
 import Link from 'next/link';
 
@@ -37,19 +31,40 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!user) {
       router.push('/login');
+      return;
     }
+
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/user/get', { credentials: 'include' });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.user?.settings) {
+          setSettings(data.user.settings);
+        }
+      } catch (error) {
+        console.error('Load settings error:', error);
+      }
+    }
+
+    loadSettings();
   }, [user, router]);
 
-  const handleSave = async () => {
+  const handleSave = async (newSettings = settings) => {
     try {
       setLoading(true);
-      // Save settings to API
-      await fetch('/api/user/update', {
+      const response = await fetch('/api/user/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ settings }),
+        body: JSON.stringify({ settings: newSettings }),
       });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to save settings');
+      }
+      setSettings(newSettings);
+      updateUser({ settings: newSettings } as any);
       alert('Settings saved successfully');
     } catch (error) {
       console.error('Save settings error:', error);
@@ -72,9 +87,7 @@ export default function SettingsPage() {
           <SettingsPanel
             initialSettings={settings}
             onSave={async (newSettings) => {
-              setLoading(true);
-              await handleSave();
-              setSettings(newSettings);
+              await handleSave(newSettings);
             }}
           />
 
@@ -88,4 +101,3 @@ export default function SettingsPage() {
     </DashboardPageShell>
   );
 }
-

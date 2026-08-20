@@ -90,6 +90,11 @@ async function loadCanonicalKundali(userId: string): Promise<KundaliData | null>
     return null
   }
 
+  const kundaliRoot = kundaliSnap.data()
+  if (kundaliRoot?.meta?.stale === true) {
+    return null
+  }
+
   const d1 = d1Snap.data()
   const dashaData = dashaSnap.data()
   if (!d1?.grahas || !d1?.bhavas || !d1?.lagna || !dashaData?.currentMahadasha || !dashaData?.currentAntardasha) {

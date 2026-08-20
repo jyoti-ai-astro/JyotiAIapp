@@ -126,6 +126,9 @@ export async function POST(request: NextRequest) {
             : new Date(),
         generationKind: isFirstOnboardingKundali ? 'onboarding_basic' : 'paid_or_subscription',
         source: isFirstOnboardingKundali ? 'onboarding' : 'entitled',
+        stale: false,
+        staleReason: null,
+        staleAt: null,
       },
     }, { merge: true });
 
@@ -197,12 +200,20 @@ export async function POST(request: NextRequest) {
       await userRef.set(
         {
           freeOnboardingKundaliGeneratedAt: new Date(),
+          derivedAstrologyStatus: 'current',
           updatedAt: new Date(),
         },
         { merge: true }
       );
     } else {
       await consumeFeatureTicket(uid, featureKey);
+      await userRef.set(
+        {
+          derivedAstrologyStatus: 'current',
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
     }
 
     return NextResponse.json({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
+import { splitSubscriptionAndTickets } from '@/lib/payments/ticket-service'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,10 +45,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User data unavailable' }, { status: 404 })
     }
 
+    let entitlementSummary = null
+    try {
+      entitlementSummary = await splitSubscriptionAndTickets(uid)
+    } catch (error) {
+      console.error('Get user entitlement summary error:', error)
+    }
+
     return NextResponse.json({
       success: true,
       user: {
         ...userData,
+        settings: {
+          notifications: userData.settings?.notifications ?? true,
+          emailUpdates: userData.settings?.emailUpdates ?? true,
+          soundEnabled: userData.settings?.soundEnabled ?? true,
+        },
+        entitlements: entitlementSummary
+          ? {
+              hasSubscription: entitlementSummary.hasSubscription,
+              subscriptionPlan: entitlementSummary.subscriptionPlan || null,
+              subscriptionExpiry: entitlementSummary.subscriptionExpiry?.toISOString?.() || null,
+              tickets: entitlementSummary.tickets,
+            }
+          : null,
         createdAt: userData.createdAt?.toDate?.() || userData.createdAt,
         updatedAt: userData.updatedAt?.toDate?.() || userData.updatedAt,
         subscriptionExpiry: userData.subscriptionExpiry?.toDate?.() || userData.subscriptionExpiry,
@@ -61,4 +82,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

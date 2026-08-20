@@ -25,6 +25,9 @@ export async function POST(request: NextRequest) {
 
     // Get update data from request
     const updates = await request.json()
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      return NextResponse.json({ error: 'Invalid update payload' }, { status: 400 })
+    }
 
     // Allowed fields that users can update
     const allowedFields = [
@@ -42,6 +45,7 @@ export async function POST(request: NextRequest) {
       'ascendant',
       'nakshatra',
       'onboarded',
+      'settings',
     ]
 
     // Filter updates to only allowed fields
@@ -51,8 +55,24 @@ export async function POST(request: NextRequest) {
 
     for (const field of allowedFields) {
       if (updates[field] !== undefined) {
-        filteredUpdates[field] = updates[field]
+        if (field === 'settings') {
+          if (!updates.settings || typeof updates.settings !== 'object' || Array.isArray(updates.settings)) {
+            return NextResponse.json({ error: 'Invalid settings payload' }, { status: 400 })
+          }
+
+          filteredUpdates.settings = {
+            notifications: Boolean(updates.settings.notifications),
+            emailUpdates: Boolean(updates.settings.emailUpdates),
+            soundEnabled: Boolean(updates.settings.soundEnabled),
+          }
+        } else {
+          filteredUpdates[field] = updates[field]
+        }
       }
+    }
+
+    if (Object.keys(filteredUpdates).length === 1) {
+      return NextResponse.json({ error: 'No supported fields to update' }, { status: 400 })
     }
 
     // Update user in Firestore
@@ -64,9 +84,62 @@ export async function POST(request: NextRequest) {
     }
 
     const userRef = adminDb.collection('users').doc(uid)
+    const userSnap = await userRef.get()
+    if (!userSnap.exists) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const userData = userSnap.data() || {}
+    const birthFields: Array<'dob' | 'tob' | 'pob' | 'lat' | 'lng' | 'timezone'> = [
+      'dob',
+      'tob',
+      'pob',
+      'lat',
+      'lng',
+      'timezone',
+    ]
+    const birthDataChanged = birthFields.some((field) => {
+      if (filteredUpdates[field] === undefined) return false
+      return filteredUpdates[field] !== userData[field]
+    })
+
+    if (birthDataChanged) {
+      filteredUpdates.derivedAstrologyStatus = 'stale'
+      filteredUpdates.birthDetailsUpdatedAt = new Date()
+
+      if (filteredUpdates.pob !== undefined && updates.lat === undefined && updates.lng === undefined) {
+        filteredUpdates.lat = null
+        filteredUpdates.lng = null
+      }
+    }
+
     await userRef.update(filteredUpdates)
 
-    return NextResponse.json({ success: true, message: 'User updated' })
+    if (birthDataChanged) {
+      const stalePayload = {
+        stale: true,
+        staleReason: 'birth_details_changed',
+        staleAt: new Date(),
+      }
+
+      await Promise.all([
+        adminDb.collection('kundali').doc(uid).set(
+          {
+            meta: stalePayload,
+          },
+          { merge: true }
+        ),
+        userRef.collection('astroContext').doc('current').set(stalePayload, { merge: true }),
+      ])
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'User updated',
+      birthDataChanged,
+      derivedAstrologyStatus: birthDataChanged ? 'stale' : undefined,
+      persistedFields: Object.keys(filteredUpdates).filter((field) => field !== 'updatedAt'),
+    })
   } catch (error: any) {
     console.error('Update user error:', error)
     return NextResponse.json(
