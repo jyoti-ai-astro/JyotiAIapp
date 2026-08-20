@@ -25,15 +25,22 @@ export async function GET(request: NextRequest) {
 
     const { limit = 50 } = Object.fromEntries(new URL(request.url).searchParams)
 
-    // Get chat history
-    const chatRef = adminDb.collection('guruChat').doc(uid).collection('messages')
+    const sessionId = new URL(request.url).searchParams.get('sessionId') || 'default'
+    const chatRef = adminDb
+      .collection('users')
+      .doc(uid)
+      .collection('guruSessions')
+      .doc(sessionId)
+      .collection('messages')
     const chatSnap = await chatRef.orderBy('createdAt', 'desc').limit(parseInt(limit as string)).get()
 
-    const messages = chatSnap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
-    }))
+    const messages = chatSnap.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
+      }))
+      .reverse()
 
     return NextResponse.json({
       success: true,
@@ -47,4 +54,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

@@ -41,6 +41,30 @@ export function useGuruChat(sessionId?: string) {
   // Load history on mount (from localStorage for now)
   useEffect(() => {
     async function loadHistory() {
+      if (user) {
+        try {
+          const query = sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : ''
+          const response = await fetch(`/api/guru/history${query}`, {
+            credentials: 'include',
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            const chatMessages: GuruMessage[] = (data.messages || []).map((msg: any) => ({
+              id: msg.id,
+              role: msg.role === 'assistant' ? 'guru' : 'user',
+              content: msg.content,
+              timestamp: msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now(),
+              metadata: msg.metadata,
+            }))
+            setMessages(chatMessages)
+          }
+        } catch (err) {
+          console.error('Error loading server history:', err)
+        }
+        return
+      }
+
       if (!sessionId) return
 
       try {
@@ -65,7 +89,7 @@ export function useGuruChat(sessionId?: string) {
     }
 
     loadHistory()
-  }, [sessionId])
+  }, [sessionId, user])
 
   const sendMessage = useCallback(
     async (content: string): Promise<boolean> => {

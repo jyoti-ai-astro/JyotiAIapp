@@ -56,6 +56,91 @@ async function loadBirthData(userId: string): Promise<AstroBirthData | null> {
   }
 }
 
+function dateToIso(value: any): string {
+  if (!value) return new Date().toISOString()
+  if (typeof value?.toDate === 'function') return value.toDate().toISOString()
+  if (value instanceof Date) return value.toISOString()
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
+}
+
+async function loadCanonicalKundali(userId: string): Promise<KundaliData | null> {
+  if (!adminDb) {
+    throw new Error('Firestore not initialized')
+  }
+
+  const kundaliRef = adminDb.collection('kundali').doc(userId)
+  const [kundaliSnap, d1Snap, dashaSnap] = await Promise.all([
+    kundaliRef.get(),
+    kundaliRef.collection('D1').doc('chart').get(),
+    kundaliRef.collection('dasha').doc('vimshottari').get(),
+  ])
+
+  if (!kundaliSnap.exists || !d1Snap.exists || !dashaSnap.exists) {
+    return null
+  }
+
+  const d1 = d1Snap.data()
+  const dashaData = dashaSnap.data()
+  if (!d1?.grahas || !d1?.bhavas || !d1?.lagna || !dashaData?.currentMahadasha || !dashaData?.currentAntardasha) {
+    return null
+  }
+
+  const grahas = Object.values(d1.grahas).map((graha: any) => ({
+    planet: graha.planet,
+    sign: graha.sign,
+    nakshatra: graha.nakshatra,
+    pada: graha.pada,
+    house: graha.house,
+    longitude: graha.longitude,
+    latitude: graha.latitude || 0,
+    degreesInSign: graha.degreesInSign,
+    retrograde: graha.retrograde || false,
+  })) as KundaliData['grahas']
+
+  const houses = Object.values(d1.bhavas).map((bhava: any) => ({
+    houseNumber: bhava.houseNumber,
+    sign: bhava.sign,
+    cuspLongitude: bhava.cuspLongitude ?? bhava.degree ?? 0,
+    planets: bhava.planets || [],
+  })) as KundaliData['houses']
+
+  return {
+    grahas,
+    houses,
+    lagna: {
+      sign: d1.lagna.sign,
+      longitude: d1.lagna.longitude || 0,
+    },
+    dasha: {
+      currentMahadasha: {
+        planet: dashaData.currentMahadasha.planet,
+        startDate: dateToIso(dashaData.currentMahadasha.startDate),
+        endDate: dateToIso(dashaData.currentMahadasha.endDate),
+      },
+      currentAntardasha: {
+        planet: dashaData.currentAntardasha.planet,
+        startDate: dateToIso(dashaData.currentAntardasha.startDate),
+        endDate: dateToIso(dashaData.currentAntardasha.endDate),
+      },
+      ...(dashaData.currentPratyantardasha
+        ? {
+            currentPratyantardasha: {
+              planet: dashaData.currentPratyantardasha.planet,
+              startDate: dateToIso(dashaData.currentPratyantardasha.startDate),
+              endDate: dateToIso(dashaData.currentPratyantardasha.endDate),
+            },
+          }
+        : {}),
+    },
+    divisionalCharts: {
+      d1,
+      d9: null,
+      d10: null,
+    },
+  }
+}
+
 /**
  * Normalize KundaliData to AstroChartCore
  */
@@ -255,12 +340,13 @@ export async function buildAstroContext(
   const userData = userSnap.exists ? userSnap.data() : null
   const rashi = userData?.rashi || userData?.rashiMoon || ''
 
-  // Call existing engines (do NOT change their math)
-  const kundali = await kundaliEngine.generateKundali(
-    birthData.dateOfBirth,
-    birthData.timeOfBirth,
-    birthData.placeName
-  )
+  const kundali =
+    (await loadCanonicalKundali(userId)) ||
+    (await kundaliEngine.generateKundali(
+      birthData.dateOfBirth,
+      birthData.timeOfBirth,
+      birthData.placeName
+    ))
 
   const predictions = await predictionEngine.getDailyPrediction(rashi || 'Aries')
 

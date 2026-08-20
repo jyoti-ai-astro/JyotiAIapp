@@ -13,7 +13,7 @@ import { saveGuruTurn } from '@/lib/guru/guru-session-store'
 import { rateLimit, getRateLimitHeaders } from '@/lib/middleware/rate-limit'
 import { sanitizeMessage } from '@/lib/security/xss-protection'
 import { rateLimitConfig } from '@/lib/security/validation-schemas'
-import { fetchUserTickets, consumeTickets, splitSubscriptionAndTickets } from '@/lib/payments/ticket-service'
+import { consumeTickets, splitSubscriptionAndTickets } from '@/lib/payments/ticket-service'
 import { deriveGuruModeFromQuestion } from '@/lib/guru/guru-context'
 
 export const dynamic = 'force-dynamic'
@@ -44,25 +44,40 @@ export async function POST(request: NextRequest) {
     let userName: string | undefined
     let gender: string | undefined
 
-    if (sessionCookie && adminAuth) {
-      try {
-        const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
-        userId = decodedClaims.uid
+    if (!sessionCookie || !adminAuth) {
+      return NextResponse.json(
+        {
+          status: 'error',
+          code: 'UNAUTHENTICATED',
+          message: 'Please log in to ask Guru.',
+        },
+        { status: 401 }
+      )
+    }
 
-        // Get user profile for name/gender
-        if (adminDb && userId) {
-          const userRef = adminDb.collection('users').doc(userId)
-          const userSnap = await userRef.get()
-          if (userSnap.exists) {
-            const userData = userSnap.data()
-            userName = userData?.name || undefined
-            gender = userData?.gender || undefined
-          }
+    try {
+      const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
+      userId = decodedClaims.uid
+
+      // Get user profile for name/gender
+      if (adminDb && userId) {
+        const userRef = adminDb.collection('users').doc(userId)
+        const userSnap = await userRef.get()
+        if (userSnap.exists) {
+          const userData = userSnap.data()
+          userName = userData?.name || undefined
+          gender = userData?.gender || undefined
         }
-      } catch (error) {
-        // Not authenticated - continue as guest
-        userId = null
       }
+    } catch (error) {
+      return NextResponse.json(
+        {
+          status: 'error',
+          code: 'UNAUTHENTICATED',
+          message: 'Please log in again to ask Guru.',
+        },
+        { status: 401 }
+      )
     }
 
     // Rate limiting (use fingerprint or userId)
@@ -116,36 +131,41 @@ export async function POST(request: NextRequest) {
     }
 
     // Phase G: Check if user has tickets (if authenticated)
-    if (userId) {
-      try {
-        const accessInfo = await splitSubscriptionAndTickets(userId);
+    try {
+      const accessInfo = await splitSubscriptionAndTickets(userId);
 
-        // If user has an active subscription, allow access without tickets
-        if (!accessInfo.hasSubscription) {
-          const aiGuruCredits = accessInfo.tickets.aiGuruTickets ?? 0;
+      // If user has an active subscription, allow access without tickets
+      if (!accessInfo.hasSubscription) {
+        const aiGuruCredits = accessInfo.tickets.aiGuruTickets ?? 0;
 
-          if (aiGuruCredits <= 0) {
-            return NextResponse.json(
-              {
-                status: 'error',
-                code: 'NO_TICKETS',
-                message:
-                  'You have 0 AI Guru credits. Please purchase a one-time reading to continue.',
-              },
-              {
-                status: 403,
-                headers: getRateLimitHeaders(
-                  rateLimitResult.remaining,
-                  rateLimitResult.resetTime
-                ),
-              }
-            );
-          }
+        if (aiGuruCredits <= 0) {
+          return NextResponse.json(
+            {
+              status: 'error',
+              code: 'NO_TICKETS',
+              message:
+                'You have 0 AI Guru credits. Please purchase a one-time reading to continue.',
+            },
+            {
+              status: 403,
+              headers: getRateLimitHeaders(
+                rateLimitResult.remaining,
+                rateLimitResult.resetTime
+              ),
+            }
+          );
         }
-      } catch (ticketError: any) {
-        // If ticket check fails, log but don't block (graceful degradation)
-        console.error('Ticket check error:', ticketError);
       }
+    } catch (ticketError: any) {
+      console.error('Ticket check error:', ticketError);
+      return NextResponse.json(
+        {
+          status: 'error',
+          code: 'ACCESS_CHECK_FAILED',
+          message: 'Unable to verify Guru access. Please try again.',
+        },
+        { status: 500 }
+      )
     }
 
     // Call Guru Brain with timeout (30 seconds)
@@ -209,7 +229,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Phase G: Consume ticket AFTER successful response (if authenticated and no subscription)
-    if (userId && result.status !== 'error' && result.status !== 'degraded') {
+    if (userId && result.status !== 'error' && result.answer?.trim()) {
       try {
         const accessInfo = await splitSubscriptionAndTickets(userId);
 
