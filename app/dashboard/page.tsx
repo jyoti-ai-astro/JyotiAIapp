@@ -13,6 +13,7 @@ import {
   FileText,
   RefreshCw,
   ScrollText,
+  Sun,
 } from 'lucide-react'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 import { Badge } from '@/components/ui/badge'
@@ -414,6 +415,23 @@ export default function DashboardPage() {
       }
     >
       <div className="grid gap-6">
+        <Card className="border-[#D8B56A]/35 bg-[#07131F] text-[#FFF7E8] shadow-[0_20px_60px_rgba(7,19,31,0.18)]">
+          <CardContent className="grid gap-6 pt-6 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <Badge className="border-[#C9A24A]/35 bg-[#F28C28]/12 text-[#F1C979]">Solar Observatory</Badge>
+              <h2 className="mt-4 font-heading text-3xl font-semibold text-[#FFF7E8] md:text-4xl">
+                Your chart-led day, organized.
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#B9C2BF]">
+                Dashboard reads current Kundali, horoscope, timeline, reports, and access state without creating new background renderers.
+              </p>
+            </div>
+            <div className="hidden h-28 w-28 items-center justify-center rounded-full border border-[#D8B56A]/30 bg-[#F28C28]/12 md:flex">
+              <Sun className="h-10 w-10 text-[#F1C979]" aria-hidden="true" />
+            </div>
+          </CardContent>
+        </Card>
+
         <TodayCard
           horoscope={horoscope}
           onRetry={loadDashboard}

@@ -8,36 +8,37 @@
 // Base Core Colors (Spiritual)
 export const launchV1 = {
   surfaces: {
-    canvas: '#FBF4E3',
-    raised: '#FFFDF7',
-    sunken: '#F2E7CE',
+    canvas: '#FFF8E6',
+    raised: '#FFFDF4',
+    sunken: '#F5EAD0',
   },
   text: {
-    primary: '#18213F',
-    muted: '#5E6472',
-    inverse: '#FFF8EA',
+    primary: '#07131F',
+    muted: '#56666A',
+    inverse: '#FFF7E8',
   },
   brand: {
-    navy: '#18213F',
-    indigo: '#27325C',
-    saffron: '#E99A24',
-    gold: '#E7B84E',
-    lotus: '#7A3430',
+    navy: '#07131F',
+    indigo: '#0B1D2C',
+    saffron: '#F28C28',
+    gold: '#C9A24A',
+    lotus: '#C9552B',
+    teal: '#2F7D7E',
   },
   semantic: {
-    success: '#2F7A4B',
-    warning: '#D08118',
-    danger: '#AF2F2F',
+    success: '#3D9B72',
+    warning: '#D9962E',
+    danger: '#C04A3A',
   },
-  border: '#D9C7A4',
-  focus: '#E99A24',
+  border: '#D8B56A',
+  focus: '#F28C28',
 } as const;
 
 export const colors = {
   navyDeep: launchV1.brand.navy,
   indigoAura: launchV1.brand.indigo,
-  purpleCosmic: '#5A3F84',
-  violetMystic: '#6F548C',
+  purpleCosmic: '#2F3B59',
+  violetMystic: '#47536A',
   goldPrana: launchV1.brand.gold,
   whiteShakti: launchV1.surfaces.raised,
 } as const;
@@ -53,10 +54,10 @@ export const nebula = {
 
 // Aurora Tokens
 export const aurora = {
-  green: '#4ef3c3',
-  blue: '#4e9df3',
-  purple: '#b44ef3',
-  cyan: '#4ef3e2',
+  green: '#3D9B72',
+  blue: '#2F7D7E',
+  purple: '#47536A',
+  cyan: '#2F7D7E',
 } as const;
 
 // Chakra Spectrum
@@ -102,7 +103,7 @@ export const states = {
   success: launchV1.semantic.success,
   warning: launchV1.semantic.warning,
   error: launchV1.semantic.danger,
-  disabled: '#A79C89',
+  disabled: '#9A8D72',
 } as const;
 
 // Accessibility Colors

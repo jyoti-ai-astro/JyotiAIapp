@@ -6,20 +6,23 @@
 
 export const colors = {
   launchV1: {
-    surface: '#FBF4E3',
-    surfaceRaised: '#FFFDF7',
-    surfaceSunken: '#F2E7CE',
-    text: '#18213F',
-    textMuted: '#5E6472',
-    navy: '#18213F',
-    indigo: '#27325C',
-    saffron: '#E99A24',
-    gold: '#E7B84E',
-    lotus: '#7A3430',
-    success: '#2F7A4B',
-    warning: '#D08118',
-    danger: '#AF2F2F',
-    border: '#D9C7A4',
+    surface: '#FFF8E6',
+    surfaceRaised: '#FFFDF4',
+    surfaceSunken: '#F5EAD0',
+    text: '#07131F',
+    textMuted: '#56666A',
+    navy: '#07131F',
+    indigo: '#0B1D2C',
+    saffron: '#F28C28',
+    gold: '#C9A24A',
+    lotus: '#C9552B',
+    teal: '#2F7D7E',
+    darkText: '#FFF7E8',
+    darkMuted: '#B9C2BF',
+    success: '#3D9B72',
+    warning: '#D9962E',
+    danger: '#C04A3A',
+    border: '#D8B56A',
   },
   // Primary Gold Gradient
   gold: {
@@ -36,12 +39,12 @@ export const colors = {
   },
   // Cosmic Indigo
   cosmic: {
-    50: '#1A2347',
-    100: '#151B3A',
-    200: '#0F142D',
-    300: '#0A0F1F', // Primary Cosmic Indigo
-    400: '#050A12',
-    500: '#030508',
+    50: '#FFF8E6',
+    100: '#B9C2BF',
+    200: '#2F7D7E',
+    300: '#0B1D2C',
+    400: '#07131F',
+    500: '#04101B',
   },
   // Nebula Purple
   nebula: {
@@ -144,7 +147,7 @@ export const typography = {
   fontFamily: {
     sans: ['Inter', 'system-ui', 'sans-serif'],
     heading: ['Marcellus', 'serif'],
-    display: ['Playfair Display', 'serif'],
+    display: ['Marcellus', 'serif'],
   },
   fontSize: {
     xs: ['0.75rem', { lineHeight: '1rem' }],      // 12px

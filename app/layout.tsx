@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-import { Inter, Marcellus, Playfair_Display } from 'next/font/google'
+import { Inter, Marcellus } from 'next/font/google'
 
 import './globals.css'
 
@@ -40,18 +40,6 @@ const marcellus = Marcellus({
 
 })
 
-const playfair = Playfair_Display({
-
-  subsets: ['latin'],
-
-  variable: '--font-display',
-
-  display: 'swap',
-
-  preload: true,
-
-})
-
 import { generateMetadata as genMeta } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = genMeta({
@@ -83,7 +71,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
 
       <body
-        className={`${inter.variable} ${marcellus.variable} ${playfair.variable} font-body antialiased bg-background text-foreground overflow-x-hidden`}
+        className={`${inter.variable} ${marcellus.variable} font-body antialiased bg-background text-foreground overflow-x-hidden`}
       >
 
         <GlobalErrorBoundary>
@@ -98,7 +86,7 @@ export default function RootLayout({
                   className="fixed inset-0 z-0 pointer-events-none bg-background"
                   style={{
                     background:
-                      'radial-gradient(circle at 18% 0%, hsl(var(--jyoti-gold) / 0.18), transparent 28rem), radial-gradient(circle at 84% 6%, hsl(var(--lotus) / 0.08), transparent 26rem), linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--surface-sunken)) 100%)',
+                      'radial-gradient(circle at 16% 0%, hsl(var(--saffron) / 0.14), transparent 28rem), radial-gradient(circle at 84% 8%, hsl(var(--teal) / 0.1), transparent 26rem), linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--surface-sunken)) 100%)',
                   }}
                 />
 
