@@ -2,6 +2,7 @@
 
 import React from 'react';
 import DashboardShell from './DashboardShell';
+import { AuthenticatedAppShell } from './AuthenticatedAppShell';
 
 interface DashboardPageShellProps {
   title?: string;
@@ -18,14 +19,15 @@ export default function DashboardPageShell({
 }: DashboardPageShellProps) {
   return (
     <div className="page-container">
-      <DashboardShell
-        title={title}
-        subtitle={subtitle}
-        rightActions={rightActions}
-      >
-        {children}
-      </DashboardShell>
+      <AuthenticatedAppShell>
+        <DashboardShell
+          title={title}
+          subtitle={subtitle}
+          rightActions={rightActions}
+        >
+          {children}
+        </DashboardShell>
+      </AuthenticatedAppShell>
     </div>
   );
 }
-

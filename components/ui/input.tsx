@@ -1,46 +1,25 @@
-/**
- * Input Component
- * 
- * Phase 3 — Section 1: UI Atoms (Inputs & Fields)
- * Phase 3 — Section 7: Component States & Variants (Inputs)
- * Phase 3 — Section 13: Form & Input Accessibility
- */
-
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { HTMLMotionProps } from 'framer-motion';
+import React, { useId } from 'react';
 import { cn } from '@/lib/utils';
-import { colors, states, durations, easing } from '@/styles/tokens';
-import type { JyotiComponentProps } from './types';
 
-type InputMotionProps = Omit<
-  HTMLMotionProps<'input'>,
-  keyof JyotiComponentProps | 'ref' | 'size'
->;
-
-export interface InputProps
-  extends InputMotionProps,
-    Omit<JyotiComponentProps, 'motion'> {
-  /** Input label */
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
-  
-  /** Error message */
   error?: string;
-  
-  /** Success state */
   success?: boolean;
-  
-  /** Helper text */
   helperText?: string;
-  
-  /** Icon to display on the left */
   iconLeft?: React.ReactNode;
-  
-  /** Icon to display on the right */
   iconRight?: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  variant?: 'light' | 'dark' | 'cosmic';
 }
+
+const sizeClasses: Record<NonNullable<InputProps['size']>, string> = {
+  sm: 'min-h-10 px-3 text-sm',
+  md: 'min-h-11 px-4 text-sm',
+  lg: 'min-h-12 px-4 text-base',
+  xl: 'min-h-14 px-5 text-lg',
+};
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
@@ -51,180 +30,69 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       helperText,
       iconLeft,
       iconRight,
-      disabled = false,
+      disabled,
       className,
       size = 'md',
-      variant = 'dark',
+      id,
       ...props
     },
     ref
   ) => {
-    const [isFocused, setIsFocused] = useState(false);
-    const [hasValue, setHasValue] = useState(false);
-    const inputRef = useRef<HTMLInputElement | null>(null);
-    
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setHasValue(e.target.value.length > 0);
-      props.onChange?.(e);
-    };
-    
-    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(true);
-      props.onFocus?.(e);
-    };
-    
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(false);
-      props.onBlur?.(e);
-    };
-    
-    const sizeClasses = {
-      sm: 'h-9 px-3 text-sm',
-      md: 'h-12 px-4 text-base',
-      lg: 'h-14 px-5 text-lg',
-      xl: 'h-16 px-6 text-xl',
-    };
-    
-    const baseClasses = cn(
-      'w-full',
-      'bg-white/8 backdrop-blur-md',
-      'border rounded-xl',
-      'text-white placeholder:text-white/40',
-      'transition-all duration-240',
-      'focus:outline-none',
-      'disabled:opacity-40 disabled:cursor-not-allowed',
-      sizeClasses[size],
-      iconLeft && 'pl-10',
-      iconRight && 'pr-10',
-      // Border states
-      !error && !success && !isFocused && 'border-white/20',
-      !error && !success && isFocused && 'border-[#F4CE65] shadow-[0_0_12px_rgba(244,206,101,0.3)]',
-      error && 'border-[#e85555] shadow-[0_0_8px_rgba(232,85,85,0.3)]',
-      success && 'border-[#42d87c] shadow-[0_0_8px_rgba(66,216,124,0.3)]',
-      className
-    );
-    
+    const generatedId = useId();
+    const inputId = id || generatedId;
+    const describedBy = error
+      ? `${inputId}-error`
+      : helperText
+        ? `${inputId}-helper`
+        : undefined;
+
     return (
       <div className="w-full">
         {label && (
-          <label
-            htmlFor={props.id}
-            className={cn(
-              'block text-sm font-medium text-white/90 mb-2',
-              error && 'text-[#e85555]',
-              success && 'text-[#42d87c]'
-            )}
-          >
+          <label htmlFor={inputId} className="mb-2 block text-sm font-medium text-primary">
             {label}
           </label>
         )}
-        
+
         <div className="relative">
-          {/* Left icon */}
           {iconLeft && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 pointer-events-none">
+            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
               {iconLeft}
             </div>
           )}
-          
-          <motion.input
-            ref={(node) => {
-              if (typeof ref === 'function') ref(node);
-              else if (ref) (ref as React.MutableRefObject<HTMLInputElement | null>).current = node;
-              inputRef.current = node;
-            }}
-            className={baseClasses}
+          <input
+            ref={ref}
+            id={inputId}
             disabled={disabled}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onChange={handleChange}
             aria-invalid={error ? 'true' : undefined}
-            aria-describedby={
-              error || helperText
-                ? `${props.id || 'input'}-${error ? 'error' : 'helper'}`
-                : undefined
-            }
+            aria-describedby={describedBy}
+            className={cn(
+              'w-full rounded-lg border bg-card text-primary placeholder:text-muted-foreground',
+              'transition-colors duration-200',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              sizeClasses[size],
+              iconLeft && 'pl-10',
+              iconRight && 'pr-10',
+              error ? 'border-danger' : success ? 'border-success' : 'border-input',
+              className
+            )}
             {...props}
-            animate={
-              error
-                ? {
-                    x: [0, -4, 4, -4, 4, 0],
-                  }
-                : {}
-            }
-            transition={{
-              duration: 0.3,
-              ease: 'easeInOut',
-            }}
           />
-          
-          {/* Right icon */}
           {iconRight && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 pointer-events-none">
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
               {iconRight}
             </div>
           )}
-          
-          {/* Focus mandala effect */}
-          {isFocused && !error && !success && (
-            <motion.div
-              className="absolute inset-0 rounded-xl pointer-events-none"
-              style={{
-                background: 'radial-gradient(circle at center, rgba(244,206,101,0.1) 0%, transparent 70%)',
-              }}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3 }}
-            />
-          )}
-          
-          {/* Success chakra spark */}
-          {success && (
-            <motion.div
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            >
-              <div className="w-2 h-2 bg-[#42d87c] rounded-full shadow-[0_0_8px_#42d87c]" />
-            </motion.div>
-          )}
         </div>
-        
-        {/* Underline animation */}
-        {isFocused && !error && !success && (
-          <motion.div
-            className="h-0.5 bg-gradient-to-r from-transparent via-[#F4CE65] to-transparent mt-1"
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-          />
+
+        {error && (
+          <p id={`${inputId}-error`} className="mt-2 text-sm text-danger" role="alert">
+            {error}
+          </p>
         )}
-        
-        {/* Error message */}
-        <AnimatePresence>
-          {error && (
-            <motion.p
-              id={`${props.id || 'input'}-error`}
-              className="mt-1 text-sm text-[#e85555]"
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.2 }}
-              role="alert"
-            >
-              {error}
-            </motion.p>
-          )}
-        </AnimatePresence>
-        
-        {/* Helper text */}
-        {helperText && !error && (
-          <p
-            id={`${props.id || 'input'}-helper`}
-            className="mt-1 text-sm text-white/60"
-          >
+        {!error && helperText && (
+          <p id={`${inputId}-helper`} className="mt-2 text-sm text-muted-foreground">
             {helperText}
           </p>
         )}

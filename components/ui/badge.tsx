@@ -1,174 +1,77 @@
-/**
- * Badge/Tag/Chip Component
- * 
- * Phase 3 — Section 1: UI Atoms (Badges + Tags + Chips)
- * Phase 3 — Section 7: Component States & Variants (Status Badges)
- */
-
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import type { HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import type { JyotiComponentProps } from './types';
 
-type BadgeMotionProps = Omit<
-  HTMLMotionProps<'span'>,
-  keyof JyotiComponentProps | 'ref' | 'size'
->;
-
-export interface BadgeProps extends Omit<JyotiComponentProps, 'variant' | 'size' | 'motion'>, BadgeMotionProps {
-  /** Badge variant */
-  variant?: 'premium' | 'guru' | 'verified' | 'chakra' | 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline' | 'secondary' | 'destructive';
-  
-  /** Badge size */
+export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  variant?:
+    | 'default'
+    | 'secondary'
+    | 'outline'
+    | 'destructive'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'info'
+    | 'premium'
+    | 'guru'
+    | 'verified'
+    | 'chakra';
   size?: 'sm' | 'md' | 'lg';
-  
-  /** Show pulse animation */
   pulse?: boolean;
-  
-  /** Make badge clickable */
   clickable?: boolean;
+  disabled?: boolean;
 }
+
+const variantClasses: Record<NonNullable<BadgeProps['variant']>, string> = {
+  default: 'border-transparent bg-primary text-primary-foreground',
+  secondary: 'border-transparent bg-secondary text-secondary-foreground',
+  outline: 'border-border bg-transparent text-primary',
+  destructive: 'border-transparent bg-danger text-white',
+  success: 'border-success/25 bg-success/10 text-success',
+  warning: 'border-warning/25 bg-warning/10 text-warning',
+  error: 'border-danger/25 bg-danger/10 text-danger',
+  info: 'border-primary/20 bg-primary/10 text-primary',
+  premium: 'border-jyoti-gold/35 bg-jyoti-gold/15 text-primary',
+  guru: 'border-saffron/35 bg-saffron/12 text-primary',
+  verified: 'border-success/25 bg-success/10 text-success',
+  chakra: 'border-jyoti-lotus/30 bg-jyoti-lotus/10 text-jyoti-lotus',
+};
+
+const sizeClasses: Record<NonNullable<BadgeProps['size']>, string> = {
+  sm: 'px-2 py-0.5 text-xs',
+  md: 'px-2.5 py-1 text-xs',
+  lg: 'px-3 py-1.5 text-sm',
+};
 
 const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
   (
     {
       variant = 'default',
       size = 'md',
-      pulse = false,
-      clickable = false,
+      pulse,
+      clickable,
+      disabled,
       className,
-      children,
-      disabled = false,
       ...props
     },
     ref
-  ) => {
-    const variantClasses = {
-      premium: cn(
-        'bg-gradient-to-r from-[#F4CE65]/20 to-[#F4CE65]/10',
-        'border border-[#F4CE65]/40',
-        'text-[#F4CE65]',
-        'shadow-[0_0_12px_rgba(244,206,101,0.3)]'
-      ),
-      guru: cn(
-        'bg-gradient-to-r from-[#9D4EDD]/20 to-[#7B2CBF]/20',
-        'border border-[#9D4EDD]/40',
-        'text-[#9D4EDD]',
-        'shadow-[0_0_12px_rgba(157,78,221,0.3)]'
-      ),
-      verified: cn(
-        'bg-[#1E88E5]/20',
-        'border border-[#1E88E5]/40',
-        'text-[#4e9df3]',
-        'shadow-[0_0_12px_rgba(78,157,243,0.3)]'
-      ),
-      chakra: cn(
-        'bg-gradient-to-r from-[#FDD835]/20 to-[#43A047]/20',
-        'border border-[#FDD835]/40',
-        'text-[#FDD835]',
-        'shadow-[0_0_12px_rgba(253,216,53,0.3)]'
-      ),
-      default: cn(
-        'bg-white/10',
-        'border border-white/20',
-        'text-white/80'
-      ),
-      outline: cn(
-        'bg-transparent',
-        'border border-white/20',
-        'text-white/80'
-      ),
-      secondary: cn(
-        'bg-white/10',
-        'border border-white/10',
-        'text-white/80'
-      ),
-      destructive: cn(
-        'bg-[#e85555]/20',
-        'border border-[#e85555]/40',
-        'text-[#e85555]',
-        'shadow-[0_0_8px_rgba(232,85,85,0.3)]'
-      ),
-      success: cn(
-        'bg-[#42d87c]/20',
-        'border border-[#42d87c]/40',
-        'text-[#42d87c]',
-        'shadow-[0_0_8px_rgba(66,216,124,0.3)]'
-      ),
-      warning: cn(
-        'bg-[#f7c948]/20',
-        'border border-[#f7c948]/40',
-        'text-[#f7c948]',
-        'shadow-[0_0_8px_rgba(247,201,72,0.3)]'
-      ),
-      error: cn(
-        'bg-[#e85555]/20',
-        'border border-[#e85555]/40',
-        'text-[#e85555]',
-        'shadow-[0_0_8px_rgba(232,85,85,0.3)]'
-      ),
-      info: cn(
-        'bg-[#4e9df3]/20',
-        'border border-[#4e9df3]/40',
-        'text-[#4e9df3]',
-        'shadow-[0_0_8px_rgba(78,157,243,0.3)]'
-      ),
-    };
-    
-    const sizeClasses = {
-      sm: 'px-2 py-0.5 text-xs',
-      md: 'px-3 py-1 text-sm',
-      lg: 'px-4 py-1.5 text-base',
-    };
-    
-    const baseClasses = cn(
-      'inline-flex items-center justify-center',
-      'rounded-full',
-      'font-medium',
-      'backdrop-blur-sm',
-      'transition-all duration-200',
-      variantClasses[variant],
-      sizeClasses[size],
-      clickable && !disabled && 'cursor-pointer hover:scale-105',
-      disabled && 'opacity-40 pointer-events-none',
-      className
-    );
-    
-    return (
-      <motion.span
-        ref={ref}
-        className={baseClasses}
-        whileHover={clickable && !disabled ? { scale: 1.05 } : undefined}
-        whileTap={clickable && !disabled ? { scale: 0.95 } : undefined}
-        animate={
-          pulse
-            ? {
-                scale: [1, 1.05, 1],
-              }
-            : undefined
-        }
-        transition={
-          pulse
-            ? {
-                duration: 2,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }
-            : {
-                type: 'spring',
-                stiffness: 300,
-                damping: 20,
-              }
-        }
-        {...props}
-      >
-        {children}
-      </motion.span>
-    );
-  }
+  ) => (
+    <span
+      ref={ref}
+      className={cn(
+        'inline-flex items-center justify-center rounded-full border font-medium',
+        'transition-colors duration-200',
+        variantClasses[variant],
+        sizeClasses[size],
+        pulse && 'animate-pulse',
+        clickable && !disabled && 'cursor-pointer hover:border-saffron',
+        disabled && 'pointer-events-none opacity-50',
+        className
+      )}
+      {...props}
+    />
+  )
 );
 
 Badge.displayName = 'Badge';

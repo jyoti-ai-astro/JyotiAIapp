@@ -52,19 +52,37 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          raised: "hsl(var(--surface-raised))",
+          sunken: "hsl(var(--surface-sunken))",
+        },
+        text: {
+          DEFAULT: "hsl(var(--text))",
+          muted: "hsl(var(--text-muted))",
+        },
+        navy: "hsl(var(--navy))",
+        saffron: "hsl(var(--saffron))",
+        jyoti: {
+          gold: "hsl(var(--jyoti-gold))",
+          lotus: "hsl(var(--lotus))",
+        },
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        danger: "hsl(var(--danger))",
         // Jyoti.ai Cosmic Color Palette (Master Plan v1.0)
         cosmic: {
-          DEFAULT: "#020916",  // Deep Navy - Primary dark background
-          navy: "#020916",
-          indigo: "#0A0F2B",   // Mystic Indigo - Secondary dark
-          purple: "#6E2DEB",   // Cosmic Purple - Accent
-          cyan: "#17E8F6",     // Aura Cyan - Highlight
-          gold: "#F2C94C",     // Ethereal Gold - Premium accent
+          DEFAULT: "#18213F",
+          navy: "#18213F",
+          indigo: "#27325C",
+          purple: "#5A3F84",
+          cyan: "#5F7C86",
+          gold: "#E7B84E",
         },
         mystic: {
-          DEFAULT: "#6E2DEB",  // Cosmic Purple
-          light: "#8B6FEF",
-          dark: "#4D2AA3",
+          DEFAULT: "#7A3430",
+          light: "#A75245",
+          dark: "#52211F",
         },
         aura: {
           DEFAULT: "#17E8F6",  // Aura Cyan (default)
@@ -77,9 +95,9 @@ const config = {
           gold: "#F2C94C",     // Ethereal Gold (aura variant)
         },
         gold: {
-          DEFAULT: "#F2C94C",  // Ethereal Gold
-          light: "#F5D675",
-          dark: "#D4AF37",
+          DEFAULT: "#E7B84E",
+          light: "#F2D488",
+          dark: "#B9861E",
         },
       },
       borderRadius: {
@@ -135,4 +153,3 @@ const config = {
 } satisfies Config
 
 export default config
-

@@ -5,6 +5,22 @@
  */
 
 export const colors = {
+  launchV1: {
+    surface: '#FBF4E3',
+    surfaceRaised: '#FFFDF7',
+    surfaceSunken: '#F2E7CE',
+    text: '#18213F',
+    textMuted: '#5E6472',
+    navy: '#18213F',
+    indigo: '#27325C',
+    saffron: '#E99A24',
+    gold: '#E7B84E',
+    lotus: '#7A3430',
+    success: '#2F7A4B',
+    warning: '#D08118',
+    danger: '#AF2F2F',
+    border: '#D9C7A4',
+  },
   // Primary Gold Gradient
   gold: {
     50: '#FFF9E6',
@@ -166,6 +182,9 @@ export const container = {
 } as const;
 
 export const shadows = {
+  editorial: '0 14px 40px rgba(24, 33, 63, 0.10)',
+  raised: '0 8px 24px rgba(24, 33, 63, 0.08)',
+  focus: '0 0 0 3px rgba(233, 154, 36, 0.24)',
   // Soft Gold Glow
   goldSoft: '0 4px 20px rgba(255, 213, 122, 0.15), 0 0 40px rgba(255, 179, 71, 0.1)',
   goldMedium: '0 8px 32px rgba(255, 213, 122, 0.25), 0 0 60px rgba(255, 179, 71, 0.15)',
@@ -194,4 +213,3 @@ export const zIndex = {
   popover: 1060,
   tooltip: 1070,
 } as const;
-

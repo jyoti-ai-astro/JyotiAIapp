@@ -12,26 +12,38 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262.1 83.3% 57.8%;
-    --radius: 0.5rem;
+    --background: 42 78% 96%;
+    --foreground: 224 48% 16%;
+    --card: 40 68% 99%;
+    --card-foreground: 224 48% 16%;
+    --popover: 40 68% 99%;
+    --popover-foreground: 224 48% 16%;
+    --primary: 224 48% 16%;
+    --primary-foreground: 42 78% 96%;
+    --secondary: 42 55% 91%;
+    --secondary-foreground: 224 48% 16%;
+    --muted: 42 45% 90%;
+    --muted-foreground: 224 18% 42%;
+    --accent: 36 88% 53%;
+    --accent-foreground: 224 48% 16%;
+    --destructive: 0 62% 42%;
+    --destructive-foreground: 42 78% 96%;
+    --border: 39 34% 80%;
+    --input: 39 34% 80%;
+    --ring: 36 88% 53%;
+    --radius: 0.75rem;
+    --surface: 42 78% 96%;
+    --surface-raised: 40 68% 99%;
+    --surface-sunken: 41 54% 92%;
+    --text: 224 48% 16%;
+    --text-muted: 224 18% 42%;
+    --navy: 224 48% 16%;
+    --saffron: 36 88% 53%;
+    --jyoti-gold: 42 88% 62%;
+    --lotus: 4 52% 42%;
+    --success: 142 42% 34%;
+    --warning: 35 84% 45%;
+    --danger: 0 62% 42%;
   }
 
   .dark {
@@ -64,6 +76,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    background:
+      radial-gradient(circle at 12% 0%, hsl(var(--jyoti-gold) / 0.16), transparent 30rem),
+      radial-gradient(circle at 92% 8%, hsl(var(--lotus) / 0.08), transparent 26rem),
+      hsl(var(--background));
   }
 }
 
@@ -440,4 +456,3 @@
     animation: marquee var(--duration, 40s) linear infinite;
   }
 }
-

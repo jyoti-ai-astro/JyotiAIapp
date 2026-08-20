@@ -83,7 +83,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
 
       <body
-        className={`${inter.variable} ${marcellus.variable} ${playfair.variable} font-body antialiased bg-[#05050A] text-white overflow-x-hidden`}
+        className={`${inter.variable} ${marcellus.variable} ${playfair.variable} font-body antialiased bg-background text-foreground overflow-x-hidden`}
       >
 
         <GlobalErrorBoundary>
@@ -95,10 +95,10 @@ export default function RootLayout({
               <GlobalProviders>
                 <div
                   aria-hidden="true"
-                  className="fixed inset-0 z-0 pointer-events-none bg-[#05050A]"
+                  className="fixed inset-0 z-0 pointer-events-none bg-background"
                   style={{
                     background:
-                      'radial-gradient(circle at 20% 10%, rgba(88, 70, 160, 0.16), transparent 32%), radial-gradient(circle at 82% 4%, rgba(255, 213, 122, 0.08), transparent 28%), linear-gradient(180deg, #05050A 0%, #0A0F1F 52%, #05050A 100%)',
+                      'radial-gradient(circle at 18% 0%, hsl(var(--jyoti-gold) / 0.18), transparent 28rem), radial-gradient(circle at 84% 6%, hsl(var(--lotus) / 0.08), transparent 26rem), linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--surface-sunken)) 100%)',
                   }}
                 />
 

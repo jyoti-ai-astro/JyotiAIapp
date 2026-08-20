@@ -6,13 +6,40 @@
  */
 
 // Base Core Colors (Spiritual)
+export const launchV1 = {
+  surfaces: {
+    canvas: '#FBF4E3',
+    raised: '#FFFDF7',
+    sunken: '#F2E7CE',
+  },
+  text: {
+    primary: '#18213F',
+    muted: '#5E6472',
+    inverse: '#FFF8EA',
+  },
+  brand: {
+    navy: '#18213F',
+    indigo: '#27325C',
+    saffron: '#E99A24',
+    gold: '#E7B84E',
+    lotus: '#7A3430',
+  },
+  semantic: {
+    success: '#2F7A4B',
+    warning: '#D08118',
+    danger: '#AF2F2F',
+  },
+  border: '#D9C7A4',
+  focus: '#E99A24',
+} as const;
+
 export const colors = {
-  navyDeep: '#060B1B',
-  indigoAura: '#1A1F3C',
-  purpleCosmic: '#7B2CBF',
-  violetMystic: '#9D4EDD',
-  goldPrana: '#F4CE65',
-  whiteShakti: '#F8F8FF',
+  navyDeep: launchV1.brand.navy,
+  indigoAura: launchV1.brand.indigo,
+  purpleCosmic: '#5A3F84',
+  violetMystic: '#6F548C',
+  goldPrana: launchV1.brand.gold,
+  whiteShakti: launchV1.surfaces.raised,
 } as const;
 
 // Nebula Gradient Tokens
@@ -58,30 +85,30 @@ export const planets = {
 
 // Utility Colors
 export const utility = {
-  success: '#42d87c',
-  warning: '#f7c948',
-  error: '#e85555',
-  info: '#4e9df3',
-  muted: 'rgba(255,255,255,0.6)',
+  success: launchV1.semantic.success,
+  warning: launchV1.semantic.warning,
+  error: launchV1.semantic.danger,
+  info: launchV1.brand.indigo,
+  muted: launchV1.text.muted,
 } as const;
 
 // State Colors (Phase 3 — Section 13.4)
 export const states = {
-  default: 'rgba(255,255,255,0.9)',
-  hover: 'rgba(255,255,255,1)',
-  active: 'rgba(255,255,255,0.8)',
-  focusRing: '#8ab4f8',
+  default: launchV1.text.primary,
+  hover: launchV1.brand.navy,
+  active: launchV1.brand.indigo,
+  focusRing: launchV1.focus,
   loading: '#d0d0d0',
-  success: '#42d87c',
-  warning: '#f7c948',
-  error: '#e85555',
-  disabled: 'rgba(255,255,255,0.4)',
+  success: launchV1.semantic.success,
+  warning: launchV1.semantic.warning,
+  error: launchV1.semantic.danger,
+  disabled: '#A79C89',
 } as const;
 
 // Accessibility Colors
 export const a11y = {
-  focusRing: '#8ab4f8',
-  focusRingDark: '#d0e0ff',
+  focusRing: launchV1.focus,
+  focusRingDark: '#F2D488',
   contrastHighBg: '#000000',
   contrastHighText: '#ffffff',
 } as const;
