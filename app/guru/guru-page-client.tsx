@@ -1,61 +1,29 @@
-/**
- * Guru Chat Page Client Component
- * 
- * Phase 3 — Section 29: PAGES PHASE 14 (F29)
- * 
- * Client component for Guru Chat page with Super Cosmic UI
- */
+'use client'
 
-'use client';
-
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { UpgradeBanner } from '@/components/ui/upgrade-banner';
-import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
-import { CosmicGuruChat } from '@/components/guru/CosmicGuruChat';
-import GuruHero from '@/src/ui/sections/guru/GuruHero';
-import GuruLayoutShell from '@/src/ui/sections/guru/GuruLayoutShell';
-import { useUserStore } from '@/store/user-store';
+import { useSearchParams } from 'next/navigation'
+import { Badge } from '@/components/ui/badge'
+import { CosmicGuruChat } from '@/components/guru/CosmicGuruChat'
 
 export function GuruPageClient() {
-  const router = useRouter();
-  const { user } = useUserStore();
-  
-  // Check if user has remaining Guru tickets
-  const aiGuruTickets = user?.aiGuruTickets || 0;
-  const hasNoTickets = aiGuruTickets === 0;
+  const searchParams = useSearchParams()
+  const prompt = searchParams.get('prompt') || ''
+  const source = searchParams.get('source') || undefined
 
   return (
-    <div className="relative">
-      <section className="page-container pt-8 md:pt-16">
-        <GuruHero />
+    <main className="page-container flex min-h-[calc(100vh-5rem)] flex-col gap-6 py-6 md:py-8">
+      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <Badge variant="guru">Jyoti Guru</Badge>
+          <h1 className="mt-4 font-heading text-4xl font-semibold leading-tight text-primary md:text-5xl">
+            What do you want clarity on?
+          </h1>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+            Ask from your saved Kundali context. Suggested prompts can prefill the composer, but nothing is sent until you confirm.
+          </p>
+        </div>
       </section>
 
-      {hasNoTickets && (
-        <section className="page-container pt-6 md:pt-10">
-          <OneTimeOfferBanner 
-            feature="AI Guru questions"
-            productId="199"
-          />
-        </section>
-      )}
-
-      <section className="page-container pt-6 md:pt-10">
-        <UpgradeBanner
-          buttonText="Upgrade for deeper sessions"
-          description="Unlock longer conversations, priority queue, and advanced karmic insights."
-          onClick={() => router.push('/pricing')}
-        />
-      </section>
-
-      <section
-        id="guru-console"
-        className="page-container pt-6 md:pt-10 pb-16 md:pb-24"
-      >
-        <GuruLayoutShell>
-          <CosmicGuruChat />
-        </GuruLayoutShell>
-      </section>
-    </div>
-  );
+      <CosmicGuruChat initialPrompt={prompt} source={source} />
+    </main>
+  )
 }

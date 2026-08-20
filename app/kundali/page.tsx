@@ -2,57 +2,94 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useUserStore } from '@/store/user-store'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  ArrowRight,
+  CalendarDays,
+  Download,
+  Eye,
+  FileText,
+  RefreshCw,
+  Sparkles,
+  TriangleAlert,
+} from 'lucide-react'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Download, RefreshCw } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState, ErrorState, LoadingState, RetryButton } from '@/components/ui/feedback-state'
+import { KundaliChart2D, type KundaliBhava, type KundaliGraha } from '@/components/charts/kundali-chart'
 import { KundaliWheel3D } from '@/components/organisms/kundali-wheel-3d'
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 import { useTicketAccess } from '@/lib/access/useTicketAccess'
-import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
-import Link from 'next/link'
-import type { AstroContext } from '@/lib/engines/astro-types'
-import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { useUserStore } from '@/store/user-store'
 
-interface KundaliData {
-  meta: {
-    birthDetails: any
-    generatedAt: string
-    chartType: string
-    houseSystem: string
+type DashaPeriod = {
+  planet?: string | null
+  startDate?: string | null
+  endDate?: string | null
+}
+
+type KundaliData = {
+  meta?: {
+    birthDetails?: any
+    generatedAt?: string | null
+    chartType?: string | null
+    houseSystem?: string | null
+    generationKind?: string | null
+    source?: string | null
+    stale?: boolean
+    staleReason?: string | null
+    staleAt?: string | null
   }
-  D1: {
-    chartType: string
-    grahas: Record<string, any>
-    bhavas: Record<string, any>
-    lagna: any
-    aspects: Array<{
-      fromPlanet: string
-      toPlanet: string
-      angle: number
-      type: string
+  D1?: {
+    chartType?: string
+    grahas?: Record<string, KundaliGraha>
+    bhavas?: Record<string, KundaliBhava>
+    lagna?: KundaliGraha & { sign?: string; longitude?: number }
+    aspects?: Array<{
+      fromPlanet?: string
+      toPlanet?: string
+      angle?: number
+      type?: string
     }>
-  }
-  dasha: {
-    currentMahadasha: any
-    currentAntardasha: any
-    currentPratyantardasha: any
-  }
+  } | null
+  dasha?: {
+    currentMahadasha?: DashaPeriod
+    currentAntardasha?: DashaPeriod
+    currentPratyantardasha?: DashaPeriod
+  } | null
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return 'Not available'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Not available'
+  return new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+function formatDegree(value?: number) {
+  return typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(2)}°` : 'Not available'
+}
+
+function firstValue(...values: Array<string | null | undefined>) {
+  return values.find((value) => value && value !== 'Unknown') || null
+}
+
+function getPlanetsByHouse(grahas: Record<string, KundaliGraha>, houseNumber?: number) {
+  if (!houseNumber) return []
+  return Object.values(grahas).filter((graha) => Number(graha.house) === houseNumber)
 }
 
 export default function KundaliPage() {
   const router = useRouter()
   const { user } = useUserStore()
-
-  // Ticket / access state
   const {
     hasAccess,
     hasSubscription,
@@ -60,17 +97,40 @@ export default function KundaliPage() {
     loading: ticketLoading,
   } = useTicketAccess('kundali')
 
-  // Data state
   const [loading, setLoading] = useState(true)
   const [kundali, setKundali] = useState<KundaliData | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [astro, setAstro] = useState<AstroContext | null>(null)
-
-  // Download state
-  const [downloadingReport, setDownloadingReport] = useState(false)
-
-  // UI state
+  const [generating, setGenerating] = useState(false)
+  const [generationError, setGenerationError] = useState<string | null>(null)
+  const [reporting, setReporting] = useState(false)
+  const [reportError, setReportError] = useState<string | null>(null)
+  const [show3D, setShow3D] = useState(false)
   const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null)
+
+  const fetchKundali = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await fetch('/api/kundali/get', { credentials: 'include' })
+      const data = await response.json().catch(() => ({}))
+
+      if (response.status === 404) {
+        setKundali(null)
+        setError(null)
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Failed to load Kundali')
+      }
+
+      setKundali(data.kundali)
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load Kundali')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (!user) {
@@ -79,526 +139,594 @@ export default function KundaliPage() {
     }
 
     void fetchKundali()
-    void fetchAstroContext()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, router])
+  }, [fetchKundali, router, user])
 
-  const fetchAstroContext = async () => {
-    if (!user?.uid) return
-    try {
-      const response = await fetch('/api/astro/context', {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setAstro(data.astro)
-      }
-    } catch (err) {
-      console.error('Error fetching astro context:', err)
-    }
-  }
+  const birthProfileMissing =
+    !user?.dob || !user?.tob || !user?.pob || user?.lat == null || user?.lng == null
+  const grahas = kundali?.D1?.grahas || {}
+  const bhavas = kundali?.D1?.bhavas || {}
+  const lagna = kundali?.D1?.lagna
+  const dasha = kundali?.dasha
+  const isStale = kundali?.meta?.stale === true || user?.derivedAstrologyStatus === 'stale'
+  const hasDasha = Boolean(dasha?.currentMahadasha || dasha?.currentAntardasha)
 
-  const fetchKundali = async () => {
-    try {
-      setLoading(true)
-      setError(null)
+  const identity = useMemo(
+    () => ({
+      lagna: firstValue(lagna?.sign, user?.ascendant),
+      rashi: firstValue(user?.rashiMoon, user?.rashi, grahas.Moon?.sign, grahas.Chandra?.sign),
+      nakshatra: firstValue(user?.nakshatra, grahas.Moon?.nakshatra, grahas.Chandra?.nakshatra, lagna?.nakshatra),
+      mahadasha: dasha?.currentMahadasha?.planet || null,
+      antardasha: dasha?.currentAntardasha?.planet || null,
+      birthPlace: user?.pob || kundali?.meta?.birthDetails?.pob || null,
+    }),
+    [dasha, grahas, kundali?.meta?.birthDetails?.pob, lagna, user]
+  )
 
-      const response = await fetch('/api/kundali/get', {
-        credentials: 'include',
-      })
+  const grahaPositions = Object.entries(grahas).map(([planetName, graha]) => ({
+    planet: graha.planet || planetName,
+    degrees: graha.degreesInSign || 0,
+    sign: graha.sign || 'Unknown',
+    house: graha.house || 0,
+    longitude: graha.longitude || 0,
+    latitude: 0,
+  }))
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          setError('Kundali not found. Please complete onboarding first.')
-          return
-        }
-        throw new Error('Failed to load kundali')
-      }
-
-      const result = await response.json()
-      setKundali(result.kundali)
-    } catch (err: any) {
-      console.error('Kundali fetch error:', err)
-      setError(err?.message || 'Failed to load kundali')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Download PDF report
-  const handleDownloadReport = async () => {
-    if (!user) return
-
-    const accessCheck = await checkFeatureAccess(user, 'kundali')
-    if (!accessCheck.allowed) {
-      if (accessCheck.redirectTo) {
-        router.push(accessCheck.redirectTo)
-      }
+  const handleGenerate = async () => {
+    if (!hasAccess) {
+      setGenerationError('Kundali credits or an active plan are required to regenerate this chart.')
       return
     }
 
-    setDownloadingReport(true)
-
     try {
-      const response = await fetch('/api/reports/generate', {
+      setGenerating(true)
+      setGenerationError(null)
+      const response = await fetch('/api/kundali/generate-full', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          type: 'kundali',
-          sendEmail: false,
-        }),
+        body: JSON.stringify({}),
       })
+      const data = await response.json().catch(() => ({}))
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || errorData.message || 'Failed to generate report')
+        throw new Error(data.message || data.error || 'Kundali generation failed')
       }
 
-      const result = await response.json()
-      if (result.report?.pdfUrl) {
-        window.location.href = result.report.pdfUrl
-      } else if (result.report?.reportId) {
-        router.push(`/reports/${result.report.reportId}`)
-      }
+      await fetchKundali()
+      setShow3D(false)
     } catch (err: any) {
-      console.error('Error downloading report:', err)
-      alert(err?.message || 'Failed to download report. Please try again.')
+      setGenerationError(err?.message || 'Kundali generation failed')
     } finally {
-      setDownloadingReport(false)
+      setGenerating(false)
     }
   }
 
-  // ---- RENDER GUARDS ----
+  const handleGenerateReport = async () => {
+    try {
+      setReporting(true)
+      setReportError(null)
+      const response = await fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ type: 'kundali', sendEmail: false }),
+      })
+      const data = await response.json().catch(() => ({}))
 
-  if (ticketLoading) {
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Failed to generate report')
+      }
+
+      const reportId = data.report?.reportId || data.reportId
+      router.push(reportId ? `/reports/${reportId}` : '/reports')
+    } catch (err: any) {
+      setReportError(err?.message || 'Failed to generate report')
+    } finally {
+      setReporting(false)
+    }
+  }
+
+  if (!user) return null
+
+  if (loading || ticketLoading) {
     return (
-      <DashboardPageShell title="Your Birth Chart" subtitle="Loading...">
-        <div className="flex items-center justify-center py-20">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-gold" />
-        </div>
+      <DashboardPageShell title="Your Vedic Birth Chart" subtitle="Preparing your Kundali view.">
+        <Card>
+          <LoadingState title="Loading Kundali" description="Reading your saved birth chart." />
+        </Card>
       </DashboardPageShell>
+    )
+  }
+
+  if (error) {
+    return (
+      <DashboardPageShell title="Your Vedic Birth Chart" subtitle="A clear view of your saved chart.">
+        <Card>
+          <ErrorState
+            title="Kundali unavailable"
+            description={error}
+            action={<RetryButton onClick={fetchKundali} />}
+          />
+        </Card>
+      </DashboardPageShell>
+    )
+  }
+
+  const missingKundali = !kundali
+
+  return (
+    <DashboardPageShell
+      title="Your Vedic Birth Chart"
+      subtitle="A clear view of your Lagna, Moon sign, Nakshatra, current Dasha, and planetary placements."
+    >
+      <div className="space-y-6">
+        <Card className="border-jyoti-gold/35 bg-jyoti-gold/10">
+          <CardContent className="grid gap-6 pt-6 lg:grid-cols-[1fr_0.85fr] lg:items-center">
+            <div>
+              <Badge variant="premium">Your birth chart</Badge>
+              <h1 className="mt-4 font-heading text-4xl font-semibold leading-tight text-primary md:text-5xl">
+                Your Vedic Birth Chart
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
+                A clear view of your Lagna, Moon sign, Nakshatra, current Dasha, and planetary placements.
+              </p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                {missingKundali ? (
+                  <PrimaryKundaliAction
+                    birthProfileMissing={birthProfileMissing}
+                    hasAccess={hasAccess}
+                    generating={generating}
+                    onGenerate={handleGenerate}
+                  />
+                ) : isStale ? (
+                  <PrimaryKundaliAction
+                    birthProfileMissing={birthProfileMissing}
+                    hasAccess={hasAccess}
+                    generating={generating}
+                    onGenerate={handleGenerate}
+                    stale
+                  />
+                ) : (
+                  <Link href="/guru?prompt=What%20does%20my%20current%20Dasha%20mean%3F&source=kundali">
+                    <Button iconRight={<ArrowRight className="h-4 w-4" />}>Ask Guru about my Kundali</Button>
+                  </Link>
+                )}
+                {!missingKundali && (
+                  <Button
+                    variant="outline"
+                    onClick={handleGenerateReport}
+                    disabled={reporting}
+                    iconLeft={reporting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  >
+                    {reporting ? 'Creating report' : 'Generate report'}
+                  </Button>
+                )}
+              </div>
+              {(generationError || reportError) && (
+                <p className="mt-4 text-sm text-danger">{generationError || reportError}</p>
+              )}
+            </div>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <p className="text-sm font-semibold text-primary">Chart status</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Badge variant={missingKundali ? 'warning' : isStale ? 'warning' : 'success'}>
+                  {missingKundali ? 'Not generated' : isStale ? 'Stale' : 'Current'}
+                </Badge>
+                {kundali?.meta?.generatedAt && (
+                  <Badge variant="outline">Generated {formatDate(kundali.meta.generatedAt)}</Badge>
+                )}
+                {hasSubscription ? (
+                  <Badge variant="success">Included in your plan</Badge>
+                ) : (
+                  <Badge variant="secondary">{tickets.kundaliTickets || 0} Kundali credits</Badge>
+                )}
+              </div>
+              {isStale && (
+                <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                  Your birth details changed. This saved chart is preserved, but JyotiAI will not present it as current
+                  until it is regenerated.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {birthProfileMissing && missingKundali && (
+          <Card>
+            <EmptyState
+              title="Complete your birth profile"
+              description="Birth date, time, place, latitude, and longitude are required before JyotiAI can generate your Kundali."
+              action={
+                <Link href="/profile">
+                  <Button>Complete birth profile</Button>
+                </Link>
+              }
+            />
+          </Card>
+        )}
+
+        {!birthProfileMissing && missingKundali && (
+          <Card>
+            <EmptyState
+              title="Generate your Kundali"
+              description="Create the canonical chart used by Dashboard, Guru, Timeline, and reports."
+              action={
+                hasAccess ? (
+                  <Button onClick={handleGenerate} disabled={generating} iconLeft={generating ? <RefreshCw className="h-4 w-4 animate-spin" /> : undefined}>
+                    {generating ? 'Generating' : 'Generate my Kundali'}
+                  </Button>
+                ) : (
+                  <Link href="/pricing">
+                    <Button>Get Kundali access</Button>
+                  </Link>
+                )
+              }
+            />
+          </Card>
+        )}
+
+        {isStale && kundali && (
+          <Card className="border-warning/30 bg-warning/10">
+            <CardContent className="flex flex-col gap-4 pt-6 md:flex-row md:items-start md:justify-between">
+              <div className="flex gap-3">
+                <TriangleAlert className="mt-1 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+                <div>
+                  <h2 className="font-heading text-xl font-semibold text-primary">This Kundali is outdated</h2>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {kundali.meta?.staleReason || 'Your birth profile changed after this chart was generated.'}
+                  </p>
+                  {kundali.meta?.staleAt && (
+                    <p className="mt-1 text-xs text-muted-foreground">Marked stale {formatDate(kundali.meta.staleAt)}.</p>
+                  )}
+                </div>
+              </div>
+              {hasAccess ? (
+                <Button onClick={handleGenerate} disabled={generating} iconLeft={<RefreshCw className={generating ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />}>
+                  {generating ? 'Regenerating' : 'Regenerate Kundali'}
+                </Button>
+              ) : (
+                <Link href="/pricing">
+                  <Button>Get Kundali access</Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {kundali && (
+          <>
+            {!isStale && (
+              <VedicIdentity identity={identity} />
+            )}
+
+            <KundaliChart2D
+              grahas={grahas}
+              bhavas={bhavas}
+              lagnaSign={identity.lagna}
+              stale={isStale}
+            />
+
+            {!isStale && hasDasha && <DashaCard dasha={dasha} />}
+
+            {!isStale && (
+              <div className="grid gap-6 lg:grid-cols-2">
+                <PlanetSummary grahas={grahas} />
+                <HouseSummary grahas={grahas} bhavas={bhavas} />
+              </div>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                {!isStale && (
+                  <Link href="/guru?prompt=What%20does%20my%20current%20Dasha%20mean%3F&source=kundali">
+                    <Button iconLeft={<Sparkles className="h-4 w-4" />}>Ask Guru about my Kundali</Button>
+                  </Link>
+                )}
+                <Link href="/dasha">
+                  <Button variant="outline" iconLeft={<CalendarDays className="h-4 w-4" />}>View Dasha</Button>
+                </Link>
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateReport}
+                  disabled={reporting}
+                  iconLeft={<FileText className="h-4 w-4" />}
+                >
+                  {reporting ? 'Creating report' : 'Generate report'}
+                </Button>
+                <Button variant="ghost" onClick={() => setShow3D((value) => !value)} iconLeft={<Eye className="h-4 w-4" />}>
+                  {show3D ? 'Hide 3D chart' : 'View 3D chart'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <AdvancedDetails kundali={kundali} />
+
+            {show3D && grahaPositions.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Optional 3D view</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    This WebGL view loads only after you request it.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <KundaliWheel3D
+                    grahas={grahaPositions}
+                    lagna={lagna?.longitude || 0}
+                    onPlanetHover={setHoveredPlanet}
+                    className="h-[560px]"
+                  />
+                  {hoveredPlanet && (
+                    <p className="mt-3 text-center text-sm text-muted-foreground">Hovering: {hoveredPlanet}</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+
+        {!hasAccess && !missingKundali && (
+          <OneTimeOfferBanner
+            title="Need a fresh Kundali?"
+            description="Regeneration uses Kundali credits or an active plan."
+            priceLabel="₹199"
+            ctaLabel="Get Kundali access"
+            ctaHref="/pay/199"
+          />
+        )}
+      </div>
+    </DashboardPageShell>
+  )
+}
+
+function PrimaryKundaliAction({
+  birthProfileMissing,
+  hasAccess,
+  generating,
+  onGenerate,
+  stale,
+}: {
+  birthProfileMissing: boolean
+  hasAccess: boolean
+  generating: boolean
+  onGenerate: () => void
+  stale?: boolean
+}) {
+  if (birthProfileMissing) {
+    return (
+      <Link href="/profile">
+        <Button>Complete birth profile</Button>
+      </Link>
     )
   }
 
   if (!hasAccess) {
     return (
-      <DashboardPageShell
-        title="Your Birth Chart"
-        subtitle="Unlock your cosmic blueprint"
-      >
-        <OneTimeOfferBanner feature="Kundali Reading" productId="199" />
-      </DashboardPageShell>
+      <Link href="/pricing">
+        <Button>{stale ? 'Get regeneration access' : 'Get Kundali access'}</Button>
+      </Link>
     )
   }
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="space-y-4 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-mystic border-t-transparent" />
-          <p className="text-muted-foreground">Loading your kundali...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error || !kundali) {
-    return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="space-y-4 pt-6 text-center">
-            <p className="text-destructive">{error || 'Kundali not found'}</p>
-            <div className="flex justify-center gap-4">
-              <Button onClick={fetchKundali}>Retry</Button>
-              <Link href="/onboarding">
-                <Button variant="outline">Complete Onboarding</Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  // ----- DATA TRANSFORMS (safe now, kundali is defined) -----
-
-  const grahas = kundali.D1?.grahas || {}
-  const bhavas = kundali.D1?.bhavas || {}
-  const lagna = kundali.D1?.lagna
-
-  const grahaPositions = Object.entries(grahas).map(
-    ([planetName, graha]: [string, any]) => ({
-      planet: graha.planet || planetName,
-      degrees: graha.degreesInSign || 0,
-      sign: graha.sign,
-      house: graha.house || 0,
-      longitude: graha.longitude || 0,
-      latitude: graha.latitude || 0,
-    })
-  )
-
-  const lagnaDegrees = lagna?.longitude || 0
-
-  // ----- UI -----
 
   return (
-    <DashboardPageShell
-      title="Your Kundali"
-      subtitle="Complete birth chart with planetary positions, houses, and aspects"
+    <Button
+      onClick={onGenerate}
+      disabled={generating}
+      iconLeft={generating ? <RefreshCw className="h-4 w-4 animate-spin" /> : undefined}
     >
-      <div className="space-y-6">
-        {/* Context Panel / Upsell */}
-        <div className="mb-8">
-          <OneTimeOfferBanner
-            title="Unlock Full Insights"
-            description="This module uses your birth chart & predictions powered by Guru Brain."
-            priceLabel="₹199"
-            ctaLabel="Unlock Now"
-            ctaHref="/pay/199"
-          />
+      {generating ? 'Generating' : stale ? 'Regenerate Kundali' : 'Generate my Kundali'}
+    </Button>
+  )
+}
+
+function VedicIdentity({ identity }: { identity: Record<string, string | null> }) {
+  const items = [
+    ['Lagna', identity.lagna, 'Your ascendant, used as the starting point for house placement.'],
+    ['Rashi / Moon sign', identity.rashi, 'The Moon sign available from your saved chart/profile.'],
+    ['Nakshatra', identity.nakshatra, 'The lunar mansion available from your saved Kundali data.'],
+    ['Mahadasha', identity.mahadasha, 'The major life-period currently active.'],
+    ['Antardasha', identity.antardasha, 'The sub-period currently active.'],
+    ['Birth place', identity.birthPlace, 'The location saved in your birth profile.'],
+  ]
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Vedic identity</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {items.map(([label, value, description]) => (
+          <div key={label} className="rounded-lg border border-border bg-secondary/40 p-4">
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="mt-1 font-heading text-2xl font-semibold text-primary">{value || 'Not available'}</p>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">{description}</p>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  )
+}
+
+function DashaCard({ dasha }: { dasha: KundaliData['dasha'] }) {
+  const mahadasha = dasha?.currentMahadasha
+  const antardasha = dasha?.currentAntardasha
+  const pratyantardasha = dasha?.currentPratyantardasha
+
+  return (
+    <Card id="dasha">
+      <CardHeader>
+        <CardTitle>Current Dasha</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <p className="text-base leading-7 text-primary">
+          You are currently in the {mahadasha?.planet || 'available'} Mahadasha
+          {antardasha?.planet ? `, with ${antardasha.planet} Antardasha active.` : '.'}
+        </p>
+        <div className="grid gap-4 md:grid-cols-3">
+          <DashaPeriodCard label="Mahadasha" period={mahadasha} />
+          <DashaPeriodCard label="Antardasha" period={antardasha} />
+          <DashaPeriodCard label="Pratyantardasha" period={pratyantardasha} />
         </div>
+      </CardContent>
+    </Card>
+  )
+}
 
-        {/* Astro Summary Block */}
-        {astro && (
-          <div className="glass-card mb-10 rounded-2xl border border-gold/20 p-6">
-            <h3 className="font-heading mb-2 text-xl text-gold">Astro Summary</h3>
-            <p className="text-sm text-white/80">
-              Sun Sign: {astro.coreChart?.sunSign || 'N/A'}
-            </p>
-            <p className="text-sm text-white/80">
-              Moon Sign: {astro.coreChart?.moonSign || 'N/A'}
-            </p>
-            <p className="text-sm text-white/80">
-              Ascendant: {astro.coreChart?.ascendantSign || 'N/A'}
-            </p>
-            <p className="mt-4 text-sm text-white/80">
-              Next Major Dasha:{' '}
-              {astro.dasha?.currentMahadasha?.planet || 'N/A'}
-            </p>
-          </div>
-        )}
+function DashaPeriodCard({ label, period }: { label: string; period?: DashaPeriod }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface-raised p-4">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-1 font-heading text-xl font-semibold text-primary">{period?.planet || 'Not available'}</p>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {formatDate(period?.startDate)} - {formatDate(period?.endDate)}
+      </p>
+    </div>
+  )
+}
 
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-4xl font-bold text-cosmic-gold">
-              Your Kundali
-            </h1>
-            <p className="text-aura-cyan">
-              Generated on{' '}
-              {kundali.meta.generatedAt
-                ? new Date(kundali.meta.generatedAt).toLocaleDateString()
-                : '—'}
-            </p>
-          </div>
-          <Link href="/dashboard">
-            <Button className="cosmic-button border-aura-cyan/30 text-aura-cyan hover:bg-aura-cyan/10">
-              Back to Dashboard
-            </Button>
-          </Link>
-        </div>
-
-        {/* 3D Kundali Wheel */}
-        {grahaPositions.length > 0 && (
-          <div className="mb-8">
-            <KundaliWheel3D
-              grahas={grahaPositions}
-              lagna={lagnaDegrees}
-              onPlanetHover={setHoveredPlanet}
-              className="h-[600px]"
-            />
-            {hoveredPlanet && (
-              <div className="mt-4 text-center">
-                <p className="text-aura-cyan">Hovering: {hoveredPlanet}</p>
+function PlanetSummary({ grahas }: { grahas: Record<string, KundaliGraha> }) {
+  const planets = Object.entries(grahas)
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Planet summary</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {planets.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Planetary placement data is unavailable.</p>
+        ) : (
+          planets.map(([key, graha]) => (
+            <div key={key} className="flex items-start justify-between gap-4 border-b border-border/70 pb-3 last:border-0">
+              <div>
+                <p className="font-medium text-primary">{graha.planet || key}</p>
+                <p className="text-sm text-muted-foreground">
+                  {graha.sign || 'Unknown sign'}
+                  {graha.house ? `, House ${graha.house}` : ''}
+                  {graha.nakshatra ? `, ${graha.nakshatra}` : ''}
+                </p>
               </div>
-            )}
-          </div>
+              {graha.retrograde && <Badge variant="warning">Retrograde</Badge>}
+            </div>
+          ))
         )}
+      </CardContent>
+    </Card>
+  )
+}
 
-        {/* Lagna Details */}
-        {lagna && (
-          <Card className="cosmic-card border-aura-blue/30 bg-cosmic-indigo/10">
-            <CardHeader>
-              <CardTitle className="text-cosmic-gold">Lagna (Ascendant)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <p className="text-sm font-medium">Sign</p>
-                  <p className="text-lg font-semibold text-mystic">
-                    {lagna.sign}
-                  </p>
+function HouseSummary({
+  grahas,
+  bhavas,
+}: {
+  grahas: Record<string, KundaliGraha>
+  bhavas: Record<string, KundaliBhava>
+}) {
+  const houses = Object.values(bhavas)
+    .filter((bhava) => bhava.houseNumber)
+    .sort((a, b) => Number(a.houseNumber) - Number(b.houseNumber))
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>House summary</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3 sm:grid-cols-2">
+        {houses.length === 0 ? (
+          <p className="text-sm text-muted-foreground">House data is unavailable.</p>
+        ) : (
+          houses.map((bhava) => {
+            const planets = getPlanetsByHouse(grahas, bhava.houseNumber)
+            return (
+              <div key={bhava.houseNumber} className="rounded-lg border border-border bg-secondary/40 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-medium text-primary">House {bhava.houseNumber}</p>
+                  {bhava.sign && <Badge variant="outline">{bhava.sign}</Badge>}
                 </div>
-                <div>
-                  <p className="text-sm font-medium">Nakshatra</p>
-                  <p className="text-lg font-semibold">{lagna.nakshatra}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Pada</p>
-                  <p className="text-lg font-semibold">{lagna.pada}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Longitude</p>
-                  <p className="text-sm">
-                    {lagna.longitude?.toFixed(2)}°
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Degrees in Sign</p>
-                  <p className="text-sm">
-                    {lagna.degreesInSign?.toFixed(2)}°
-                  </p>
-                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {planets.length ? planets.map((planet) => planet.planet).join(', ') : 'No planets recorded'}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            )
+          })
         )}
+      </CardContent>
+    </Card>
+  )
+}
 
-        {/* Grahas table */}
-        <Card className="cosmic-card border-aura-violet/30 bg-cosmic-indigo/10">
-          <CardHeader>
-            <CardTitle className="text-aura-violet">
-              Grahas (Planets)
-            </CardTitle>
-            <CardDescription className="text-aura-cyan">
-              Planetary positions in your birth chart
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+function AdvancedDetails({ kundali }: { kundali: KundaliData }) {
+  const grahas = Object.entries(kundali.D1?.grahas || {})
+  const bhavas = Object.values(kundali.D1?.bhavas || {}).sort(
+    (a, b) => Number(a.houseNumber) - Number(b.houseNumber)
+  )
+  const aspects = kundali.D1?.aspects || []
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Advanced details</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <details className="group">
+          <summary className="min-h-11 cursor-pointer rounded-lg border border-border bg-secondary/40 px-4 py-3 font-medium text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            Show technical chart data
+          </summary>
+          <div className="mt-5 space-y-6">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[720px] text-sm">
                 <thead>
-                  <tr className="border-b">
-                    <th className="p-2 text-left">Planet</th>
-                    <th className="p-2 text-left">Sign</th>
-                    <th className="p-2 text-left">Nakshatra</th>
-                    <th className="p-2 text-left">Pada</th>
-                    <th className="p-2 text-left">House</th>
-                    <th className="p-2 text-left">Longitude</th>
-                    <th className="p-2 text-left">Retrograde</th>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="p-2">Planet</th>
+                    <th className="p-2">Sign</th>
+                    <th className="p-2">House</th>
+                    <th className="p-2">Nakshatra</th>
+                    <th className="p-2">Pada</th>
+                    <th className="p-2">Longitude</th>
+                    <th className="p-2">Degrees</th>
+                    <th className="p-2">Retrograde</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(grahas).map(
-                    ([planetName, graha]: [string, any]) => (
-                      <tr key={planetName} className="border-b">
-                        <td className="p-2 font-medium">{graha.planet}</td>
-                        <td className="p-2">{graha.sign}</td>
-                        <td className="p-2">{graha.nakshatra}</td>
-                        <td className="p-2">{graha.pada}</td>
-                        <td className="p-2">{graha.house || '-'}</td>
-                        <td className="p-2">
-                          {graha.longitude?.toFixed(2)}°
-                        </td>
-                        <td className="p-2">
-                          {graha.retrograde ? (
-                            <span className="text-destructive">Yes</span>
-                          ) : (
-                            <span className="text-muted-foreground">No</span>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  )}
+                  {grahas.map(([key, graha]) => (
+                    <tr key={key} className="border-b border-border/70">
+                      <td className="p-2 font-medium text-primary">{graha.planet || key}</td>
+                      <td className="p-2">{graha.sign || '-'}</td>
+                      <td className="p-2">{graha.house || '-'}</td>
+                      <td className="p-2">{graha.nakshatra || '-'}</td>
+                      <td className="p-2">{graha.pada || '-'}</td>
+                      <td className="p-2">{formatDegree(graha.longitude)}</td>
+                      <td className="p-2">{formatDegree(graha.degreesInSign)}</td>
+                      <td className="p-2">{graha.retrograde ? 'Yes' : 'No'}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Bhavas table */}
-        <Card className="cosmic-card border-aura-green/30 bg-cosmic-indigo/10">
-          <CardHeader>
-            <CardTitle className="text-aura-green">
-              Bhavas (Houses)
-            </CardTitle>
-            <CardDescription className="text-aura-cyan">
-              House cusps and planetary placements
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {Object.values(bhavas)
-                .sort((a: any, b: any) => a.houseNumber - b.houseNumber)
-                .map((bhava: any) => (
-                  <div key={bhava.houseNumber} className="rounded-lg border p-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <p className="font-semibold">
-                        House {bhava.houseNumber}
-                      </p>
-                      <p className="text-sm text-mystic">{bhava.sign}</p>
-                    </div>
-                    <p className="mb-2 text-xs text-muted-foreground">
-                      Cusp: {bhava.cuspLongitude?.toFixed(2)}°
-                    </p>
-                    {bhava.planets && bhava.planets.length > 0 && (
-                      <div>
-                        <p className="mb-1 text-xs font-medium">Planets:</p>
-                        <p className="text-xs text-muted-foreground">
-                          {bhava.planets.join(', ')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {bhavas.map((bhava) => (
+                <div key={bhava.houseNumber} className="rounded-lg border border-border p-3 text-sm">
+                  <p className="font-medium text-primary">House {bhava.houseNumber}</p>
+                  <p className="text-muted-foreground">Sign: {bhava.sign || '-'}</p>
+                  <p className="text-muted-foreground">Cusp: {formatDegree(bhava.cuspLongitude)}</p>
+                </div>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Dasha Summary */}
-        {kundali.dasha && (
-          <Card className="cosmic-card border-aura-orange/30 bg-cosmic-indigo/10">
-            <CardHeader>
-              <CardTitle className="text-aura-orange">Vimshottari Dasha</CardTitle>
-              <CardDescription className="text-aura-cyan">
-                Current life phase periods
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium">Current Mahadasha</p>
-                <p className="text-xl font-semibold text-mystic">
-                  {kundali.dasha.currentMahadasha?.planet}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {kundali.dasha.currentMahadasha?.startDate &&
-                    new Date(
-                      kundali.dasha.currentMahadasha.startDate
-                    ).toLocaleDateString()}{' '}
-                  -{' '}
-                  {kundali.dasha.currentMahadasha?.endDate &&
-                    new Date(
-                      kundali.dasha.currentMahadasha.endDate
-                    ).toLocaleDateString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Current Antar Dasha</p>
-                <p className="text-lg font-semibold">
-                  {kundali.dasha.currentAntardasha?.planet}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {kundali.dasha.currentAntardasha?.startDate &&
-                    new Date(
-                      kundali.dasha.currentAntardasha.startDate
-                    ).toLocaleDateString()}{' '}
-                  -{' '}
-                  {kundali.dasha.currentAntardasha?.endDate &&
-                    new Date(
-                      kundali.dasha.currentAntardasha.endDate
-                    ).toLocaleDateString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">
-                  Current Pratyantar Dasha
-                </p>
-                <p className="text-lg">
-                  {kundali.dasha.currentPratyantardasha?.planet}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {kundali.dasha.currentPratyantardasha?.startDate &&
-                    new Date(
-                      kundali.dasha.currentPratyantardasha.startDate
-                    ).toLocaleDateString()}{' '}
-                  -{' '}
-                  {kundali.dasha.currentPratyantardasha?.endDate &&
-                    new Date(
-                      kundali.dasha.currentPratyantardasha.endDate
-                    ).toLocaleDateString()}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Aspects */}
-        {kundali.D1?.aspects && kundali.D1.aspects.length > 0 && (
-          <Card className="cosmic-card border-aura-red/30 bg-cosmic-indigo/10">
-            <CardHeader>
-              <CardTitle className="text-aura-red">
-                Planetary Aspects
-              </CardTitle>
-              <CardDescription className="text-aura-cyan">
-                Important planetary relationships
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            {aspects.length > 0 && (
               <div className="space-y-2">
-                {kundali.D1.aspects.map((aspect, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between border-b pb-2"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">
-                        {aspect.fromPlanet} → {aspect.toPlanet}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {aspect.type}
-                      </p>
-                    </div>
-                    <p className="text-sm">
-                      {aspect.angle?.toFixed(2)}°
-                    </p>
+                <p className="font-medium text-primary">Aspects</p>
+                {aspects.map((aspect, index) => (
+                  <div key={`${aspect.fromPlanet}-${aspect.toPlanet}-${index}`} className="rounded-lg border border-border p-3 text-sm">
+                    {aspect.fromPlanet || '-'} to {aspect.toPlanet || '-'} · {aspect.type || '-'} · {formatDegree(aspect.angle)}
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Download Report */}
-        <Card className="cosmic-card mt-8 border-gold/30 bg-cosmic-indigo/10">
-          <CardHeader>
-            <CardTitle className="text-gold">
-              Download Full PDF Report
-            </CardTitle>
-            <CardDescription className="text-aura-cyan">
-              Get a comprehensive Kundali report as a PDF document
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={handleDownloadReport}
-              disabled={downloadingReport}
-              className="w-full border border-gold/50 bg-gold/20 text-gold hover:bg-gold/30"
-            >
-              {downloadingReport ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Generating PDF...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Kundali PDF
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Ask Guru With Context */}
-        {astro && (
-          <div className="mt-8 text-center">
-            <Button
-              onClick={() =>
-                router.push(
-                  `/guru?context=${encodeURIComponent(
-                    JSON.stringify(astro)
-                  )}`
-                )
-              }
-              className="gold-btn"
-            >
-              Ask Guru With My Birth Context
-            </Button>
+            )}
           </div>
-        )}
-      </div>
-    </DashboardPageShell>
+        </details>
+      </CardContent>
+    </Card>
   )
 }

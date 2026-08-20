@@ -85,7 +85,11 @@ export async function POST(request: NextRequest) {
     const rateLimitResult = rateLimit(fingerprint, rateLimitConfig.chat)
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
-        { error: rateLimitResult.error || 'Rate limit exceeded. Please try again later.' },
+        {
+          status: 'error',
+          code: 'RATE_LIMITED',
+          message: rateLimitResult.error || 'Please wait briefly before asking again.',
+        },
         {
           status: 429,
           headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
@@ -210,6 +214,18 @@ export async function POST(request: NextRequest) {
       if (error.message?.includes('No AI provider configured')) {
         errorCode = 'AI_PROVIDER_MISSING'
         errorMessage = 'AI service is not configured. Please contact support.'
+      } else if (/quota|billing|insufficient_quota/i.test(error.message || '')) {
+        errorCode = 'AI_QUOTA'
+        errorMessage = 'Guru is temporarily unavailable. Please try again later.'
+      } else if (/rate limit|429/i.test(error.message || '')) {
+        errorCode = 'AI_RATE_LIMIT'
+        errorMessage = 'Please wait briefly before asking again.'
+      } else if (/model|not found|unavailable/i.test(error.message || '')) {
+        errorCode = 'MODEL_UNAVAILABLE'
+        errorMessage = 'Guru is temporarily unavailable. Please try again later.'
+      } else if (/malformed|empty response|invalid response/i.test(error.message || '')) {
+        errorCode = 'MALFORMED_RESPONSE'
+        errorMessage = 'Guru returned an unreadable response. Please retry.'
       } else if (error.message?.includes('Pinecone') || error.message?.includes('RAG')) {
         errorCode = 'RAG_UNAVAILABLE'
         errorMessage = 'Knowledge base is temporarily unavailable. The Guru will still respond without enhanced context.'
