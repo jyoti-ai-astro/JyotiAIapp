@@ -96,16 +96,16 @@ function SolarHeroVisual() {
   return (
     <div className="relative min-h-[22rem] overflow-hidden rounded-lg border border-[#D8B56A]/22 bg-[#07131F] md:min-h-[34rem]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_16%,rgba(242,140,40,0.2),transparent_22rem),radial-gradient(circle_at_18%_76%,rgba(47,125,126,0.16),transparent_20rem)]" />
-      <StaticSolarFallback />
+      {!canUseScene && <StaticSolarFallback />}
       {canUseScene && (
         <div className="absolute inset-0 hidden md:block">
           <SolarObservatoryScene />
         </div>
       )}
       <div className="absolute inset-x-6 bottom-6 rounded-lg border border-[#FFF8E6]/12 bg-[#07131F]/68 p-4 backdrop-blur">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#F1C979]">Solar Observatory</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#F1C979]">Your celestial blueprint</p>
         <p className="mt-2 text-sm leading-6 text-[#B9C2BF]">
-          A restrained celestial system: solar core, orbiting planets, sacred geometry, and star depth.
+          See your Vedic astrology come alive through the patterns, timings, and planetary forces shaping your journey.
         </p>
       </div>
     </div>
@@ -132,7 +132,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_10%,rgba(242,140,40,0.18),transparent_24rem),radial-gradient(circle_at_12%_28%,rgba(47,125,126,0.18),transparent_24rem)]" />
         <div className="page-container relative grid min-h-[calc(100svh-6rem)] items-center gap-10 py-12 md:grid-cols-[0.92fr_1.08fr] md:py-16">
           <div className="max-w-3xl">
-            <Badge className="border-[#C9A24A]/35 bg-[#F28C28]/12 text-[#F1C979]">JyotiAI Solar Observatory</Badge>
+            <Badge className="border-[#C9A24A]/35 bg-[#F28C28]/12 text-[#F1C979]">Personal Vedic Astrology</Badge>
             <h1 className="mt-5 max-w-4xl font-heading text-5xl font-semibold leading-[0.98] text-[#FFF7E8] md:text-7xl">
               Vedic guidance from the chart you were born with.
             </h1>
