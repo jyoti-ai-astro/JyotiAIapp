@@ -223,7 +223,7 @@ export function CosmicFooter({ intensity = 1.0, className = '' }: CosmicFooterPr
                 intensity={intensity}
               />
               <SocialIcon
-                href="mailto:support@jyoti.ai"
+                href="mailto:support@jyotiai.in"
                 label="Email"
                 icon="✉️"
                 intensity={intensity}
@@ -279,7 +279,7 @@ export function CosmicFooter({ intensity = 1.0, className = '' }: CosmicFooterPr
         {/* Copyright */}
         <div className="border-t border-white/10 pt-8 mt-8">
           <p className="text-center text-white/60 text-sm">
-            © 2025 Jyoti.ai — Guided by Ancient Wisdom + AI
+            © 2025 JyotiAI — Guided by Ancient Wisdom + AI
           </p>
         </div>
       </div>

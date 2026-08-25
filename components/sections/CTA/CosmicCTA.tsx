@@ -78,7 +78,7 @@ const defaultCTAs = {
   },
   cosmos: {
     title: 'Explore All Cosmic Features',
-    subtitle: 'Experience the Full Power of Jyoti.ai',
+    subtitle: 'Experience the Full Power of JyotiAI',
     description: 'Discover all spiritual engines: Kundali, Numerology, Aura Scan, Palmistry, AI Guru, and Predictions. Your complete spiritual operating system.',
     primaryCTA: {
       label: 'Explore All Features',
@@ -116,11 +116,11 @@ const defaultCTAs = {
     },
   },
   global: {
-    title: 'Experience Jyoti.ai',
+    title: 'Experience JyotiAI',
     subtitle: 'Your Spiritual Operating System',
-    description: 'Join thousands on their spiritual journey. Get started with Jyoti.ai and discover your cosmic destiny.',
+    description: 'Join thousands on their spiritual journey. Get started with JyotiAI and discover your cosmic destiny.',
     primaryCTA: {
-      label: 'Experience Jyoti.ai',
+      label: 'Experience JyotiAI',
       href: '/login',
     },
     secondaryCTA: {

@@ -75,7 +75,7 @@ export function Header({ className = '' }: HeaderProps) {
           <Link
             href="/"
             className="flex items-center space-x-2 group"
-            aria-label="Jyoti.ai Home"
+            aria-label="JyotiAI Home"
           >
             <motion.div
               className="relative"

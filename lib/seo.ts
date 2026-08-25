@@ -15,10 +15,10 @@ interface SEOOptions {
   noIndex?: boolean;
 }
 
-const defaultTitle = 'Jyoti.ai - Your Spiritual Operating System';
+const defaultTitle = 'JyotiAI - Your Spiritual Operating System';
 const defaultDescription = 'AI-powered spiritual guidance combining astrology, palmistry, face reading, aura analysis, and more';
 const defaultKeywords = ['astrology', 'palmistry', 'spiritual', 'AI', 'kundali', 'numerology'];
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://jyoti.ai';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.jyotiai.in';
 
 export function generateMetadata(options: SEOOptions = {}): Metadata {
   const {
@@ -30,7 +30,7 @@ export function generateMetadata(options: SEOOptions = {}): Metadata {
     noIndex = false,
   } = options;
 
-  const fullTitle = title ? `${title} | Jyoti.ai` : defaultTitle;
+  const fullTitle = title ? `${title} | JyotiAI` : defaultTitle;
   const url = `${baseUrl}${path}`;
   const imageUrl = image.startsWith('http') ? image : `${baseUrl}${image}`;
 
@@ -38,9 +38,9 @@ export function generateMetadata(options: SEOOptions = {}): Metadata {
     title: fullTitle,
     description,
     keywords: keywords.join(', '),
-    authors: [{ name: 'Jyoti.ai' }],
-    creator: 'Jyoti.ai',
-    publisher: 'Jyoti.ai',
+    authors: [{ name: 'JyotiAI' }],
+    creator: 'JyotiAI',
+    publisher: 'JyotiAI',
     robots: noIndex ? 'noindex, nofollow' : 'index, follow',
     openGraph: {
       type: 'website',
@@ -48,7 +48,7 @@ export function generateMetadata(options: SEOOptions = {}): Metadata {
       url,
       title: fullTitle,
       description,
-      siteName: 'Jyoti.ai',
+      siteName: 'JyotiAI',
       images: [
         {
           url: imageUrl,

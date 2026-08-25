@@ -34,7 +34,7 @@ export default function SecurityPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-white/80">
               <p>
-                At Jyoti.ai, we take security seriously. This Security Policy outlines the measures we implement to
+                At JyotiAI, we take security seriously. This Security Policy outlines the measures we implement to
                 protect your data and ensure the security of our Service.
               </p>
             </CardContent>
@@ -96,7 +96,7 @@ export default function SecurityPage() {
                 If you discover a security vulnerability, please report it to:
               </p>
               <p className="text-gold">
-                Email: security@jyoti.ai<br />
+                Email: security@jyotiai.in<br />
                 We appreciate responsible disclosure and will respond promptly.
               </p>
             </CardContent>

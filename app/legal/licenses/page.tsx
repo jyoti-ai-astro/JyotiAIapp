@@ -34,7 +34,7 @@ export default function LicensesPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-white/80">
               <p>
-                Jyoti.ai uses various open-source libraries and frameworks. This page lists the licenses and
+                JyotiAI uses various open-source libraries and frameworks. This page lists the licenses and
                 attributions for third-party software used in our Service.
               </p>
             </CardContent>
@@ -88,7 +88,7 @@ export default function LicensesPage() {
                 For questions about licenses, please contact us at:
               </p>
               <p className="text-gold">
-                Email: legal@jyoti.ai<br />
+                Email: legal@jyotiai.in<br />
                 Address: [Your Company Address]
               </p>
             </CardContent>

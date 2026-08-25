@@ -35,7 +35,7 @@ export default function RefundPage() {
             <CardContent className="space-y-4 text-white/80">
               <p>
                 This Refund Policy outlines the terms and conditions for refunds and cancellations of subscriptions
-                and services purchased through Jyoti.ai.
+                and services purchased through JyotiAI.
               </p>
             </CardContent>
           </Card>
@@ -77,7 +77,7 @@ export default function RefundPage() {
             <CardContent className="space-y-4 text-white/80">
               <p>To request a refund:</p>
               <ol className="list-decimal list-inside space-y-2">
-                <li>Contact our support team at refunds@jyoti.ai</li>
+                <li>Contact our support team at refunds@jyotiai.in</li>
                 <li>Provide your order number and reason for refund</li>
                 <li>Wait for our team to review your request (typically within 5 business days)</li>
                 <li>Receive refund to your original payment method (5-10 business days)</li>
@@ -94,7 +94,7 @@ export default function RefundPage() {
                 For refund inquiries, please contact us at:
               </p>
               <p className="text-gold">
-                Email: refunds@jyoti.ai<br />
+                Email: refunds@jyotiai.in<br />
                 Address: [Your Company Address]
               </p>
             </CardContent>

@@ -34,7 +34,7 @@ export default function CookiesPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-white/80">
               <p>
-                This Cookie Policy explains how Jyoti.ai uses cookies and similar technologies to recognize you when
+                This Cookie Policy explains how JyotiAI uses cookies and similar technologies to recognize you when
                 you visit our website and use our Service.
               </p>
             </CardContent>
@@ -88,7 +88,7 @@ export default function CookiesPage() {
                 For questions about our use of cookies, please contact us at:
               </p>
               <p className="text-gold">
-                Email: privacy@jyoti.ai<br />
+                Email: privacy@jyotiai.in<br />
                 Address: [Your Company Address]
               </p>
             </CardContent>

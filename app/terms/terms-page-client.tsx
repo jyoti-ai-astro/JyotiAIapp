@@ -17,7 +17,7 @@ export function TermsPageClient() {
           variant="legal"
           title="Terms of Service"
           subtitle="Our Terms & Conditions"
-          description="Please read these terms carefully before using Jyoti.ai. By accessing our platform, you agree to be bound by these terms and conditions governing your spiritual journey with us."
+          description="Please read these terms carefully before using JyotiAI. By accessing our platform, you agree to be bound by these terms and conditions governing your spiritual journey with us."
         />
         
         <section id="features" className="min-h-screen flex items-center justify-center py-20">

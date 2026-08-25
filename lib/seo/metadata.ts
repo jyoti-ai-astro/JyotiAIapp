@@ -18,7 +18,7 @@ export interface SEOConfig {
 }
 
 const defaultOGImage = '/og-image.jpg';
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://jyoti.ai';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jyotiai.in';
 
 export function generateMetadata(config: SEOConfig): Metadata {
   const {
@@ -32,16 +32,16 @@ export function generateMetadata(config: SEOConfig): Metadata {
     nofollow = false,
   } = config;
 
-  const fullTitle = `${title} | Jyoti.ai - AI-Powered Spiritual Guidance`;
+  const fullTitle = `${title} | JyotiAI - AI-Powered Spiritual Guidance`;
   const canonicalUrl = canonical ? `${siteUrl}${canonical}` : undefined;
 
   return {
     title: fullTitle,
     description,
     keywords: keywords.length > 0 ? keywords.join(', ') : undefined,
-    authors: [{ name: 'Jyoti.ai' }],
-    creator: 'Jyoti.ai',
-    publisher: 'Jyoti.ai',
+    authors: [{ name: 'JyotiAI' }],
+    creator: 'JyotiAI',
+    publisher: 'JyotiAI',
     robots: {
       index: !noindex,
       follow: !nofollow,
@@ -57,7 +57,7 @@ export function generateMetadata(config: SEOConfig): Metadata {
       type: ogType,
       locale: 'en_US',
       url: canonicalUrl || siteUrl,
-      siteName: 'Jyoti.ai',
+      siteName: 'JyotiAI',
       title: fullTitle,
       description,
       images: [
@@ -93,7 +93,7 @@ export const pageMetadata = {
   }),
   features: generateMetadata({
     title: 'Features',
-    description: 'Experience the power of Jyoti.ai\'s spiritual engines: Kundali Engine, Numerology Engine, Aura & Chakra Scan, Palmistry Scanner, AI Guru Chat, and Predictive Reports.',
+    description: 'Experience the power of JyotiAI\'s spiritual engines: Kundali Engine, Numerology Engine, Aura & Chakra Scan, Palmistry Scanner, AI Guru Chat, and Predictive Reports.',
     keywords: ['kundali engine', 'numerology engine', 'aura scan', 'palmistry', 'AI guru', 'spiritual features'],
     canonical: '/features',
     ogImage: '/og-features.jpg',

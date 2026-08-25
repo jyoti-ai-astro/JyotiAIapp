@@ -140,7 +140,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess }) => {
           >
             <Sparkles className="h-12 w-12 text-gold" />
           </motion.div>
-          <h1 className="text-4xl font-display font-bold text-white mb-2">Jyoti.ai</h1>
+          <h1 className="text-4xl font-display font-bold text-white mb-2">JyotiAI</h1>
           <p className="text-white/80">Sign in to your spiritual journey</p>
         </div>
 

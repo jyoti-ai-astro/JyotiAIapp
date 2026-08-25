@@ -34,7 +34,7 @@ export default function TermsPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-white/80">
               <p>
-                Welcome to Jyoti.ai. These Terms of Service (&quot;Terms&quot;) govern your access to and use of our
+                Welcome to JyotiAI. These Terms of Service (&quot;Terms&quot;) govern your access to and use of our
                 spiritual guidance platform. By using our services, you agree to be bound by these Terms.
               </p>
             </CardContent>
@@ -46,7 +46,7 @@ export default function TermsPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-white/80">
               <ul className="list-disc list-inside space-y-2">
-                <li><strong>&quot;Service&quot;</strong> refers to the Jyoti.ai platform and all associated features.</li>
+                <li><strong>&quot;Service&quot;</strong> refers to the JyotiAI platform and all associated features.</li>
                 <li><strong>&quot;User&quot;</strong> refers to any individual who accesses or uses our Service.</li>
                 <li><strong>&quot;Content&quot;</strong> refers to all data, text, images, and other materials on our platform.</li>
               </ul>
@@ -92,7 +92,7 @@ export default function TermsPage() {
                 If you have any questions about these Terms, please contact us at:
               </p>
               <p className="text-gold">
-                Email: legal@jyoti.ai<br />
+                Email: legal@jyotiai.in<br />
                 Address: [Your Company Address]
               </p>
             </CardContent>

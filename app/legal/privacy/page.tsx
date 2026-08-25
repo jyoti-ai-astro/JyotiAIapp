@@ -34,7 +34,7 @@ export default function PrivacyPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-white/80">
               <p>
-                At Jyoti.ai, we are committed to protecting your privacy. This Privacy Policy explains how we collect,
+                At JyotiAI, we are committed to protecting your privacy. This Privacy Policy explains how we collect,
                 use, and safeguard your personal information when you use our Service.
               </p>
             </CardContent>
@@ -109,7 +109,7 @@ export default function PrivacyPage() {
                 For privacy-related inquiries, please contact us at:
               </p>
               <p className="text-gold">
-                Email: privacy@jyoti.ai<br />
+                Email: privacy@jyotiai.in<br />
                 Address: [Your Company Address]
               </p>
             </CardContent>
