@@ -23,6 +23,7 @@ interface EmailOptions {
   htmlBody: string
   category: 'login' | 'payment' | 'report' | 'alert' | 'festival' | 'security' | 'admin'
   replyTo?: string
+  from?: string
   attachments?: Array<{
     filename: string
     content: string
@@ -70,8 +71,8 @@ async function sendViaZeptoMail(options: EmailOptions): Promise<boolean> {
       },
       body: JSON.stringify({
         from: {
-          address: zeptoConfig.from,
-          name: 'Jyoti.ai',
+          address: options.from || zeptoConfig.from,
+          name: 'JyotiAI',
         },
         to: [
           {
@@ -166,13 +167,23 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 /**
  * Send magic link email for authentication
  */
+const EMAIL_SENDERS = {
+  system: process.env.EMAIL_FROM_SYSTEM || 'noreply@jyotiai.in',
+  orders: process.env.EMAIL_FROM_ORDERS || 'order@jyotiai.in',
+  support:
+    process.env.EMAIL_FROM_SUPPORT ||
+    process.env.SUPPORT_EMAIL ||
+    'support@jyotiai.in',
+} as const
+
 export async function sendMagicLink(email: string, loginUrl: string, device?: string): Promise<boolean> {
   const { getMagicLinkEmailTemplate } = await import('./email-templates')
-  const subject = 'Sign in to Jyoti.ai'
+  const subject = 'Sign in to JyotiAI'
   const htmlBody = getMagicLinkEmailTemplate({ email, loginUrl, device })
 
   return sendEmail({
     to: email,
+    from: EMAIL_SENDERS.system,
     subject,
     htmlBody,
     category: 'login',
@@ -191,7 +202,7 @@ export async function sendPaymentReceipt(
   productName?: string
 ): Promise<boolean> {
   const { getPaymentReceiptEmailTemplate } = await import('./email-templates')
-  const subject = 'Payment Confirmation - Jyoti.ai'
+  const subject = 'Payment Confirmation - JyotiAI'
   const htmlBody = getPaymentReceiptEmailTemplate({
     email,
     amount,
@@ -203,6 +214,7 @@ export async function sendPaymentReceipt(
 
   return sendEmail({
     to: email,
+    from: EMAIL_SENDERS.orders,
     subject,
     htmlBody,
     category: 'payment',
@@ -213,7 +225,7 @@ export async function sendPaymentReceipt(
  * Send prediction report email
  */
 export async function sendPredictionReport(email: string, reportUrl: string, reportType: string): Promise<boolean> {
-  const subject = `Your ${reportType} Report is Ready - Jyoti.ai`
+  const subject = `Your ${reportType} Report is Ready - JyotiAI`
   const htmlBody = `
     <!DOCTYPE html>
     <html>
@@ -222,7 +234,7 @@ export async function sendPredictionReport(email: string, reportUrl: string, rep
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5;">
-      <div style="background: linear-gradient(135deg, #0D0A33 0%, #5A3FEF 100%); padding: 40px; text-align: center; border-radius: 10px 10px 0 0;">
+      <div style="background: #17243A; padding: 40px; text-align: center; border-radius: 10px 10px 0 0;">
         <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 600;">📊 Your Report is Ready</h1>
         <p style="color: #fff; margin: 10px 0 0 0; opacity: 0.9;">${reportType}</p>
       </div>
@@ -230,7 +242,7 @@ export async function sendPredictionReport(email: string, reportUrl: string, rep
         <p style="font-size: 16px; margin-bottom: 20px;">Dear Seeker,</p>
         <p style="font-size: 16px; margin-bottom: 20px;">Your personalized ${reportType} report has been generated and is ready for download.</p>
         <div style="text-align: center; margin: 40px 0;">
-          <a href="${reportUrl}" style="background: #5A3FEF; color: #fff; padding: 14px 35px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(90, 63, 239, 0.3);">Download Report</a>
+          <a href="${reportUrl}" style="background: #B8873B; color: #fff; padding: 14px 35px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(90, 63, 239, 0.3);">Download Report</a>
         </div>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 6px; margin-top: 30px;">
           <p style="margin: 0; font-size: 14px; color: #666;"><strong>Note:</strong> This download link will remain valid for 30 days.</p>
@@ -238,7 +250,7 @@ export async function sendPredictionReport(email: string, reportUrl: string, rep
         <p style="font-size: 14px; color: #666; margin-top: 30px;">If you have any questions, feel free to reach out to our support team.</p>
       </div>
       <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-        <p>© ${new Date().getFullYear()} Jyoti.ai. All rights reserved.</p>
+        <p>© ${new Date().getFullYear()} JyotiAI. All rights reserved.</p>
         <p>Your Spiritual Operating System</p>
       </div>
     </body>
@@ -247,6 +259,7 @@ export async function sendPredictionReport(email: string, reportUrl: string, rep
 
   return sendEmail({
     to: email,
+    from: EMAIL_SENDERS.system,
     subject,
     htmlBody,
     category: 'report',
@@ -269,7 +282,7 @@ export async function sendDailyHoroscopeEmail(
     luckyNumber: number
   }
 ): Promise<boolean> {
-  const subject = `🌟 Your Daily Horoscope - ${horoscope.rashi} - Jyoti.ai`
+  const subject = `Your Daily Horoscope - ${horoscope.rashi} - JyotiAI`
   const htmlBody = `
     <!DOCTYPE html>
     <html>
@@ -278,12 +291,12 @@ export async function sendDailyHoroscopeEmail(
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5;">
-      <div style="background: linear-gradient(135deg, #0D0A33 0%, #5A3FEF 100%); padding: 40px; text-align: center; border-radius: 10px 10px 0 0;">
+      <div style="background: #17243A; padding: 40px; text-align: center; border-radius: 10px 10px 0 0;">
         <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 600;">🌟 Daily Horoscope</h1>
         <p style="color: #fff; margin: 10px 0 0 0; opacity: 0.9; font-size: 18px;">${horoscope.rashi}</p>
       </div>
       <div style="background: #fff; padding: 40px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
-        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+        <div style="background: #F3ECDF; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
           <h2 style="margin: 0 0 10px 0; color: #92400e; font-size: 20px;">General</h2>
           <p style="margin: 0; color: #78350f; font-size: 16px;">${horoscope.general}</p>
         </div>
@@ -315,17 +328,17 @@ export async function sendDailyHoroscopeEmail(
           <div style="display: flex; justify-content: center; gap: 30px;">
             <div>
               <p style="margin: 0; font-size: 12px; color: #999;">Color</p>
-              <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: 600; color: #5A3FEF;">${horoscope.luckyColor}</p>
+              <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: 600; color: #B8873B;">${horoscope.luckyColor}</p>
             </div>
             <div>
               <p style="margin: 0; font-size: 12px; color: #999;">Number</p>
-              <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: 600; color: #5A3FEF;">${horoscope.luckyNumber}</p>
+              <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: 600; color: #B8873B;">${horoscope.luckyNumber}</p>
             </div>
           </div>
         </div>
       </div>
       <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-        <p>© ${new Date().getFullYear()} Jyoti.ai. All rights reserved.</p>
+        <p>© ${new Date().getFullYear()} JyotiAI. All rights reserved.</p>
       </div>
     </body>
     </html>
@@ -333,6 +346,7 @@ export async function sendDailyHoroscopeEmail(
 
   return sendEmail({
     to: email,
+    from: EMAIL_SENDERS.system,
     subject,
     htmlBody,
     category: 'alert',
@@ -353,7 +367,7 @@ export async function sendTransitAlertEmail(
     recommendation: string
   }
 ): Promise<boolean> {
-  const subject = `🔮 ${transit.planet} Transit Alert - Jyoti.ai`
+  const subject = `${transit.planet} Transit Alert - JyotiAI`
   const htmlBody = `
     <!DOCTYPE html>
     <html>
@@ -362,8 +376,8 @@ export async function sendTransitAlertEmail(
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5;">
-      <div style="background: linear-gradient(135deg, #0D0A33 0%, #5A3FEF 100%); padding: 40px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 600;">🔮 Transit Alert</h1>
+      <div style="background: #17243A; padding: 40px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 600;">Transit Alert</h1>
         <p style="color: #fff; margin: 10px 0 0 0; opacity: 0.9; font-size: 18px;">${transit.planet} - ${transit.event}</p>
       </div>
       <div style="background: #fff; padding: 40px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
@@ -384,7 +398,7 @@ export async function sendTransitAlertEmail(
         </div>
       </div>
       <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-        <p>© ${new Date().getFullYear()} Jyoti.ai. All rights reserved.</p>
+        <p>© ${new Date().getFullYear()} JyotiAI. All rights reserved.</p>
       </div>
     </body>
     </html>
@@ -392,6 +406,7 @@ export async function sendTransitAlertEmail(
 
   return sendEmail({
     to: email,
+    from: EMAIL_SENDERS.system,
     subject,
     htmlBody,
     category: 'alert',
@@ -411,7 +426,7 @@ export async function sendFestivalAlertEmail(
     mantras: string[]
   }
 ): Promise<boolean> {
-  const subject = `🎉 ${festival.name} - Festival Energy Alert - Jyoti.ai`
+  const subject = `${festival.name} - Festival Energy Alert - JyotiAI`
   const htmlBody = `
     <!DOCTYPE html>
     <html>
@@ -420,14 +435,14 @@ export async function sendFestivalAlertEmail(
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5;">
-      <div style="background: linear-gradient(135deg, #0D0A33 0%, #5A3FEF 100%); padding: 40px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 600;">🎉 ${festival.name}</h1>
+      <div style="background: #17243A; padding: 40px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 600;">${festival.name}</h1>
         <p style="color: #fff; margin: 10px 0 0 0; opacity: 0.9;">Festival Energy Alert</p>
       </div>
       <div style="background: #fff; padding: 40px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
         <p style="font-size: 16px; margin-bottom: 20px;">${festival.description}</p>
         
-        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <div style="background: #F3ECDF; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
           <h3 style="margin: 0 0 10px 0; color: #92400e; font-size: 18px;">✨ Energy Influence</h3>
           <p style="margin: 0; color: #78350f; font-size: 15px;">${festival.energy}</p>
         </div>
@@ -449,7 +464,7 @@ export async function sendFestivalAlertEmail(
         ` : ''}
       </div>
       <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-        <p>© ${new Date().getFullYear()} Jyoti.ai. All rights reserved.</p>
+        <p>© ${new Date().getFullYear()} JyotiAI. All rights reserved.</p>
       </div>
     </body>
     </html>
@@ -457,6 +472,7 @@ export async function sendFestivalAlertEmail(
 
   return sendEmail({
     to: email,
+    from: EMAIL_SENDERS.system,
     subject,
     htmlBody,
     category: 'alert',
