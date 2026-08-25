@@ -119,7 +119,10 @@ export async function POST(request: NextRequest) {
     try {
       const subscriptionPayload: any = {
         plan_id: razorpayPlanId,
-        total_count: 1,            // Razorpay requires >=1
+        // JyotiAI subscriptions use a 12-cycle monthly contract.
+        // total_count: 1 caused Razorpay to complete the subscription
+        // immediately after the first successful monthly payment.
+        total_count: 12,
         customer_notify: 1,        // Notify customer via Razorpay
         notes: {
           userId: uid,

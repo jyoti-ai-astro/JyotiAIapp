@@ -137,6 +137,14 @@ export async function POST(request: NextRequest) {
       const subscriptionDoc = subscriptionsSnapshot.docs[0];
       const subscriptionRef = subscriptionDoc.ref;
 
+      // Resolve the owner canonically from the Firestore document path:
+      // users/{uid}/subscriptions/current
+      //
+      // Razorpay notes are useful metadata, but some event payloads may
+      // not expose notes consistently. Firestore ownership is the fallback.
+      const firestoreUserId = subscriptionDoc.ref.parent.parent?.id;
+      const resolvedUserId = userId || firestoreUserId;
+
       // Update subscription based on event
       let status = subscriptionEntity?.status;
       let active = false;
@@ -151,10 +159,10 @@ export async function POST(request: NextRequest) {
             'subscription.activated',
             {
               subscriptionId,
-              userId,
+              userId: resolvedUserId,
               paymentId: payload.payload?.payment?.entity?.id,
             },
-            userId
+            resolvedUserId
           );
           break;
 
@@ -165,10 +173,10 @@ export async function POST(request: NextRequest) {
             'subscription.charged',
             {
               subscriptionId,
-              userId,
+              userId: resolvedUserId,
               paymentId: payload.payload?.payment?.entity?.id,
             },
-            userId
+            resolvedUserId
           );
           break;
 
@@ -179,10 +187,10 @@ export async function POST(request: NextRequest) {
             'subscription.halted',
             {
               subscriptionId,
-              userId,
+              userId: resolvedUserId,
               reason: subscriptionEntity?.pause_at || 'unknown',
             },
-            userId
+            resolvedUserId
           );
           break;
 
@@ -193,9 +201,9 @@ export async function POST(request: NextRequest) {
             'subscription.expired',
             {
               subscriptionId,
-              userId,
+              userId: resolvedUserId,
             },
-            userId
+            resolvedUserId
           );
           break;
 
@@ -221,9 +229,11 @@ export async function POST(request: NextRequest) {
         { merge: true }
       );
 
-      // Update user doc if userId is available
-      if (userId) {
-        const userRef = adminDb.collection('users').doc(userId);
+      // Keep the top-level user subscription snapshot synchronized.
+      // Prefer Razorpay notes when available, with Firestore ownership
+      // as the canonical fallback.
+      if (resolvedUserId) {
+        const userRef = adminDb.collection('users').doc(resolvedUserId);
         await userRef.set(
           {
             subscription: {
