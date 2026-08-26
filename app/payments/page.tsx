@@ -1,177 +1,174 @@
-/**
- * Payments Page
- * 
- * Batch 4 - App Internal Screens Part 2
- * 
- * Subscription and payment management
- */
+'use client'
 
-'use client';
+import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { CreditCard, RefreshCw } from 'lucide-react'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ErrorState, LoadingState, RetryButton } from '@/components/ui/feedback-state'
+import { getSubscriptionPlan, type SubscriptionPlanId } from '@/lib/pricing/plans'
+import { useUserStore } from '@/store/user-store'
 
-export const dynamic = 'force-dynamic';
-
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUserStore } from '@/store/user-store';
-import { motion } from 'framer-motion';
-import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CreditCard, Sparkles } from 'lucide-react';
-import { PaymentCards } from '@/components/engines/PaymentCards';
-import Link from 'next/link';
+interface SubscriptionStatusResponse {
+  active: boolean
+  planId: SubscriptionPlanId | null
+  productId: string | null
+  razorpaySubscriptionId: string | null
+  status: string | null
+}
 
 export default function PaymentsPage() {
-  const router = useRouter();
-  const { user } = useUserStore();
-  const [loading, setLoading] = useState(false);
-  const [subscription, setSubscription] = useState<any>(null);
+  const router = useRouter()
+  const { user } = useUserStore()
+  const [status, setStatus] = useState<SubscriptionStatusResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchStatus = useCallback(async (refresh = false) => {
+    try {
+      refresh ? setRefreshing(true) : setLoading(true)
+      setError(null)
+
+      const res = await fetch(`/api/subscriptions/status${refresh ? '?refresh=true' : ''}`, {
+        cache: 'no-store',
+        credentials: 'include',
+      })
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(json.error || `Status ${res.status}`)
+      }
+
+      setStatus(json as SubscriptionStatusResponse)
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load subscription')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
-    } else {
-      fetchSubscription();
-    }
-  }, [user, router]);
-
-  const fetchSubscription = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/subscriptions/status', {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch subscription');
-      }
-      
-      const data = await response.json();
-      setSubscription(data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Fetch subscription error:', error);
-      setSubscription({
-        active: false,
-        planId: null,
-        productId: null,
-        razorpaySubscriptionId: null,
-        status: null,
-      });
-      setLoading(false);
-    }
-  };
-
-  const handleCancelSubscription = async () => {
-    if (!confirm('Are you sure you want to cancel your subscription? This action cannot be undone.')) {
-      return;
+      router.push('/login')
+      return
     }
 
-    try {
-      setLoading(true);
-      const response = await fetch('/api/subscriptions/cancel', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to cancel subscription');
-      }
-
-      // Refresh subscription status
-      await fetchSubscription();
-    } catch (error: any) {
-      console.error('Cancel subscription error:', error);
-      alert(error.message || 'Failed to cancel subscription');
-      setLoading(false);
-    }
-  };
+    fetchStatus()
+  }, [fetchStatus, router, user])
 
   if (!user) {
-    return null;
+    return null
   }
+
+  const plan = status?.planId ? getSubscriptionPlan(status.planId) : null
+  const statusLabel = status?.status || 'none'
 
   return (
     <DashboardPageShell
       title="Payments"
-      subtitle="Manage your subscription and payments"
+      subtitle="Current plan, subscription status, and purchase options"
+      rightActions={
+        <Button variant="outline" onClick={() => fetchStatus(true)} disabled={refreshing} className="min-h-11">
+          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      }
     >
-
-          {loading ? (
-            <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
-              <CardContent className="pt-12 pb-12 text-center">
-                <Sparkles className="w-8 h-8 text-[#FFD57A] animate-spin mx-auto mb-4" />
-                <p className="text-white/60">Loading subscription details...</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-2xl font-display text-[#FFD57A]">Current Subscription</CardTitle>
-                <CardDescription className="text-white/70">Your active subscription plan</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {subscription?.active ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-white/80">Plan:</span>
-                      <span className="text-[#FFD57A] font-semibold capitalize">
-                        {subscription.planId || 'Active'}
-                      </span>
-                    </div>
-                    {subscription.status && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-white/80">Status:</span>
-                        <span className="text-white/80 capitalize">{subscription.status}</span>
-                      </div>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Current Subscription
+            </CardTitle>
+            <CardDescription>
+              Read from `/api/subscriptions/status`; Razorpay `created` is shown as pending and does not grant active access.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <LoadingState title="Checking subscription" description="Loading your canonical subscription state." />
+            ) : error ? (
+              <ErrorState
+                title="Subscription unavailable"
+                description={error}
+                action={<RetryButton onClick={() => fetchStatus()} />}
+              />
+            ) : !status?.active ? (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <Badge variant="secondary" className="mb-2">No active subscription</Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Current Razorpay status: <span className="font-mono">{statusLabel}</span>
+                    </p>
+                    {status?.planId && plan && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Pending plan: {plan.name} · {plan.priceLabel}{plan.period}
+                      </p>
                     )}
-                    {subscription.razorpaySubscriptionId && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-white/80">Subscription ID:</span>
-                        <span className="text-white/60 text-sm font-mono">
-                          {subscription.razorpaySubscriptionId.substring(0, 12)}...
-                        </span>
-                      </div>
-                    )}
-                    <Button
-                      onClick={handleCancelSubscription}
-                      variant="destructive"
-                      className="w-full bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
-                    >
-                      Cancel Subscription
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-center py-4">
-                      <p className="text-white/60 mb-4">No active subscription</p>
-                      <Button
-                        onClick={() => router.push('/pricing')}
-                        className="w-full bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#05050A] font-semibold hover:opacity-90 transition-opacity"
-                      >
-                        <Sparkles className="inline-block mr-2 h-4 w-4" />
-                        View Plans
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                  </div>
+                  <Link href="/pricing">
+                    <Button className="min-h-11 w-full sm:w-auto">View Plans</Button>
+                  </Link>
+                </div>
+              </div>
+            ) : plan ? (
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <Badge variant="success" className="mb-3">Active</Badge>
+                  <h2 className="text-xl font-semibold">
+                    {plan.name} · {plan.priceLabel}
+                    <span className="ml-1 text-sm font-normal text-muted-foreground">{plan.period}</span>
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground">
+                  <p className="font-semibold text-foreground">Subscription details</p>
+                  <p className="mt-2 break-all font-mono">Status: {status.status || 'unknown'}</p>
+                  {status.razorpaySubscriptionId && (
+                    <p className="mt-1 break-all font-mono">Sub ID: {status.razorpaySubscriptionId}</p>
+                  )}
+                  {status.productId && (
+                    <p className="mt-1 break-all font-mono">Product: {status.productId}</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <ErrorState
+                title="Unknown plan"
+                description="Your subscription is active, but its plan metadata could not be resolved."
+                action={<Link href="/support"><Button variant="outline">Contact Support</Button></Link>}
+              />
+            )}
+          </CardContent>
+        </Card>
 
-          <div className="text-center">
-            <Link href="/dashboard">
-              <Button variant="outline" className="border-cosmic-purple/50 text-white/80 hover:bg-cosmic-purple/20">
-                Back to Dashboard
-              </Button>
+        <Card>
+          <CardHeader>
+            <CardTitle>One-Time Purchases</CardTitle>
+            <CardDescription>
+              One-time products add tickets or prediction credits. They are separate from monthly subscriptions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-3">
+            <Link href="/pay/99">
+              <Button variant="outline" className="min-h-11 w-full">Quick Reading · ₹99</Button>
             </Link>
-          </div>
+            <Link href="/pay/199">
+              <Button variant="outline" className="min-h-11 w-full">Deep Insight · ₹199</Button>
+            </Link>
+            <Link href="/pay/299">
+              <Button variant="outline" className="min-h-11 w-full">Predictions Credit · ₹299</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     </DashboardPageShell>
-  );
+  )
 }
-

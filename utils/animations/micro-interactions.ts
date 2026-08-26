@@ -8,3 +8,4 @@
 
 // Placeholder for micro-interaction utilities implementation
 
+export const microInteractions = {};

@@ -70,10 +70,44 @@ export async function POST(request: NextRequest) {
       key_secret: razorpayKeySecret,
     })
 
-    // Cancel subscription in Razorpay
-    await razorpay.subscriptions.cancel(razorpaySubscriptionId, {
-      cancel_at_cycle_end: 0, // Cancel immediately
-    })
+    // Cancel subscription in Razorpay (hardened)
+    let cancelResult = null;
+    try {
+      cancelResult = await razorpay.subscriptions.cancel(
+        razorpaySubscriptionId,
+        0
+      );
+    } catch (err: any) {
+      console.error("Razorpay cancel error:", {
+        statusCode: err?.statusCode,
+        description: err?.error?.description,
+        field: err?.error?.field,
+        message: err?.message,
+      });
+
+      // ⚠️ If already cancelled → still treat as success
+      if (err?.error?.description?.includes("already cancelled")) {
+        cancelResult = { status: "cancelled", alreadyCancelled: true };
+      } else {
+        await logEvent(
+          "api.error",
+          {
+            endpoint: "/api/subscriptions/cancel",
+            phase: "razorpay.subscriptions.cancel",
+            statusCode: err?.statusCode,
+            description: err?.error?.description,
+            field: err?.error?.field,
+            message: err?.message,
+          },
+          uid
+        );
+
+        return NextResponse.json(
+          { error: err?.error?.description || "Failed to cancel subscription" },
+          { status: 500 }
+        );
+      }
+    }
 
     // Update Firestore
     const subscriptionRef = adminDb
@@ -84,25 +118,27 @@ export async function POST(request: NextRequest) {
 
     await subscriptionRef.set(
       {
-        status: 'cancelled',
+        status: "cancelled",
         cancelledAt: new Date(),
         updatedAt: new Date(),
+        rawCancel: cancelResult, // store payload for debugging
       },
       { merge: true }
-    )
+    );
 
     // Update user doc
     const userRef = adminDb.collection('users').doc(uid)
     await userRef.set(
       {
         subscription: {
-          status: 'cancelled',
+          status: "cancelled",
           active: false,
+          lastSyncedAt: new Date(),
         },
         updatedAt: new Date(),
       },
       { merge: true }
-    )
+    );
 
     // Phase Z3: Log subscription cancellation
     await logEvent('subscription.cancelled', {

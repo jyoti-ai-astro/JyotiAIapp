@@ -42,7 +42,7 @@ export class CosmicLensEngine {
   private mesh: THREE.Mesh;
   private config: CosmicLensEngineConfig;
   
-  private lensPlane: LensPlaneData;
+  private lensPlane!: LensPlaneData;
   private arcs: ArcData[] = [];
   private photons: PhotonData[] = [];
   
@@ -437,4 +437,3 @@ export class CosmicLensEngine {
     this.material.dispose();
   }
 }
-

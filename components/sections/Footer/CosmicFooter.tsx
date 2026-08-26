@@ -67,6 +67,8 @@ export function CosmicFooter({ intensity = 1.0, className = '' }: CosmicFooterPr
   const mouseY = useMotionValue(0);
   const springX = useSpring(mouseX, { stiffness: 50, damping: 20 });
   const springY = useSpring(mouseY, { stiffness: 50, damping: 20 });
+  const springXGrid = useTransform(springX, (value) => value * 0.3);
+  const springYGrid = useTransform(springY, (value) => value * 0.3);
   
   React.useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -161,8 +163,8 @@ export function CosmicFooter({ intensity = 1.0, className = '' }: CosmicFooterPr
           `,
           backgroundSize: '50px 50px',
           opacity: intensity,
-          x: springX * 0.3,
-          y: springY * 0.3,
+          x: springXGrid,
+          y: springYGrid,
         }}
       />
       
@@ -376,4 +378,3 @@ function SocialIcon({ href, label, icon, intensity }: SocialIconProps) {
     </motion.a>
   );
 }
-

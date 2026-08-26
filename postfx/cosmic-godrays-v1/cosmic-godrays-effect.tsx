@@ -17,9 +17,11 @@ const { Vector2, Vector3 } = THREE;
 
 
 
-import { CosmicGodRaysPass } from './cosmic-godrays-pass';
+import { CosmicGodRaysPass, type CosmicGodRaysPassConfig } from './cosmic-godrays-pass';
 
-const Effect = wrapEffect(CosmicGodRaysPass);
+const Effect = wrapEffect(CosmicGodRaysPass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicGodRaysPassConfig> & React.RefAttributes<CosmicGodRaysPass>
+>;
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
 export interface CosmicGodRaysEffectProps {
@@ -80,6 +82,7 @@ export const CosmicGodRaysEffect: React.FC<CosmicGodRaysEffectProps> = ({
 }) => {
   const { size, camera } = useThree();
   const timeRef = useRef<number>(0);
+  const passRef = useRef<CosmicGodRaysPass | null>(null);
   
   // Mobile fallback: reduce steps to 12, reduce scattering strength
   const adjustedStepCount = isMobile ? 12.0 : stepCount;
@@ -90,44 +93,27 @@ export const CosmicGodRaysEffect: React.FC<CosmicGodRaysEffectProps> = ({
   const lightDirVec = useMemo(() => new Vector3(lightDir.x, lightDir.y, lightDir.z), [lightDir.x, lightDir.y, lightDir.z]);
   const mouseVec = useMemo(() => new Vector2(mouse.x, mouse.y), [mouse.x, mouse.y]);
   
-  // Create pass
-  const pass = useMemo(() => {
-    return new CosmicGodRaysPass({
-      sunPos: sunPosVec,
-      lightDir: lightDirVec,
-      intensity,
-      scatteringStrength: adjustedScatteringStrength,
-      stepCount: adjustedStepCount,
-      parallaxStrength,
-      bass: audioReactive?.bass ?? 0,
-      mid: audioReactive?.mid ?? 0,
-      high: audioReactive?.high ?? 0,
-      blessingWaveProgress,
-      cameraFOV,
-      depthTexture: depthBuffer,
-      time: 0,
-      mouse: mouseVec,
-    });
-  }, [sunPosVec, lightDirVec, intensity, adjustedScatteringStrength, adjustedStepCount, parallaxStrength, blessingWaveProgress, cameraFOV, depthBuffer, mouseVec]);
-
   // Register with motion orchestrator
   useEffect(() => {
     motionOrchestrator.registerEngine('cosmic-godrays', (motionState) => {
       // Update audio reactive values
-      pass.setAudioReactive(
-        motionState.bassMotion,
-        motionState.midMotion,
-        motionState.highMotion
-      );
+      passRef.current?.setAudioReactive(
+          motionState.bassMotion,
+          motionState.midMotion,
+          motionState.highMotion
+        );
     });
 
     return () => {
       motionOrchestrator.unregisterEngine('cosmic-godrays');
     };
-  }, [pass]);
+  }, []);
 
   // Update pass each frame
   useFrame((state, delta) => {
+    const pass = passRef.current;
+    if (!pass) return;
+
     timeRef.current += delta;
 
     // Update time
@@ -146,8 +132,8 @@ export const CosmicGodRaysEffect: React.FC<CosmicGodRaysEffectProps> = ({
     pass.setBlessingWaveProgress(blessingWaveProgress);
 
     // Update camera FOV
-    if (camera && 'fov' in camera) {
-      pass.setCameraFOV((camera as any).fov);
+    if ('fov' in camera && typeof camera.fov === 'number') {
+      pass.setCameraFOV(camera.fov);
     } else {
       pass.setCameraFOV(cameraFOV);
     }
@@ -159,6 +145,25 @@ export const CosmicGodRaysEffect: React.FC<CosmicGodRaysEffectProps> = ({
     }
   });
 
-  return <Effect effect={pass} />;
+  return (
+    <Effect
+      ref={(instance: CosmicGodRaysPass | null) => {
+        passRef.current = instance;
+      }}
+      sunPos={sunPosVec}
+      lightDir={lightDirVec}
+      intensity={intensity}
+      scatteringStrength={adjustedScatteringStrength}
+      stepCount={adjustedStepCount}
+      parallaxStrength={parallaxStrength}
+      bass={audioReactive?.bass ?? 0}
+      mid={audioReactive?.mid ?? 0}
+      high={audioReactive?.high ?? 0}
+      blessingWaveProgress={blessingWaveProgress}
+      cameraFOV={cameraFOV}
+      depthTexture={depthBuffer}
+      time={0}
+      mouse={mouseVec}
+    />
+  );
 };
-

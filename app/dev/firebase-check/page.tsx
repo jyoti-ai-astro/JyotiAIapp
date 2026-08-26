@@ -10,6 +10,17 @@ import { useEffect, useState } from 'react';
 import { auth } from '@/lib/firebase/config';
 
 export default function FirebaseCheckPage() {
+  if (process.env.NODE_ENV === 'production') {
+    return (
+      <div className="min-h-screen bg-black p-8 text-white">
+        <div className="mx-auto max-w-4xl">
+          <h1 className="mb-4 text-3xl font-bold">Not available</h1>
+          <p className="text-zinc-300">This diagnostic page is disabled in production.</p>
+        </div>
+      </div>
+    );
+  }
+
   const [checks, setChecks] = useState<{
     auth: boolean;
     envVars: Record<string, boolean>;
@@ -47,7 +58,6 @@ export default function FirebaseCheckPage() {
           console.warn('⚠️ Firebase variables are present but auth is not initialized.');
           console.warn('⚠️ This means Firebase initialization failed on the client side.');
           console.warn('⚠️ Check browser console for Firebase initialization errors.');
-          console.warn('⚠️ Variable values:', data.envVarValues);
           
           // Try to manually trigger Firebase initialization
           if (typeof window !== 'undefined' && !auth) {
@@ -64,22 +74,8 @@ export default function FirebaseCheckPage() {
                 setChecks(prev => ({ ...prev, auth: true }));
               } else {
                 console.error('❌ Firebase still not initialized after manual import');
-                console.error('❌ Env vars check:', {
-                  apiKey: data.envVarValues?.['NEXT_PUBLIC_FIREBASE_API_KEY']?.substring(0, 10),
-                  authDomain: data.envVarValues?.['NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'],
-                  projectId: data.envVarValues?.['NEXT_PUBLIC_FIREBASE_PROJECT_ID'],
-                });
+                console.error('❌ Env vars check failed after manual import.');
                 console.error('❌ Check for errors above in the console');
-                
-                // Try one more time with a direct initialization attempt
-                setTimeout(() => {
-                  const { getFirebaseAuth: retryGetAuth } = require('@/lib/firebase/config');
-                  const retryAuth = retryGetAuth();
-                  if (retryAuth) {
-                    console.log('✅ Firebase initialized on retry');
-                    setChecks(prev => ({ ...prev, auth: true }));
-                  }
-                }, 500);
               }
             }).catch((err) => {
               console.error('❌ Failed to import Firebase config:', err);
@@ -225,4 +221,3 @@ export default function FirebaseCheckPage() {
     </div>
   );
 }
-

@@ -1,92 +1,78 @@
 export const dynamic = 'force-dynamic'
-import { NextRequest, NextResponse } from 'next/server'
-import { adminAuth, adminDb } from '@/lib/firebase/admin'
-import { getAdminUser, updateAdminLastLogin, createAdminSession } from '@/lib/admin/admin-auth'
-import { cookies } from 'next/headers'
 
-/**
- * Admin Login API
- * Milestone 10 - Step 1
- */
-export async function POST(request: NextRequest) {
+import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { adminDb } from '@/lib/firebase/admin'
+import { getAdminUser, updateAdminLastLogin, createAdminSession, verifyPassword } from '@/lib/admin/admin-auth'
+import { withRateLimit } from '@/lib/middleware/rate-limit-enforcement'
+
+async function login(request: NextRequest) {
   try {
     const { email, password } = await request.json()
-
-    if (!email || !password) {
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
     }
-
-    if (!adminAuth || !adminDb) {
+    if (!adminDb) {
       return NextResponse.json({ error: 'Admin auth not configured' }, { status: 500 })
     }
 
-    // Find admin by email
-    const adminsRef = adminDb.collection('admins')
-    const snapshot = await adminsRef.where('email', '==', email.toLowerCase()).limit(1).get()
-
+    const normalizedEmail = email.trim().toLowerCase()
+    const snapshot = await adminDb.collection('admins').where('email', '==', normalizedEmail).limit(1).get()
     if (snapshot.empty) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
     const adminDoc = snapshot.docs[0]
     const adminData = adminDoc.data()
+    const passwordOk = await verifyPassword(
+      password,
+      {
+        passwordHash: adminData.passwordHash,
+        passwordSalt: adminData.passwordSalt,
+        passwordVersion: adminData.passwordVersion,
+        password: adminData.password,
+      },
+      async (newHash) => {
+        await adminDoc.ref.update({
+          passwordHash: newHash.hash,
+          passwordSalt: newHash.salt,
+          passwordVersion: newHash.version,
+          password: null,
+        })
+      }
+    )
 
-    // In production, use proper password hashing (bcrypt, etc.)
-    // For now, check if password matches (this should be replaced with secure authentication)
-    if (adminData.password !== password) {
+    if (!passwordOk) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    const uid = adminDoc.id
-    const admin = await getAdminUser(uid)
-
+    const admin = await getAdminUser(adminDoc.id)
     if (!admin) {
-      return NextResponse.json({ error: 'Admin not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    // Update last login
-    await updateAdminLastLogin(uid)
-
-    // Create a session token (simplified approach for now)
-    // In production, this should use Firebase Admin session cookies with proper ID tokens
-    const expiresIn = 60 * 60 * 24 * 5 * 1000 // 5 days
-    
-    // Create a session payload
-    const sessionPayload = {
-      uid,
-      email: admin.email,
-      role: admin.role,
-      exp: Date.now() + expiresIn,
-    }
-    
-    // Create a simple session token (in production, use proper JWT signing)
-    const sessionToken = Buffer.from(JSON.stringify(sessionPayload)).toString('base64')
-
-    // Set cookie
+    await updateAdminLastLogin(admin.uid)
+    const sessionToken = await createAdminSession(admin.uid)
+    const expiresIn = 60 * 60 * 24 * 5
     const cookieStore = await cookies()
     cookieStore.set('admin_session', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: expiresIn / 1000,
+      maxAge: expiresIn,
       path: '/',
     })
 
     return NextResponse.json({
       success: true,
-      admin: {
-        uid: admin.uid,
-        email: admin.email,
-        role: admin.role,
-        name: admin.name,
-      },
+      admin: { uid: admin.uid, email: admin.email, role: admin.role, name: admin.name },
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Admin login error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Login failed' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Login failed' }, { status: 500 })
   }
 }
 
+export async function POST(request: NextRequest) {
+  return withRateLimit(login)(request)
+}

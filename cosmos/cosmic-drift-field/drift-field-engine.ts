@@ -42,8 +42,8 @@ export class CosmicDriftFieldEngine {
   private mesh: THREE.Mesh;
   private config: CosmicDriftFieldEngineConfig;
   
-  private nebulaPlane: NebulaPlaneData;
-  private flowPlane: FlowPlaneData;
+  private nebulaPlane!: NebulaPlaneData;
+  private flowPlane!: FlowPlaneData;
   private dustParticles: DustParticleData[] = [];
   
   private numParticles: number;
@@ -419,4 +419,3 @@ export class CosmicDriftFieldEngine {
     this.material.dispose();
   }
 }
-

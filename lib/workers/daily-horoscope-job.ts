@@ -13,6 +13,12 @@ import { adminDb } from '@/lib/firebase/admin'
 import { generateDailyHoroscope } from '@/lib/engines/horoscope/daily-horoscope'
 import { queueNotification } from '@/lib/services/notification-service'
 
+type ScheduledEvent = Event
+type ExecutionContext = {
+  waitUntil(promise: Promise<unknown>): void
+  passThroughOnException?(): void
+}
+
 /**
  * Daily Horoscope Job
  * Processes all users and generates daily horoscopes
@@ -91,4 +97,3 @@ export default {
     await runDailyHoroscopeJob()
   },
 }
-

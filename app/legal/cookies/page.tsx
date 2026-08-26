@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic';
 import React from 'react';
 import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
 import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
 // Footer removed - using global FooterWrapper from app/layout.tsx from '@/components/sections/Footer/CosmicFooter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -21,7 +20,6 @@ export default function CookiesPage() {
   return (
     <PageTransitionWrapper>
       <CosmicCursor />
-      <SoundscapeController />
       
       <div className="min-h-screen bg-cosmic-navy text-white">
         <div className="container mx-auto px-4 py-16 space-y-8">
@@ -102,4 +100,3 @@ export default function CookiesPage() {
     </PageTransitionWrapper>
   );
 }
-

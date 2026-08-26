@@ -25,6 +25,18 @@ export type GuruErrorCode =
   | 'INTERNAL_ERROR'
   | 'NETWORK'
   | 'UNKNOWN'
+  | 'NO_TICKETS'
+  | 'KUNDALI_REQUIRED'
+  | 'ASTRO_CONTEXT_MISSING'
+  | 'TICKET_CONSUMPTION_FAILED'
+  | 'ACCESS_CHECK_FAILED'
+  | 'AI_PROVIDER_MISSING'
+  | 'AI_QUOTA'
+  | 'AI_RATE_LIMIT'
+  | 'MODEL_UNAVAILABLE'
+  | 'MALFORMED_RESPONSE'
+  | 'RATE_LIMITED'
+  | 'TIMEOUT'
 
 export function useGuruChat(sessionId?: string) {
   const { user } = useUserStore()
@@ -40,6 +52,30 @@ export function useGuruChat(sessionId?: string) {
   // Load history on mount (from localStorage for now)
   useEffect(() => {
     async function loadHistory() {
+      if (user) {
+        try {
+          const query = sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : ''
+          const response = await fetch(`/api/guru/history${query}`, {
+            credentials: 'include',
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            const chatMessages: GuruMessage[] = (data.messages || []).map((msg: any) => ({
+              id: msg.id,
+              role: msg.role === 'assistant' ? 'guru' : 'user',
+              content: msg.content,
+              timestamp: msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now(),
+              metadata: msg.metadata,
+            }))
+            setMessages(chatMessages)
+          }
+        } catch (err) {
+          console.error('Error loading server history:', err)
+        }
+        return
+      }
+
       if (!sessionId) return
 
       try {
@@ -64,7 +100,7 @@ export function useGuruChat(sessionId?: string) {
     }
 
     loadHistory()
-  }, [sessionId])
+  }, [sessionId, user])
 
   const sendMessage = useCallback(
     async (content: string): Promise<boolean> => {
@@ -120,11 +156,18 @@ export function useGuruChat(sessionId?: string) {
           return false
         }
 
-        const data = await res.json()
+        const data = await res.json().catch(() => {
+          throw new Error('MALFORMED_RESPONSE')
+        })
 
         // Handle network errors
         if (!res.ok) {
-          if (data.code === 'UNAUTHENTICATED') {
+          if (res.status === 429) {
+            setStatus('error')
+            setErrorCode('RATE_LIMITED')
+            setErrorMessage('Please wait briefly before asking again.')
+            throw new Error('RATE_LIMITED')
+          } else if (data.code === 'UNAUTHENTICATED') {
             setStatus('error')
             setErrorCode('UNAUTHENTICATED')
             setErrorMessage('Please log in again')
@@ -141,7 +184,7 @@ export function useGuruChat(sessionId?: string) {
             setStatus('error')
             setErrorCode(data.code || 'INTERNAL_ERROR')
             setErrorMessage(data.message || 'An error occurred')
-            throw new Error(data.message || 'Failed to connect to the cosmos.')
+            throw new Error(data.code || data.message || 'INTERNAL_ERROR')
           }
         }
 
@@ -203,9 +246,15 @@ export function useGuruChat(sessionId?: string) {
           setStatus('error')
           setErrorCode('NETWORK')
           setErrorMessage('Network error. Please check your connection.')
+        } else if (err.message === 'MALFORMED_RESPONSE') {
+          setStatus('error')
+          setErrorCode('MALFORMED_RESPONSE')
+          setErrorMessage('Guru returned an unreadable response. Please retry.')
         } else if (err.message === 'UNAUTHENTICATED') {
           // Already set above
         } else if (err.message === 'GURU_TIMEOUT') {
+          // Already set above
+        } else if (err.message === 'RATE_LIMITED') {
           // Already set above
         } else {
           setStatus('error')
@@ -257,6 +306,16 @@ export function useGuruChat(sessionId?: string) {
     }
   }, [])
 
+  const stopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    setIsLoading(false)
+    setIsTyping(false)
+    setStatus('idle')
+  }, [])
+
   const clearSession = useCallback(() => {
     setMessages([])
     setError(null)
@@ -278,6 +337,7 @@ export function useGuruChat(sessionId?: string) {
     clearError,
     clearSession,
     reconnect, // Super Phase C
+    stopGeneration,
     status, // Super Phase C
     errorCode, // Super Phase C
     errorMessage, // Super Phase C

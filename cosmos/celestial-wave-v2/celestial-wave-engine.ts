@@ -54,8 +54,8 @@ export class CelestialWaveEngine {
   private mesh: THREE.Mesh;
   private config: CelestialWaveEngineConfig;
   
-  private waveSheet: WaveSheetData;
-  private crossWave: CrossWaveData;
+  private waveSheet!: WaveSheetData;
+  private crossWave!: CrossWaveData;
   private rippleRings: RippleRingData[] = [];
   private auraStreams: AuraStreamData[] = [];
   private particles: ParticleData[] = [];
@@ -577,4 +577,3 @@ export class CelestialWaveEngine {
     this.material.dispose();
   }
 }
-

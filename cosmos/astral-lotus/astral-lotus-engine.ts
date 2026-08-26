@@ -45,7 +45,7 @@ export class AstralLotusEngine {
   
   private outerPetals: OuterPetalData[] = [];
   private innerPetals: InnerPetalData[] = [];
-  private core: CoreData;
+  private core!: CoreData;
   
   private numOuterPetals: number;
   private numInnerPetals: number;
@@ -445,4 +445,3 @@ export class AstralLotusEngine {
     this.material.dispose();
   }
 }
-

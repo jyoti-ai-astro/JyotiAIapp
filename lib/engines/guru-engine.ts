@@ -5,7 +5,7 @@
  * Intelligent Guru chat with context-aware, DOB-aware, module-aware responses
  */
 
-import { getCachedAstroContext } from './astro-context-builder'
+import { AstroContextError, buildAstroContext } from './astro-context-builder'
 import { buildGuruContext, deriveGuruMode, type GuruMode } from '@/lib/guru/guru-context'
 import type { AstroContext } from './astro-types'
 
@@ -94,18 +94,35 @@ export async function runGuruBrain(params: {
   let ragChunks: GuruRagChunk[] = []
   let ragContext = ''
 
-  // 1. Load AstroContext if userId present (graceful degradation)
+  // 1. Load AstroContext if userId present. Personalized Guru must never use mock chart data.
   if (userId) {
     try {
-      astroContext = await getCachedAstroContext(userId)
+      astroContext = await buildAstroContext(userId, { forceRefresh: true })
       if (astroContext) {
         usedAstroContext = true
         astroSummary = buildGuruContext({ userId, astroContext, userName, gender })
       }
-    } catch (error) {
-      console.error('Error loading astro context (degrading gracefully):', error)
-      // Continue without astro context
-      status = 'degraded'
+    } catch (error: any) {
+      if (error instanceof AstroContextError || error?.code === 'KUNDALI_REQUIRED' || error?.code === 'ASTRO_CONTEXT_MISSING') {
+        return {
+          status: 'error',
+          mode: 'GeneralSeer',
+          usedAstroContext: false,
+          usedRag: false,
+          errorCode: error.code,
+          errorMessage: error.message,
+        }
+      }
+
+      console.error('Error loading astro context:', error)
+      return {
+        status: 'error',
+        mode: 'GeneralSeer',
+        usedAstroContext: false,
+        usedRag: false,
+        errorCode: 'ASTRO_CONTEXT_MISSING',
+        errorMessage: 'Unable to load your birth profile. Please try again.',
+      }
     }
   }
 
@@ -191,8 +208,8 @@ export async function runGuruBrain(params: {
       mode: derivedMode,
       usedAstroContext,
       usedRag,
-      errorCode: 'LLM_ERROR',
-      errorMessage: 'Failed to generate response',
+      errorCode: error?.code || 'LLM_ERROR',
+      errorMessage: error?.clientMessage || 'Failed to generate response. Please try again.',
     }
   }
 
@@ -333,11 +350,12 @@ async function callLLM(
   const provider = envVars.ai.provider || 'openai'
   const openaiApiKey = envVars.ai.openaiApiKey
   const geminiApiKey = envVars.ai.geminiApiKey
+  const openaiModel = envVars.ai.guruModelName
 
   if (provider === 'gemini' && geminiApiKey) {
     return callGemini(messages, geminiApiKey, signal)
   } else if (openaiApiKey) {
-    return callOpenAI(messages, openaiApiKey, signal)
+    return callOpenAI(messages, openaiApiKey, openaiModel, signal)
   } else {
     throw new Error('No AI provider configured. Please set OPENAI_API_KEY or GEMINI_API_KEY in your environment variables.')
   }
@@ -349,33 +367,76 @@ async function callLLM(
 async function callOpenAI(
   messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
   apiKey: string,
+  model: string,
   signal?: AbortSignal
 ): Promise<string> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4',
-      messages: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
-      temperature: 0.7,
-      max_tokens: 1000,
-    }),
-    signal,
-  })
+  let response: Response
+  try {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        temperature: 0.7,
+        max_tokens: 1000,
+      }),
+      signal,
+    })
+  } catch (error: any) {
+    const err: any = new Error('OpenAI network error')
+    err.code = 'AI_NETWORK_ERROR'
+    err.clientMessage = 'Guru could not reach the AI service. Please retry in a moment.'
+    throw err
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
-    throw new Error(`OpenAI error: ${error.error?.message || 'Unknown error'}`)
+    const message = error.error?.message || 'Unknown error'
+    const type = error.error?.type || ''
+    const code = error.error?.code || ''
+    const err: any = new Error(`OpenAI error: ${message}`)
+
+    if (response.status === 429) {
+      err.code = code === 'insufficient_quota' || type === 'insufficient_quota'
+        ? 'AI_BILLING_OR_QUOTA'
+        : 'AI_RATE_LIMIT'
+      err.clientMessage = err.code === 'AI_BILLING_OR_QUOTA'
+        ? 'Guru AI credits are temporarily unavailable. Please try again later.'
+        : 'Guru is receiving too many requests. Please retry in a moment.'
+    } else if (response.status === 402) {
+      err.code = 'AI_BILLING_OR_QUOTA'
+      err.clientMessage = 'Guru AI credits are temporarily unavailable. Please try again later.'
+    } else if (response.status === 404 || code === 'model_not_found') {
+      err.code = 'AI_MODEL_UNAVAILABLE'
+      err.clientMessage = 'Guru model is temporarily unavailable. Please try again later.'
+    } else if (response.status >= 500) {
+      err.code = 'AI_PROVIDER_UNAVAILABLE'
+      err.clientMessage = 'Guru AI service is temporarily unavailable. Please retry shortly.'
+    } else {
+      err.code = 'AI_REQUEST_FAILED'
+      err.clientMessage = 'Guru could not complete the AI request. Please retry.'
+    }
+
+    throw err
   }
 
   const data = await response.json()
-  return data.choices[0]?.message?.content || 'I apologize, but I could not generate a response.'
+  const content = data.choices?.[0]?.message?.content
+  if (!content || typeof content !== 'string') {
+    const err: any = new Error('Malformed OpenAI response')
+    err.code = 'AI_MALFORMED_RESPONSE'
+    err.clientMessage = 'Guru received an unreadable AI response. Please retry.'
+    throw err
+  }
+
+  return content
 }
 
 /**
@@ -468,7 +529,6 @@ function generateFollowUps(mode: GuruMode, astroContext: AstroContext | null): s
         followUps.push('What does my current dasha say about my career?')
       }
       break
-    case 'love':
     case 'RelationshipGuide':
       followUps.push('When will I find love?', 'What are my relationship strengths?')
       if (astroContext?.lifeThemes?.[0]?.area === 'love') {

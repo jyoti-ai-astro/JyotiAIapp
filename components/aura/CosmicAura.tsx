@@ -166,7 +166,7 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
 
   const handleScan = async () => {
     // Check access before scanning
-    const access = await checkFeatureAccess('aura');
+    const access = await checkFeatureAccess(user, 'aura');
     if (!access.allowed) {
       if (access.redirectTo) {
         router.push(access.redirectTo);
@@ -176,7 +176,7 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
 
     // If user has tickets (not subscription), decrement after successful scan
     const hasSubscription =
-      user?.subscription === 'pro' &&
+      ['advanced', 'supreme'].includes(user?.subscription ?? 'free') &&
       user?.subscriptionExpiry &&
       new Date(user.subscriptionExpiry) > new Date();
 
@@ -184,7 +184,7 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
     await onUpload();
 
     // Decrement ticket if not subscription
-    if (!hasSubscription && user?.tickets?.kundali_basic && user.tickets.kundali_basic > 0) {
+    if (!hasSubscription && (user?.kundaliTickets ?? user?.legacyTickets?.kundali_basic ?? 0) > 0) {
       await decrementTicket('kundali_basic');
     }
   };
@@ -364,4 +364,3 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
     </div>
   );
 };
-

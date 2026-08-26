@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Flame, Music, Scroll, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useUserStore } from '@/store/user-store'
 import type { Ritual } from '@/lib/engines/ritual/ai-ritual-engine'
@@ -316,4 +316,3 @@ export default function RitualsPage() {
     </DashboardPageShell>
   )
 }
-

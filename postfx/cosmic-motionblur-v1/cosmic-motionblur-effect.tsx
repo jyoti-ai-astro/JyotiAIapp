@@ -17,10 +17,12 @@ const { Vector2 } = THREE;
 
 
 
-import { CosmicMotionBlurPass } from './cosmic-motionblur-pass';
+import { CosmicMotionBlurPass, type CosmicMotionBlurPassConfig } from './cosmic-motionblur-pass';
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
-const Effect = wrapEffect(CosmicMotionBlurPass);
+const Effect = wrapEffect(CosmicMotionBlurPass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicMotionBlurPassConfig> & React.RefAttributes<CosmicMotionBlurPass>
+>;
 
 export interface CosmicMotionBlurEffectProps {
   /** Blur strength */
@@ -156,4 +158,3 @@ export const CosmicMotionBlurEffect: React.FC<CosmicMotionBlurEffectProps> = ({
     />
   );
 };
-

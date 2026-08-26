@@ -6,7 +6,14 @@
  * Generates personalized rituals and remedies using AI
  */
 
-import { retrieveRelevantDocuments } from '@/lib/rag/rag-service'
+import { envVars } from '@/lib/env/env.mjs'
+import {
+  aiMalformedResponse,
+  aiNetworkError,
+  aiNotConfigured,
+  classifyAIResponseError,
+} from '@/lib/ai/provider-errors'
+import { retrieveRelevantDocuments, type RAGResult } from '@/lib/rag/rag-service'
 
 export interface Ritual {
   type: 'puja' | 'mantra' | 'yantra' | 'gemstone' | 'donation' | 'fasting'
@@ -33,6 +40,7 @@ export async function generateRitual(
   kundali: {
     grahas: Record<string, any>
     bhavas: Record<string, any>
+    dasha?: Record<string, any>
   },
   numerology?: {
     lifePathNumber: number
@@ -41,7 +49,7 @@ export async function generateRitual(
 ): Promise<Ritual> {
   // Retrieve relevant RAG documents
   const ragQuery = `Ritual for ${purpose} based on Vedic astrology`
-  const ragResults = await retrieveRelevantDocuments(ragQuery, 5, 'remedies')
+  const ragResults = await retrieveRitualKnowledge(ragQuery)
 
   // Build AI prompt
   const prompt = buildRitualPrompt(purpose, kundali, numerology, ragResults)
@@ -59,7 +67,7 @@ function buildRitualPrompt(
   purpose: string,
   kundali: any,
   numerology: any,
-  ragResults: any
+  ragResults: RAGResult
 ): string {
   const systemPrompt = `You are an expert Vedic astrologer and ritual specialist. Generate a personalized ritual based on the user's astrological profile.
 
@@ -111,8 +119,14 @@ Generate ritual in JSON format:
 /**
  * Generate ritual using AI
  */
-// Phase 31 - F46: Use validated environment variables
-import { envVars } from '@/lib/env/env.mjs'
+async function retrieveRitualKnowledge(query: string): Promise<RAGResult> {
+  try {
+    return await retrieveRelevantDocuments(query, 5, 'remedies')
+  } catch (error) {
+    console.error('Ritual RAG retrieval degraded:', error)
+    return { documents: [], query, totalResults: 0 }
+  }
+}
 
 async function generateAIRitual(prompt: string, purpose: string): Promise<Ritual> {
   const provider = envVars.ai.provider
@@ -123,9 +137,9 @@ async function generateAIRitual(prompt: string, purpose: string): Promise<Ritual
     return generateGeminiRitual(prompt, purpose)
   } else if (openaiApiKey) {
     return generateOpenAIRitual(prompt, purpose)
-  } else {
-    return createFallbackRitual(purpose)
   }
+
+  throw aiNotConfigured('Ritual AI')
 }
 
 /**
@@ -133,39 +147,48 @@ async function generateAIRitual(prompt: string, purpose: string): Promise<Ritual
  */
 async function generateOpenAIRitual(prompt: string, purpose: string): Promise<Ritual> {
   const openaiApiKey = envVars.ai.openaiApiKey
+  const openaiModel = envVars.ai.predictionModelName
   if (!openaiApiKey) {
-    throw new Error('OpenAI API key not configured')
+    throw aiNotConfigured('OpenAI')
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${openaiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: 'You are an expert Vedic astrologer. Always respond with valid JSON only.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      response_format: { type: 'json_object' },
-    }),
-  })
+  let response: Response
+  try {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: openaiModel,
+        messages: [
+          { role: 'system', content: 'You are an expert Vedic astrologer. Always respond with valid JSON only.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' },
+      }),
+    })
+  } catch {
+    throw aiNetworkError('OpenAI')
+  }
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`OpenAI error: ${error.error?.message || 'Unknown error'}`)
+    const error = await response.json().catch(() => ({}))
+    throw classifyAIResponseError('OpenAI', response, error)
   }
 
   const data = await response.json()
-  const content = data.choices[0].message.content
+  const content = data.choices?.[0]?.message?.content
+  if (!content || typeof content !== 'string') {
+    throw aiMalformedResponse('OpenAI')
+  }
 
   try {
     return JSON.parse(content) as Ritual
-  } catch (e) {
-    return createFallbackRitual(purpose)
+  } catch {
+    throw aiMalformedResponse('OpenAI')
   }
 }
 
@@ -175,70 +198,47 @@ async function generateOpenAIRitual(prompt: string, purpose: string): Promise<Ri
 async function generateGeminiRitual(prompt: string, purpose: string): Promise<Ritual> {
   const geminiApiKey = envVars.ai.geminiApiKey
   if (!geminiApiKey) {
-    throw new Error('Gemini API key not configured')
+    throw aiNotConfigured('Gemini')
   }
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: 'You are an expert Vedic astrologer. Always respond with valid JSON only.\n\n' + prompt },
-            ],
-          },
-        ],
-      }),
-    }
-  )
+  let response: Response
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: 'You are an expert Vedic astrologer. Always respond with valid JSON only.\n\n' + prompt },
+              ],
+            },
+          ],
+        }),
+      }
+    )
+  } catch {
+    throw aiNetworkError('Gemini')
+  }
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`Gemini error: ${error.error?.message || 'Unknown error'}`)
+    const error = await response.json().catch(() => ({}))
+    throw classifyAIResponseError('Gemini', response, error)
   }
 
   const data = await response.json()
-  const content = data.candidates[0].content.parts[0].text
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text
+  if (!content || typeof content !== 'string') {
+    throw aiMalformedResponse('Gemini')
+  }
 
   try {
     return JSON.parse(content) as Ritual
-  } catch (e) {
-    return createFallbackRitual(purpose)
+  } catch {
+    throw aiMalformedResponse('Gemini')
   }
 }
-
-/**
- * Create fallback ritual
- */
-function createFallbackRitual(purpose: string): Ritual {
-  return {
-    type: 'puja',
-    name: 'Ganesha Puja',
-    deity: 'Lord Ganesha',
-    purpose: `Remedy for ${purpose}`,
-    procedure: [
-      'Clean the puja area',
-      'Place Ganesha idol or image',
-      'Light incense and lamp',
-      'Offer flowers and fruits',
-      'Chant Ganesha mantras',
-      'Perform aarti',
-      'Seek blessings',
-    ],
-    timing: {
-      bestDays: ['Tuesday', 'Thursday'],
-      bestTime: 'Morning',
-      duration: '21 days',
-    },
-    materials: ['Ganesha idol', 'Incense', 'Lamp', 'Flowers', 'Fruits'],
-    mantra: 'Om Gam Ganapataye Namaha',
-    benefits: ['Removes obstacles', 'Brings success', 'Enhances wisdom'],
-    precautions: ['Maintain purity', 'Perform with devotion', 'Follow timing'],
-  }
-}
-

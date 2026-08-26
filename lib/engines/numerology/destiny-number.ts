@@ -20,6 +20,18 @@ export interface DestinyProfile {
   }
 }
 
+function reduceNumber(num: number): number {
+  if ([11, 22, 33].includes(num)) return num
+  while (num > 9) {
+    num = num
+      .toString()
+      .split('')
+      .reduce((sum, digit) => sum + Number(digit), 0)
+    if ([11, 22, 33].includes(num)) return num
+  }
+  return num
+}
+
 /**
  * Calculate complete destiny profile
  */
@@ -55,23 +67,23 @@ function getCompatibilityNumbers(destinyNumber: number): {
   challengingNumbers: number[]
 } {
   // Simplified compatibility rules
-  const compatibilityMap: Record<number, { best: number[]; challenging: number[] }> = {
-    1: { best: [1, 5, 7], challenging: [2, 4, 8] },
-    2: { best: [2, 4, 8], challenging: [1, 5, 7] },
-    3: { best: [3, 6, 9], challenging: [4, 7] },
-    4: { best: [2, 4, 8], challenging: [1, 3, 5] },
-    5: { best: [1, 5, 7], challenging: [2, 4, 8] },
-    6: { best: [3, 6, 9], challenging: [1, 5] },
-    7: { best: [1, 5, 7], challenging: [2, 4, 8] },
-    8: { best: [2, 4, 8], challenging: [1, 3, 5] },
-    9: { best: [3, 6, 9], challenging: [1, 5, 7] },
-    11: { best: [2, 4, 8, 11], challenging: [1, 5, 7] },
-    22: { best: [2, 4, 8, 22], challenging: [1, 3, 5] },
-    33: { best: [3, 6, 9, 33], challenging: [1, 5, 7] },
+  const compatibilityMap: Record<number, { bestNumbers: number[]; challengingNumbers: number[] }> = {
+    1: { bestNumbers: [1, 5, 7], challengingNumbers: [2, 4, 8] },
+    2: { bestNumbers: [2, 4, 8], challengingNumbers: [1, 5, 7] },
+    3: { bestNumbers: [3, 6, 9], challengingNumbers: [4, 7] },
+    4: { bestNumbers: [2, 4, 8], challengingNumbers: [1, 3, 5] },
+    5: { bestNumbers: [1, 5, 7], challengingNumbers: [2, 4, 8] },
+    6: { bestNumbers: [3, 6, 9], challengingNumbers: [1, 5] },
+    7: { bestNumbers: [1, 5, 7], challengingNumbers: [2, 4, 8] },
+    8: { bestNumbers: [2, 4, 8], challengingNumbers: [1, 3, 5] },
+    9: { bestNumbers: [3, 6, 9], challengingNumbers: [1, 5, 7] },
+    11: { bestNumbers: [2, 4, 8, 11], challengingNumbers: [1, 5, 7] },
+    22: { bestNumbers: [2, 4, 8, 22], challengingNumbers: [1, 3, 5] },
+    33: { bestNumbers: [3, 6, 9, 33], challengingNumbers: [1, 5, 7] },
   }
   
   return compatibilityMap[destinyNumber] || {
-    best: [],
-    challenging: [],
+    bestNumbers: [],
+    challengingNumbers: [],
   }
 }

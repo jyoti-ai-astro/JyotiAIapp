@@ -16,11 +16,6 @@ export function getAudioContext(): AudioContext {
   if (!audioContextInstance) {
     // Create new AudioContext
     audioContextInstance = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    // Resume context if suspended (browser autoplay policy)
-    if (audioContextInstance.state === 'suspended') {
-      audioContextInstance.resume();
-    }
   }
   
   return audioContextInstance;
@@ -52,4 +47,3 @@ export function destroyAudioContext(): void {
     audioContextInstance = null;
   }
 }
-

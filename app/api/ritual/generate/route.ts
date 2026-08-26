@@ -4,6 +4,7 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { generateRitual } from '@/lib/engines/ritual/ai-ritual-engine'
 import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket-service'
 import type { FeatureKey } from '@/lib/payments/feature-access'
+import { getAIErrorStatus } from '@/lib/ai/provider-errors'
 
 /**
  * Generate AI Ritual
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     const kundaliRef = adminDb.collection('kundali').doc(uid)
     const kundaliSnap = await kundaliRef.get()
 
-    if (!kundaliSnap.exists) {
+    if (!kundaliSnap.exists || kundaliSnap.data()?.meta?.stale === true) {
       return NextResponse.json({ error: 'Kundali not found' }, { status: 404 })
     }
 
@@ -61,6 +62,10 @@ export async function POST(request: NextRequest) {
     const D1Data = D1Snap.data()
     const dashaData = dashaSnap.data()
 
+    if (!D1Data || !dashaData) {
+      return NextResponse.json({ error: 'Kundali data incomplete' }, { status: 400 })
+    }
+
     // Get Numerology
     const userRef = adminDb.collection('users').doc(uid)
     const userSnap = await userRef.get()
@@ -70,12 +75,9 @@ export async function POST(request: NextRequest) {
     const ritual = await generateRitual(
       purpose,
       {
-        grahas: D1Data?.grahas || {},
-        bhavas: D1Data?.bhavas || {},
-        dasha: {
-          currentMahadasha: dashaData.currentMahadasha,
-          currentAntardasha: dashaData.currentAntardasha,
-        },
+        grahas: D1Data.grahas || {},
+        bhavas: D1Data.bhavas || {},
+        dasha: dashaData || {},
       },
       numerology
     )
@@ -87,9 +89,11 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Ritual generation error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to generate ritual' },
-      { status: 500 }
+      {
+        error: error.code || 'RITUAL_GENERATION_FAILED',
+        message: error.clientMessage || 'Failed to generate ritual',
+      },
+      { status: getAIErrorStatus(error) }
     )
   }
 }
-

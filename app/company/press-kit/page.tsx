@@ -69,7 +69,7 @@ export default function PressKitPage() {
           <p className="text-white/70 leading-relaxed">
             JyotiAI is a spiritual guidance platform that combines ancient Vedic astrology, numerology, and
             palmistry with cutting-edge AI technology. We make personalized astrological insights accessible
-            to everyone, helping millions discover their true purpose and navigate life's challenges with
+            to everyone, helping millions discover their true purpose and navigate life&apos;s challenges with
             confidence.
           </p>
         </div>

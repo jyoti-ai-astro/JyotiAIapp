@@ -84,12 +84,9 @@ export const RotatingMandala = React.memo(function RotatingMandala({ speed = 0.1
           ]);
           geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-          return (
-            <line key={i} geometry={geo} material={lineMaterial} />
-          );
+          return <primitive key={i} object={new THREE.Line(geo, lineMaterial)} />;
         });
       }, [intensity])}
     </group>
   );
 });
-

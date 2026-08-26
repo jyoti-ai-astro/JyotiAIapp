@@ -36,7 +36,7 @@ export default function NumerologyPage() {
 
     // Pre-fill with user data
     if (user.name) {
-      setFormData((prev) => ({ ...prev, fullName: user.name }))
+      setFormData((prev) => ({ ...prev, fullName: user.name || '' }))
     }
     if (user.dob) {
       setFormData((prev) => ({ ...prev, birthDate: user.dob || '' }))
@@ -175,4 +175,3 @@ export default function NumerologyPage() {
     </div>
   )
 }
-

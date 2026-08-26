@@ -3,6 +3,34 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 
 export const dynamic = 'force-dynamic'
 
+function toIso(value: any): string | null {
+  if (!value) return null
+  if (value instanceof Date) return value.toISOString()
+  if (typeof value?.toDate === 'function') return value.toDate().toISOString()
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date.toISOString()
+}
+
+function toDate(value: any): Date | null {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value?.toDate === 'function') return value.toDate()
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function getStaleStatus(data: any, birthDetailsUpdatedAt: Date | null, derivedAstrologyStatus?: string) {
+  const generatedAt = toDate(data?.generatedAt ?? data?.metadata?.generatedAt)
+  const outdatedByBirthChange =
+    !!generatedAt && !!birthDetailsUpdatedAt && generatedAt.getTime() < birthDetailsUpdatedAt.getTime()
+
+  return {
+    staleStatus:
+      derivedAstrologyStatus === 'stale' || outdatedByBirthChange ? 'outdated_after_birth_change' : 'current',
+    outdated: derivedAstrologyStatus === 'stale' || outdatedByBirthChange,
+  }
+}
+
 /**
  * Get Report
  * Part B - Section 6: Reports Engine
@@ -38,13 +66,32 @@ export async function GET(request: NextRequest) {
     }
 
     const reportData = reportSnap.data()
+    const userSnap = await adminDb.collection('users').doc(uid).get()
+    const userData = userSnap.exists ? userSnap.data() : null
+    const stale = getStaleStatus(
+      reportData,
+      toDate(userData?.birthDetailsUpdatedAt),
+      userData?.derivedAstrologyStatus
+    )
 
     return NextResponse.json({
       success: true,
       report: {
-        ...reportData,
-        generatedAt: reportData?.metadata?.generatedAt?.toDate?.()?.toISOString() || null,
-        createdAt: reportData?.createdAt?.toDate?.()?.toISOString() || null,
+        id: reportData?.id || reportSnap.id,
+        reportId: reportSnap.id,
+        uid: reportData?.uid || uid,
+        type: reportData?.type || null,
+        title: reportData?.title || 'Untitled Report',
+        status: reportData?.status || (reportData?.pdfUrl ? 'ready' : 'failed'),
+        pdfUrl: reportData?.pdfUrl || null,
+        storagePath: reportData?.storagePath || null,
+        failureReason: reportData?.failureReason || null,
+        entitlement: reportData?.entitlement || null,
+        generatedAt: toIso(reportData?.generatedAt ?? reportData?.metadata?.generatedAt),
+        createdAt: toIso(reportData?.createdAt),
+        updatedAt: toIso(reportData?.updatedAt),
+        staleStatus: stale.staleStatus,
+        outdated: stale.outdated,
       },
     })
   } catch (error: any) {
@@ -55,4 +102,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

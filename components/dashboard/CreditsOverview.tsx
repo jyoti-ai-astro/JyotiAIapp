@@ -19,17 +19,6 @@ import { getUserTickets } from '@/lib/payments/ticket-service'
 export function CreditsOverview() {
   const { user } = useUserStore()
   const [loading, setLoading] = React.useState(false)
-
-  if (!user) {
-    return (
-      <Card className="bg-cosmic-indigo/60 backdrop-blur-xl border-white/10">
-        <CardContent className="p-6 text-center text-white/60">
-          Login to see your credits
-        </CardContent>
-      </Card>
-    )
-  }
-
   const [ticketInfo, setTicketInfo] = React.useState<{
     tickets: { aiGuruTickets: number; kundaliTickets: number; lifetimePredictions: number }
     hasSubscription: boolean
@@ -59,6 +48,16 @@ export function CreditsOverview() {
 
     fetchTicketInfo()
   }, [user])
+
+  if (!user) {
+    return (
+      <Card className="bg-cosmic-indigo/60 backdrop-blur-xl border-white/10">
+        <CardContent className="p-6 text-center text-white/60">
+          Login to see your credits
+        </CardContent>
+      </Card>
+    )
+  }
 
   const tickets = ticketInfo?.tickets || {
     aiGuruTickets: user?.aiGuruTickets || 0,

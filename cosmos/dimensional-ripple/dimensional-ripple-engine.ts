@@ -42,8 +42,8 @@ export class DimensionalRippleEngine {
   private mesh: THREE.Mesh;
   private config: DimensionalRippleEngineConfig;
   
-  private ripplePlane: RipplePlaneData;
-  private warpPlane: WarpPlaneData;
+  private ripplePlane!: RipplePlaneData;
+  private warpPlane!: WarpPlaneData;
   private particles: ParticleData[] = [];
   
   private numParticles: number;
@@ -419,4 +419,3 @@ export class DimensionalRippleEngine {
     this.material.dispose();
   }
 }
-

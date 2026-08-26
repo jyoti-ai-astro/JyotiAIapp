@@ -1,47 +1,36 @@
-/**
- * Admin: Reset Tickets
- * 
- * Pricing & Payments v3 - Phase I
- * 
- * Admin API to reset all tickets for a user
- */
+export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
-import { adminDb } from '@/lib/firebase/admin'
-
-export const dynamic = 'force-dynamic'
+import { adjustTicketsByAdmin } from '@/lib/payments/ticket-service'
 
 export async function POST(request: NextRequest) {
-  return withAdminAuth(async (req, admin) => {
-    if (!adminDb) {
-      return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
-    }
+  return withAdminAuth(
+    async (req, admin) => {
+      try {
+        const { uid, reason, correlationId } = await req.json()
+        if (!uid || !reason || !correlationId) {
+          return NextResponse.json(
+            { error: 'uid, reason, and correlationId are required' },
+            { status: 400 }
+          )
+        }
 
-    try {
-      const { uid } = await req.json()
+        const result = await adjustTicketsByAdmin({
+          uid,
+          actorAdminUid: admin.uid,
+          reason,
+          correlationId,
+          reset: true,
+        })
 
-      if (!uid) {
-        return NextResponse.json({ error: 'uid is required' }, { status: 400 })
+        return NextResponse.json({ success: true, ...result })
+      } catch (error: any) {
+        console.error('Reset tickets error:', error)
+        const status = /required|Invalid|negative|Correlation/.test(error.message || '') ? 400 : 500
+        return NextResponse.json({ error: error.message || 'Failed to reset tickets' }, { status })
       }
-
-      const userRef = adminDb.collection('users').doc(uid)
-      await userRef.update({
-        aiGuruTickets: 0,
-        kundaliTickets: 0,
-        lifetimePredictions: 0,
-        tickets: 0,
-        updatedAt: new Date(),
-      })
-
-      return NextResponse.json({
-        success: true,
-        message: 'Tickets reset successfully',
-      })
-    } catch (error: any) {
-      console.error('Reset tickets error:', error)
-      return NextResponse.json({ error: error.message || 'Failed to reset tickets' }, { status: 500 })
-    }
-  })(request)
+    },
+    'tickets.adjust'
+  )(request)
 }
-

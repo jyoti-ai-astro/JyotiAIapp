@@ -1,28 +1,7 @@
-/**
- * Report Page
- * 
- * Phase 3 — Section 38: PAGES PHASE 23 (F38)
- * 
- * Server component for report generation
- */
+import { redirect } from 'next/navigation';
 
-import { Metadata } from 'next';
-import { ReportPageClient } from './report-page-client';
+export const dynamic = 'force-dynamic';
 
-export const dynamic = 'force-dynamic'
-
-export const metadata: Metadata = {
-  title: 'Cosmic Reports | Jyoti.ai',
-  description: 'Comprehensive spiritual reports: Kundali, Numerology, Aura Chakra, Past Life, Predictions, and Compatibility',
-};
-
-export default function ReportPage({
-  searchParams,
-}: {
-  searchParams: { type?: string };
-}) {
-  const reportType = searchParams.type || 'guru';
-
-  return <ReportPageClient reportType={reportType as any} />;
+export default function ReportPage() {
+  redirect('/reports');
 }
-

@@ -34,7 +34,7 @@ export function CosmosPageClient() {
           }}
           secondaryCTA={{
             label: 'View Pricing',
-            href: '/premium',
+            href: '/pricing',
           }}
         />
         

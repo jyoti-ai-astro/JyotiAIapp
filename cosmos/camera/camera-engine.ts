@@ -271,6 +271,10 @@ export class CameraEngine {
   /**
    * E. Audio Reactive Camera
    */
+  private updateAudioReactiveMode(deltaTime: number): void {
+    this.updateOrbitMode(deltaTime);
+  }
+
   private applyAudioReactive(deltaTime: number): void {
     const bass = this.config.audioReactive?.bass || 0;
     const mid = this.config.audioReactive?.mid || 0;
@@ -392,4 +396,3 @@ export class CameraEngine {
     return this.state;
   }
 }
-

@@ -7,14 +7,19 @@
  */
 
 // Prediction Report type
-interface PredictionReport {
+export interface PredictionReport {
   personality: {
     overview: string
-    strengths: string[]
-    weaknesses: string[]
+    strengths?: string[]
+    weaknesses?: string[]
+    traits?: string[]
+    characteristics?: string
   }
+  strengths?: string[]
+  weaknesses?: string[]
   career: {
     insights: string
+    suitableFields?: string[]
     recommendations: string[]
   }
   love: {
@@ -23,7 +28,9 @@ interface PredictionReport {
   }
   wealth: {
     insights: string
-    recommendations: string[]
+    recommendations?: string[]
+    opportunities?: string[]
+    precautions?: string[]
   }
   health: {
     insights: string
@@ -252,7 +259,7 @@ function consolidateWealth(
   const merged = `${kundaliWealth} ${numerologyWealth ? `${numerologyWealth}.` : ''}`
 
   const recommendations = [
-    ...kundali.wealth.recommendations,
+    ...(kundali.wealth.recommendations ?? kundali.wealth.precautions ?? []),
     ...(numerology ? getNumerologyWealthRecommendations(numerology) : []),
   ]
 
@@ -440,4 +447,3 @@ function getAuraSpiritual(aura: any): string {
 function getAuraSpiritualRecommendations(aura: any): string[] {
   return ['Practice chakra meditation', 'Work on spiritual growth']
 }
-

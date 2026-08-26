@@ -16,11 +16,5 @@
  */
 
 export * from './use-cosmic-motion';
-export * from './use-scroll-trigger';
-export * from './use-glow-pulse';
-export * from './use-particle-distortion';
-export * from './use-kundalini-wave';
-export * from './use-cursor-trail';
-export * from './use-audio';
 export * from './use-reduced-motion';
 

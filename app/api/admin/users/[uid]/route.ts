@@ -1,204 +1,136 @@
 export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
 
-/**
- * Get User Details API
- * Milestone 10 - Step 3
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { uid: string } }
-) {
-  return withAdminAuth(async (req, admin) => {
-    if (!adminDb) {
-      return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
-    }
+function toDate(value: any): Date | null {
+  if (!value) return null
+  if (typeof value?.toDate === 'function') return value.toDate()
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function toIso(value: any) { return toDate(value)?.toISOString() || null }
+
+export async function GET(request: NextRequest, { params }: { params: { uid: string } }) {
+  return withAdminAuth(async () => {
+    if (!adminDb) return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
 
     try {
       const { uid } = params
-
-      // Get user profile
       const userRef = adminDb.collection('users').doc(uid)
-      const userSnap = await userRef.get()
-      const userData = userSnap.exists ? userSnap.data() : null
+      const [userSnap, subscriptionSnap, reportsSnapshot, paymentsSnapshot, analyticsSnapshot] = await Promise.all([
+        userRef.get(),
+        adminDb.collection('subscriptions').doc(uid).get(),
+        adminDb.collection('reports').doc(uid).collection('items').orderBy('createdAt', 'desc').limit(20).get(),
+        adminDb.collection('payments').where('userId', '==', uid).get(),
+        adminDb.collection('analyticsEvents').where('userUid', '==', uid).limit(300).get().catch(() => null),
+      ])
 
-      if (!userData) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      if (!userSnap.exists) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+      const data = userSnap.data() || {}
+      const subscription = subscriptionSnap.exists ? subscriptionSnap.data() || {} : null
+      const reports = reportsSnapshot.docs.map((doc) => {
+        const report = doc.data()
+        return { id: doc.id, type: report.type || report.reportType || null, title: report.title || report.name || null, status: report.status || null, createdAt: toIso(report.createdAt) }
+      })
+
+      let lifetimeValue = 0
+      let successfulPurchases = 0
+      let failedPayments = 0
+      let firstPaidAt: Date | null = null
+      let lastPaidAt: Date | null = null
+      const products = new Map<string, { purchases: number; revenue: number }>()
+      const allPayments = paymentsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() as any }))
+
+      for (const payment of allPayments) {
+        const created = toDate(payment.createdAt)
+        if (payment.status === 'success') {
+          const amount = Number(payment.amount || 0)
+          const safeAmount = Number.isFinite(amount) ? amount : 0
+          lifetimeValue += safeAmount
+          successfulPurchases += 1
+          if (created && (!firstPaidAt || created < firstPaidAt)) firstPaidAt = created
+          if (created && (!lastPaidAt || created > lastPaidAt)) lastPaidAt = created
+          const product = String(payment.productId || payment.planId || payment.type || 'Unmapped')
+          const current = products.get(product) || { purchases: 0, revenue: 0 }
+          current.purchases += 1
+          current.revenue += safeAmount
+          products.set(product, current)
+        } else if (payment.status === 'failed') failedPayments += 1
       }
 
-      // Get kundali
-      const kundaliRef = adminDb.collection('kundali').doc(uid)
-      const kundaliSnap = await kundaliRef.get()
-      const kundali = kundaliSnap.exists ? kundaliSnap.data() : null
+      const payments = allPayments
+        .sort((a: any, b: any) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))
+        .slice(0, 20)
+        .map((payment: any) => ({
+          id: payment.id,
+          paymentId: payment.razorpayPaymentId || payment.paymentId || null,
+          orderId: payment.razorpayOrderId || payment.orderId || null,
+          amount: Number(payment.amount || 0), currency: payment.currency || 'INR', status: payment.status || null,
+          type: payment.type || null, productId: payment.productId || payment.planId || null,
+          source: payment.utmSource || payment.utm_source || payment.source || payment.attribution?.latestTouch?.utm_source || null,
+          campaign: payment.utmCampaign || payment.utm_campaign || payment.attribution?.latestTouch?.utm_campaign || null,
+          createdAt: toIso(payment.createdAt), verifiedAt: toIso(payment.verifiedAt || payment.completedAt),
+        }))
 
-      // Get numerology
-      const numerology = userData.numerology || null
-
-      // Get palmistry
-      const palmistrySnap = await adminDb
-        .collection('scans')
-        .doc(uid)
-        .collection('palmistry')
-        .doc('latest')
-        .get()
-      const palmistry = palmistrySnap.exists ? palmistrySnap.data() : null
-
-      // Get aura
-      const auraSnap = await adminDb
-        .collection('scans')
-        .doc(uid)
-        .collection('aura')
-        .doc('latest')
-        .get()
-      const aura = auraSnap.exists ? auraSnap.data() : null
-
-      // Get reports
-      const reportsSnapshot = await adminDb
-        .collection('reports')
-        .doc(uid)
-        .collection('items')
-        .get()
-      const reports = reportsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-
-      // Get payments
-      const paymentsSnapshot = await adminDb
-        .collection('payments')
-        .where('userId', '==', uid)
-        .get()
-      const payments = paymentsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-
-      // Get notifications
-      const notificationsSnapshot = await adminDb
-        .collection('notifications')
-        .doc(uid)
-        .collection('items')
-        .limit(50)
-        .get()
-      const notifications = notificationsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-
-      // Get Guru chats
-      const guruChatsSnapshot = await adminDb
-        .collection('guruChat')
-        .doc(uid)
-        .collection('messages')
-        .limit(50)
-        .get()
-      const guruChats = guruChatsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      const analyticsEvents = analyticsSnapshot ? analyticsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) : []
+      analyticsEvents.sort((a: any, b: any) => String(a.occurredAt || '').localeCompare(String(b.occurredAt || '')))
+      const firstEvent: any = analyticsEvents[0] || null
+      const lastEvent: any = analyticsEvents[analyticsEvents.length - 1] || null
+      const attribution = firstEvent?.attribution?.firstTouch || lastEvent?.attribution?.firstTouch || null
+      const latestAttribution = lastEvent?.attribution?.latestTouch || attribution
+      const recentActivity = analyticsEvents.slice(-20).reverse().map((event: any) => ({
+        id: event.id, eventName: event.eventName || 'unknown', occurredAt: event.occurredAt || toIso(event.receivedAt), currentPath: event.currentPath || null, sessionId: event.sessionId || null,
       }))
 
       return NextResponse.json({
         success: true,
         user: {
           uid,
-          ...userData,
-          kundali,
-          numerology,
-          palmistry,
-          aura,
+          email: data.email || '',
+          displayName: data.name || data.displayName || '',
+          createdAt: toIso(data.createdAt), lastLoginAt: toIso(data.lastLoginAt),
+          blocked: data.blocked === true, onboardingComplete: data.onboardingComplete === true,
+          phone: data.phone || data.phoneNumber || null,
+          tickets: { aiGuruTickets: Number(data.aiGuruTickets || 0), kundaliTickets: Number(data.kundaliTickets || 0), lifetimePredictions: Number(data.lifetimePredictions || 0) },
+          subscription: subscription ? {
+            status: subscription.status || null, planId: subscription.planId || subscription.plan || null,
+            active: subscription.active === true || subscription.status === 'active',
+            startedAt: toIso(subscription.startedAt || subscription.activatedAt || subscription.createdAt),
+            expiresAt: toIso(subscription.expiry || subscription.expiresAt || subscription.subscriptionExpiry),
+            cancelledAt: toIso(subscription.cancelledAt), razorpaySubscriptionId: subscription.razorpaySubscriptionId || null,
+          } : null,
+          commerce: {
+            lifetimeValue, successfulPurchases, failedPayments,
+            averageOrderValue: successfulPurchases ? lifetimeValue / successfulPurchases : 0,
+            firstPaidAt: firstPaidAt?.toISOString() || null, lastPaidAt: lastPaidAt?.toISOString() || null,
+            products: Array.from(products.entries()).map(([product, value]) => ({ product, ...value })).sort((a,b) => b.revenue - a.revenue),
+          },
+          acquisition: {
+            firstTouch: attribution ? {
+              source: attribution.utm_source || (attribution.referrer ? 'Referral' : 'Direct / unknown'), medium: attribution.utm_medium || null,
+              campaign: attribution.utm_campaign || null, landingPath: attribution.landingPath || null, referrer: attribution.referrer || null, capturedAt: attribution.capturedAt || null,
+            } : null,
+            latestTouch: latestAttribution ? {
+              source: latestAttribution.utm_source || (latestAttribution.referrer ? 'Referral' : 'Direct / unknown'), medium: latestAttribution.utm_medium || null,
+              campaign: latestAttribution.utm_campaign || null, landingPath: latestAttribution.landingPath || null, referrer: latestAttribution.referrer || null, capturedAt: latestAttribution.capturedAt || null,
+            } : null,
+          },
+          analytics: { eventCount: analyticsEvents.length, firstActivityAt: firstEvent?.occurredAt || null, lastActivityAt: lastEvent?.occurredAt || null, recentActivity },
           reports,
           payments,
-          notifications,
-          guruChats,
         },
       })
     } catch (error: any) {
       console.error('Get user error:', error)
-      return NextResponse.json(
-        { error: error.message || 'Failed to get user' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to get user' }, { status: 500 })
     }
-  })(request)
+  }, 'users.read')(request)
 }
 
-/**
- * Update User API
- * Milestone 10 - Step 3
- */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { uid: string } }
-) {
-  return withAdminAuth(
-    async (req, admin) => {
-      if (!adminDb) {
-        return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
-      }
-
-      try {
-        const { uid } = params
-        const body = await req.json()
-
-        // Check permissions
-        if (body.action === 'delete' && !admin.permissions.includes('users.delete')) {
-          return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-        }
-
-        if (body.action === 'block' && !admin.permissions.includes('users.write')) {
-          return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-        }
-
-        const userRef = adminDb.collection('users').doc(uid)
-
-        switch (body.action) {
-          case 'upgrade_premium':
-            await userRef.update({
-              subscriptionStatus: 'premium',
-              upgradedAt: new Date(),
-            })
-            break
-
-          case 'block':
-            await userRef.update({
-              blocked: true,
-              blockedAt: new Date(),
-              blockedBy: admin.uid,
-            })
-            break
-
-          case 'reset_onboarding':
-            await userRef.update({
-              onboardingComplete: false,
-            })
-            break
-
-          case 'delete':
-            // Delete user and all related data
-            await userRef.delete()
-            await adminDb.collection('kundali').doc(uid).delete()
-            await adminDb.collection('reports').doc(uid).delete()
-            await adminDb.collection('notifications').doc(uid).delete()
-            await adminDb.collection('guruChat').doc(uid).delete()
-            await adminDb.collection('scans').doc(uid).delete()
-            break
-
-          default:
-            return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-        }
-
-        return NextResponse.json({ success: true })
-      } catch (error: any) {
-        console.error('Update user error:', error)
-        return NextResponse.json(
-          { error: error.message || 'Failed to update user' },
-          { status: 500 }
-        )
-      }
-    },
-    'users.write'
-  )(request)
+export async function PATCH(request: NextRequest) {
+  return withAdminAuth(async () => NextResponse.json({ error: 'User mutations are retired from this generic endpoint. Use dedicated audited actions.', code: 'ADMIN_USER_MUTATION_RETIRED' }, { status: 410 }), 'users.write')(request)
 }
-

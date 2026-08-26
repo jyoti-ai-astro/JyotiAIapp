@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion, useInView } from "framer-motion";
+import type { HTMLMotionProps } from "framer-motion";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +23,7 @@ export function TimelineContent({
   className,
   children,
 }: TimelineContentProps) {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   const defaultVariants = {
@@ -44,7 +45,10 @@ export function TimelineContent({
 
   const variants = customVariants || defaultVariants;
 
-  const MotionComponent = motion[Component as keyof typeof motion] || motion.div;
+  const MotionComponent = (motion[Component as keyof typeof motion] ||
+    motion.div) as React.ComponentType<
+    HTMLMotionProps<"div"> & { ref?: React.Ref<HTMLDivElement> }
+  >;
 
   return (
     <MotionComponent
@@ -58,4 +62,3 @@ export function TimelineContent({
     </MotionComponent>
   );
 }
-

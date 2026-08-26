@@ -43,10 +43,10 @@ export class DivineCompassEngine {
   private mesh: THREE.Mesh;
   private config: DivineCompassEngineConfig;
   
-  private compassRing: CompassRingData;
+  private compassRing!: CompassRingData;
   private glyphs: GlyphData[] = [];
-  private star: StarData;
-  private arrow: ArrowData;
+  private star!: StarData;
+  private arrow!: ArrowData;
   
   private numStarPoints: number;
   private includeGlyphs: boolean;
@@ -488,4 +488,3 @@ export class DivineCompassEngine {
     this.material.dispose();
   }
 }
-

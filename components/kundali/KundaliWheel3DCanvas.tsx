@@ -74,7 +74,7 @@ function PlanetGlyph({ position, planet, sign, house, onHover }: PlanetProps) {
         onPointerLeave={() => setHovered(false)}
       >
         <circleGeometry args={[0.15, 32]} />
-        <meshBasicMaterial
+        <meshStandardMaterial
           color={color}
           emissive={color}
           emissiveIntensity={hovered ? 0.8 : 0.3}
@@ -96,7 +96,12 @@ function PlanetGlyph({ position, planet, sign, house, onHover }: PlanetProps) {
 // House division lines
 function HouseLines({ lagna }: { lagna: number }) {
   const lines = useMemo(() => {
-    const houseLines: JSX.Element[] = [];
+      const houseLines: JSX.Element[] = [];
+      const lineMaterial = new THREE.LineBasicMaterial({
+        color: '#F2C94C',
+        opacity: 0.2,
+        transparent: true,
+      });
     for (let i = 0; i < 12; i++) {
       const angle = ((i * 30 - lagna) * Math.PI) / 180;
       const x1 = Math.cos(angle) * 2;
@@ -105,15 +110,16 @@ function HouseLines({ lagna }: { lagna: number }) {
       const y2 = Math.sin(angle) * 3.5;
 
       houseLines.push(
-        <line
+        <primitive
           key={i}
-          geometry={new THREE.BufferGeometry().setFromPoints([
+          object={new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(x1, y1, 0),
             new THREE.Vector3(x2, y2, 0),
-          ])}
-        >
-          <lineBasicMaterial color="#F2C94C" opacity={0.2} transparent />
-        </line>
+            ]),
+            lineMaterial
+          )}
+        />
       );
     }
     return houseLines;
@@ -145,7 +151,7 @@ function ZodiacSigns({ lagna }: { lagna: number }) {
             color="#17E8F6"
             anchorX="center"
             anchorY="middle"
-            opacity={0.6}
+            fillOpacity={0.6}
           >
             {sign.substring(0, 3)}
           </Text>
@@ -186,6 +192,18 @@ function KundaliWheelScene({
     });
   }, [grahas, lagna]);
 
+  const lagnaLine = useMemo(
+    () =>
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(Math.cos(0) * 3.5, Math.sin(0) * 3.5, 0),
+        ]),
+        new THREE.LineBasicMaterial({ color: '#F2C94C', linewidth: 2 })
+      ),
+    []
+  );
+
   return (
     <>
       <ambientLight intensity={0.5} />
@@ -224,14 +242,7 @@ function KundaliWheelScene({
         ))}
 
         {/* Lagna indicator (ascendant line) */}
-        <line
-          geometry={new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(Math.cos(0) * 3.5, Math.sin(0) * 3.5, 0),
-          ])}
-        >
-          <lineBasicMaterial color="#F2C94C" linewidth={2} />
-        </line>
+        <primitive object={lagnaLine} />
       </group>
 
       <OrbitControls
@@ -268,4 +279,3 @@ export function KundaliWheel3DCanvas({
     </Canvas>
   );
 }
-

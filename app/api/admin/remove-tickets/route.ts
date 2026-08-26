@@ -1,45 +1,45 @@
-/**
- * Admin: Remove Tickets
- * 
- * Pricing & Payments v3 - Phase I
- * 
- * Admin API to remove tickets from user accounts
- */
+export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
-import { consumeTickets } from '@/lib/payments/ticket-service'
-import { adminDb } from '@/lib/firebase/admin'
-
-export const dynamic = 'force-dynamic'
+import { adjustTicketsByAdmin, type TicketPayload } from '@/lib/payments/ticket-service'
 
 export async function POST(request: NextRequest) {
-  return withAdminAuth(async (req, admin) => {
-    if (!adminDb) {
-      return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
-    }
+  return withAdminAuth(
+    async (req, admin) => {
+      try {
+        const { uid, tickets, reason, correlationId } = await req.json()
+        if (!uid || !tickets || !reason || !correlationId) {
+          return NextResponse.json(
+            { error: 'uid, tickets, reason, and correlationId are required' },
+            { status: 400 }
+          )
+        }
 
-    try {
-      const { uid, tickets } = await req.json()
+        const deltas: TicketPayload = {}
+        for (const [key, raw] of Object.entries(tickets as Record<string, unknown>)) {
+          const value = Number(raw)
+          if (!Number.isSafeInteger(value) || value <= 0) {
+            return NextResponse.json({ error: `Invalid positive ticket amount for ${key}` }, { status: 400 })
+          }
+          ;(deltas as any)[key] = -value
+        }
 
-      if (!uid || !tickets) {
-        return NextResponse.json({ error: 'uid and tickets are required' }, { status: 400 })
+        const result = await adjustTicketsByAdmin({
+          uid,
+          actorAdminUid: admin.uid,
+          reason,
+          correlationId,
+          deltas,
+        })
+
+        return NextResponse.json({ success: true, ...result })
+      } catch (error: any) {
+        console.error('Remove tickets error:', error)
+        const status = /required|Invalid|negative|Correlation/.test(error.message || '') ? 400 : 500
+        return NextResponse.json({ error: error.message || 'Failed to remove tickets' }, { status })
       }
-
-      const consumed = await consumeTickets(uid, tickets)
-
-      if (!consumed) {
-        return NextResponse.json({ error: 'User does not have enough tickets' }, { status: 400 })
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Tickets removed successfully',
-      })
-    } catch (error: any) {
-      console.error('Remove tickets error:', error)
-      return NextResponse.json({ error: error.message || 'Failed to remove tickets' }, { status: 500 })
-    }
-  })(request)
+    },
+    'tickets.adjust'
+  )(request)
 }
-

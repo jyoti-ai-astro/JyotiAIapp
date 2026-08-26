@@ -7,6 +7,7 @@
 
 import { adminDb } from '@/lib/firebase/admin'
 import { logError, logWarning, logInfo } from '@/lib/utils/error-handler'
+import { Timestamp } from 'firebase-admin/firestore'
 
 export interface LogEntry {
   timestamp: Date
@@ -160,15 +161,16 @@ export class Logger {
       return
     }
 
+    const db = adminDb
     const logsToFlush = [...this.logBuffer]
     this.logBuffer = []
 
     try {
-      const batch = adminDb.batch()
+      const batch = db.batch()
       const timestamp = new Date()
 
       logsToFlush.forEach((entry) => {
-        const logRef = adminDb
+        const logRef = db
           .collection('logs')
           .doc(entry.level)
           .collection('items')
@@ -176,7 +178,7 @@ export class Logger {
 
         batch.set(logRef, {
           ...entry,
-          timestamp: adminDb.Timestamp.fromDate(entry.timestamp),
+          timestamp: Timestamp.fromDate(entry.timestamp),
         })
       })
 
@@ -242,4 +244,3 @@ export async function logAPIError(
     metadata,
   })
 }
-

@@ -12,14 +12,13 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
-const { Vector2 } = THREE;
+import { Vector2 } from 'three';
 
+import { CosmicStarlightPass, type CosmicStarlightPassConfig } from './cosmic-starlight-pass';
 
-
-import { CosmicStarlightPass } from './cosmic-starlight-pass';
-
-const Effect = wrapEffect(CosmicStarlightPass);
+const Effect = wrapEffect(CosmicStarlightPass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicStarlightPassConfig> & React.RefAttributes<CosmicStarlightPass>
+>;
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
 export interface CosmicStarlightEffectProps {
@@ -64,6 +63,7 @@ export const CosmicStarlightEffect: React.FC<CosmicStarlightEffectProps> = ({
 }) => {
   const { size, camera } = useThree();
   const timeRef = useRef<number>(0);
+  const passRef = useRef<CosmicStarlightPass | null>(null);
   
   // Mobile fallback: reduce star count by 50%, disable parallax
   const adjustedLayerDensity = isMobile ? layerDensity * 0.5 : layerDensity;
@@ -79,29 +79,11 @@ export const CosmicStarlightEffect: React.FC<CosmicStarlightEffectProps> = ({
     return defaultMouse;
   }, [mousePosition, defaultMouse]);
   
-  // Create pass
-  const pass = useMemo(() => {
-    return new CosmicStarlightPass({
-      starIntensity,
-      twinkleStrength,
-      layerDensity: adjustedLayerDensity,
-      bass: audioReactive?.bass ?? 0,
-      mid: audioReactive?.mid ?? 0,
-      high: audioReactive?.high ?? 0,
-      blessingWaveProgress,
-      mouse,
-      cameraFOV,
-      time: 0,
-      disableParallax,
-      starCount,
-    });
-  }, [starIntensity, twinkleStrength, adjustedLayerDensity, blessingWaveProgress, mouse, cameraFOV, disableParallax, starCount]);
-
   // Register with motion orchestrator
   useEffect(() => {
     motionOrchestrator.registerEngine('cosmic-starlight', (motionState) => {
       // Update audio reactive values
-      pass.setAudioReactive(
+      passRef.current?.setAudioReactive(
         motionState.bassMotion,
         motionState.midMotion,
         motionState.highMotion
@@ -111,10 +93,13 @@ export const CosmicStarlightEffect: React.FC<CosmicStarlightEffectProps> = ({
     return () => {
       motionOrchestrator.unregisterEngine('cosmic-starlight');
     };
-  }, [pass]);
+  }, []);
 
   // Update pass each frame
   useFrame((state, delta) => {
+    const pass = passRef.current;
+    if (!pass) return;
+
     timeRef.current += delta;
 
     // Update time
@@ -131,10 +116,6 @@ export const CosmicStarlightEffect: React.FC<CosmicStarlightEffectProps> = ({
     }
 
     // Update twinkle strength (motion-reactive: high → sparkle density, mid → twinkle amplitude)
-    const bass = audioReactive?.bass ?? 0;
-    const mid = audioReactive?.mid ?? 0;
-    const high = audioReactive?.high ?? 0;
-    
     // Motion-reactive twinkle: mid → twinkle amplitude (handled in shader)
     // Motion-reactive sparkle density: high → sparkle density (handled in shader)
 
@@ -142,8 +123,8 @@ export const CosmicStarlightEffect: React.FC<CosmicStarlightEffectProps> = ({
     pass.setBlessingWaveProgress(blessingWaveProgress);
 
     // Update camera FOV
-    if (camera && 'fov' in camera) {
-      pass.setCameraFOV((camera as any).fov);
+    if ('fov' in camera && typeof camera.fov === 'number') {
+      pass.setCameraFOV(camera.fov);
     } else {
       pass.setCameraFOV(cameraFOV);
     }
@@ -155,6 +136,23 @@ export const CosmicStarlightEffect: React.FC<CosmicStarlightEffectProps> = ({
     }
   });
 
-  return <Effect effect={pass} />;
+  return (
+    <Effect
+      ref={(instance: CosmicStarlightPass | null) => {
+        passRef.current = instance;
+      }}
+      starIntensity={starIntensity}
+      twinkleStrength={twinkleStrength}
+      layerDensity={adjustedLayerDensity}
+      bass={audioReactive?.bass ?? 0}
+      mid={audioReactive?.mid ?? 0}
+      high={audioReactive?.high ?? 0}
+      blessingWaveProgress={blessingWaveProgress}
+      mouse={mouse}
+      cameraFOV={cameraFOV}
+      time={0}
+      disableParallax={disableParallax}
+      starCount={starCount}
+    />
+  );
 };
-

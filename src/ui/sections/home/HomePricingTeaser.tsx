@@ -24,7 +24,7 @@ export default function HomePricingTeaser() {
     >
       <motion.div variants={fadeUp} className="text-center space-y-3">
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-white">
-          Simple plans when you're{' '}
+          Simple plans when you&apos;re{' '}
           <span className="bg-gradient-to-r from-[#FFD57A] to-[#FFB347] bg-clip-text text-transparent">
             ready
           </span>

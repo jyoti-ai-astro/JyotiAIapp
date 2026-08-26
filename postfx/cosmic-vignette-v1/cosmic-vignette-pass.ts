@@ -68,7 +68,7 @@ export class CosmicVignettePass extends Effect {
 
     super('CosmicVignettePass', cosmicVignetteShader.fragmentShader, {
       blendFunction: BlendFunction.NORMAL,
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uIntensity', intensityUniform],
         ['uVignetteStrength', vignetteStrengthUniform],
@@ -179,4 +179,3 @@ export class CosmicVignettePass extends Effect {
     }
   }
 }
-

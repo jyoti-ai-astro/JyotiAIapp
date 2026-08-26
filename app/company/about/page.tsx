@@ -174,7 +174,7 @@ export default function AboutPage() {
               author: {
                 name: 'Priya Sharma',
                 role: 'From Mumbai',
-                avatar: undefined,
+                avatarUrl: undefined,
               },
               text: 'More accurate than any astrologer I&apos;ve consulted. The AI Guru understands context and remembers my chart.',
             },
@@ -182,7 +182,7 @@ export default function AboutPage() {
               author: {
                 name: 'Rajesh Kumar',
                 role: 'From Delhi',
-                avatar: undefined,
+                avatarUrl: undefined,
               },
               text: 'Career Engine changed my life. I found my ideal path and the timing was perfect.',
             },
@@ -190,7 +190,7 @@ export default function AboutPage() {
               author: {
                 name: 'Ananya Patel',
                 role: 'From Bangalore',
-                avatar: undefined,
+                avatarUrl: undefined,
               },
               text: 'Pregnancy prediction beautifully explained. The insights helped me prepare for this new phase.',
             },
@@ -200,4 +200,3 @@ export default function AboutPage() {
     </CompanyPageShell>
   );
 }
-

@@ -13,10 +13,12 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CosmicFilmGrainPass } from './cosmic-filmgrain-pass';
+import { CosmicFilmGrainPass, type CosmicFilmGrainPassConfig } from './cosmic-filmgrain-pass';
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
-const Effect = wrapEffect(CosmicFilmGrainPass);
+const Effect = wrapEffect(CosmicFilmGrainPass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicFilmGrainPassConfig> & React.RefAttributes<CosmicFilmGrainPass>
+>;
 
 export interface CosmicFilmGrainEffectProps {
   /** Grain intensity */
@@ -147,4 +149,3 @@ export const CosmicFilmGrainEffect: React.FC<CosmicFilmGrainEffectProps> = ({
     />
   );
 };
-

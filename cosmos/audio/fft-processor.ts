@@ -20,7 +20,7 @@ export interface FFTData {
 export class FFTProcessor {
   private analyser: AnalyserNode;
   private bufferLength: number;
-  private dataArray: Uint8Array;
+  private dataArray: Uint8Array<ArrayBuffer>;
   private fftSize: number = 2048;
   
   // Smoothing for each band
@@ -117,4 +117,3 @@ export class FFTProcessor {
     return this.analyser;
   }
 }
-

@@ -36,8 +36,16 @@ export interface StarParticlesProps {
   blessingWaveProgress?: number;
 }
 
+interface StarParticleData {
+  positions: Float32Array;
+  colors: Float32Array;
+  sizes: Float32Array;
+  twinkleSpeeds: Float32Array;
+  twinkleOffsets: Float32Array;
+}
+
 // Generate spiral galaxy star positions
-function generateStarPositions(count: number): Float32Array {
+function generateStarPositions(count: number): StarParticleData {
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
   const sizes = new Float32Array(count);

@@ -28,7 +28,7 @@ interface SignInPageProps {
 }
 
 const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-2xl border border-white/10 bg-white/5 dark:bg-zinc-900/40 backdrop-blur-sm transition-colors focus-within:border-violet-400/70 focus-within:bg-violet-500/10">
+  <div className="rounded-lg border border-[#D8B56A]/22 bg-[#FFF8E6]/8 backdrop-blur-sm transition-colors focus-within:border-[#F28C28]/80 focus-within:bg-[#FFF8E6]/12">
     {children}
   </div>
 );
@@ -41,7 +41,7 @@ const TestimonialCard = ({
   delay: string;
 }) => (
   <div
-    className={`flex items-start gap-3 rounded-3xl bg-black/40 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/10 p-5 w-64 ${delay}`}
+    className={`flex w-64 items-start gap-3 rounded-lg border border-[#D8B56A]/20 bg-[#07131F]/68 p-5 backdrop-blur-xl ${delay}`}
   >
     <img
       src={testimonial.avatarSrc}
@@ -50,8 +50,8 @@ const TestimonialCard = ({
     />
     <div className="text-sm leading-snug">
       <p className="flex items-center gap-1 font-medium">{testimonial.name}</p>
-      <p className="text-xs text-zinc-400">{testimonial.handle}</p>
-      <p className="mt-1 text-zinc-100/90">{testimonial.text}</p>
+      <p className="text-xs text-[#B9C2BF]">{testimonial.handle}</p>
+      <p className="mt-1 text-[#FFF7E8]/90">{testimonial.text}</p>
     </div>
   </div>
 );
@@ -94,12 +94,12 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   return (
     <div className="flex flex-col md:flex-row w-full">
       <section className="flex-1 flex items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-md glass-card border border-white/10 bg-black/40 p-8 rounded-3xl shadow-2xl">
+        <div className="w-full max-w-md rounded-lg border border-[#D8B56A]/24 bg-[#07131F]/76 p-8 shadow-[0_24px_70px_rgba(0,0,0,0.32)] backdrop-blur-xl">
           <div className="flex flex-col gap-6">
-            <h1 className="text-3xl md:text-4xl font-semibold leading-tight text-white">
+            <h1 className="font-heading text-3xl font-semibold leading-tight text-[#FFF7E8] md:text-4xl">
               {title}
             </h1>
-            <p className="text-sm text-zinc-300">{description}</p>
+            <p className="text-sm leading-6 text-[#B9C2BF]">{description}</p>
 
             <form
               className="space-y-5"
@@ -109,7 +109,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
               }}
             >
               <div>
-                <label className="text-xs font-medium text-zinc-300">
+                <label className="text-xs font-medium text-[#B9C2BF]">
                   Email Address
                 </label>
                 <GlassInputWrapper>
@@ -117,14 +117,14 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                     name="email"
                     type="email"
                     placeholder="you@example.com"
-                    className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-zinc-100 placeholder:text-zinc-500"
+                    className="w-full rounded-lg bg-transparent p-4 text-sm text-[#FFF7E8] placeholder:text-[#B9C2BF]/50 focus:outline-none"
                     required
                   />
                 </GlassInputWrapper>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-zinc-300">
+                <label className="text-xs font-medium text-[#B9C2BF]">
                   Password
                 </label>
                 <GlassInputWrapper>
@@ -133,7 +133,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                       name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      className="w-full bg-transparent text-sm p-4 pr-12 rounded-2xl focus:outline-none text-zinc-100 placeholder:text-zinc-500"
+                      className="w-full rounded-lg bg-transparent p-4 pr-12 text-sm text-[#FFF7E8] placeholder:text-[#B9C2BF]/50 focus:outline-none"
                       required
                     />
                     <button
@@ -142,28 +142,28 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                       className="absolute inset-y-0 right-3 flex items-center"
                     >
                       {showPassword ? (
-                        <EyeOff className="w-5 h-5 text-zinc-400 hover:text-zinc-100 transition-colors" />
+                        <EyeOff className="h-5 w-5 text-[#B9C2BF] transition-colors hover:text-[#FFF7E8]" />
                       ) : (
-                        <Eye className="w-5 h-5 text-zinc-400 hover:text-zinc-100 transition-colors" />
+                        <Eye className="h-5 w-5 text-[#B9C2BF] transition-colors hover:text-[#FFF7E8]" />
                       )}
                     </button>
                   </div>
                 </GlassInputWrapper>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-zinc-300">
+              <div className="flex items-center justify-between text-xs text-[#B9C2BF]">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     name="rememberMe"
-                    className="accent-violet-500"
+                    className="accent-[#F28C28]"
                   />
                   <span>Keep me signed in</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => onResetPassword?.()}
-                  className="text-violet-400 hover:text-violet-300 hover:underline"
+                  className="text-[#F1C979] hover:text-[#FFF7E8] hover:underline"
                 >
                   Reset password
                 </button>
@@ -172,15 +172,15 @@ export const SignInPage: React.FC<SignInPageProps> = ({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full gradient-button rounded-[11px] py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="min-h-11 w-full rounded-lg bg-[#F28C28] py-3 text-sm font-semibold text-[#07131F] transition-colors hover:bg-[#F28C28]/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>
             </form>
 
             <div className="relative flex items-center justify-center">
-              <span className="w-full border-t border-white/10" />
-              <span className="px-3 text-[10px] uppercase tracking-[0.2em] text-zinc-400 bg-black/60 rounded-full">
+              <span className="w-full border-t border-[#D8B56A]/18" />
+              <span className="rounded-full bg-[#07131F]/80 px-3 text-[10px] uppercase tracking-[0.2em] text-[#B9C2BF]">
                 Or continue with
               </span>
             </div>
@@ -191,7 +191,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   type="button"
                   onClick={onGoogleSignIn}
                   disabled={loading || magicLinkLoading}
-                  className="w-full flex items-center justify-center gap-3 border border-white/15 rounded-2xl py-3 hover:bg-white/5 transition-colors text-sm text-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-[#D8B56A]/22 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path
@@ -220,7 +220,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   type="button"
                   onClick={onFacebookSignIn}
                   disabled={loading || magicLinkLoading}
-                  className="w-full flex items-center justify-center gap-3 border border-white/15 rounded-2xl py-3 hover:bg-white/5 transition-colors text-sm text-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-[#D8B56A]/22 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -236,7 +236,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                       type="button"
                       onClick={() => setShowMagicLink(true)}
                       disabled={loading || magicLinkLoading}
-                      className="w-full flex items-center justify-center gap-3 border border-white/15 rounded-2xl py-3 hover:bg-white/5 transition-colors text-sm text-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-[#D8B56A]/22 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -251,7 +251,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                           placeholder="Enter your email"
                           value={magicLinkEmail}
                           onChange={(e) => setMagicLinkEmail(e.target.value)}
-                          className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-zinc-100 placeholder:text-zinc-500"
+                          className="w-full rounded-lg bg-transparent p-4 text-sm text-[#FFF7E8] placeholder:text-[#B9C2BF]/50 focus:outline-none"
                           disabled={magicLinkLoading}
                         />
                       </GlassInputWrapper>
@@ -270,7 +270,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                             }
                           }}
                           disabled={magicLinkLoading || !magicLinkEmail || !magicLinkEmail.includes('@')}
-                          className="flex-1 gradient-button rounded-[11px] py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="min-h-11 flex-1 rounded-lg bg-[#F28C28] py-3 text-sm font-semibold text-[#07131F] transition-colors hover:bg-[#F28C28]/90 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {magicLinkLoading ? 'Sending...' : 'Send Magic Link'}
                         </button>
@@ -281,7 +281,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                             setMagicLinkEmail('');
                           }}
                           disabled={magicLinkLoading}
-                          className="px-4 border border-white/15 rounded-2xl py-3 hover:bg-white/5 transition-colors text-sm text-zinc-100 disabled:opacity-50"
+                          className="min-h-11 rounded-lg border border-[#D8B56A]/22 px-4 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:opacity-50"
                         >
                           Cancel
                         </button>
@@ -292,12 +292,12 @@ export const SignInPage: React.FC<SignInPageProps> = ({
               )}
             </div>
 
-            <p className="text-center text-xs text-zinc-400">
+            <p className="text-center text-xs text-[#B9C2BF]">
               New to JyotiAI?{" "}
               <button
                 type="button"
                 onClick={() => onCreateAccount?.()}
-                className="text-violet-400 hover:text-violet-300 hover:underline"
+                className="text-[#F1C979] hover:text-[#FFF7E8] hover:underline"
               >
                 Create an account
               </button>
@@ -341,4 +341,3 @@ export const SignInPage: React.FC<SignInPageProps> = ({
     </div>
   );
 };
-

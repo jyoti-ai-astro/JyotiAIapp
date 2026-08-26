@@ -202,6 +202,10 @@ export function CosmicFeatures({
       container: 'py-20',
       grid: 'grid-cols-1 md:grid-cols-2 gap-6',
     },
+    guru: {
+      container: 'py-24',
+      grid: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8',
+    },
   };
   
   const styles = variantStyles[variant];
@@ -260,5 +264,4 @@ export function CosmicFeatures({
     </section>
   );
 }
-
 

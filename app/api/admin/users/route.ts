@@ -1,189 +1,114 @@
 /**
  * Admin Users API
- * 
- * Mega Build 4 - Admin Command Center
- * Full user management with pagination and actions
+ * Read-only user listing. Economic-state and staff mutations live behind
+ * dedicated permissioned endpoints.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
-import { isAdmin } from '@/lib/admin/admin-auth'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * GET - Paginated list of users
- */
-export async function GET(request: NextRequest) {
-  return withAdminAuth(async (req, admin) => {
-    if (!adminDb) {
-      return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
-    }
-
-    try {
-      const { searchParams } = new URL(req.url)
-      const page = parseInt(searchParams.get('page') || '1')
-      const limit = parseInt(searchParams.get('limit') || '50')
-      const search = searchParams.get('search') || ''
-      const offset = (page - 1) * limit
-
-      let query = adminDb.collection('users').orderBy('createdAt', 'desc')
-
-      // Apply search filter if provided
-      if (search) {
-        // Firestore doesn't support full-text search, so we'll filter client-side
-        // In production, use Algolia or similar
-        query = query.limit(limit * 3) // Get more to filter
-      } else {
-        query = query.limit(limit).offset(offset)
-      }
-
-      const snapshot = await query.get()
-      const users: any[] = []
-
-      snapshot.forEach((doc) => {
-        const data = doc.data()
-        const user = {
-          uid: doc.id,
-          email: data.email || '',
-          displayName: data.name || data.displayName || 'No name',
-          isAdmin: false, // Will check separately
-          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || null,
-          lastLoginAt: data.lastLoginAt?.toDate?.()?.toISOString() || data.lastLoginAt || null,
-          subscriptionStatus: data.subscriptionStatus || 'free',
-          legacyTickets: data.legacyTickets || {},
-        }
-
-        // Apply search filter
-        if (!search || 
-            user.email.toLowerCase().includes(search.toLowerCase()) ||
-            user.displayName.toLowerCase().includes(search.toLowerCase())) {
-          users.push(user)
-        }
-      })
-
-      // Limit to requested page size
-      const paginatedUsers = users.slice(0, limit)
-
-      // Check admin status for each user
-      for (const user of paginatedUsers) {
-        user.isAdmin = await isAdmin(user.uid)
-      }
-
-      // Get subscription status
-      for (const user of paginatedUsers) {
-        const subRef = adminDb.collection('subscriptions').doc(user.uid)
-        const subSnap = await subRef.get()
-        if (subSnap.exists) {
-          const subData = subSnap.data()
-          user.subscriptionStatus = subData?.status === 'active' ? 'active' : 'inactive'
-        }
-      }
-
-      return NextResponse.json({
-        success: true,
-        users: paginatedUsers,
-        pagination: {
-          page,
-          limit,
-          total: users.length, // Approximate
-          hasMore: users.length >= limit,
-        },
-      })
-    } catch (error: any) {
-      console.error('Admin users list error:', error)
-      return NextResponse.json(
-        { error: error.message || 'Failed to fetch users' },
-        { status: 500 }
-      )
-    }
-  })(request)
+function iso(value: any) {
+  return value?.toDate?.()?.toISOString?.() || (value instanceof Date ? value.toISOString() : value || null)
 }
 
-/**
- * POST - Update user actions
- */
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   return withAdminAuth(
-    async (req, admin) => {
-      if (!adminDb) {
-        return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
-      }
+    async (req) => {
+      if (!adminDb) return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
 
       try {
-        const body = await req.json()
-        const { action, uid, ...params } = body
+        const { searchParams } = new URL(req.url)
+        const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+        const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)))
+        const search = (searchParams.get('search') || '').trim().toLowerCase()
+        const subscription = (searchParams.get('subscription') || 'all').trim().toLowerCase()
+        const staff = (searchParams.get('staff') || 'all').trim().toLowerCase()
+        const joined = (searchParams.get('joined') || 'all').trim().toLowerCase()
+        const offset = (page - 1) * limit
 
-        if (!action || !uid) {
-          return NextResponse.json({ error: 'Action and uid are required' }, { status: 400 })
-        }
+        let query: any = adminDb.collection('users').orderBy('createdAt', 'desc')
+        const joinedDays = joined === '7d' ? 7 : joined === '30d' ? 30 : joined === '90d' ? 90 : 0
+        if (joinedDays) query = query.where('createdAt', '>=', new Date(Date.now() - joinedDays * 24 * 60 * 60 * 1000))
 
-        const userRef = adminDb.collection('users').doc(uid)
-        const userSnap = await userRef.get()
+        const needsPostFilter = Boolean(search || subscription !== 'all' || staff !== 'all')
+        query = needsPostFilter ? query.limit(Math.min(500, limit * 6)) : query.limit(limit).offset(offset)
 
-        if (!userSnap.exists) {
-          return NextResponse.json({ error: 'User not found' }, { status: 404 })
-        }
+        const [snapshot, adminsSnapshot] = await Promise.all([
+          query.get(),
+          adminDb.collection('admins').select().get(),
+        ])
+        const adminIds = new Set(adminsSnapshot.docs.map((doc: any) => doc.id))
 
-        switch (action) {
-          case 'setAdmin': {
-            const { isAdmin: shouldBeAdmin } = params
-            if (typeof shouldBeAdmin !== 'boolean') {
-              return NextResponse.json({ error: 'isAdmin must be boolean' }, { status: 400 })
-            }
-
-            if (shouldBeAdmin) {
-              // Add to admins collection
-              await adminDb.collection('admins').doc(uid).set({
-                email: userSnap.data()?.email || '',
-                role: 'Support', // Default role
-                name: userSnap.data()?.name || '',
-                createdAt: new Date(),
-              })
-            } else {
-              // Remove from admins collection
-              await adminDb.collection('admins').doc(uid).delete()
-            }
-
-            return NextResponse.json({ success: true, message: `User ${shouldBeAdmin ? 'promoted to' : 'removed from'} admin` })
+        const baseUsers = snapshot.docs.map((doc: any) => {
+          const data = doc.data()
+          return {
+            uid: doc.id,
+            email: data.email || '',
+            displayName: data.name || data.displayName || 'No name',
+            isAdmin: adminIds.has(doc.id),
+            createdAt: iso(data.createdAt),
+            lastLoginAt: iso(data.lastLoginAt),
+            subscriptionStatus: data.subscriptionStatus || 'free',
+            onboardingComplete: Boolean(data.onboardingComplete),
           }
+        })
 
-          case 'resetTickets': {
-            await userRef.update({
-              legacyTickets: {
-                ai_questions: 0,
-                kundali_basic: 0,
-              },
-            })
-            return NextResponse.json({ success: true, message: 'Tickets reset' })
-          }
+        const subscriptionDocs = await Promise.all(baseUsers.map((user: any) => adminDb.collection('subscriptions').doc(user.uid).get()))
+        const users = baseUsers.map((user: any, index: number) => {
+          const sub = subscriptionDocs[index]
+          if (!sub?.exists) return user
+          const status = String(sub.data()?.status || 'inactive').toLowerCase()
+          return { ...user, subscriptionStatus: status === 'active' ? 'active' : status }
+        }).filter((user: any) => {
+          if (search && !user.email.toLowerCase().includes(search) && !user.displayName.toLowerCase().includes(search) && !user.uid.toLowerCase().includes(search)) return false
+          if (subscription === 'paid' && user.subscriptionStatus !== 'active') return false
+          if (subscription === 'free' && user.subscriptionStatus === 'active') return false
+          if (subscription === 'active' && user.subscriptionStatus !== 'active') return false
+          if (subscription === 'inactive' && !['inactive', 'cancelled', 'expired'].includes(user.subscriptionStatus)) return false
+          if (staff === 'yes' && !user.isAdmin) return false
+          if (staff === 'no' && user.isAdmin) return false
+          return true
+        })
 
-          case 'updateTickets': {
-            const { ai_questions, kundali_basic } = params
-            const currentTickets = userSnap.data()?.legacyTickets || {}
+        const paginatedUsers = needsPostFilter ? users.slice(offset, offset + limit) : users
+        const totalUsersSnapshot = await adminDb.collection('users').count().get()
+        const totalUsers = Number(totalUsersSnapshot.data().count || 0)
 
-            await userRef.update({
-              legacyTickets: {
-                ai_questions: typeof ai_questions === 'number' ? ai_questions : currentTickets.ai_questions || 0,
-                kundali_basic: typeof kundali_basic === 'number' ? kundali_basic : currentTickets.kundali_basic || 0,
-              },
-            })
-            return NextResponse.json({ success: true, message: 'Tickets updated' })
-          }
-
-          default:
-            return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-        }
-      } catch (error: any) {
-        console.error('Admin user action error:', error)
-        return NextResponse.json(
-          { error: error.message || 'Failed to perform action' },
-          { status: 500 }
-        )
+        return NextResponse.json({
+          success: true,
+          users: paginatedUsers,
+          summary: {
+            totalUsers,
+            visibleUsers: users.length,
+            activeOnPage: paginatedUsers.filter((user: any) => user.subscriptionStatus === 'active').length,
+            staffOnPage: paginatedUsers.filter((user: any) => user.isAdmin).length,
+          },
+          filters: { search, subscription, staff, joined },
+          pagination: {
+            page,
+            limit,
+            total: needsPostFilter ? users.length : totalUsers,
+            hasMore: needsPostFilter ? offset + limit < users.length : offset + limit < totalUsers,
+          },
+        })
+      } catch (error) {
+        console.error('Admin users list error:', error)
+        return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
       }
     },
-    'users.write'
+    'users.read'
   )(request)
 }
 
+export async function POST(request: NextRequest) {
+  return withAdminAuth(
+    async () => NextResponse.json(
+      { error: 'This mutation endpoint is retired. Use dedicated staff or ticket endpoints.', code: 'ADMIN_USERS_MUTATION_RETIRED' },
+      { status: 410 }
+    ),
+    'users.write'
+  )(request)
+}

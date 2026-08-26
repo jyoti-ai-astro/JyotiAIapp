@@ -22,6 +22,8 @@
 | `EMBEDDING_PROVIDER` | Private | ✅ Yes | Embedding provider: `openai` or `gemini` | `openai` |
 | `OPENAI_API_KEY` | Private | Conditional | OpenAI API key (if `AI_PROVIDER=openai`) | `sk-...` |
 | `GEMINI_API_KEY` | Private | Conditional | Gemini API key (if `AI_PROVIDER=gemini`) | `...` |
+| `GURU_MODEL_NAME` | Private | ⚠️ Optional | OpenAI model for Guru chat when `AI_PROVIDER=openai` | `gpt-4.1` |
+| `PREDICTION_MODEL_NAME` | Private | ⚠️ Optional | OpenAI model for prediction/timeline/report generation when `AI_PROVIDER=openai` | `gpt-4.1` |
 | **Razorpay** |
 | `RAZORPAY_KEY_ID` | Private | ⚠️ Optional | Razorpay key ID | `rzp_test_...` |
 | `RAZORPAY_KEY_SECRET` | Private | ⚠️ Optional | Razorpay key secret | `...` |
@@ -31,9 +33,10 @@
 | `PINECONE_ENVIRONMENT` | Private | ⚠️ Optional | Pinecone environment | `us-east-1` |
 | `PINECONE_INDEX_NAME` | Private | ⚠️ Optional | Pinecone index name | `jyotiai-index` |
 | **ZeptoMail** |
-| `ZEPTO_API_KEY` | Private | ⚠️ Optional | ZeptoMail API key | `...` |
+| `ZEPTO_API_URL` | Private | ⚠️ Optional | ZeptoMail API endpoint | `https://api.zeptomail.in/v1.1/email` |
+| `ZEPTO_API_TOKEN` | Private | ⚠️ Optional | Full ZeptoMail authorization token | `Zoho-enczapikey ...` |
 | `ZEPTO_DOMAIN` | Private | ⚠️ Optional | ZeptoMail domain | `jyoti.app` |
-| `ZEPTO_FROM` | Private | ⚠️ Optional | ZeptoMail from address | `order@jyoti.app` |
+| `SENDER_EMAIL` | Private | ⚠️ Optional | ZeptoMail from address | `order@jyoti.app` |
 | **Geocoding** |
 | `GOOGLE_GEOCODING_API_KEY` | Private | ⚠️ Optional | Google Geocoding API key | `...` |
 | `TIMEZONEDB_API_KEY` | Private | ⚠️ Optional | TimezoneDB API key | `...` |
@@ -183,4 +186,3 @@ const aiProvider = envVars.ai.provider
 4. ✅ Use different keys for development and production
 5. ✅ Limit access to environment variables in Vercel
 6. ✅ Monitor for exposed keys in error logs
-

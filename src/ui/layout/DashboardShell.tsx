@@ -31,12 +31,12 @@ export default function DashboardShell({
         >
           <div className="space-y-2">
             {title && (
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-white">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-heading font-semibold text-primary">
                 {title}
               </h1>
             )}
             {subtitle && (
-              <p className="text-lg md:text-xl text-white/70 max-w-2xl">
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
                 {subtitle}
               </p>
             )}
@@ -56,4 +56,3 @@ export default function DashboardShell({
     </motion.div>
   );
 }
-

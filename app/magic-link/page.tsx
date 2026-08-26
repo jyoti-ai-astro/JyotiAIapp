@@ -40,32 +40,32 @@ export default function MagicLinkPage() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm p-8 shadow-[0_8px_32px_rgba(255,213,122,0.15)] text-center">
+          <div className="rounded-lg border border-[#D8B56A]/24 bg-[#07131F]/86 p-8 text-center shadow-[0_24px_70px_rgba(7,19,31,0.28)] backdrop-blur-sm">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: 'spring' }}
               className="mb-6"
             >
-              <div className="mx-auto w-20 h-20 rounded-full bg-aura-green/20 flex items-center justify-center">
-                <CheckCircle className="h-12 w-12 text-aura-green" />
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#3D9B72]/16">
+                <CheckCircle className="h-12 w-12 text-[#3D9B72]" />
               </div>
             </motion.div>
 
-            <h1 className="text-3xl font-display font-bold text-white mb-4">
+            <h1 className="mb-4 font-heading text-3xl font-semibold text-[#FFF7E8]">
               Check Your Email
             </h1>
 
             <div className="space-y-4 mb-6">
-              <div className="flex items-center justify-center gap-2 text-white/80">
+              <div className="flex items-center justify-center gap-2 text-[#B9C2BF]">
                 <Mail className="h-5 w-5" />
                 <p>
                   We&apos;ve sent a magic link to{' '}
-                  <span className="text-gold font-semibold">{email || 'your email'}</span>
+                  <span className="font-semibold text-[#F1C979]">{email || 'your email'}</span>
                 </p>
               </div>
 
-              <p className="text-white/60 text-sm">
+              <p className="text-sm text-[#B9C2BF]">
                 Click the link in the email to sign in. The link will expire in 1 hour.
               </p>
             </div>
@@ -73,11 +73,11 @@ export default function MagicLinkPage() {
             <div className="space-y-3">
               <Button
                 onClick={() => router.push('/login')}
-                className="w-full bg-cosmic-purple/50 text-white hover:bg-cosmic-purple/70"
+                className="w-full bg-[#F28C28] text-[#07131F] hover:bg-[#F28C28]/90"
               >
                 Back to Login
               </Button>
-              <Link href="/" className="block text-center text-gold hover:underline text-sm">
+              <Link href="/" className="block text-center text-sm text-[#F1C979] hover:underline">
                 Go to Homepage
               </Link>
             </div>
@@ -87,4 +87,3 @@ export default function MagicLinkPage() {
     </MarketingPageShell>
   );
 }
-

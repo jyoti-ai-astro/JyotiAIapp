@@ -12,6 +12,10 @@ import { envVars } from '@/lib/env/env.mjs'
 
 export async function GET(request: NextRequest) {
   try {
+    if (process.env.NODE_ENV === 'production' || envVars.app.env === 'production') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     return NextResponse.json({
       hasKeyId: !!envVars.razorpay.keyId,
       hasSecret: !!envVars.razorpay.keySecret,
@@ -29,4 +33,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

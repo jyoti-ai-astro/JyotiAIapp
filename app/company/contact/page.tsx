@@ -44,7 +44,7 @@ export default function ContactPage() {
     <CompanyPageShell
       eyebrow="Contact"
       title="Reach the JyotiAI team"
-      description="We'd love to hear from you. Fill out the form below and we'll get back to you as soon as possible."
+      description="We&apos;d love to hear from you. Fill out the form below and we&apos;ll get back to you as soon as possible."
     >
       <div className="grid md:grid-cols-2 gap-12">
         {/* Left: Contact Info */}
@@ -52,7 +52,7 @@ export default function ContactPage() {
           <div>
             <h2 className="text-2xl font-heading font-bold text-white mb-4">Get in Touch</h2>
             <p className="text-white/70 leading-relaxed">
-              Have questions about JyotiAI? Want to share feedback? Or need support? We're here to help.
+              Have questions about JyotiAI? Want to share feedback? Or need support? We&apos;re here to help.
             </p>
           </div>
           <div className="space-y-4">

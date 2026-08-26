@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         }
 
         const snapshot = await query.get()
-        const templates = snapshot.docs.map((doc) => ({
+        const templates = snapshot.docs.map((doc: { id: string; data: () => Record<string, any> }) => ({
           id: doc.id,
           ...doc.data(),
         }))

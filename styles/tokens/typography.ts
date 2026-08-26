@@ -7,8 +7,8 @@
 
 export const fonts = {
   primary: "'Inter', sans-serif",
-  secondary: "'Poppins', sans-serif",
-  cosmic: "'Cinzel', serif",
+  secondary: "'Inter', sans-serif",
+  cosmic: "'Marcellus', serif",
   guru: "'Marcellus', serif",
 } as const;
 

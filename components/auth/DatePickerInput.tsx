@@ -1,13 +1,15 @@
+// components/auth/DatePickerInput.tsx
+
 /**
  * Date Picker Input Component
- * 
+ *
  * Better date picker with separate year/month/day inputs
  * to avoid the year input issue with native date input
  */
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import { Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,13 +27,22 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
   onChange,
   required = false,
   className = '',
-  label,
+  label = 'Date of Birth',
 }) => {
+  const reactId = useId();
+  const dayId = `${reactId}-day`;
+  const monthId = `${reactId}-month`;
+  const yearId = `${reactId}-year`;
+
   const [day, setDay] = useState('');
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
   const isEditingRef = useRef(false);
   const lastValueRef = useRef<string>('');
+
+  const dayRef = useRef<HTMLInputElement | null>(null);
+  const monthRef = useRef<HTMLInputElement | null>(null);
+  const yearRef = useRef<HTMLInputElement | null>(null);
 
   // Parse initial value - only when value prop changes externally (not from our own onChange)
   useEffect(() => {
@@ -46,7 +57,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
         const newDay = String(date.getDate()).padStart(2, '0');
         const newMonth = String(date.getMonth() + 1).padStart(2, '0');
         const newYear = String(date.getFullYear());
-        
+
         // Only update if different from current values
         if (newDay !== day || newMonth !== month || newYear !== year) {
           setDay(newDay);
@@ -78,19 +89,22 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
 
     // Validate date
     if (
-      dayNum >= 1 && dayNum <= 31 &&
-      monthNum >= 1 && monthNum <= 12 &&
-      yearNum >= 1900 && yearNum <= new Date().getFullYear()
+      dayNum >= 1 &&
+      dayNum <= 31 &&
+      monthNum >= 1 &&
+      monthNum <= 12 &&
+      yearNum >= 1900 &&
+      yearNum <= new Date().getFullYear()
     ) {
       const date = new Date(yearNum, monthNum - 1, dayNum);
       // Check if date is valid (handles leap years, month boundaries, etc.)
       if (
-        date.getDate() === dayNum && 
+        date.getDate() === dayNum &&
         date.getMonth() === monthNum - 1 &&
         date.getFullYear() === yearNum
       ) {
         const isoString = date.toISOString().split('T')[0];
-        
+
         // Only call onChange if the value actually changed
         if (isoString !== lastValueRef.current) {
           isEditingRef.current = true;
@@ -109,6 +123,10 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     const val = e.target.value.replace(/\D/g, '').slice(0, 2);
     isEditingRef.current = true;
     setDay(val);
+    // Auto-advance to month when 2 digits entered
+    if (val.length === 2) {
+      monthRef.current?.focus();
+    }
     // Reset editing flag after a delay
     setTimeout(() => {
       isEditingRef.current = false;
@@ -116,29 +134,28 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
   };
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, '').slice(0, 2);
-    if (val === '' || (parseInt(val, 10) >= 1 && parseInt(val, 10) <= 12)) {
-      isEditingRef.current = true;
-      setMonth(val);
-      // Reset editing flag after a delay
-      setTimeout(() => {
-        isEditingRef.current = false;
-      }, 200);
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 2);
+    const n = parseInt(raw || '0', 10);
+    const val =
+      raw === '' || (n >= 1 && n <= 12) ? raw : month; // keep previous if invalid
+
+    isEditingRef.current = true;
+    setMonth(val);
+    // Auto-advance to year when 2 digits entered
+    if (val.length === 2) {
+      yearRef.current?.focus();
     }
+    // Reset editing flag after a delay
+    setTimeout(() => {
+      isEditingRef.current = false;
+    }, 200);
   };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 4);
     isEditingRef.current = true;
     // Allow partial input - only validate when all 4 digits are entered
-    if (val === '' || val.length < 4) {
-      setYear(val);
-    } else {
-      const yearNum = parseInt(val, 10);
-      if (yearNum >= 1900 && yearNum <= new Date().getFullYear()) {
-        setYear(val);
-      }
-    }
+    setYear(val);
     // Reset editing flag after a delay
     setTimeout(() => {
       isEditingRef.current = false;
@@ -148,44 +165,63 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
   return (
     <div className={className}>
       {label && (
-        <Label className="text-white/80 mb-2 flex items-center gap-2">
+        <Label
+          className="text-white/80 mb-2 flex items-center gap-2"
+          htmlFor={dayId}
+        >
           <Calendar className="h-4 w-4" />
           {label}
+          {required && <span className="text-red-400">*</span>}
         </Label>
       )}
       <div className="flex gap-2">
         <div className="flex-1">
           <Input
+            id={dayId}
+            name="dob-day"
             type="text"
+            inputMode="numeric"
             value={day}
             onChange={handleDayChange}
             placeholder="DD"
             maxLength={2}
             required={required}
+            ref={dayRef}
+            autoComplete="bday-day"
             className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:ring-2 focus:ring-gold text-center"
           />
           <span className="text-xs text-white/60 mt-1 block text-center">Day</span>
         </div>
         <div className="flex-1">
           <Input
+            id={monthId}
+            name="dob-month"
             type="text"
+            inputMode="numeric"
             value={month}
             onChange={handleMonthChange}
             placeholder="MM"
             maxLength={2}
             required={required}
+            ref={monthRef}
+            autoComplete="bday-month"
             className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:ring-2 focus:ring-gold text-center"
           />
           <span className="text-xs text-white/60 mt-1 block text-center">Month</span>
         </div>
         <div className="flex-1">
           <Input
+            id={yearId}
+            name="dob-year"
             type="text"
+            inputMode="numeric"
             value={year}
             onChange={handleYearChange}
             placeholder="YYYY"
             maxLength={4}
             required={required}
+            ref={yearRef}
+            autoComplete="bday-year"
             className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:ring-2 focus:ring-gold text-center"
           />
           <span className="text-xs text-white/60 mt-1 block text-center">Year</span>
@@ -194,4 +230,3 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     </div>
   );
 };
-
