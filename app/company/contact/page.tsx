@@ -58,7 +58,7 @@ export default function ContactPage() {
           <div className="space-y-4">
             <div>
               <h3 className="text-lg font-semibold text-[#FFD57A] mb-2">Email</h3>
-              <p className="text-white/70">support@jyoti.ai</p>
+              <p className="text-white/70">support@jyotiai.in</p>
             </div>
             <div>
               <h3 className="text-lg font-semibold text-[#FFD57A] mb-2">Support Hours</h3>
