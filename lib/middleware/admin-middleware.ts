@@ -1,16 +1,27 @@
 /**
  * Admin Middleware
- * Milestone 10 - Step 1
- * 
- * Protects admin routes and verifies admin sessions
+ * Central authentication, authorization, and mutation-origin enforcement.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession, hasPermission } from '@/lib/admin/admin-auth'
 
-/**
- * Admin middleware wrapper
- */
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
+
+function validateMutationOrigin(request: NextRequest): boolean {
+  if (SAFE_METHODS.has(request.method.toUpperCase())) return true
+
+  const origin = request.headers.get('origin')
+  if (!origin) return false
+
+  try {
+    const originUrl = new URL(origin)
+    return originUrl.host === request.nextUrl.host && originUrl.protocol === request.nextUrl.protocol
+  } catch {
+    return false
+  }
+}
+
 export function withAdminAuth(
   handler: (request: NextRequest, admin: any) => Promise<NextResponse>,
   requiredPermission?: string
@@ -18,18 +29,22 @@ export function withAdminAuth(
   return async (request: NextRequest): Promise<NextResponse> => {
     try {
       const sessionCookie = request.cookies.get('admin_session')?.value
-
       if (!sessionCookie) {
         return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
       }
 
       const admin = await verifyAdminSession(sessionCookie)
-
       if (!admin) {
         return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
       }
 
-      // Check permission if required
+      if (!validateMutationOrigin(request)) {
+        return NextResponse.json(
+          { error: 'Invalid request origin', code: 'ADMIN_ORIGIN_REJECTED' },
+          { status: 403 }
+        )
+      }
+
       if (requiredPermission) {
         const hasAccess = await hasPermission(admin.uid, requiredPermission)
         if (!hasAccess) {
@@ -38,16 +53,13 @@ export function withAdminAuth(
       }
 
       return handler(request, admin)
-    } catch (error: any) {
+    } catch (error) {
       console.error('Admin middleware error:', error)
       return NextResponse.json({ error: 'Authentication failed' }, { status: 401 })
     }
   }
 }
 
-/**
- * Check admin session (for use in API routes)
- */
 export async function checkAdminSession(request: NextRequest): Promise<{
   admin: any
   error?: NextResponse
@@ -62,7 +74,6 @@ export async function checkAdminSession(request: NextRequest): Promise<{
   }
 
   const admin = await verifyAdminSession(sessionCookie)
-
   if (!admin) {
     return {
       admin: null,
@@ -70,6 +81,15 @@ export async function checkAdminSession(request: NextRequest): Promise<{
     }
   }
 
+  if (!validateMutationOrigin(request)) {
+    return {
+      admin: null,
+      error: NextResponse.json(
+        { error: 'Invalid request origin', code: 'ADMIN_ORIGIN_REJECTED' },
+        { status: 403 }
+      ),
+    }
+  }
+
   return { admin }
 }
-
