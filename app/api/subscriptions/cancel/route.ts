@@ -121,7 +121,12 @@ export async function POST(request: NextRequest) {
         status: "cancelled",
         cancelledAt: new Date(),
         updatedAt: new Date(),
-        rawCancel: cancelResult, // store payload for debugging
+        razorpayCancelSnapshot: {
+          id: cancelResult.id,
+          status: cancelResult.status,
+          endedAt: cancelResult.ended_at ?? null,
+          currentEnd: cancelResult.current_end ?? null,
+        }
       },
       { merge: true }
     );

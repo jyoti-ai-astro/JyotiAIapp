@@ -179,7 +179,14 @@ export async function POST(request: NextRequest) {
           subscriptionProductId: plan.subscriptionProductId,
           razorpaySubscriptionId: subscription.id,
           status: subscription.status, // created, authenticated, active, etc.
-          raw: subscription, // Store full payload for debugging mismatches
+          razorpaySnapshot: {
+            id: subscription.id,
+            status: subscription.status,
+            planId: subscription.plan_id,
+            currentStart: subscription.current_start ?? null,
+            currentEnd: subscription.current_end ?? null,
+            chargeAt: subscription.charge_at ?? null,
+          },
           createdAt: new Date(),
           updatedAt: new Date(),
         });

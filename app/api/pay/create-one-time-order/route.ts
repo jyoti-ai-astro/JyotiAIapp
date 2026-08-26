@@ -50,15 +50,6 @@ export async function POST(req: NextRequest) {
     const razorpayKeyId = envVars?.razorpay?.keyId;
     const razorpayKeySecret = envVars?.razorpay?.keySecret;
 
-    // Debug what env we are actually using
-    console.log('[payments] Razorpay env debug', {
-      keyIdPrefix: razorpayKeyId?.slice(0, 8),
-      keyIdLength: razorpayKeyId?.length,
-      hasSecret: !!razorpayKeySecret,
-      appEnv: envVars?.app?.env,
-      nodeEnv: envVars?.nodeEnv,
-    });
-
     if (!razorpayKeyId || !razorpayKeySecret) {
       return NextResponse.json(
         {

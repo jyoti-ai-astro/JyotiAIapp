@@ -53,64 +53,6 @@ export default function PaymentsPage() {
     }
   }
 
-  const handleVerifySignature = async (paymentId: string, orderId: string, signature: string) => {
-    try {
-      const response = await fetch('/api/admin/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentId, orderId, signature }),
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        alert(data.isValid ? 'Signature is valid' : 'Signature is invalid')
-      }
-    } catch (error) {
-      console.error('Verify failed:', error)
-    }
-  }
-
-  const handleFixPayment = async (paymentId: string, userId: string, action: string) => {
-    if (!confirm(`Are you sure you want to ${action} this payment?`)) return
-
-    try {
-      const response = await fetch(`/api/admin/payments/${paymentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, userId }),
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        alert('Payment updated successfully')
-        fetchPayments()
-      }
-    } catch (error) {
-      console.error('Fix payment failed:', error)
-    }
-  }
-
-  const handleRefund = async (paymentId: string) => {
-    const amount = prompt('Enter refund amount:')
-    const reason = prompt('Enter refund reason:')
-    if (!amount) return
-
-    try {
-      const response = await fetch(`/api/admin/payments/${paymentId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: parseFloat(amount), reason }),
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        alert('Refund processed successfully')
-        fetchPayments()
-      }
-    } catch (error) {
-      console.error('Refund failed:', error)
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -184,42 +126,6 @@ export default function PaymentsPage() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    {payment.status === 'failed' && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleFixPayment(payment.id, payment.userId, 'retry')}
-                        >
-                          Retry
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleFixPayment(payment.id, payment.userId, 'mark_success')}
-                        >
-                          Mark Success
-                        </Button>
-                      </>
-                    )}
-                    {payment.status === 'success' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRefund(payment.id)}
-                      >
-                        Refund
-                      </Button>
-                    )}
-                    {payment.paymentId && payment.orderId && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleVerifySignature(payment.paymentId!, payment.orderId!, '')}
-                      >
-                        Verify
-                      </Button>
-                    )}
                   </div>
                 </div>
               ))}
