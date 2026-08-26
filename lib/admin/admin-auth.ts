@@ -6,7 +6,7 @@
  */
 
 import crypto from 'crypto'
-import { adminAuth, adminDb } from '@/lib/firebase/admin'
+import { adminDb } from '@/lib/firebase/admin'
 import { envVars } from '@/lib/env/env.mjs'
 
 export type AdminRole = 'SuperAdmin' | 'Astrologer' | 'Support' | 'ContentManager' | 'Finance'
@@ -21,62 +21,35 @@ export interface AdminUser {
   permissions: string[]
 }
 
-/**
- * Admin permissions by role
- */
 export const ADMIN_PERMISSIONS: Record<AdminRole, string[]> = {
   SuperAdmin: [
-    'users.read',
-    'users.write',
-    'users.delete',
-    'reports.read',
-    'reports.write',
-    'reports.delete',
-    'payments.read',
-    'payments.write',
-    'payments.refund',
-    'guru.read',
-    'guru.write',
-    'knowledge.read',
-    'knowledge.write',
-    'knowledge.delete',
-    'content.read',
-    'content.write',
-    'logs.read',
-    'jobs.trigger',
-    'settings.read',
-    'settings.write',
-    'backup.read',
-    'backup.write',
+    'users.read', 'users.write', 'users.delete',
+    'reports.read', 'reports.write', 'reports.delete',
+    'payments.read', 'payments.write', 'payments.refund',
+    'tickets.read', 'tickets.adjust',
+    'staff.read', 'staff.manage',
+    'guru.read', 'guru.write',
+    'knowledge.read', 'knowledge.write', 'knowledge.delete',
+    'content.read', 'content.write',
+    'logs.read', 'jobs.trigger',
+    'settings.read', 'settings.write',
+    'backup.read', 'backup.write',
   ],
   Astrologer: [
-    'users.read',
-    'reports.read',
-    'reports.write',
-    'guru.read',
-    'knowledge.read',
-    'knowledge.write',
+    'users.read', 'reports.read', 'reports.write', 'guru.read',
+    'knowledge.read', 'knowledge.write',
   ],
   Support: [
-    'users.read',
-    'users.write',
-    'reports.read',
-    'payments.read',
-    'logs.read',
+    'users.read', 'users.write', 'reports.read', 'payments.read',
+    'tickets.read', 'logs.read',
   ],
   ContentManager: [
-    'knowledge.read',
-    'knowledge.write',
-    'knowledge.delete',
-    'content.read',
-    'content.write',
+    'knowledge.read', 'knowledge.write', 'knowledge.delete',
+    'content.read', 'content.write',
   ],
   Finance: [
-    'users.read',
-    'payments.read',
-    'payments.write',
-    'payments.refund',
-    'reports.read',
+    'users.read', 'payments.read', 'payments.write', 'payments.refund',
+    'tickets.read', 'tickets.adjust', 'reports.read',
   ],
 }
 
@@ -84,17 +57,10 @@ function isAdminRole(role: unknown): role is AdminRole {
   return typeof role === 'string' && role in ADMIN_PERMISSIONS
 }
 
-/**
- * Check if user is admin
- */
 export async function isAdmin(uid: string): Promise<boolean> {
-  if (!adminDb) {
-    return false
-  }
-
+  if (!adminDb) return false
   try {
-    const adminRef = adminDb.collection('admins').doc(uid)
-    const adminSnap = await adminRef.get()
+    const adminSnap = await adminDb.collection('admins').doc(uid).get()
     return adminSnap.exists
   } catch (error) {
     console.error('Error checking admin status:', error)
@@ -102,22 +68,11 @@ export async function isAdmin(uid: string): Promise<boolean> {
   }
 }
 
-/**
- * Get admin user
- */
 export async function getAdminUser(uid: string): Promise<AdminUser | null> {
-  if (!adminDb) {
-    return null
-  }
-
+  if (!adminDb) return null
   try {
-    const adminRef = adminDb.collection('admins').doc(uid)
-    const adminSnap = await adminRef.get()
-
-    if (!adminSnap.exists) {
-      return null
-    }
-
+    const adminSnap = await adminDb.collection('admins').doc(uid).get()
+    if (!adminSnap.exists) return null
     const data = adminSnap.data()
     const role: AdminRole = isAdminRole(data?.role) ? data.role : 'Support'
     return {
@@ -135,16 +90,11 @@ export async function getAdminUser(uid: string): Promise<AdminUser | null> {
   }
 }
 
-/**
- * Password hashing helpers (HMAC-scrypt)
- */
 const HASH_VERSION = 'scrypt-v1'
 
 function getSessionSecret(): string {
   const secret = envVars.auth.adminSessionSecret
-  if (!secret) {
-    throw new Error('ADMIN_SESSION_SECRET is not configured')
-  }
+  if (!secret) throw new Error('ADMIN_SESSION_SECRET is not configured')
   return secret
 }
 
@@ -163,23 +113,18 @@ export function verifyPassword(
     try {
       if (stored.passwordHash && stored.passwordSalt) {
         const version = stored.passwordVersion || HASH_VERSION
-        if (version !== HASH_VERSION) {
-          return resolve(false)
-        }
+        if (version !== HASH_VERSION) return resolve(false)
         const derivedKey = crypto.scryptSync(password, stored.passwordSalt, 64).toString('hex')
-        if (crypto.timingSafeEqual(Buffer.from(derivedKey, 'hex'), Buffer.from(stored.passwordHash, 'hex'))) {
-          return resolve(true)
-        }
-        return resolve(false)
+        const derived = Buffer.from(derivedKey, 'hex')
+        const expected = Buffer.from(stored.passwordHash, 'hex')
+        if (derived.length !== expected.length) return resolve(false)
+        return resolve(crypto.timingSafeEqual(derived, expected))
       }
-
-      // Transitional: if legacy plaintext exists, verify then immediately rehash and store
       if (stored.password && stored.password === password && onRehash) {
         const newHash = hashPassword(password)
         await onRehash(newHash)
         return resolve(true)
       }
-
       resolve(false)
     } catch (error) {
       console.error('Password verification error:', error)
@@ -188,9 +133,6 @@ export function verifyPassword(
   })
 }
 
-/**
- * Signed admin session tokens (HMAC SHA-256)
- */
 export function signAdminSession(payload: { uid: string; email: string; role: AdminRole; exp: number }): string {
   const secret = getSessionSecret()
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url')
@@ -203,19 +145,16 @@ export function verifyAdminSessionToken(token: string): { valid: boolean; payloa
   try {
     const secret = getSessionSecret()
     const parts = token.split('.')
-    if (parts.length !== 3) {
-      return { valid: false }
-    }
+    if (parts.length !== 3) return { valid: false }
     const [header, body, signature] = parts
     const expected = crypto.createHmac('sha256', secret).update(`${header}.${body}`).digest('base64url')
-    const matches = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
-    if (!matches) {
+    const actualBuffer = Buffer.from(signature)
+    const expectedBuffer = Buffer.from(expected)
+    if (actualBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(actualBuffer, expectedBuffer)) {
       return { valid: false }
     }
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'))
-    if (payload.exp && Date.now() > payload.exp) {
-      return { valid: false }
-    }
+    if (payload.exp && Date.now() > payload.exp) return { valid: false }
     return { valid: true, payload }
   } catch (error) {
     console.error('Admin session verification error:', error)
@@ -223,68 +162,33 @@ export function verifyAdminSessionToken(token: string): { valid: boolean; payloa
   }
 }
 
-/**
- * Check if admin has permission
- */
 export async function hasPermission(uid: string, permission: string): Promise<boolean> {
   const admin = await getAdminUser(uid)
-  if (!admin) {
-    return false
-  }
-
-  return admin.permissions.includes(permission)
+  return !!admin && admin.permissions.includes(permission)
 }
 
-/**
- * Create admin session
- */
 export async function createAdminSession(uid: string): Promise<string> {
   const admin = await getAdminUser(uid)
-  if (!admin) {
-    throw new Error('Admin not found')
-  }
-
-  const expiresIn = 60 * 60 * 24 * 5 * 1000 // 5 days
-  const payload = {
-    uid: admin.uid,
-    email: admin.email,
-    role: admin.role,
-    exp: Date.now() + expiresIn,
-  }
-
-  return signAdminSession(payload)
+  if (!admin) throw new Error('Admin not found')
+  const expiresIn = 60 * 60 * 24 * 5 * 1000
+  return signAdminSession({ uid: admin.uid, email: admin.email, role: admin.role, exp: Date.now() + expiresIn })
 }
 
-/**
- * Verify admin session
- */
 export async function verifyAdminSession(sessionCookie: string): Promise<AdminUser | null> {
   try {
     const result = verifyAdminSessionToken(sessionCookie)
-    if (!result.valid || !result.payload?.uid) {
-      return null
-    }
-
-    const admin = await getAdminUser(result.payload.uid)
-    return admin
+    if (!result.valid || !result.payload?.uid) return null
+    return await getAdminUser(result.payload.uid)
   } catch (error) {
     console.error('Error verifying admin session:', error)
     return null
   }
 }
 
-/**
- * Update admin last login
- */
 export async function updateAdminLastLogin(uid: string): Promise<void> {
-  if (!adminDb) {
-    return
-  }
-
+  if (!adminDb) return
   try {
-    await adminDb.collection('admins').doc(uid).update({
-      lastLogin: new Date(),
-    })
+    await adminDb.collection('admins').doc(uid).update({ lastLogin: new Date() })
   } catch (error) {
     console.error('Error updating admin last login:', error)
   }
