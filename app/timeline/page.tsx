@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { motion } from 'framer-motion';
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
+import { ProductPageFrame } from '@/components/product';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState, LoadingState } from '@/components/ui/feedback-state';
@@ -148,12 +149,12 @@ export default function TimelinePage() {
   }
 
   return (
-    <DashboardPageShell
-      title="Your 12-Month Timeline"
-      subtitle="A month-by-month view of themes, focus areas, and astrological signals"
-    >
-        {/* Context Panel */}
-        <div className="mb-8">
+    <ProductPageFrame product="timeline">
+      <DashboardPageShell
+        title="Your 12-Month Timeline"
+        subtitle="A month-by-month view of themes, focus areas, and astrological signals"
+      >
+        <div className="mx-auto w-full max-w-[1320px] space-y-7">
           <OneTimeOfferBanner
             title="Unlock Full Insights"
             description="This module uses your birth chart & predictions powered by Guru Brain."
@@ -161,45 +162,61 @@ export default function TimelinePage() {
             ctaLabel="Unlock Now"
             ctaHref="/pay/299"
           />
-        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto space-y-8"
-        >
-          <div className="text-center">
-            <Calendar className="mx-auto h-14 w-14 text-[#F28C28] mb-4" />
-            <h1 className="text-4xl font-display font-semibold text-[#07131F]">12-Month Timeline</h1>
-            <p className="text-[#56666A] mt-2">Your astrological timeline for the next year</p>
-            
-            {/* Mega Build 2 - Generate Timeline Button */}
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="mt-4 mb-6"
-            >
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="relative overflow-hidden rounded-[28px] border border-[#dfa84d]/20 bg-[#091216] p-6 md:p-8"
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 rounded-full border border-[#dfa84d]/10"
+            />
+
+            <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#dfa84d]">
+                  <Calendar className="h-4 w-4" />
+                  Personal timing map
+                </div>
+
+                <h2 className="mt-4 font-heading text-3xl font-semibold text-[#f8f1e6] md:text-5xl">
+                  Twelve months. One connected timeline.
+                </h2>
+
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-[#aaa69e] md:text-base">
+                  Track monthly themes, intensity, focus areas, cautions,
+                  astrological signals, and recommended actions from your
+                  current Kundali context.
+                </p>
+              </div>
+
               <Button
                 onClick={handleGenerateTimeline}
-                className="min-h-11 bg-[#F28C28] border border-[#F28C28] text-[#07131F] font-semibold hover:bg-[#E57E1D]"
                 disabled={timelineLoading}
+                className="min-h-12 border-[#e8aa4f] bg-[#e99a34] px-6 font-semibold text-[#160d04] hover:bg-[#f1aa4d]"
               >
-                <Calendar className={`h-4 w-4 mr-2 ${timelineLoading ? 'animate-spin' : ''}`} />
-                {timelineLoading ? 'Generating Timeline...' : 'Generate 12-Month Timeline'}
+                <Calendar
+                  className={`mr-2 h-4 w-4 ${
+                    timelineLoading ? 'animate-spin' : ''
+                  }`}
+                />
+                {timelineLoading
+                  ? 'Generating Timeline...'
+                  : 'Generate 12-Month Timeline'}
               </Button>
-            </motion.div>
-          </div>
+            </div>
+          </motion.section>
 
-          {/* Mega Build 2 - Timeline Error */}
           {timelineError && (
-            <Card className="bg-[#C04A3A]/8 border border-[#C04A3A]/30 text-[#07131F] mb-6">
+            <Card className="border-[#b85c4e]/35 bg-[#351716]/35 text-[#f5eee2]">
               <CardContent className="pt-6">
-                <p className="text-[#A33D31]">{timelineError}</p>
+                <p className="text-sm text-[#f0a79c]">{timelineError}</p>
                 <Button
                   onClick={handleGenerateTimeline}
-                  variant="ghost"
-                  className="mt-4 text-[#A33D31] hover:text-[#7F2F27]"
+                  variant="outline"
+                  className="mt-4 border-[#b85c4e]/30 bg-transparent text-[#f4ddd8] hover:bg-[#b85c4e]/10"
                 >
                   Try Again
                 </Button>
@@ -207,92 +224,123 @@ export default function TimelinePage() {
             </Card>
           )}
 
-          {/* Mega Build 2 - Timeline Results */}
+          {(loadingPersistedTimeline || timelineLoading) && !timelineResult ? (
+            <Card className="border-[#dca94e]/16 bg-[#091216]">
+              <CardContent>
+                <LoadingState
+                  title={timelineLoading ? 'Generating timeline' : 'Loading timeline'}
+                  description="We are checking your saved timeline state."
+                  className="text-[#f5eee2]"
+                />
+              </CardContent>
+            </Card>
+          ) : !timelineResult ? (
+            <Card className="border-[#dca94e]/16 bg-[#091216]">
+              <CardContent>
+                <EmptyState
+                  title="No timeline yet"
+                  description="Generate a timeline after completing your verified birth profile and Kundali."
+                  className="text-[#f5eee2]"
+                  action={
+                    <Button
+                      onClick={handleGenerateTimeline}
+                      disabled={timelineLoading}
+                      className="min-h-11 border-[#e8aa4f] bg-[#e99a34] text-[#160d04] hover:bg-[#f1aa4d]"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Generate Timeline
+                    </Button>
+                  }
+                />
+              </CardContent>
+            </Card>
+          ) : null}
+
           {timelineResult && (
-            <div className="mb-8 space-y-6">
-              {/* Overview */}
-              <Card className="bg-[#FFFDF4] border border-[#D8B56A]/35 text-[#07131F] shadow-sm">
+            <div className="space-y-6">
+              <Card className="border-[#dca94e]/20 bg-[#091216] text-[#f5eee2]">
                 <CardHeader>
-                  <CardTitle className="text-[#8A5A16]">12-Month Timeline Overview</CardTitle>
+                  <CardTitle className="text-[#f5eee2]">
+                    12-Month Timeline Overview
+                  </CardTitle>
                   {timelineResult.status === 'degraded' && (
-                    <CardDescription className="text-[#A66B16]">
+                    <CardDescription className="text-[#d5b47b]">
                       Timeline generated with limited context
                     </CardDescription>
                   )}
                 </CardHeader>
                 <CardContent>
-                  <p className="text-[#34484C]">{timelineResult.overview}</p>
+                  <p className="text-sm leading-7 text-[#aaa69e]">
+                    {timelineResult.overview}
+                  </p>
                 </CardContent>
               </Card>
 
-              {/* Timeline Events */}
-              <div className="space-y-4">
+              <div className="relative space-y-5 before:absolute before:bottom-0 before:left-[19px] before:top-0 before:w-px before:bg-[#dfa84d]/12 md:before:left-[23px]">
                 {timelineResult.events.map((event, index) => (
                   <motion.div
                     key={event.id}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                    transition={{ delay: index * 0.05, duration: 0.4 }}
+                    className="relative pl-12 md:pl-14"
                   >
-                    <Card className="bg-[#FFFDF4] border border-[#D8B56A]/35 text-[#07131F] shadow-sm hover:border-gold/50 transition-all">
+                    <span className="absolute left-[13px] top-8 h-3.5 w-3.5 rounded-full border border-[#dfa84d]/60 bg-[#091216] shadow-[0_0_18px_rgba(223,168,77,0.18)] md:left-[17px]" />
+
+                    <Card className="border-[#dca94e]/16 bg-[#0a1418] text-[#f5eee2] hover:border-[#dca94e]/28">
                       <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-[#8A5A16] flex items-center gap-2">
-                              <Calendar className="h-5 w-5" />
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <CardTitle className="flex items-center gap-2 text-[#f5eee2]">
+                              <Calendar className="h-5 w-5 text-[#dfa84d]" />
                               {event.monthLabel}
                             </CardTitle>
-                            <CardDescription className="text-[#56666A] mt-2">
-                              <div className="flex items-center gap-4 flex-wrap">
-                                <span>
-                                  Intensity:{' '}
-                                  <span
-                                    className={`font-semibold ${
-                                      event.intensity === 'high'
-                                        ? 'text-[#2F7D7E]'
-                                        : event.intensity === 'medium'
-                                        ? 'text-[#A66B16]'
-                                        : 'text-[#A33D31]'
-                                    }`}
-                                  >
-                                    {event.intensity.toUpperCase()}
-                                  </span>
-                                </span>
-                                {event.focusAreas.length > 0 && (
-                                  <span>Focus: {event.focusAreas.join(', ')}</span>
-                                )}
-                              </div>
+
+                            <CardDescription className="mt-2 text-[#9f9b94]">
+                              {event.focusAreas.length > 0
+                                ? `Focus: ${event.focusAreas.join(', ')}`
+                                : 'Monthly astrological guidance'}
                             </CardDescription>
                           </div>
+
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
                               event.intensity === 'high'
-                                ? 'bg-[#2F7D7E]/10 text-[#246566] border border-[#2F7D7E]/30'
+                                ? 'border-[#66a5a5]/30 bg-[#66a5a5]/10 text-[#86c5c6]'
                                 : event.intensity === 'medium'
-                                ? 'bg-yellow-500/20 text-[#A66B16] border border-yellow-500/50'
-                                : 'bg-red-500/20 text-[#A33D31] border border-red-500/50'
+                                  ? 'border-[#dfa84d]/30 bg-[#dfa84d]/10 text-[#e3b66a]'
+                                  : 'border-[#b85c4e]/30 bg-[#b85c4e]/10 text-[#e7a097]'
                             }`}
                           >
                             {event.intensity}
                           </span>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+
+                      <CardContent className="space-y-5">
                         <div>
-                          <h4 className="text-[#8A5A16] text-sm font-semibold mb-1">Theme</h4>
-                          <p className="text-[#34484C]">{event.theme}</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dfa84d]">
+                            Theme
+                          </p>
+                          <p className="mt-2 text-base text-[#eee5d9]">
+                            {event.theme}
+                          </p>
                         </div>
 
-                        <p className="text-[#34484C]">{event.description}</p>
+                        <p className="text-sm leading-7 text-[#aaa69e]">
+                          {event.description}
+                        </p>
 
                         {event.focusAreas.length > 0 && (
                           <div>
-                            <h4 className="text-[#8A5A16] text-sm font-semibold mb-2">Focus Areas</h4>
-                            <div className="flex flex-wrap gap-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f5eee2]">
+                              Focus areas
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
                               {event.focusAreas.map((area, i) => (
                                 <span
                                   key={i}
-                                  className="px-2 py-1 bg-[#F5EAD0] rounded-full border border-[#D8B56A]/30 text-xs text-[#34484C]"
+                                  className="rounded-full border border-[#dca94e]/18 bg-[#dca94e]/[0.055] px-3 py-1.5 text-xs text-[#d8d1c6]"
                                 >
                                   {area}
                                 </span>
@@ -301,58 +349,78 @@ export default function TimelinePage() {
                           </div>
                         )}
 
-                        {event.recommendedActions.length > 0 && (
-                          <div>
-                            <h4 className="text-[#8A5A16] text-sm font-semibold mb-2">Recommended Actions</h4>
-                            <ul className="space-y-1">
-                              {event.recommendedActions.map((action, i) => (
-                                <li key={i} className="text-sm text-[#56666A] flex items-start gap-2">
-                                  <span className="text-[#8A5A16] mt-1">•</span>
-                                  <span>{action}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        <div className="grid gap-4 lg:grid-cols-2">
+                          {event.recommendedActions.length > 0 && (
+                            <div className="rounded-xl border border-[#66a5a5]/14 bg-[#66a5a5]/[0.04] p-4">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#82bfc0]">
+                                Recommended actions
+                              </p>
+                              <ul className="mt-3 space-y-2">
+                                {event.recommendedActions.map((action, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex gap-2 text-sm leading-6 text-[#aaa69e]"
+                                  >
+                                    <span className="text-[#66a5a5]">•</span>
+                                    <span>{action}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
 
-                        {event.cautions.length > 0 && (
-                          <div>
-                            <h4 className="text-[#A66B16] text-sm font-semibold mb-2">Cautions</h4>
-                            <ul className="space-y-1">
-                              {event.cautions.map((caution, i) => (
-                                <li key={i} className="text-sm text-[#56666A] flex items-start gap-2">
-                                  <span className="text-[#A66B16] mt-1">•</span>
-                                  <span>{caution}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                          {event.cautions.length > 0 && (
+                            <div className="rounded-xl border border-[#dfa84d]/14 bg-[#dfa84d]/[0.035] p-4">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dfa84d]">
+                                Cautions
+                              </p>
+                              <ul className="mt-3 space-y-2">
+                                {event.cautions.map((caution, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex gap-2 text-sm leading-6 text-[#aaa69e]"
+                                  >
+                                    <span className="text-[#dfa84d]">•</span>
+                                    <span>{caution}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
 
                         {event.astroSignals.length > 0 && (
                           <div>
-                            <h4 className="text-[#8A5A16] text-sm font-semibold mb-2">Astrological Signals</h4>
-                            <div className="flex flex-wrap gap-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f5eee2]">
+                              Astrological signals
+                            </p>
+
+                            <div className="mt-3 grid gap-3 md:grid-cols-2">
                               {event.astroSignals.map((signal, i) => (
                                 <div
                                   key={i}
-                                  className="px-3 py-2 bg-[#F5EAD0]/60 rounded-lg border border-[#D8B56A]/30"
+                                  className="rounded-xl border border-[#dca94e]/14 bg-[#071014] p-4"
                                 >
-                                  <p className="text-xs font-semibold text-[#8A5A16]">{signal.label}</p>
-                                  <p className="text-xs text-[#56666A] mt-1">{signal.description}</p>
+                                  <p className="text-sm font-semibold text-[#e3b66a]">
+                                    {signal.label}
+                                  </p>
+                                  <p className="mt-2 text-xs leading-5 text-[#99958e]">
+                                    {signal.description}
+                                  </p>
                                 </div>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {/* CTA to Ask Guru */}
-                        <div className="pt-3 border-t border-[#D8B56A]/25">
+                        <div className="border-t border-[#dca94e]/10 pt-4">
                           <Button
-                            onClick={() => router.push(`/guru?month=${event.monthLabel}`)}
-                            variant="ghost"
-                            className="text-[#8A5A16] hover:text-[#8A5A16]/80 border border-gold/30 hover:bg-gold/10"
+                            onClick={() =>
+                              router.push(`/guru?month=${event.monthLabel}`)
+                            }
+                            variant="outline"
                             size="sm"
+                            className="border-[#dca94e]/20 bg-[#10191d] text-[#f2e9dc] hover:bg-[#162126]"
                           >
                             Ask Guru about this month →
                           </Button>
@@ -363,9 +431,8 @@ export default function TimelinePage() {
                 ))}
               </div>
 
-              {/* Disclaimers */}
               {timelineResult.disclaimers.length > 0 && (
-                <div className="text-xs text-[#6B777A] space-y-1">
+                <div className="space-y-1 px-2 text-xs leading-5 text-[#77756f]">
                   {timelineResult.disclaimers.map((disclaimer, i) => (
                     <p key={i}>{disclaimer}</p>
                   ))}
@@ -374,70 +441,47 @@ export default function TimelinePage() {
             </div>
           )}
 
-          {(loadingPersistedTimeline || timelineLoading) && !timelineResult ? (
-            <Card>
-              <CardContent>
-                <LoadingState
-                  title={timelineLoading ? 'Generating timeline' : 'Loading timeline'}
-                  description="We are checking your saved timeline state."
-                />
-              </CardContent>
-            </Card>
-          ) : !timelineResult ? (
-            <Card>
-              <CardContent>
-                <EmptyState
-                  title="No timeline yet"
-                  description="Generate a timeline after completing your verified birth profile and Kundali."
-                  action={
-                    <Button onClick={handleGenerateTimeline} disabled={timelineLoading} className="min-h-11">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Generate Timeline
-                    </Button>
-                  }
-                />
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {/* Mega Build 3 - Download Report Section */}
-          <Card className="bg-[#FFFDF4] border border-[#D8B56A]/35 text-[#07131F] shadow-sm mt-8">
+          <Card className="border-[#dca94e]/18 bg-[#091216] text-[#f5eee2]">
             <CardHeader>
-              <CardTitle className="text-[#8A5A16]">Download Full PDF Report</CardTitle>
-              <CardDescription className="text-[#56666A]">
-                Get a comprehensive 12-month timeline report as a PDF document
+              <CardTitle className="text-[#f5eee2]">
+                Save your complete timeline
+              </CardTitle>
+              <CardDescription className="text-[#9f9b94]">
+                Generate the comprehensive 12-month timeline as a PDF document.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+
+            <CardContent className="flex flex-col gap-3 sm:flex-row">
               <Button
                 onClick={handleDownloadReport}
                 disabled={downloadingReport}
-                className="min-h-11 w-full bg-[#F28C28] border border-[#F28C28] text-[#07131F] font-semibold hover:bg-[#E57E1D]"
+                className="min-h-11 border-[#e8aa4f] bg-[#e99a34] font-semibold text-[#160d04] hover:bg-[#f1aa4d]"
               >
                 {downloadingReport ? (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                     Generating PDF...
                   </>
                 ) : (
                   <>
-                    <Download className="h-4 w-4 mr-2" />
-                    Download 12-Month Timeline PDF
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Timeline PDF
                   </>
                 )}
               </Button>
+
+              <Link href="/dashboard">
+                <Button
+                  variant="outline"
+                  className="min-h-11 border-[#dca94e]/20 bg-[#10191d] text-[#f2e9dc] hover:bg-[#162126]"
+                >
+                  Back to Dashboard
+                </Button>
+              </Link>
             </CardContent>
           </Card>
-
-          <div className="text-center">
-            <Link href="/dashboard">
-              <Button variant="ghost" className="min-h-11 border border-[#D8B56A]/45 text-[#07131F] hover:bg-[#F5EAD0]">
-                Back to Dashboard
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
-
-    </DashboardPageShell>
-  );
+        </div>
+      </DashboardPageShell>
+    </ProductPageFrame>
+  )
 }

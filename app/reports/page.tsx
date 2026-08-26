@@ -14,6 +14,7 @@ import { useUserStore } from '@/store/user-store'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { ProductPageFrame } from '@/components/product'
 
 interface Report {
   id?: string
@@ -117,260 +118,299 @@ export default function ReportsPage() {
   const displayReports = reports
 
   return (
-    <DashboardPageShell
-      title="Your Reports"
-      subtitle="Your saved Kundali, prediction, and timeline reports"
-    >
-        {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-4 max-w-3xl mx-auto"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F28C28]/10 border border-[#C9A24A]/30 text-[#8A5A16] text-sm mb-4">
-            <Sparkles className="w-4 h-4" />
-            <span>Personal Astrology Library</span>
-          </div>
+    <ProductPageFrame product="reports">
+      <DashboardPageShell
+        title="Your Reports"
+        subtitle="Your saved Kundali, prediction, and timeline reports"
+      >
+        <div className="mx-auto w-full max-w-[1320px] space-y-8">
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-[28px] border border-[#dfa84d]/20 bg-[#091216] p-6 md:p-8"
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute right-10 top-8 h-52 w-52 rounded-full border border-[#dfa84d]/10"
+            />
 
-          <h1 className="text-4xl md:text-5xl font-display font-semibold text-[#07131F]">
-            Your Cosmic Reports
-          </h1>
-          {errorMessage && (
-            <Card className="border-destructive">
-              <CardContent className="pt-6">
-                <p className="text-sm text-destructive">{errorMessage}</p>
-              </CardContent>
-            </Card>
-          )}
-          <p className="text-lg text-[#56666A]">
-            Download detailed PDF analysis of your destiny, karma, and life path.
-          </p>
-        </motion.div>
+            <div className="relative z-10 max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#dfa84d]/24 bg-[#dfa84d]/10 px-4 py-1.5 text-sm text-[#e6b96f]">
+                <Sparkles className="h-4 w-4" />
+                <span>Personal Astrology Library</span>
+              </div>
 
-        {/* Mega Build 3 - Report Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          {/* Kundali Report Card */}
-          <Card className="bg-[#FFFDF4] border-[#D8B56A]/35 hover:border-[#C9A24A]/65 transition-all shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-[#8A5A16]">Full Kundali Report</CardTitle>
-              <CardDescription className="text-[#56666A]">
-                Complete birth chart analysis with planetary positions, dasha periods, and life themes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge className="mb-4 bg-[#F28C28]/10 text-[#8A5A16] border-[#C9A24A]/35">
-                Included in Supreme Plan
-              </Badge>
-              <Button
-                onClick={() => handleGenerate('kundali')}
-                disabled={generating}
-                className="min-h-11 w-full bg-[#F28C28] text-[#07131F] border border-[#F28C28] hover:bg-[#E57E1D] font-semibold"
-              >
-                {generating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 mr-2" />
-                    Generate PDF
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+              <h2 className="mt-5 font-heading text-3xl font-semibold text-[#f8f1e6] md:text-5xl">
+                Your cosmic reports, in one library.
+              </h2>
 
-          {/* Predictions Report Card */}
-          <Card className="bg-[#FFFDF4] border-[#D8B56A]/35 hover:border-[#C9A24A]/65 transition-all shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-[#8A5A16]">12-Month Predictions</CardTitle>
-              <CardDescription className="text-[#56666A]">
-                Detailed forecasts for career, love, money, health, and spiritual growth
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge className="mb-4 bg-[#F28C28]/10 text-[#8A5A16] border-[#C9A24A]/35">
-                Paid · ₹299
-              </Badge>
-              <Button
-                onClick={() => handleGenerate('predictions')}
-                disabled={generating}
-                className="min-h-11 w-full bg-[#F28C28] text-[#07131F] border border-[#F28C28] hover:bg-[#E57E1D] font-semibold"
-              >
-                {generating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 mr-2" />
-                    Generate PDF
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-[#aaa69e] md:text-base">
+                Generate, revisit, and download your Kundali, predictions, and
+                timeline reports without leaving your JyotiAI workspace.
+              </p>
+            </div>
 
-          {/* Timeline Report Card */}
-          <Card className="bg-[#FFFDF4] border-[#D8B56A]/35 hover:border-[#C9A24A]/65 transition-all shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-[#8A5A16]">12-Month Timeline</CardTitle>
-              <CardDescription className="text-[#56666A]">
-                Month-by-month cosmic journey with themes, intensity, and focus areas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge className="mb-4 bg-[#F28C28]/10 text-[#8A5A16] border-[#C9A24A]/35">
-                Paid · ₹299
-              </Badge>
-              <Button
-                onClick={() => handleGenerate('timeline')}
-                disabled={generating}
-                className="min-h-11 w-full bg-[#F28C28] text-[#07131F] border border-[#F28C28] hover:bg-[#E57E1D] font-semibold"
-              >
-                {generating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 mr-2" />
-                    Generate PDF
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+            {errorMessage && (
+              <div className="relative z-10 mt-6 rounded-xl border border-[#b85c4e]/30 bg-[#351716]/40 p-4">
+                <p className="text-sm text-[#f0a79c]">{errorMessage}</p>
+              </div>
+            )}
+          </motion.section>
 
-        {/* Reports Grid */}
-        {loading ? (
-          <Card>
-            <CardContent>
-              <LoadingState title="Loading reports" description="Checking your persisted report library." />
-            </CardContent>
-          </Card>
-        ) : displayReports.length === 0 ? (
-          <Card>
-            <CardContent>
-              <EmptyState
-                title="No reports yet"
-                description="Generate your first Launch v1 report from Kundali, Predictions, or Timeline."
-                action={
-                  <Button onClick={() => handleGenerate('kundali')} disabled={generating} className="min-h-11">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Kundali Report
-                  </Button>
-                }
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {displayReports.map((report, index) => {
-              const reportDate = report.generatedAt || report.createdAt
-              const formattedDate = reportDate
-                ? new Date(reportDate).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })
-                : 'Unknown date'
+          <section>
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#dfa84d]">
+                Create a report
+              </p>
+              <h3 className="mt-2 font-heading text-2xl font-semibold text-[#f5eee2]">
+                Choose your report type
+              </h3>
+            </div>
 
-              return (
-                <motion.div
-                  key={report.reportId}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+            <div className="grid gap-5 md:grid-cols-3">
+              {[
+                {
+                  type: 'kundali' as const,
+                  title: 'Full Kundali Report',
+                  description:
+                    'Complete birth chart analysis with planetary positions, dasha periods, and life themes.',
+                  badge: 'Included in Supreme Plan',
+                },
+                {
+                  type: 'predictions' as const,
+                  title: '12-Month Predictions',
+                  description:
+                    'Detailed forecasts for career, love, money, health, and spiritual growth.',
+                  badge: 'Paid · ₹299',
+                },
+                {
+                  type: 'timeline' as const,
+                  title: '12-Month Timeline',
+                  description:
+                    'Month-by-month cosmic journey with themes, intensity, and focus areas.',
+                  badge: 'Paid · ₹299',
+                },
+              ].map((item) => (
+                <Card
+                  key={item.type}
+                  className="flex h-full flex-col border-[#dca94e]/16 bg-[#0a1418] text-[#f5eee2] hover:border-[#dca94e]/30"
                 >
-                  <Card className="group relative overflow-hidden bg-[#FFFDF4] border-[#D8B56A]/35 hover:border-[#C9A24A]/65 transition-all duration-300 h-full shadow-sm">
-                    {/* Hover Glow Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#F28C28]/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <CardHeader className="flex-1">
+                    <Badge
+                      variant="outline"
+                      className="mb-3 w-fit border-[#dca94e]/20 bg-[#dca94e]/[0.055] text-[#dcb36f]"
+                    >
+                      {item.badge}
+                    </Badge>
 
-                    {/* Report Image / Preview */}
-                    <div className="relative h-40 w-full bg-[#07131F] overflow-hidden">
-                      {/* Fallback pattern if no image */}
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(242,140,40,0.32),transparent_32%),radial-gradient(circle_at_75%_55%,rgba(47,125,126,0.22),transparent_30%),linear-gradient(135deg,#07131F,#0B1D2C)] opacity-100 group-hover:scale-105 transition-transform duration-700" />
+                    <CardTitle className="text-[#f5eee2]">
+                      {item.title}
+                    </CardTitle>
 
-                      <div className="absolute top-4 right-4">
-                        <Badge
-                          variant={report.type === 'kundali' ? 'premium' : 'default'}
-                          className={cn(
-                            'backdrop-blur-md border-0',
-                            report.type === 'kundali'
-                              ? 'bg-[#F28C28]/20 text-[#FFF8E6]'
-                              : 'bg-[#2F7D7E]/25 text-[#E6FFFF]'
-                          )}
-                        >
-                          {report.status === 'ready' ? report.type : report.status}
-                        </Badge>
-                      </div>
-                      {report.outdated && (
-                        <div className="absolute left-4 top-4">
-                          <Badge className="bg-amber-500/20 text-amber-100 border border-amber-300/40">
-                            Outdated
-                          </Badge>
-                        </div>
+                    <CardDescription className="text-[#9f9b94]">
+                      {item.description}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent>
+                    <Button
+                      onClick={() => handleGenerate(item.type)}
+                      disabled={generating}
+                      className="min-h-11 w-full border-[#e8aa4f] bg-[#e99a34] font-semibold text-[#160d04] hover:bg-[#f1aa4d]"
+                    >
+                      {generating ? (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="mr-2 h-4 w-4" />
+                          Generate PDF
+                        </>
                       )}
-                    </div>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
 
-                    {/* Content */}
-                    <div className="p-6 space-y-6 relative z-10">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-start">
-                          <h3 className="text-xl font-display font-semibold text-[#07131F] group-hover:text-[#8A5A16] transition-colors">
-                            {report.title}
-                          </h3>
-                          {report.status === 'failed' ? (
-                            <Lock className="w-5 h-5 text-[#C04A3A]" />
-                          ) : (
-                            <FileText className="w-5 h-5 text-[#2F7D7E]" />
+          <section>
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#dfa84d]">
+                  Saved library
+                </p>
+                <h3 className="mt-2 font-heading text-2xl font-semibold text-[#f5eee2]">
+                  Previous reports
+                </h3>
+              </div>
+
+              {displayReports.length > 0 && (
+                <p className="text-sm text-[#8f8b84]">
+                  {displayReports.length}{' '}
+                  {displayReports.length === 1 ? 'report' : 'reports'}
+                </p>
+              )}
+            </div>
+
+            {loading ? (
+              <Card className="border-[#dca94e]/16 bg-[#091216]">
+                <CardContent>
+                  <LoadingState
+                    title="Loading reports"
+                    description="Checking your persisted report library."
+                    className="text-[#f5eee2]"
+                  />
+                </CardContent>
+              </Card>
+            ) : displayReports.length === 0 ? (
+              <Card className="border-[#dca94e]/16 bg-[#091216]">
+                <CardContent>
+                  <EmptyState
+                    title="No reports yet"
+                    description="Generate your first report from Kundali, Predictions, or Timeline."
+                    className="text-[#f5eee2]"
+                    action={
+                      <Button
+                        onClick={() => handleGenerate('kundali')}
+                        disabled={generating}
+                        className="min-h-11 border-[#e8aa4f] bg-[#e99a34] text-[#160d04] hover:bg-[#f1aa4d]"
+                      >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate Kundali Report
+                      </Button>
+                    }
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {displayReports.map((report, index) => {
+                  const reportDate = report.generatedAt || report.createdAt
+
+                  const formattedDate = reportDate
+                    ? new Date(reportDate).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : 'Unknown date'
+
+                  return (
+                    <motion.div
+                      key={report.reportId}
+                      initial={{ opacity: 0, y: 22 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <Card className="group h-full overflow-hidden border-[#dca94e]/16 bg-[#0a1418] text-[#f5eee2] hover:border-[#dca94e]/30">
+                        <div className="relative h-40 overflow-hidden bg-[#040b0f]">
+                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(242,140,40,0.26),transparent_32%),radial-gradient(circle_at_75%_55%,rgba(47,125,126,0.18),transparent_30%),linear-gradient(135deg,#07131F,#0B1D2C)] transition-transform duration-700 group-hover:scale-105" />
+
+                          <div className="absolute right-4 top-4">
+                            <Badge
+                              variant={
+                                report.type === 'kundali'
+                                  ? 'premium'
+                                  : 'default'
+                              }
+                              className={cn(
+                                'border-0 backdrop-blur-md',
+                                report.type === 'kundali'
+                                  ? 'bg-[#F28C28]/20 text-[#FFF8E6]'
+                                  : 'bg-[#2F7D7E]/25 text-[#E6FFFF]'
+                              )}
+                            >
+                              {report.status === 'ready'
+                                ? report.type
+                                : report.status}
+                            </Badge>
+                          </div>
+
+                          {report.outdated && (
+                            <div className="absolute left-4 top-4">
+                              <Badge className="border border-amber-300/30 bg-amber-500/15 text-amber-100">
+                                Outdated
+                              </Badge>
+                            </div>
                           )}
-                        </div>
-                        <p className="text-sm text-[#6B777A]">
-                          {report.status === 'ready' ? 'Generated' : 'Requested'} on {formattedDate}
-                        </p>
-                        {report.outdated && (
-                          <p className="text-sm text-amber-100">
-                            Birth details changed after this report. Keep it for records, but regenerate for current astrology.
-                          </p>
-                        )}
-                        {report.status === 'failed' && (
-                          <p className="text-sm text-[#A33D31]">
-                            {report.failureReason || 'Report generation failed'}
-                          </p>
-                        )}
-                      </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex gap-3 pt-2">
-                        {report.status === 'failed' ? (
-                          <Button
-                            onClick={() => handleGenerate(report.type)}
-                            className="min-h-11 w-full bg-[#F28C28] text-[#07131F] font-semibold hover:bg-[#E57E1D]"
-                          >
-                            Retry
-                          </Button>
-                        ) : (
-                          <>
-                            {report.status === 'ready' && report.pdfUrl ? (
+                          <div className="absolute bottom-4 left-4">
+                            <FileText className="h-7 w-7 text-[#dfa84d]/80" />
+                          </div>
+                        </div>
+
+                        <div className="relative z-10 space-y-5 p-6">
+                          <div className="space-y-2">
+                            <div className="flex items-start justify-between gap-4">
+                              <h3 className="font-heading text-xl font-semibold text-[#f5eee2]">
+                                {report.title}
+                              </h3>
+
+                              {report.status === 'failed' ? (
+                                <Lock className="h-5 w-5 shrink-0 text-[#d77f71]" />
+                              ) : (
+                                <FileText className="h-5 w-5 shrink-0 text-[#66a5a5]" />
+                              )}
+                            </div>
+
+                            <p className="text-sm text-[#8f8b84]">
+                              {report.status === 'ready'
+                                ? 'Generated'
+                                : 'Requested'}{' '}
+                              on {formattedDate}
+                            </p>
+
+                            {report.outdated && (
+                              <p className="text-sm leading-6 text-amber-200/80">
+                                Birth details changed after this report.
+                                Regenerate for current astrology.
+                              </p>
+                            )}
+
+                            {report.status === 'failed' && (
+                              <p className="text-sm leading-6 text-[#e7a097]">
+                                {report.failureReason ||
+                                  'Report generation failed'}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex gap-3 pt-2">
+                            {report.status === 'failed' ? (
+                              <Button
+                                onClick={() =>
+                                  handleGenerate(report.type)
+                                }
+                                className="min-h-11 w-full border-[#e8aa4f] bg-[#e99a34] font-semibold text-[#160d04] hover:bg-[#f1aa4d]"
+                              >
+                                Retry
+                              </Button>
+                            ) : report.status === 'ready' &&
+                              report.pdfUrl ? (
                               <>
-                                <Link href={`/reports/${report.reportId}`} className="flex-1">
+                                <Link
+                                  href={`/reports/${report.reportId}`}
+                                  className="flex-1"
+                                >
                                   <Button
                                     variant="outline"
-                                    className="min-h-11 w-full border-[#D8B56A]/45 text-[#07131F] hover:bg-[#F5EAD0]"
+                                    className="min-h-11 w-full border-[#dca94e]/20 bg-[#10191d] text-[#f2e9dc] hover:bg-[#162126]"
                                   >
-                                    <Eye className="w-4 h-4 mr-2" />
+                                    <Eye className="mr-2 h-4 w-4" />
                                     View
                                   </Button>
                                 </Link>
-                                <a href={report.pdfUrl} download className="flex-1">
-                                  <Button className="min-h-11 w-full bg-[#2F7D7E] hover:bg-[#286B6C] text-white">
-                                    <Download className="w-4 h-4 mr-2" />
+
+                                <a
+                                  href={report.pdfUrl}
+                                  download
+                                  className="flex-1"
+                                >
+                                  <Button className="min-h-11 w-full border-[#34787a] bg-[#255f61] text-white hover:bg-[#2e7072]">
+                                    <Download className="mr-2 h-4 w-4" />
                                     PDF
                                   </Button>
                                 </a>
@@ -378,50 +418,55 @@ export default function ReportsPage() {
                             ) : (
                               <Button
                                 variant="outline"
-                                className="w-full border-[#D8B56A]/45 text-[#07131F] hover:bg-[#F5EAD0]"
+                                className="w-full border-[#dca94e]/14 bg-[#0c1519] text-[#7d7a74]"
                                 disabled
                               >
-                                {report.status === 'queued' ? 'Queued...' : 'Generating...'}
+                                {report.status === 'queued'
+                                  ? 'Queued...'
+                                  : 'Generating...'}
                               </Button>
                             )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              )
-            })}
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  )
+                })}
 
-            {/* "Generate New" Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: displayReports.length * 0.1 }}
-              className="h-full"
-            >
-              <button
-                onClick={() => handleGenerate('kundali')}
-                disabled={generating}
-                className="w-full h-full min-h-[300px] border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-4 hover:border-gold/40 hover:bg-white/5 transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  {generating ? (
-                    <RefreshCw className="w-8 h-8 text-[#F28C28] animate-spin" />
-                  ) : (
-                    <Sparkles className="w-8 h-8 text-[#F28C28]" />
-                  )}
-                </div>
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold text-[#07131F] group-hover:text-[#8A5A16]">
-                    Generate New Report
-                  </h3>
-                  <p className="text-sm text-[#6B777A]">Detailed Life & Destiny Analysis</p>
-                </div>
-              </button>
-            </motion.div>
-          </div>
-        )}
-    </DashboardPageShell>
+                <motion.div
+                  initial={{ opacity: 0, y: 22 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: displayReports.length * 0.05 }}
+                  className="h-full"
+                >
+                  <button
+                    onClick={() => handleGenerate('kundali')}
+                    disabled={generating}
+                    className="flex h-full min-h-[360px] w-full flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-[#dca94e]/20 bg-[#091216]/60 p-8 transition-all hover:border-[#dca94e]/40 hover:bg-[#0d181c] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[#dca94e]/18 bg-[#dca94e]/[0.055]">
+                      {generating ? (
+                        <RefreshCw className="h-7 w-7 animate-spin text-[#dfa84d]" />
+                      ) : (
+                        <Sparkles className="h-7 w-7 text-[#dfa84d]" />
+                      )}
+                    </div>
+
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-[#f5eee2]">
+                        Generate New Report
+                      </h3>
+                      <p className="mt-2 text-sm text-[#8f8b84]">
+                        Detailed Life & Destiny Analysis
+                      </p>
+                    </div>
+                  </button>
+                </motion.div>
+              </div>
+            )}
+          </section>
+        </div>
+      </DashboardPageShell>
+    </ProductPageFrame>
   )
 }
