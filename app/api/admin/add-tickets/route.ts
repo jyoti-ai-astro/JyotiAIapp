@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
-import { adjustTicketsByAdmin } from '@/lib/payments/ticket-service'
+import { adjustTicketsByAdmin, type TicketPayload } from '@/lib/payments/ticket-service'
 
 export async function POST(request: NextRequest) {
   return withAdminAuth(
@@ -16,9 +16,15 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        const deltas = Object.fromEntries(
-          Object.entries(tickets).map(([key, value]) => [key, Math.abs(Number(value))])
-        )
+        const deltas: TicketPayload = {}
+        for (const [key, raw] of Object.entries(tickets as Record<string, unknown>)) {
+          const value = Number(raw)
+          if (!Number.isSafeInteger(value) || value <= 0) {
+            return NextResponse.json({ error: `Invalid positive ticket amount for ${key}` }, { status: 400 })
+          }
+          ;(deltas as any)[key] = value
+        }
+
         const result = await adjustTicketsByAdmin({
           uid,
           actorAdminUid: admin.uid,
