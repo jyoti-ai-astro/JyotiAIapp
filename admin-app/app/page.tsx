@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { canonicalAdminFetch } from '@/lib/canonical-api'
 
 const nav = [
-  ['Overview', '/'], ['Users', '/users'], ['Payments', '/payments'], ['Subscriptions', '#'], ['Tickets', '#'],
+  ['Overview', '/'], ['Users', '/users'], ['Payments', '/payments'], ['Subscriptions', '/subscriptions'], ['Tickets', '#'],
   ['Reports', '#'], ['Guru', '#'], ['Knowledge', '#'], ['Jobs', '#'], ['Monitoring', '#'], ['Audit', '#'],
   ['Backups', '#'], ['Staff', '#'], ['Settings', '#'],
 ] as const
