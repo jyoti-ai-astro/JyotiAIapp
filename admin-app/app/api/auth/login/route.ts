@@ -21,13 +21,19 @@ export async function POST(request: NextRequest) {
   if (!origin) return NextResponse.json({ error: 'Admin backend is not configured' }, { status: 500 })
 
   const body = await request.text()
-  const upstream = await fetch(`${origin}/api/admin/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: origin },
-    body,
-    cache: 'no-store',
-    redirect: 'manual',
-  })
+  let upstream: Response
+  try {
+    upstream = await fetch(`${origin}/api/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: origin },
+      body,
+      cache: 'no-store',
+      redirect: 'follow',
+    })
+  } catch (error) {
+    console.error('[admin-login-proxy] Upstream request failed', error)
+    return NextResponse.json({ error: 'Admin authentication service is unreachable' }, { status: 502 })
+  }
 
   const payload = await upstream.json().catch(() => ({ error: 'Authentication failed' }))
   const setCookies = getSetCookies(upstream.headers)
@@ -36,6 +42,7 @@ export async function POST(request: NextRequest) {
   if (upstream.ok && !adminSession) {
     console.error('[admin-login-proxy] Upstream authenticated but no admin_session cookie was returned', {
       upstreamStatus: upstream.status,
+      finalHost: (() => { try { return new URL(upstream.url).host } catch { return 'unknown' } })(),
       setCookieCount: setCookies.length,
     })
     return NextResponse.json(
