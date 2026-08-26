@@ -13,7 +13,7 @@ const nextConfig = {
   images: {
     domains: [
       "localhost",
-      "jyoti.app",
+      "jyotiai.in",
       "firebasestorage.googleapis.com",
       "lh3.googleusercontent.com",
       "res.cloudinary.com",
