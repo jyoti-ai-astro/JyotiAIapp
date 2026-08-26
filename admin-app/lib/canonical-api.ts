@@ -58,6 +58,10 @@ async function fetchWithSafeRetry(url: string, init: RequestInit) {
   }
 }
 
+async function fetchPath(origin: string, path: string, init: RequestInit) {
+  return fetchWithSafeRetry(`${origin}${path}`, init)
+}
+
 export async function canonicalAdminFetch(path: string, init: RequestInit = {}) {
   const cookieStore = await cookies()
   const adminSession = cookieStore.get('admin_session')?.value
@@ -67,6 +71,17 @@ export async function canonicalAdminFetch(path: string, init: RequestInit = {}) 
   headers.set('Accept', 'application/json')
   headers.set('Origin', configuredOrigin)
   if (adminSession) headers.set('Cookie', `admin_session=${adminSession}`)
+  const requestInit = { ...init, headers }
 
-  return fetchWithSafeRetry(`${origin}${path}`, { ...init, headers })
+  // The Mission Control overview is additive and verified-success-only. Until its
+  // backend batch is deployed, fall back to the legacy dashboard route so local
+  // development remains usable without coordinating both deployments atomically.
+  if (path.startsWith('/api/admin/dashboard/stats') && isRetryableRead(init)) {
+    const queryIndex = path.indexOf('?')
+    const query = queryIndex >= 0 ? path.slice(queryIndex) : ''
+    const mission = await fetchPath(origin, `/api/admin/mission/overview${query}`, requestInit)
+    if (mission.status !== 404 && mission.status !== 401 && mission.status !== 403) return mission
+  }
+
+  return fetchPath(origin, path, requestInit)
 }
