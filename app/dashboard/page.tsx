@@ -440,11 +440,11 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recommended next action</CardTitle>
+            <CardTitle className="font-heading text-xl font-semibold text-[#17222c]">Recommended next action</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="font-medium text-primary">{recommendedAction.title}</p>
+              <p className="font-medium text-[#17222c]">{recommendedAction.title}</p>
               <p className="mt-1 text-sm text-muted-foreground">{recommendedAction.description}</p>
             </div>
             {recommendedAction.href ? (
@@ -541,7 +541,7 @@ function TodayCard({
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <Badge variant="premium">Rashi used: {today.rashi}</Badge>
-            <CardTitle className="mt-3">Today’s guidance</CardTitle>
+            <CardTitle className="mt-3 font-heading text-xl font-semibold text-[#17222c]">Today’s guidance</CardTitle>
           </div>
           <Badge variant="secondary">{today.date}</Badge>
         </div>
@@ -610,7 +610,7 @@ function KundaliIdentityCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Kundali identity</CardTitle>
+        <CardTitle className="font-heading text-xl font-semibold text-[#17222c]">Kundali identity</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <IdentityRow label="Rashi / Moon sign" value={identity.rashi} />
@@ -632,7 +632,7 @@ function IdentityRow({ label, value }: { label: string; value?: string | null })
   return (
     <div className="flex items-start justify-between gap-4 border-b border-border/70 pb-3 last:border-0">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-right text-sm font-medium text-primary">{value || 'Not available'}</span>
+      <span className="text-right text-sm font-medium text-[#17222c]">{value || 'Not available'}</span>
     </div>
   )
 }
@@ -647,7 +647,7 @@ function GuruLauncher({ hasAccess, loading }: { hasAccess: boolean; loading: boo
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ask Guru</CardTitle>
+        <CardTitle className="font-heading text-xl font-semibold text-[#17222c]">Ask Guru</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-sm leading-6 text-muted-foreground">
@@ -698,7 +698,7 @@ function PreviewCard({
           {icon}
         </div>
         <div>
-          <h3 className="font-heading text-xl font-semibold text-primary">{title}</h3>
+          <h3 className="font-heading text-xl font-semibold text-[#17222c]">{title}</h3>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
         </div>
         <Link href={href}>
@@ -732,7 +732,7 @@ function ReportsPreview({ reports }: { reports: RequestState<ReportRecord[]> }) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Latest reports</CardTitle>
+        <CardTitle className="font-heading text-xl font-semibold text-[#17222c]">Latest reports</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {reports.loading && <LoadingState title="Loading reports" description="Checking your saved report library." />}
@@ -758,7 +758,7 @@ function ReportsPreview({ reports }: { reports: RequestState<ReportRecord[]> }) 
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="font-medium text-primary">{report.title}</p>
+                <p className="font-medium text-[#17222c]">{report.title}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{reportTypeLabel(report.type)}</p>
               </div>
               <Badge variant={report.status === 'ready' ? 'success' : report.status === 'failed' ? 'error' : 'warning'}>
@@ -777,7 +777,7 @@ function PlanUsage({ tickets }: { tickets: RequestState<TicketSummary> }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Plan and usage</CardTitle>
+        <CardTitle className="font-heading text-xl font-semibold text-[#17222c]">Plan and usage</CardTitle>
       </CardHeader>
       <CardContent>
         {tickets.loading && <LoadingState title="Loading access" description="Checking your plan." />}
@@ -811,19 +811,19 @@ function MoreInsights({ festival }: { festival: any }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>More insights</CardTitle>
+        <CardTitle className="font-heading text-xl font-semibold text-[#17222c]">More insights</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
         {festival?.festival && (
           <div className="rounded-lg border border-jyoti-gold/30 bg-jyoti-gold/10 p-4">
-            <p className="text-sm font-semibold text-primary">{festival.festival.name}</p>
+            <p className="text-sm font-semibold text-[#17222c]">{festival.festival.name}</p>
             <p className="mt-1 text-sm text-muted-foreground">Today’s festival is available in your calendar context.</p>
           </div>
         )}
         <div className="grid gap-4 md:grid-cols-2">
           {groups.map((group) => (
             <div key={group.title}>
-              <p className="text-sm font-semibold text-primary">{group.title}</p>
+              <p className="text-sm font-semibold text-[#17222c]">{group.title}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {group.links.map(([label, href]) => (
                   <Link key={href} href={href}>
@@ -836,12 +836,22 @@ function MoreInsights({ festival }: { festival: any }) {
             </div>
           ))}
           <div>
-            <p className="text-sm font-semibold text-primary">Coming later</p>
+            <p className="text-sm font-semibold text-[#17222c]">Personal insights</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {['Career', 'Business', 'Compatibility', 'Numerology', 'Palmistry', 'Aura', 'Face'].map((label) => (
-                <Badge key={label} variant="secondary">
-                  {label}
-                </Badge>
+              {[
+                ['Career', '/career'],
+                ['Business', '/business'],
+                ['Compatibility', '/compatibility'],
+                ['Numerology', '/numerology'],
+                ['Palmistry', '/palmistry'],
+                ['Aura', '/aura'],
+                ['Face', '/face'],
+              ].map(([label, href]) => (
+                <Link key={href} href={href}>
+                  <Badge variant="outline" clickable>
+                    {label}
+                  </Badge>
+                </Link>
               ))}
             </div>
           </div>
