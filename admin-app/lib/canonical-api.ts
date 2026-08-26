@@ -62,6 +62,18 @@ async function fetchPath(origin: string, path: string, init: RequestInit) {
   return fetchWithSafeRetry(`${origin}${path}`, init)
 }
 
+function missionPreferredPath(path: string) {
+  const queryIndex = path.indexOf('?')
+  const pathname = queryIndex >= 0 ? path.slice(0, queryIndex) : path
+  const query = queryIndex >= 0 ? path.slice(queryIndex) : ''
+  const map: Record<string, string> = {
+    '/api/admin/dashboard/stats': '/api/admin/mission/overview',
+    '/api/admin/reports': '/api/admin/mission/reports',
+    '/api/admin/guru': '/api/admin/mission/guru',
+  }
+  return map[pathname] ? `${map[pathname]}${query}` : null
+}
+
 export async function canonicalAdminFetch(path: string, init: RequestInit = {}) {
   const cookieStore = await cookies()
   const adminSession = cookieStore.get('admin_session')?.value
@@ -73,14 +85,15 @@ export async function canonicalAdminFetch(path: string, init: RequestInit = {}) 
   if (adminSession) headers.set('Cookie', `admin_session=${adminSession}`)
   const requestInit = { ...init, headers }
 
-  // The Mission Control overview is additive and verified-success-only. Until its
-  // backend batch is deployed, fall back to the legacy dashboard route so local
-  // development remains usable without coordinating both deployments atomically.
-  if (path.startsWith('/api/admin/dashboard/stats') && isRetryableRead(init)) {
-    const queryIndex = path.indexOf('?')
-    const query = queryIndex >= 0 ? path.slice(queryIndex) : ''
-    const mission = await fetchPath(origin, `/api/admin/mission/overview${query}`, requestInit)
-    if (mission.status !== 404 && mission.status !== 401 && mission.status !== 403) return mission
+  // Prefer additive Mission Control read contracts when deployed. A 401/403/404
+  // means the canonical backend is still on the legacy contract, so read-only
+  // callers may safely fall back. Mutations are never remapped or retried here.
+  if (isRetryableRead(init)) {
+    const preferred = missionPreferredPath(path)
+    if (preferred) {
+      const mission = await fetchPath(origin, preferred, requestInit)
+      if (![401, 403, 404].includes(mission.status)) return mission
+    }
   }
 
   return fetchPath(origin, path, requestInit)
