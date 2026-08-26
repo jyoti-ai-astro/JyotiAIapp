@@ -1,8 +1,6 @@
 /**
  * Admin Authentication Layer
  * Milestone 10 - Step 1
- *
- * Admin authentication and role management
  */
 
 import crypto from 'crypto'
@@ -54,8 +52,17 @@ export const ADMIN_PERMISSIONS: Record<AdminRole, string[]> = {
   ],
 }
 
-function isAdminRole(role: unknown): role is AdminRole {
-  return typeof role === 'string' && role in ADMIN_PERMISSIONS
+function normalizeAdminRole(role: unknown): AdminRole {
+  if (typeof role !== 'string') return 'Support'
+  if (role in ADMIN_PERMISSIONS) return role as AdminRole
+
+  const legacy = role.trim().toLowerCase()
+  if (legacy === 'super' || legacy === 'superadmin' || legacy === 'super_admin' || legacy === 'admin') return 'SuperAdmin'
+  if (legacy === 'astrologer') return 'Astrologer'
+  if (legacy === 'support') return 'Support'
+  if (legacy === 'contentmanager' || legacy === 'content_manager' || legacy === 'content') return 'ContentManager'
+  if (legacy === 'finance') return 'Finance'
+  return 'Support'
 }
 
 export async function isAdmin(uid: string): Promise<boolean> {
@@ -75,14 +82,14 @@ export async function getAdminUser(uid: string): Promise<AdminUser | null> {
     const adminSnap = await adminDb.collection('admins').doc(uid).get()
     if (!adminSnap.exists) return null
     const data = adminSnap.data()
-    const role: AdminRole = isAdminRole(data?.role) ? data.role : 'Support'
+    const role = normalizeAdminRole(data?.role)
     return {
       uid,
       email: data?.email || '',
       role,
       name: data?.name || '',
-      createdAt: data?.createdAt?.toDate() || new Date(),
-      lastLogin: data?.lastLogin?.toDate(),
+      createdAt: data?.createdAt?.toDate?.() || new Date(),
+      lastLogin: data?.lastLogin?.toDate?.(),
       permissions: ADMIN_PERMISSIONS[role],
     }
   } catch (error) {
@@ -151,9 +158,7 @@ export function verifyAdminSessionToken(token: string): { valid: boolean; payloa
     const expected = crypto.createHmac('sha256', secret).update(`${header}.${body}`).digest('base64url')
     const actualBuffer = Buffer.from(signature)
     const expectedBuffer = Buffer.from(expected)
-    if (actualBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(actualBuffer, expectedBuffer)) {
-      return { valid: false }
-    }
+    if (actualBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(actualBuffer, expectedBuffer)) return { valid: false }
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'))
     if (payload.exp && Date.now() > payload.exp) return { valid: false }
     return { valid: true, payload }
