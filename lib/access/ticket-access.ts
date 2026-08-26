@@ -88,9 +88,3 @@ export function hasAnyAccess(user: UserAccess | null): boolean {
   return newTickets > 0 || (legacyTickets.ai_questions || 0) > 0 || (legacyTickets.kundali_basic || 0) > 0
 }
 
-/**
- * Decrement ticket via API call
- * Client-side function that calls the backend API
- */
-
-

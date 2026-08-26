@@ -12,7 +12,6 @@ interface AccessCheckResult {
   reason?: string
   redirect?: string
   redirectTo?: string // Alias for redirect
-  decrementTicket?: boolean
 }
 
 /**
@@ -74,13 +73,11 @@ export async function checkFeatureAccess(
       reason: 'You need to purchase access to use this feature',
       redirect: `/pay/${productId}`,
       redirectTo: `/pay/${productId}`,
-      decrementTicket: false,
     }
   }
 
   return {
     allowed: true,
-    decrementTicket: !hasSubscription, // Only decrement if no subscription
   }
 }
 
