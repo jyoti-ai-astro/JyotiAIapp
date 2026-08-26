@@ -13,13 +13,14 @@ export function RootSiteShell({
 }) {
   const pathname = usePathname()
 
-  const isVisualPrototype =
+  const isSelfContainedCelestialExperience =
+    pathname === '/' ||
     pathname === '/dev/visual-v2' ||
     pathname === '/dev/visual-v3' ||
     pathname.startsWith('/dev/visual-v2/') ||
     pathname.startsWith('/dev/visual-v3/')
 
-  if (isVisualPrototype) {
+  if (isSelfContainedCelestialExperience) {
     return (
       <main className="relative z-10 min-h-screen">
         {children}
