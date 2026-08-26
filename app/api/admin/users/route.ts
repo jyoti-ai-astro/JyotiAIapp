@@ -1,6 +1,6 @@
 /**
  * Admin Users API
- * 
+ *
  * Mega Build 4 - Admin Command Center
  * Full user management with pagination and actions
  */
@@ -32,14 +32,19 @@ export async function GET(request: NextRequest) {
 
       // Apply search filter if provided
       if (search) {
-        // Firestore doesn't support full-text search, so we'll filter client-side
-        // In production, use Algolia or similar
-        query = query.limit(limit * 3) // Get more to filter
+        // Firestore doesn't support full-text search, so we'll filter client-side.
+        // In production, use a dedicated search index for unbounded datasets.
+        query = query.limit(limit * 3)
       } else {
         query = query.limit(limit).offset(offset)
       }
 
-      const snapshot = await query.get()
+      const [snapshot, totalSnapshot] = await Promise.all([
+        query.get(),
+        adminDb.collection('users').count().get(),
+      ])
+
+      const totalUsers = Number(totalSnapshot.data().count || 0)
       const users: any[] = []
 
       snapshot.forEach((doc) => {
@@ -48,30 +53,38 @@ export async function GET(request: NextRequest) {
           uid: doc.id,
           email: data.email || '',
           displayName: data.name || data.displayName || 'No name',
-          isAdmin: false, // Will check separately
+          isAdmin: false,
           createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || null,
           lastLoginAt: data.lastLoginAt?.toDate?.()?.toISOString() || data.lastLoginAt || null,
           subscriptionStatus: data.subscriptionStatus || 'free',
+          onboardingComplete: Boolean(
+            data.onboardingComplete ??
+            data.onboardingCompleted ??
+            data.profileComplete ??
+            data.profileCompleted ??
+            false
+          ),
           legacyTickets: data.legacyTickets || {},
         }
 
-        // Apply search filter
-        if (!search || 
-            user.email.toLowerCase().includes(search.toLowerCase()) ||
-            user.displayName.toLowerCase().includes(search.toLowerCase())) {
+        if (
+          !search ||
+          user.email.toLowerCase().includes(search.toLowerCase()) ||
+          user.displayName.toLowerCase().includes(search.toLowerCase()) ||
+          user.uid.toLowerCase().includes(search.toLowerCase())
+        ) {
           users.push(user)
         }
       })
 
-      // Limit to requested page size
       const paginatedUsers = users.slice(0, limit)
 
-      // Check admin status for each user
+      // Check admin status for each visible user.
       for (const user of paginatedUsers) {
         user.isAdmin = await isAdmin(user.uid)
       }
 
-      // Get subscription status
+      // Resolve canonical subscription status for each visible user.
       for (const user of paginatedUsers) {
         const subRef = adminDb.collection('subscriptions').doc(user.uid)
         const subSnap = await subRef.get()
@@ -81,14 +94,23 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      const activeOnPage = paginatedUsers.filter((user) => user.subscriptionStatus === 'active').length
+      const staffOnPage = paginatedUsers.filter((user) => user.isAdmin).length
+
       return NextResponse.json({
         success: true,
         users: paginatedUsers,
         pagination: {
           page,
           limit,
-          total: users.length, // Approximate
-          hasMore: users.length >= limit,
+          total: search ? users.length : totalUsers,
+          hasMore: search ? users.length > limit : offset + paginatedUsers.length < totalUsers,
+        },
+        summary: {
+          totalUsers,
+          visibleUsers: search ? users.length : paginatedUsers.length,
+          activeOnPage,
+          staffOnPage,
         },
       })
     } catch (error: any) {
@@ -134,15 +156,13 @@ export async function POST(request: NextRequest) {
             }
 
             if (shouldBeAdmin) {
-              // Add to admins collection
               await adminDb.collection('admins').doc(uid).set({
                 email: userSnap.data()?.email || '',
-                role: 'Support', // Default role
+                role: 'Support',
                 name: userSnap.data()?.name || '',
                 createdAt: new Date(),
               })
             } else {
-              // Remove from admins collection
               await adminDb.collection('admins').doc(uid).delete()
             }
 
@@ -186,4 +206,3 @@ export async function POST(request: NextRequest) {
     'users.write'
   )(request)
 }
-
