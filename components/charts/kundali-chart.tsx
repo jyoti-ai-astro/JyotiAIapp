@@ -102,12 +102,18 @@ export function KundaliChart2D({
   }
 
   return (
-    <Card className={className}>
+    <Card
+      data-kundali-d1="true"
+      className={cn(
+        'border-[#d4a24b]/20 !bg-[#071014] shadow-none',
+        className
+      )}
+    >
       <CardHeader>
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <CardTitle>D1 Kundali chart</CardTitle>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <CardTitle className="text-[#f3ead8]">D1 Kundali chart</CardTitle>
+            <p className="mt-2 text-sm text-[#969a98]">
               A 12-house view built from your saved D1 planetary placements.
             </p>
           </div>
@@ -121,19 +127,29 @@ export function KundaliChart2D({
         <div
           role="img"
           aria-label="D1 Kundali chart showing planets by house"
-          className="grid aspect-square w-full max-w-3xl grid-cols-4 grid-rows-4 overflow-hidden rounded-xl border border-border bg-surface-raised"
+          className="grid aspect-square w-full grid-cols-4 grid-rows-4 overflow-hidden rounded-2xl border border-[#d4a24b]/24 bg-[#091216] shadow-[inset_0_0_80px_rgba(214,162,75,0.025)]"
         >
           {HOUSE_LAYOUT.map((houseNumber, index) => {
             if (houseNumber === 0) {
               return (
                 <div
                   key={`center-${index}`}
-                  className="flex items-center justify-center border border-border/80 bg-jyoti-gold/10 p-3 text-center"
+                  className={cn(
+                    'relative flex items-center justify-center bg-[#0b1519] p-3 text-center',
+                    index === 5 && 'border-l border-t border-[#d4a24b]/22',
+                    index === 6 && 'border-r border-t border-[#d4a24b]/22',
+                    index === 9 && 'border-l border-b border-[#d4a24b]/22',
+                    index === 10 && 'border-r border-b border-[#d4a24b]/22'
+                  )}
                 >
                   {index === 5 ? (
-                    <div>
-                      <p className="font-heading text-lg font-semibold text-primary">D1</p>
-                      <p className="text-xs text-muted-foreground">Birth chart</p>
+                    <div className="relative z-10">
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#dfa84d]/30 bg-[#111b1e] shadow-[0_0_28px_rgba(223,168,77,0.08)]">
+                        <p className="font-heading text-xl font-semibold text-[#efc46d]">D1</p>
+                      </div>
+                      <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.16em] text-[#9e9788]">
+                        Birth chart
+                      </p>
                     </div>
                   ) : null}
                 </div>
@@ -144,11 +160,15 @@ export function KundaliChart2D({
             return (
               <div
                 key={houseNumber}
-                className="min-h-24 border border-border/80 bg-card p-2 md:p-3"
+                className="min-h-24 border border-[#d4a24b]/14 bg-[#0d171b] p-2 transition-colors hover:bg-[#111d21] md:p-3"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="text-xs font-semibold text-primary">H{houseNumber}</span>
-                  {house?.sign && <span className="text-right text-[11px] text-muted-foreground">{house.sign}</span>}
+                  <span className="text-xs font-semibold text-[#d8a84e]">H{houseNumber}</span>
+                  {house?.sign && (
+                    <span className="text-right text-[11px] text-[#aaa393]">
+                      {house.sign}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {house?.planets.length ? (
@@ -156,8 +176,9 @@ export function KundaliChart2D({
                       <span
                         key={`${houseNumber}-${planet.planet}`}
                         className={cn(
-                          'rounded-md border border-jyoti-gold/30 bg-jyoti-gold/10 px-1.5 py-1 text-[11px] font-medium text-primary',
-                          planet.retrograde && 'border-warning/35 bg-warning/10'
+                          'rounded-md border border-[#d4a24b]/24 bg-[#182126] px-1.5 py-1 text-[11px] font-medium text-[#eee5d3]',
+                          planet.retrograde &&
+                            'border-[#d98d45]/40 bg-[#211812] text-[#efc184]'
                         )}
                         title={[
                           formatAstrologyDisplayValue(planet.sign, ''),
@@ -172,7 +193,7 @@ export function KundaliChart2D({
                       </span>
                     ))
                   ) : (
-                    <span className="text-[11px] text-muted-foreground">No planets</span>
+                    <span className="text-[11px] text-[#746f65]">No planets</span>
                   )}
                 </div>
               </div>
