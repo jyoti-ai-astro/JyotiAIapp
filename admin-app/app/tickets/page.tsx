@@ -9,6 +9,12 @@ const ticketTypes = [
   ['lifetimePredictions', 'Predictions'],
 ] as const
 
+type TicketType = (typeof ticketTypes)[number][0]
+
+function isTicketType(value: string): value is TicketType {
+  return ticketTypes.some(([ticketType]) => ticketType === value)
+}
+
 export default function TicketsPage() {
   const [status, setStatus] = useState<string>('')
   const [busy, setBusy] = useState(false)
@@ -17,13 +23,22 @@ export default function TicketsPage() {
     event.preventDefault()
     setBusy(true)
     setStatus('')
+
     const form = new FormData(event.currentTarget)
+    const ticketTypeValue = String(form.get('ticketType') || '')
+
+    if (!isTicketType(ticketTypeValue)) {
+      setBusy(false)
+      setStatus('Invalid ticket type')
+      return
+    }
+
     const payload = {
-      uid: form.get('uid'),
-      action: form.get('action'),
-      ticketType: form.get('ticketType'),
+      uid: String(form.get('uid') || ''),
+      action: String(form.get('action') || ''),
+      ticketType: ticketTypeValue,
       amount: Number(form.get('amount')),
-      reason: form.get('reason'),
+      reason: String(form.get('reason') || ''),
       correlationId: crypto.randomUUID(),
     }
 
