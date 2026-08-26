@@ -4,7 +4,7 @@ import { canonicalAdminFetch } from '@/lib/canonical-api'
 
 const nav = [
   ['Overview', '/'], ['Users', '/users'], ['Payments', '/payments'], ['Subscriptions', '/subscriptions'], ['Tickets', '/tickets'],
-  ['Reports', '#'], ['Guru', '#'], ['Knowledge', '#'], ['Jobs', '#'], ['Monitoring', '#'], ['Audit', '#'],
+  ['Reports', '/reports'], ['Guru', '/guru'], ['Knowledge', '/knowledge'], ['Jobs', '#'], ['Monitoring', '#'], ['Audit', '#'],
   ['Backups', '#'], ['Staff', '#'], ['Settings', '#'],
 ] as const
 
