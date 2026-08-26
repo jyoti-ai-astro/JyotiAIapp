@@ -26,9 +26,7 @@ async function verifyAdminSessionToken(token: string) {
     if (expected !== signature) return false
 
     const payload = JSON.parse(atobUrl(body))
-    if (payload.exp && Date.now() > payload.exp) {
-      return false
-    }
+    if (payload.exp && Date.now() > payload.exp) return false
 
     return true
   } catch (error) {
@@ -48,16 +46,27 @@ function base64UrlEncode(bytes: Uint8Array) {
 function atobUrl(value: string) {
   value = value.replace(/-/g, '+').replace(/_/g, '/')
   const pad = value.length % 4
-  if (pad) {
-    value += '='.repeat(4 - pad)
-  }
+  if (pad) value += '='.repeat(4 - pad)
   return Buffer.from(value, 'base64').toString('utf8')
+}
+
+function hardenAdminResponse(response: NextResponse) {
+  response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet')
+  response.headers.set('Cache-Control', 'no-store, private')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'no-referrer')
+  response.headers.set('X-Frame-Options', 'DENY')
+  return response
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Canonicalize retired Launch-v0 page aliases before React renders.
+  // Development surfaces must not exist in production.
+  if (process.env.NODE_ENV === 'production' && (pathname === '/dev' || pathname.startsWith('/dev/'))) {
+    return new NextResponse('Not Found', { status: 404 })
+  }
+
   const legacyRedirects: Record<string, string> = {
     '/home': '/',
     '/premium': '/pricing',
@@ -71,11 +80,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(legacyDestination, request.url))
   }
 
-  // Public auth routes (always allow)
   const publicAuthRoutes = ['/login', '/signup', '/reset-password', '/magic-link']
   const isPublicAuthRoute = publicAuthRoutes.some((route) => pathname === route)
 
-  // Canonical Launch v1 routes that require an authenticated user session.
   const protectedRoutes = [
     '/dashboard',
     '/onboarding',
@@ -96,60 +103,38 @@ export async function middleware(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
 
-  // Admin routes
-  const adminRoutes = ['/admin']
-  const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route))
+  const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/')
 
-  // Always allow public auth routes
-  if (isPublicAuthRoute) {
-    return NextResponse.next()
-  }
+  if (isPublicAuthRoute) return NextResponse.next()
 
-  // Check for session cookie (will be set by auth API)
   const sessionCookie = request.cookies.get('session')
-
   if (isProtectedRoute && !sessionCookie) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // Admin routes require admin_session cookie (not regular session)
   if (isAdminRoute) {
     const adminSessionCookie = request.cookies.get('admin_session')?.value
+
     if (!adminSessionCookie) {
-      // Allow /admin/login to pass through
       if (pathname === '/admin/login') {
-        return NextResponse.next()
+        return hardenAdminResponse(NextResponse.next())
       }
-      return NextResponse.redirect(new URL('/admin/login', request.url))
+      return hardenAdminResponse(NextResponse.redirect(new URL('/admin/login', request.url)))
     }
 
-    // Validate signed admin session token
-    const isValid = !!adminSessionCookie && (await verifyAdminSessionToken(adminSessionCookie))
+    const isValid = await verifyAdminSessionToken(adminSessionCookie)
     if (!isValid) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
+      return hardenAdminResponse(NextResponse.redirect(new URL('/admin/login', request.url)))
     }
 
-    return NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    })
+    return hardenAdminResponse(NextResponse.next())
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
