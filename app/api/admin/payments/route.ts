@@ -11,6 +11,10 @@ function toDate(value: any): Date | null {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+function iso(value: any): string | null {
+  return toDate(value)?.toISOString() || null
+}
+
 export async function GET(request: NextRequest) {
   return withAdminAuth(
     async (req) => {
@@ -20,15 +24,49 @@ export async function GET(request: NextRequest) {
 
       try {
         const { searchParams } = new URL(req.url)
-        const status = searchParams.get('status')
+        const status = (searchParams.get('status') || '').trim().toLowerCase()
+        const search = (searchParams.get('search') || '').trim().toLowerCase()
         const requestedLimit = Number.parseInt(searchParams.get('limit') || '50', 10)
         const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 50
 
         let query: any = adminDb.collection('payments')
-        if (status) query = query.where('status', '==', status)
+        if (status && status !== 'all') query = query.where('status', '==', status)
 
-        const snapshot = await query.orderBy('createdAt', 'desc').limit(limit).get()
-        const payments = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }))
+        const snapshot = await query.orderBy('createdAt', 'desc').limit(search ? Math.min(limit * 4, 200) : limit).get()
+        const payments = snapshot.docs
+          .map((doc: any) => {
+            const data = doc.data()
+            return {
+              id: doc.id,
+              userId: data.userId || data.uid || '',
+              email: data.email || data.userEmail || '',
+              status: data.status || 'unknown',
+              type: data.type || data.paymentType || '',
+              productId: data.productId || data.planId || data.plan || '',
+              amount: Number(data.amount || 0),
+              currency: data.currency || 'INR',
+              razorpayPaymentId: data.razorpayPaymentId || data.paymentId || '',
+              razorpayOrderId: data.razorpayOrderId || data.orderId || '',
+              razorpaySubscriptionId: data.razorpaySubscriptionId || '',
+              createdAt: iso(data.createdAt),
+              verifiedAt: iso(data.verifiedAt || data.completedAt),
+              failureCode: data.failureCode || data.errorCode || '',
+              failureDescription: data.failureDescription || data.errorDescription || data.error || '',
+            }
+          })
+          .filter((payment: any) => {
+            if (!search) return true
+            return [
+              payment.id,
+              payment.userId,
+              payment.email,
+              payment.razorpayPaymentId,
+              payment.razorpayOrderId,
+              payment.razorpaySubscriptionId,
+              payment.productId,
+            ].some((value) => String(value || '').toLowerCase().includes(search))
+          })
+          .slice(0, limit)
 
         const [allPayments, subscriptionsSnapshot] = await Promise.all([
           adminDb.collection('payments').get(),
@@ -42,6 +80,7 @@ export async function GET(request: NextRequest) {
         let verifiedRevenueToday = 0
         let successfulPayments = 0
         let failedPayments = 0
+        let pendingPayments = 0
 
         allPayments.forEach((doc) => {
           const data = doc.data()
@@ -55,6 +94,8 @@ export async function GET(request: NextRequest) {
             }
           } else if (data.status === 'failed') {
             failedPayments += 1
+          } else if (data.status === 'pending' || data.status === 'created') {
+            pendingPayments += 1
           }
         })
 
@@ -75,15 +116,14 @@ export async function GET(request: NextRequest) {
             verifiedRevenueToday,
             successfulPayments,
             failedPayments,
+            pendingPayments,
             activeSubscriptions,
           },
+          filters: { status: status || 'all', search },
         })
       } catch (error: any) {
         console.error('List payments error:', error)
-        return NextResponse.json(
-          { error: error.message || 'Failed to list payments' },
-          { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to list payments' }, { status: 500 })
       }
     },
     'payments.read'
@@ -96,10 +136,7 @@ export async function POST(request: NextRequest) {
       try {
         const { paymentId, signature, orderId } = await req.json()
         if (!paymentId || !signature || !orderId) {
-          return NextResponse.json(
-            { error: 'paymentId, signature, and orderId are required' },
-            { status: 400 }
-          )
+          return NextResponse.json({ error: 'paymentId, signature, and orderId are required' }, { status: 400 })
         }
 
         const razorpayKeySecret = (await import('@/lib/env/env.mjs')).envVars.razorpay.keySecret
@@ -120,10 +157,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, isValid })
       } catch (error: any) {
         console.error('Verify payment error:', error)
-        return NextResponse.json(
-          { error: error.message || 'Failed to verify payment' },
-          { status: 500 }
-        )
+        return NextResponse.json({ error: 'Failed to verify payment' }, { status: 500 })
       }
     },
     'payments.read'
