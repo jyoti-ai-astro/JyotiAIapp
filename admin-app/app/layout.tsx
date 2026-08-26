@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import './mission-components.css'
 import AdminShell from '@/components/admin-shell'
 
 export const metadata: Metadata = {
