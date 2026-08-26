@@ -82,6 +82,20 @@ export async function POST(request: NextRequest) {
       numerology
     )
 
+    // Consume only after successful ritual generation and before paid-result delivery.
+    try {
+      await consumeFeatureTicket(uid, featureKey)
+    } catch (err: any) {
+      console.error('Ticket consumption error:', err)
+      return NextResponse.json(
+        {
+          error: 'TICKET_CONSUMPTION_FAILED',
+          message: 'The ritual was generated, but credit consumption could not be confirmed. Please retry.',
+        },
+        { status: 409 }
+      )
+    }
+
     return NextResponse.json({
       success: true,
       ritual,

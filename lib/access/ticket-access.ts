@@ -92,28 +92,5 @@ export function hasAnyAccess(user: UserAccess | null): boolean {
  * Decrement ticket via API call
  * Client-side function that calls the backend API
  */
-export async function decrementTicket(
-  ticketType: 'ai_questions' | 'kundali_basic'
-): Promise<{ success: boolean; tickets?: any } | null> {
-  try {
-    const response = await fetch('/api/tickets/decrement', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ ticketType }),
-    })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to decrement ticket')
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error('Decrement ticket error:', error)
-    return null
-  }
-}
 

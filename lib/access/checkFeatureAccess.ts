@@ -5,7 +5,6 @@
  */
 
 import { canAccessFeature } from './ticket-access'
-import { decrementTicket } from './ticket-access'
 import { useUserStore, type User } from '@/store/user-store'
 
 interface AccessCheckResult {

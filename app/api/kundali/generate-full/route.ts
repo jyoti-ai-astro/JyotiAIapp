@@ -4,7 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { generateFullKundali } from '@/lib/engines/kundali/generator';
 import type { BirthDetails } from '@/lib/engines/kundali/swisseph-wrapper';
-import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket-service';
+import {
+  claimFeatureUse,
+  releaseFeatureUseClaim,
+} from '@/lib/payments/ticket-service';
 import type { FeatureKey } from '@/lib/payments/feature-access';
 import { isValidCoordinate, isValidTimezone } from '@/lib/services/geocoding';
 
@@ -89,6 +92,11 @@ function validateKundaliBirthData(userData: any):
 export async function POST(request: NextRequest) {
   let claimedFirstOnboardingKundali = false;
   let claimUserRef: FirebaseFirestore.DocumentReference | null = null;
+  let paidKundaliClaim: {
+    claimId: string;
+    mode: 'subscription' | 'ticket';
+  } | null = null;
+  let paidClaimUid: string | null = null;
 
   try {
     // Verify session
@@ -197,9 +205,36 @@ export async function POST(request: NextRequest) {
 
     if (!isFirstOnboardingKundali) {
       try {
-        await ensureFeatureAccess(uid, featureKey);
+        const claim = await claimFeatureUse(
+          uid,
+          featureKey,
+          'kundaliGenerationClaim',
+          30 * 60 * 1000
+        );
+
+        if (claim.status === 'in_progress') {
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'KUNDALI_GENERATION_IN_PROGRESS',
+              message: 'A Kundali generation is already in progress. Please wait a moment and refresh.',
+            },
+            { status: 409 }
+          );
+        }
+
+        if (!claim.claimId || !claim.mode) {
+          throw new Error('Kundali generation claim was incomplete');
+        }
+
+        paidKundaliClaim = {
+          claimId: claim.claimId,
+          mode: claim.mode,
+        };
+        paidClaimUid = uid;
       } catch (err: any) {
         const code = err?.code || err?.message || 'UNKNOWN';
+
         if (code === 'NO_TICKETS') {
           return NextResponse.json(
             {
@@ -211,12 +246,12 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        console.error('[kundali] Ticket check failed:', err);
+        console.error('[kundali] Generation claim failed:', err);
         return NextResponse.json(
           {
             success: false,
             code: 'ACCESS_CHECK_FAILED',
-            message: 'Unable to verify Kundali access.',
+            message: 'Unable to reserve Kundali generation access.',
           },
           { status: 500 }
         );
@@ -245,105 +280,162 @@ export async function POST(request: NextRequest) {
       throw new Error('kundali generation returned empty data');
     }
 
-    // Save to Firestore
-    await kundaliRef.set({
-      meta: {
-        ...kundali.meta,
-        generatedAt:
-          (kundali.meta as any).generatedAt instanceof Date
-            ? kundali.meta.generatedAt
-            : new Date(),
-        generationKind: isFirstOnboardingKundali ? 'onboarding_basic' : 'paid_or_subscription',
-        source: isFirstOnboardingKundali ? 'onboarding' : 'entitled',
-        stale: false,
-        staleReason: null,
-        staleAt: null,
-      },
-    }, { merge: true });
+    const kundaliMetaPayload = {
+      ...kundali.meta,
+      generatedAt:
+        (kundali.meta as any).generatedAt instanceof Date
+          ? kundali.meta.generatedAt
+          : new Date(),
+      generationKind: isFirstOnboardingKundali
+        ? 'onboarding_basic'
+        : 'paid_or_subscription',
+      source: isFirstOnboardingKundali ? 'onboarding' : 'entitled',
+      stale: false,
+      staleReason: null,
+      staleAt: null,
+    };
 
-    // Save D1 chart
-    await kundaliRef
-      .collection('D1')
-      .doc('chart')
-      .set({
-        chartType: kundali.D1?.chartType,
-        grahas: kundali.D1?.grahas,
-        bhavas: kundali.D1?.bhavas,
-        lagna: kundali.D1?.lagna,
-        aspects: kundali.D1?.aspects,
-      });
+    const d1Payload = {
+      chartType: kundali.D1?.chartType,
+      grahas: kundali.D1?.grahas,
+      bhavas: kundali.D1?.bhavas,
+      lagna: kundali.D1?.lagna,
+      aspects: kundali.D1?.aspects,
+    };
 
-    // Save Dasha
-    await kundaliRef
-      .collection('dasha')
-      .doc('vimshottari')
-      .set({
-        ...(kundali.dasha?.currentMahadasha
-          ? {
-              currentMahadasha: {
-                ...kundali.dasha.currentMahadasha,
-                startDate:
-                  (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
-                    kundali.dasha.currentMahadasha.startDate
-                  ) ?? kundali.dasha.currentMahadasha.startDate,
-                endDate:
-                  (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
-                    kundali.dasha.currentMahadasha.endDate
-                  ) ?? kundali.dasha.currentMahadasha.endDate,
-              },
-            }
-          : {}),
-        ...(kundali.dasha?.currentAntardasha
-          ? {
-              currentAntardasha: {
-                ...kundali.dasha.currentAntardasha,
-                startDate:
-                  (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
-                    kundali.dasha.currentAntardasha.startDate
-                  ) ?? kundali.dasha.currentAntardasha.startDate,
-                endDate:
-                  (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
-                    kundali.dasha.currentAntardasha.endDate
-                  ) ?? kundali.dasha.currentAntardasha.endDate,
-              },
-            }
-          : {}),
-        ...(kundali.dasha?.currentPratyantardasha
-          ? {
-              currentPratyantardasha: {
-                ...kundali.dasha.currentPratyantardasha,
-                startDate:
-                  (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
-                    kundali.dasha.currentPratyantardasha.startDate
-                  ) ?? kundali.dasha.currentPratyantardasha.startDate,
-                endDate:
-                  (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
-                    kundali.dasha.currentPratyantardasha.endDate
-                  ) ?? kundali.dasha.currentPratyantardasha.endDate,
-              },
-            }
-          : {}),
-      });
+    const dashaPayload = {
+      ...(kundali.dasha?.currentMahadasha
+        ? {
+            currentMahadasha: {
+              ...kundali.dasha.currentMahadasha,
+              startDate:
+                (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
+                  kundali.dasha.currentMahadasha.startDate
+                ) ?? kundali.dasha.currentMahadasha.startDate,
+              endDate:
+                (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
+                  kundali.dasha.currentMahadasha.endDate
+                ) ?? kundali.dasha.currentMahadasha.endDate,
+            },
+          }
+        : {}),
+      ...(kundali.dasha?.currentAntardasha
+        ? {
+            currentAntardasha: {
+              ...kundali.dasha.currentAntardasha,
+              startDate:
+                (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
+                  kundali.dasha.currentAntardasha.startDate
+                ) ?? kundali.dasha.currentAntardasha.startDate,
+              endDate:
+                (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
+                  kundali.dasha.currentAntardasha.endDate
+                ) ?? kundali.dasha.currentAntardasha.endDate,
+            },
+          }
+        : {}),
+      ...(kundali.dasha?.currentPratyantardasha
+        ? {
+            currentPratyantardasha: {
+              ...kundali.dasha.currentPratyantardasha,
+              startDate:
+                (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
+                  kundali.dasha.currentPratyantardasha.startDate
+                ) ?? kundali.dasha.currentPratyantardasha.startDate,
+              endDate:
+                (adminDb as any)?.constructor?.Timestamp?.fromDate?.(
+                  kundali.dasha.currentPratyantardasha.endDate
+                ) ?? kundali.dasha.currentPratyantardasha.endDate,
+            },
+          }
+        : {}),
+    };
+
+    const d1Ref = kundaliRef.collection('D1').doc('chart');
+    const dashaRef = kundaliRef.collection('dasha').doc('vimshottari');
 
     if (isFirstOnboardingKundali) {
-      await userRef.set(
-        {
-          freeOnboardingKundaliGeneratedAt: new Date(),
-          freeOnboardingKundaliClaimedAt: null,
-          derivedAstrologyStatus: 'current',
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
+      // Finalize the free onboarding Kundali atomically.
+      await adminDb.runTransaction(async (transaction) => {
+        const freshUserSnap = await transaction.get(userRef);
+        const freshUserData = freshUserSnap.data() || {};
+
+        if (!freshUserSnap.exists) {
+          throw new Error('User not found during onboarding Kundali finalization');
+        }
+
+        if (!freshUserData.freeOnboardingKundaliClaimedAt) {
+          throw new Error('Onboarding Kundali claim was lost before finalization');
+        }
+
+        transaction.set(
+          kundaliRef,
+          { meta: kundaliMetaPayload },
+          { merge: true }
+        );
+        transaction.set(d1Ref, d1Payload);
+        transaction.set(dashaRef, dashaPayload);
+        transaction.set(
+          userRef,
+          {
+            freeOnboardingKundaliGeneratedAt: new Date(),
+            freeOnboardingKundaliClaimedAt: null,
+            derivedAstrologyStatus: 'current',
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        );
+      });
+
+      claimedFirstOnboardingKundali = false;
+      claimUserRef = null;
     } else {
-      await consumeFeatureTicket(uid, featureKey);
-      await userRef.set(
-        {
-          derivedAstrologyStatus: 'current',
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
+      if (!paidKundaliClaim) {
+        throw new Error('Paid Kundali claim missing before finalization');
+      }
+
+      // The ticket/subscription reservation already happened atomically.
+      // Persist all canonical Kundali state and clear the matching claim
+      // in one Firestore transaction before exposing the result.
+      await adminDb.runTransaction(async (transaction) => {
+        const freshUserSnap = await transaction.get(userRef);
+
+        if (!freshUserSnap.exists) {
+          throw new Error('User not found during Kundali finalization');
+        }
+
+        const freshUserData = freshUserSnap.data() || {};
+        const activeClaim = freshUserData.kundaliGenerationClaim;
+
+        if (
+          !activeClaim ||
+          activeClaim.id !== paidKundaliClaim?.claimId
+        ) {
+          throw new Error('Kundali generation claim no longer matches');
+        }
+
+        transaction.set(
+          kundaliRef,
+          { meta: kundaliMetaPayload },
+          { merge: true }
+        );
+        transaction.set(d1Ref, d1Payload);
+        transaction.set(dashaRef, dashaPayload);
+        transaction.set(
+          userRef,
+          {
+            kundaliGenerationClaim: null,
+            derivedAstrologyStatus: 'current',
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        );
+      });
+
+      // Finalization committed the reserved entitlement and persisted result.
+      // Do not refund this claim if a later response serialization issue occurs.
+      paidKundaliClaim = null;
+      paidClaimUid = null;
     }
 
     return NextResponse.json({
@@ -361,6 +453,18 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
+    if (paidKundaliClaim && paidClaimUid) {
+      await releaseFeatureUseClaim(
+        paidClaimUid,
+        'kundali',
+        'kundaliGenerationClaim',
+        paidKundaliClaim.claimId,
+        true
+      ).catch((claimError: any) => {
+        console.error('[kundali] failed to release paid generation claim', claimError);
+      });
+    }
+
     if (claimedFirstOnboardingKundali && claimUserRef) {
       await claimUserRef
         .set(

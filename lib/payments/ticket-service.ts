@@ -7,6 +7,7 @@
  * and feature access.
  */
 
+import { randomUUID } from 'crypto'
 import { adminDb } from '@/lib/firebase/admin'
 import { getFeatureAccess, type FeatureKey } from '@/lib/payments/feature-access'
 
@@ -190,47 +191,68 @@ export async function consumeTickets(uid: string, ticketPayload: TicketPayload):
 
   try {
     const userRef = adminDb.collection('users').doc(uid)
-    const userSnap = await userRef.get()
 
-    if (!userSnap.exists) {
-      throw new Error('User not found')
-    }
+    return await adminDb.runTransaction(async (transaction) => {
+      const userSnap = await transaction.get(userRef)
 
-    const userData = userSnap.data()
-    const updates: any = {}
-
-    // Check if user has enough tickets
-    if (ticketPayload.aiGuruTickets !== undefined && ticketPayload.aiGuruTickets > 0) {
-      const current = userData?.aiGuruTickets || 0
-      if (current < ticketPayload.aiGuruTickets) {
-        return false // Not enough tickets
+      if (!userSnap.exists) {
+        throw new Error('User not found')
       }
-      updates.aiGuruTickets = current - ticketPayload.aiGuruTickets
-      // Also update legacy tickets field for backward compatibility
-      const legacyTickets = userData?.tickets || 0
-      updates.tickets = Math.max(0, legacyTickets - ticketPayload.aiGuruTickets)
-    }
 
-    if (ticketPayload.kundaliTickets !== undefined && ticketPayload.kundaliTickets > 0) {
-      const current = userData?.kundaliTickets || 0
-      if (current < ticketPayload.kundaliTickets) {
-        return false // Not enough tickets
+      const userData = userSnap.data()
+      const updates: any = {}
+
+      if (ticketPayload.aiGuruTickets !== undefined && ticketPayload.aiGuruTickets > 0) {
+        const current = userData?.aiGuruTickets || 0
+
+        if (current < ticketPayload.aiGuruTickets) {
+          return false
+        }
+
+        updates.aiGuruTickets = current - ticketPayload.aiGuruTickets
+
+        // Keep the legacy mirror synchronized while backward compatibility remains.
+        const legacyTickets =
+          typeof userData?.tickets === 'number'
+            ? userData.tickets
+            : current
+
+        updates.tickets = Math.max(
+          0,
+          legacyTickets - ticketPayload.aiGuruTickets
+        )
       }
-      updates.kundaliTickets = current - ticketPayload.kundaliTickets
-    }
 
-    if (ticketPayload.lifetimePredictions !== undefined && ticketPayload.lifetimePredictions > 0) {
-      const current = userData?.lifetimePredictions || 0
-      if (current < ticketPayload.lifetimePredictions) {
-        return false // Not enough tickets
+      if (ticketPayload.kundaliTickets !== undefined && ticketPayload.kundaliTickets > 0) {
+        const current = userData?.kundaliTickets || 0
+
+        if (current < ticketPayload.kundaliTickets) {
+          return false
+        }
+
+        updates.kundaliTickets = current - ticketPayload.kundaliTickets
       }
-      updates.lifetimePredictions = current - ticketPayload.lifetimePredictions
-    }
 
-    updates.updatedAt = new Date()
+      if (
+        ticketPayload.lifetimePredictions !== undefined &&
+        ticketPayload.lifetimePredictions > 0
+      ) {
+        const current = userData?.lifetimePredictions || 0
 
-    await userRef.update(updates)
-    return true
+        if (current < ticketPayload.lifetimePredictions) {
+          return false
+        }
+
+        updates.lifetimePredictions =
+          current - ticketPayload.lifetimePredictions
+      }
+
+      updates.updatedAt = new Date()
+
+      transaction.update(userRef, updates)
+
+      return true
+    })
   } catch (error: any) {
     console.error('Error consuming tickets:', error)
     throw new Error(`Failed to consume tickets: ${error.message}`)
@@ -378,6 +400,166 @@ export function decrementTickets(user: any, ticketPayload: TicketPayload): any {
   }
 
   return updates
+}
+
+
+export type FeatureUseClaimMode = 'subscription' | 'ticket'
+
+export interface FeatureUseClaimResult {
+  status: 'claimed' | 'in_progress'
+  claimId?: string
+  mode?: FeatureUseClaimMode
+}
+
+/**
+ * Atomically reserve a feature use.
+ *
+ * Subscription users receive a zero-ticket claim.
+ * Ticket users have the configured ticket reserved in the same transaction.
+ * A fresh existing claim prevents concurrent duplicate generation.
+ */
+export async function claimFeatureUse(
+  uid: string,
+  featureKey: FeatureKey,
+  claimField: string,
+  ttlMs = 10 * 60 * 1000
+): Promise<FeatureUseClaimResult> {
+  if (!adminDb) {
+    throw new Error('Firestore not initialized')
+  }
+
+  const config = getFeatureAccess(featureKey)
+  const userRef = adminDb.collection('users').doc(uid)
+  const claimId = randomUUID()
+
+  return adminDb.runTransaction(async (transaction) => {
+    const userSnap = await transaction.get(userRef)
+
+    if (!userSnap.exists) {
+      throw new Error('User not found')
+    }
+
+    const userData = userSnap.data() || {}
+    const existingClaim = userData?.[claimField]
+    const existingClaimedAt = toDateOrNull(existingClaim?.claimedAt)
+
+    if (
+      existingClaim?.id &&
+      existingClaimedAt &&
+      Date.now() - existingClaimedAt.getTime() < ttlMs
+    ) {
+      return {
+        status: 'in_progress' as const,
+      }
+    }
+
+    const subscription = detectSubscription(userData)
+    const updates: Record<string, any> = {}
+    let mode: FeatureUseClaimMode = 'subscription'
+
+    if (!subscription.hasSubscription) {
+      mode = 'ticket'
+
+      const current = Number(userData?.[config.ticketField] || 0)
+
+      if (current < config.costPerUse) {
+        const error: any = new Error(
+          `Insufficient ${config.ticketField} for ${config.label}`
+        )
+        error.code = 'NO_TICKETS'
+        error.feature = featureKey
+        throw error
+      }
+
+      updates[config.ticketField] = current - config.costPerUse
+
+      if (config.ticketField === 'aiGuruTickets') {
+        const legacyTickets =
+          typeof userData?.tickets === 'number'
+            ? userData.tickets
+            : current
+
+        updates.tickets = Math.max(
+          0,
+          legacyTickets - config.costPerUse
+        )
+      }
+    }
+
+    updates[claimField] = {
+      id: claimId,
+      featureKey,
+      mode,
+      claimedAt: new Date(),
+    }
+    updates.updatedAt = new Date()
+
+    transaction.update(userRef, updates)
+
+    return {
+      status: 'claimed' as const,
+      claimId,
+      mode,
+    }
+  })
+}
+
+/**
+ * Release a feature-use claim.
+ *
+ * When refundTicket=true, a ticket-reserved claim restores the exact
+ * configured feature cost. Subscription claims never mint tickets.
+ */
+export async function releaseFeatureUseClaim(
+  uid: string,
+  featureKey: FeatureKey,
+  claimField: string,
+  claimId: string,
+  refundTicket: boolean
+): Promise<void> {
+  if (!adminDb) {
+    throw new Error('Firestore not initialized')
+  }
+
+  const config = getFeatureAccess(featureKey)
+  const userRef = adminDb.collection('users').doc(uid)
+
+  await adminDb.runTransaction(async (transaction) => {
+    const userSnap = await transaction.get(userRef)
+
+    if (!userSnap.exists) {
+      return
+    }
+
+    const userData = userSnap.data() || {}
+    const claim = userData?.[claimField]
+
+    // Never release or refund somebody else's newer claim.
+    if (!claim || claim.id !== claimId) {
+      return
+    }
+
+    const updates: Record<string, any> = {
+      [claimField]: null,
+      updatedAt: new Date(),
+    }
+
+    if (refundTicket && claim.mode === 'ticket') {
+      const current = Number(userData?.[config.ticketField] || 0)
+      updates[config.ticketField] = current + config.costPerUse
+
+      if (config.ticketField === 'aiGuruTickets') {
+        const legacyTickets =
+          typeof userData?.tickets === 'number'
+            ? userData.tickets
+            : current
+
+        updates.tickets = legacyTickets + config.costPerUse
+      }
+    }
+
+    transaction.update(userRef, updates)
+  })
 }
 
 /**

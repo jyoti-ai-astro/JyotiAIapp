@@ -16,6 +16,7 @@ export type FeatureKey =
   | 'career'
   | 'business'
   | 'compatibility'
+  | 'numerology'
   | 'face'
   | 'palmistry'
   | 'aura'
@@ -65,6 +66,13 @@ export const FEATURE_ACCESS: Record<FeatureKey, FeatureAccessConfig> = {
     ticketField: 'lifetimePredictions',
     costPerUse: 1,
     defaultProductId: '299',
+  },
+  numerology: {
+    key: 'numerology',
+    label: 'Numerology',
+    ticketField: 'kundaliTickets',
+    costPerUse: 1,
+    defaultProductId: '199',
   },
   face: {
     key: 'face',
