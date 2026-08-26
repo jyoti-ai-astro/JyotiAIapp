@@ -2,9 +2,7 @@
  * Ticket Service
  *
  * Pricing & Payments v3 - Phase F
- *
- * Centralized ticket + subscription management for one-time purchases
- * and feature access.
+ * Centralized ticket + subscription management.
  */
 
 import { adminDb } from '@/lib/firebase/admin'
@@ -24,7 +22,25 @@ export interface UserTickets {
   uid?: string
 }
 
+export interface AdminTicketAdjustmentInput {
+  uid: string
+  actorAdminUid: string
+  reason: string
+  correlationId: string
+  deltas?: TicketPayload
+  reset?: boolean
+}
+
+export interface AdminTicketAdjustmentResult {
+  before: UserTickets
+  after: UserTickets
+  idempotentReplay: boolean
+}
+
 const ACTIVE_STATUSES = new Set(['active', 'authenticated'])
+const TICKET_FIELDS = ['aiGuruTickets', 'kundaliTickets', 'lifetimePredictions'] as const
+
+type TicketField = (typeof TICKET_FIELDS)[number]
 
 function toDateOrNull(value: any): Date | null {
   if (!value) return null
@@ -34,366 +50,257 @@ function toDateOrNull(value: any): Date | null {
   return Number.isNaN(d.getTime()) ? null : d
 }
 
-/**
- * Internal helper: detect active subscription (new + legacy shapes).
- */
-function detectSubscription(userData: any): {
-  hasSubscription: boolean
-  planId?: string
-  expiry?: Date
-} {
+function detectSubscription(userData: any): { hasSubscription: boolean; planId?: string; expiry?: Date } {
   const now = new Date()
-
   let hasNew = false
   let hasLegacy = false
   let planId: string | undefined
   let expiry: Date | undefined
 
-  // New object-based subscription
   const subObj = typeof userData?.subscription === 'object' ? userData.subscription : null
   if (subObj) {
     const status: string | null = subObj.status ?? null
     const activeFlag: boolean = subObj.active === true
-
     const statusActive = status ? ACTIVE_STATUSES.has(status) : false
-
-    const rawExpiry =
-      subObj.expiry ??
-      subObj.expiresAt ??
-      subObj.subscriptionExpiry
-
-    const expiryDate = toDateOrNull(rawExpiry) ?? undefined
-
-    const isWithinExpiry =
-      !expiryDate || expiryDate > now
-
-    if ((activeFlag || statusActive) && isWithinExpiry) {
+    const expiryDate = toDateOrNull(subObj.expiry ?? subObj.expiresAt ?? subObj.subscriptionExpiry) ?? undefined
+    if ((activeFlag || statusActive) && (!expiryDate || expiryDate > now)) {
       hasNew = true
       planId = subObj.planId ?? planId
       expiry = expiryDate ?? expiry
     }
   }
 
-  // Legacy string-based subscription + subscriptionExpiry
-  const legacySub =
-    typeof userData?.subscription === 'string'
-      ? (userData.subscription as string)
-      : undefined
-
+  const legacySub = typeof userData?.subscription === 'string' ? userData.subscription : undefined
   const legacyExpiry = toDateOrNull(userData?.subscriptionExpiry) ?? undefined
-
-  if (
-    legacySub &&
-    legacySub !== 'free' &&
-    legacyExpiry &&
-    legacyExpiry > now
-  ) {
+  if (legacySub && legacySub !== 'free' && legacyExpiry && legacyExpiry > now) {
     hasLegacy = true
-    if (!planId) {
-      planId = legacySub
-    }
-    if (!expiry) {
-      expiry = legacyExpiry
-    }
+    planId = planId || legacySub
+    expiry = expiry || legacyExpiry
   }
 
+  return { hasSubscription: hasNew || hasLegacy, planId, expiry }
+}
+
+function normalizeTickets(data: any): UserTickets {
   return {
-    hasSubscription: hasNew || hasLegacy,
-    planId,
-    expiry,
+    aiGuruTickets: Number(data?.aiGuruTickets || 0),
+    kundaliTickets: Number(data?.kundaliTickets || 0),
+    lifetimePredictions: Number(data?.lifetimePredictions || 0),
   }
 }
 
-/**
- * Get user tickets from Firestore
- */
+function validateTicketPayload(payload: TicketPayload | undefined): TicketPayload {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error('A ticket adjustment payload is required')
+  }
+
+  const keys = Object.keys(payload)
+  if (keys.length === 0 || keys.some((key) => !TICKET_FIELDS.includes(key as TicketField))) {
+    throw new Error('Invalid ticket field')
+  }
+
+  const validated: TicketPayload = {}
+  for (const field of TICKET_FIELDS) {
+    const value = payload[field]
+    if (value !== undefined) {
+      if (!Number.isSafeInteger(value) || value === 0 || Math.abs(value) > 100000) {
+        throw new Error(`Invalid ${field} adjustment`)
+      }
+      validated[field] = value
+    }
+  }
+  return validated
+}
+
 export async function fetchUserTickets(uid: string): Promise<UserTickets | null> {
-  if (!adminDb) {
-    throw new Error('Firestore not initialized')
-  }
-
-  try {
-    const userRef = adminDb.collection('users').doc(uid)
-    const userSnap = await userRef.get()
-
-    if (!userSnap.exists) {
-      return null
-    }
-
-    const userData = userSnap.data()
-    return {
-      aiGuruTickets: userData?.aiGuruTickets || 0,
-      kundaliTickets: userData?.kundaliTickets || 0,
-      lifetimePredictions: userData?.lifetimePredictions || 0,
-      email: userData?.email || undefined,
-      uid: uid,
-    }
-  } catch (error: any) {
-    console.error('Error fetching user tickets:', error)
-    throw new Error(`Failed to fetch user tickets: ${error.message}`)
-  }
+  if (!adminDb) throw new Error('Firestore not initialized')
+  const snap = await adminDb.collection('users').doc(uid).get()
+  if (!snap.exists) return null
+  const data = snap.data()
+  return { ...normalizeTickets(data), email: data?.email || undefined, uid }
 }
 
-/**
- * Add tickets to user account
- */
 export async function addTickets(uid: string, ticketPayload: TicketPayload): Promise<void> {
-  if (!adminDb) {
-    throw new Error('Firestore not initialized')
-  }
+  if (!adminDb) throw new Error('Firestore not initialized')
+  const payload = validateTicketPayload(ticketPayload)
+  if (Object.values(payload).some((value) => (value || 0) < 0)) throw new Error('addTickets only accepts positive values')
 
-  try {
-    const userRef = adminDb.collection('users').doc(uid)
-    const userSnap = await userRef.get()
-
-    if (!userSnap.exists) {
-      throw new Error('User not found')
+  const userRef = adminDb.collection('users').doc(uid)
+  await adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef)
+    if (!snap.exists) throw new Error('User not found')
+    const current = normalizeTickets(snap.data())
+    const updates: Record<string, any> = { updatedAt: new Date() }
+    for (const field of TICKET_FIELDS) {
+      const delta = payload[field]
+      if (delta !== undefined) updates[field] = current[field] + delta
     }
-
-    const userData = userSnap.data()
-    const updates: any = {}
-
-    if (ticketPayload.aiGuruTickets !== undefined) {
-      const current = userData?.aiGuruTickets || 0
-      updates.aiGuruTickets = current + ticketPayload.aiGuruTickets
-      // Also update legacy tickets field for backward compatibility
-      const legacyTickets = userData?.tickets || 0
-      updates.tickets = legacyTickets + ticketPayload.aiGuruTickets
+    if (payload.aiGuruTickets !== undefined) {
+      updates.tickets = Number(snap.data()?.tickets || 0) + payload.aiGuruTickets
     }
-
-    if (ticketPayload.kundaliTickets !== undefined) {
-      const current = userData?.kundaliTickets || 0
-      updates.kundaliTickets = current + ticketPayload.kundaliTickets
-    }
-
-    if (ticketPayload.lifetimePredictions !== undefined) {
-      const current = userData?.lifetimePredictions || 0
-      updates.lifetimePredictions = current + ticketPayload.lifetimePredictions
-    }
-
-    updates.updatedAt = new Date()
-
-    await userRef.update(updates)
-  } catch (error: any) {
-    console.error('Error adding tickets:', error)
-    throw new Error(`Failed to add tickets: ${error.message}`)
-  }
+    tx.update(userRef, updates)
+  })
 }
 
-/**
- * Consume tickets from user account
- */
 export async function consumeTickets(uid: string, ticketPayload: TicketPayload): Promise<boolean> {
-  if (!adminDb) {
-    throw new Error('Firestore not initialized')
-  }
+  if (!adminDb) throw new Error('Firestore not initialized')
+  const payload = validateTicketPayload(ticketPayload)
+  if (Object.values(payload).some((value) => (value || 0) < 0)) throw new Error('consumeTickets only accepts positive values')
 
-  try {
-    const userRef = adminDb.collection('users').doc(uid)
-    const userSnap = await userRef.get()
+  const userRef = adminDb.collection('users').doc(uid)
+  return adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef)
+    if (!snap.exists) throw new Error('User not found')
+    const current = normalizeTickets(snap.data())
+    const updates: Record<string, any> = { updatedAt: new Date() }
 
-    if (!userSnap.exists) {
-      throw new Error('User not found')
-    }
-
-    const userData = userSnap.data()
-    const updates: any = {}
-
-    // Check if user has enough tickets
-    if (ticketPayload.aiGuruTickets !== undefined && ticketPayload.aiGuruTickets > 0) {
-      const current = userData?.aiGuruTickets || 0
-      if (current < ticketPayload.aiGuruTickets) {
-        return false // Not enough tickets
+    for (const field of TICKET_FIELDS) {
+      const amount = payload[field]
+      if (amount !== undefined) {
+        if (current[field] < amount) return false
+        updates[field] = current[field] - amount
       }
-      updates.aiGuruTickets = current - ticketPayload.aiGuruTickets
-      // Also update legacy tickets field for backward compatibility
-      const legacyTickets = userData?.tickets || 0
-      updates.tickets = Math.max(0, legacyTickets - ticketPayload.aiGuruTickets)
     }
-
-    if (ticketPayload.kundaliTickets !== undefined && ticketPayload.kundaliTickets > 0) {
-      const current = userData?.kundaliTickets || 0
-      if (current < ticketPayload.kundaliTickets) {
-        return false // Not enough tickets
-      }
-      updates.kundaliTickets = current - ticketPayload.kundaliTickets
+    if (payload.aiGuruTickets !== undefined) {
+      updates.tickets = Math.max(0, Number(snap.data()?.tickets || 0) - payload.aiGuruTickets)
     }
-
-    if (ticketPayload.lifetimePredictions !== undefined && ticketPayload.lifetimePredictions > 0) {
-      const current = userData?.lifetimePredictions || 0
-      if (current < ticketPayload.lifetimePredictions) {
-        return false // Not enough tickets
-      }
-      updates.lifetimePredictions = current - ticketPayload.lifetimePredictions
-    }
-
-    updates.updatedAt = new Date()
-
-    await userRef.update(updates)
+    tx.update(userRef, updates)
     return true
-  } catch (error: any) {
-    console.error('Error consuming tickets:', error)
-    throw new Error(`Failed to consume tickets: ${error.message}`)
-  }
+  })
 }
 
-/**
- * Check if user has enough tickets for required operation
- */
+export async function adjustTicketsByAdmin(input: AdminTicketAdjustmentInput): Promise<AdminTicketAdjustmentResult> {
+  if (!adminDb) throw new Error('Firestore not initialized')
+
+  const uid = input.uid?.trim()
+  const actorAdminUid = input.actorAdminUid?.trim()
+  const reason = input.reason?.trim()
+  const correlationId = input.correlationId?.trim()
+  if (!uid || !actorAdminUid) throw new Error('uid and actorAdminUid are required')
+  if (!reason || reason.length < 5 || reason.length > 500) throw new Error('A reason of 5-500 characters is required')
+  if (!correlationId || correlationId.length < 8 || correlationId.length > 128) throw new Error('A valid correlationId is required')
+  if (input.reset && input.deltas) throw new Error('reset and deltas are mutually exclusive')
+  const deltas = input.reset ? undefined : validateTicketPayload(input.deltas)
+
+  const userRef = adminDb.collection('users').doc(uid)
+  const ledgerRef = adminDb.collection('ticket_ledger').doc(correlationId)
+  const auditRef = adminDb.collection('admin_audit').doc(`ticket-${correlationId}`)
+
+  return adminDb.runTransaction(async (tx) => {
+    const existing = await tx.get(ledgerRef)
+    if (existing.exists) {
+      const data = existing.data() || {}
+      if (data.actorAdminUid !== actorAdminUid || data.userId !== uid) {
+        throw new Error('Correlation ID already used for a different adjustment')
+      }
+      return { before: data.before, after: data.after, idempotentReplay: true }
+    }
+
+    const userSnap = await tx.get(userRef)
+    if (!userSnap.exists) throw new Error('User not found')
+
+    const before = normalizeTickets(userSnap.data())
+    const after: UserTickets = { ...before }
+    if (input.reset) {
+      for (const field of TICKET_FIELDS) after[field] = 0
+    } else {
+      for (const field of TICKET_FIELDS) {
+        const delta = deltas?.[field]
+        if (delta !== undefined) after[field] = before[field] + delta
+        if (after[field] < 0) throw new Error(`Adjustment would make ${field} negative`)
+      }
+    }
+
+    const updates: Record<string, any> = {
+      aiGuruTickets: after.aiGuruTickets,
+      kundaliTickets: after.kundaliTickets,
+      lifetimePredictions: after.lifetimePredictions,
+      updatedAt: new Date(),
+    }
+    const legacyTickets = Number(userSnap.data()?.tickets || 0)
+    updates.tickets = input.reset
+      ? 0
+      : Math.max(0, legacyTickets + (deltas?.aiGuruTickets || 0))
+
+    const createdAt = new Date()
+    tx.update(userRef, updates)
+    tx.create(ledgerRef, {
+      userId: uid,
+      actorAdminUid,
+      source: 'admin',
+      reason,
+      correlationId,
+      operation: input.reset ? 'reset' : 'adjust',
+      deltas: input.reset ? null : deltas,
+      before,
+      after,
+      createdAt,
+    })
+    tx.create(auditRef, {
+      actorUid: actorAdminUid,
+      permission: 'tickets.adjust',
+      action: input.reset ? 'tickets.reset' : 'tickets.adjust',
+      targetType: 'user',
+      targetId: uid,
+      reason,
+      beforeSummary: before,
+      afterSummary: after,
+      requestId: correlationId,
+      createdAt,
+    })
+
+    return { before, after, idempotentReplay: false }
+  })
+}
+
 export async function haveEnoughTickets(uid: string, required: TicketPayload): Promise<boolean> {
-  try {
-    const userTickets = await fetchUserTickets(uid)
-    if (!userTickets) {
-      return false
-    }
-
-    if (required.aiGuruTickets !== undefined && required.aiGuruTickets > 0) {
-      if (userTickets.aiGuruTickets < required.aiGuruTickets) {
-        return false
-      }
-    }
-
-    if (required.kundaliTickets !== undefined && required.kundaliTickets > 0) {
-      if (userTickets.kundaliTickets < required.kundaliTickets) {
-        return false
-      }
-    }
-
-    if (required.lifetimePredictions !== undefined && required.lifetimePredictions > 0) {
-      if (userTickets.lifetimePredictions < required.lifetimePredictions) {
-        return false
-      }
-    }
-
-    return true
-  } catch (error) {
-    console.error('Error checking tickets:', error)
-    return false
-  }
+  const userTickets = await fetchUserTickets(uid)
+  if (!userTickets) return false
+  return TICKET_FIELDS.every((field) => required[field] === undefined || userTickets[field] >= (required[field] || 0))
 }
 
-/**
- * Split user access into subscription and tickets.
- * Returns object with subscription info and ticket counts.
- */
 export async function splitSubscriptionAndTickets(uid: string): Promise<{
   hasSubscription: boolean
   subscriptionPlan?: string
   subscriptionExpiry?: Date
   tickets: UserTickets
 }> {
-  if (!adminDb) {
-    throw new Error('Firestore not initialized')
-  }
-
-  try {
-    const userRef = adminDb.collection('users').doc(uid)
-    const userSnap = await userRef.get()
-
-    if (!userSnap.exists) {
-      throw new Error('User not found')
-    }
-
-    const userData = userSnap.data()
-
-    const { hasSubscription, planId, expiry } = detectSubscription(userData)
-
-    const tickets = await fetchUserTickets(uid)
-
-    return {
-      hasSubscription,
-      subscriptionPlan: planId,
-      subscriptionExpiry: expiry,
-      tickets: tickets || {
-        aiGuruTickets: 0,
-        kundaliTickets: 0,
-        lifetimePredictions: 0,
-      },
-    }
-  } catch (error: any) {
-    console.error('Error splitting subscription and tickets:', error)
-    throw new Error(`Failed to split subscription and tickets: ${error.message}`)
-  }
+  if (!adminDb) throw new Error('Firestore not initialized')
+  const snap = await adminDb.collection('users').doc(uid).get()
+  if (!snap.exists) throw new Error('User not found')
+  const data = snap.data()
+  const { hasSubscription, planId, expiry } = detectSubscription(data)
+  return { hasSubscription, subscriptionPlan: planId, subscriptionExpiry: expiry, tickets: normalizeTickets(data) }
 }
 
-/**
- * Get user tickets (helper for client-side compatible format)
- */
 export function getUserTickets(user: any): UserTickets {
-  return {
-    aiGuruTickets: user?.aiGuruTickets || 0,
-    kundaliTickets: user?.kundaliTickets || 0,
-    lifetimePredictions: user?.lifetimePredictions || 0,
-    email: user?.email || undefined,
-    uid: user?.uid || undefined,
-  }
+  return { ...normalizeTickets(user), email: user?.email || undefined, uid: user?.uid || undefined }
 }
 
-/**
- * Increment tickets (client-side helper)
- */
 export function incrementTickets(user: any, ticketPayload: TicketPayload): any {
   const updates: any = { ...user }
-
-  if (ticketPayload.aiGuruTickets !== undefined) {
-    updates.aiGuruTickets = (updates.aiGuruTickets || 0) + ticketPayload.aiGuruTickets
-    updates.tickets = (updates.tickets || 0) + ticketPayload.aiGuruTickets
+  for (const field of TICKET_FIELDS) {
+    const value = ticketPayload[field]
+    if (value !== undefined) updates[field] = (updates[field] || 0) + value
   }
-
-  if (ticketPayload.kundaliTickets !== undefined) {
-    updates.kundaliTickets = (updates.kundaliTickets || 0) + ticketPayload.kundaliTickets
-  }
-
-  if (ticketPayload.lifetimePredictions !== undefined) {
-    updates.lifetimePredictions =
-      (updates.lifetimePredictions || 0) + ticketPayload.lifetimePredictions
-  }
-
+  if (ticketPayload.aiGuruTickets !== undefined) updates.tickets = (updates.tickets || 0) + ticketPayload.aiGuruTickets
   return updates
 }
 
-/**
- * Decrement tickets (client-side helper)
- */
 export function decrementTickets(user: any, ticketPayload: TicketPayload): any {
   const updates: any = { ...user }
-
-  if (ticketPayload.aiGuruTickets !== undefined) {
-    updates.aiGuruTickets = Math.max(0, (updates.aiGuruTickets || 0) - ticketPayload.aiGuruTickets)
-    updates.tickets = Math.max(0, (updates.tickets || 0) - ticketPayload.aiGuruTickets)
+  for (const field of TICKET_FIELDS) {
+    const value = ticketPayload[field]
+    if (value !== undefined) updates[field] = Math.max(0, (updates[field] || 0) - value)
   }
-
-  if (ticketPayload.kundaliTickets !== undefined) {
-    updates.kundaliTickets = Math.max(
-      0,
-      (updates.kundaliTickets || 0) - ticketPayload.kundaliTickets
-    )
-  }
-
-  if (ticketPayload.lifetimePredictions !== undefined) {
-    updates.lifetimePredictions = Math.max(
-      0,
-      (updates.lifetimePredictions || 0) - ticketPayload.lifetimePredictions
-    )
-  }
-
+  if (ticketPayload.aiGuruTickets !== undefined) updates.tickets = Math.max(0, (updates.tickets || 0) - ticketPayload.aiGuruTickets)
   return updates
 }
 
-/**
- * Ensure user has access to a feature (throws if not)
- * Phase S: Backend API enforcement helper
- */
 export async function ensureFeatureAccess(uid: string, featureKey: FeatureKey): Promise<void> {
   const config = getFeatureAccess(featureKey)
   const accessInfo = await splitSubscriptionAndTickets(uid)
-
-  // If user has active subscription, allow access
-  if (accessInfo.hasSubscription) {
-    return
-  }
-
-  // Check if user has enough tickets
+  if (accessInfo.hasSubscription) return
   const ticketCount = (accessInfo.tickets as any)[config.ticketField] || 0
   if (ticketCount < config.costPerUse) {
     const error: any = new Error(`Insufficient ${config.ticketField} for ${config.label}`)
@@ -403,23 +310,11 @@ export async function ensureFeatureAccess(uid: string, featureKey: FeatureKey): 
   }
 }
 
-/**
- * Consume tickets for a feature use
- * Phase S: Backend API enforcement helper
- */
 export async function consumeFeatureTicket(uid: string, featureKey: FeatureKey): Promise<void> {
   const config = getFeatureAccess(featureKey)
   const accessInfo = await splitSubscriptionAndTickets(uid)
-
-  // If user has active subscription, don't consume tickets
-  if (accessInfo.hasSubscription) {
-    return
-  }
-
-  // Consume the required tickets
-  const ticketPayload: TicketPayload = {}
-  ;(ticketPayload as any)[config.ticketField] = config.costPerUse
-
+  if (accessInfo.hasSubscription) return
+  const ticketPayload: TicketPayload = { [config.ticketField]: config.costPerUse } as TicketPayload
   const consumed = await consumeTickets(uid, ticketPayload)
   if (!consumed) {
     const error: any = new Error(`Failed to consume tickets for ${config.label}`)
