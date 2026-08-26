@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { getAdminUser, updateAdminLastLogin, createAdminSession } from '@/lib/admin/admin-auth'
 import { cookies } from 'next/headers'
+import { scryptSync, timingSafeEqual } from 'node:crypto'
 
 /**
  * Admin Login API
@@ -31,10 +32,54 @@ export async function POST(request: NextRequest) {
     const adminDoc = snapshot.docs[0]
     const adminData = adminDoc.data()
 
-    // In production, use proper password hashing (bcrypt, etc.)
-    // For now, check if password matches (this should be replaced with secure authentication)
-    if (adminData.password !== password) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    // Authenticate against the password format created by the
+    // JyotiAI Mission Control SuperAdmin bootstrap.
+    const passwordHash =
+      typeof adminData.passwordHash === 'string' ? adminData.passwordHash : ''
+    const passwordSalt =
+      typeof adminData.passwordSalt === 'string' ? adminData.passwordSalt : ''
+    const passwordVersion =
+      typeof adminData.passwordVersion === 'string' ? adminData.passwordVersion : ''
+
+    if (
+      !passwordHash ||
+      !passwordSalt ||
+      passwordVersion !== 'scrypt-v1'
+    ) {
+      console.error('[admin-login] Unsupported or missing admin password credentials', {
+        uid: adminDoc.id,
+        passwordVersion: passwordVersion || 'missing',
+      })
+
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      )
+    }
+
+    let suppliedHash: Buffer
+    let storedHash: Buffer
+
+    try {
+      suppliedHash = scryptSync(String(password), passwordSalt, 64)
+      storedHash = Buffer.from(passwordHash, 'hex')
+    } catch (error) {
+      console.error('[admin-login] Password verification failed', error)
+
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      )
+    }
+
+    if (
+      suppliedHash.length !== storedHash.length ||
+      !timingSafeEqual(suppliedHash, storedHash)
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      )
     }
 
     const uid = adminDoc.id
@@ -50,7 +95,7 @@ export async function POST(request: NextRequest) {
     // Create a session token (simplified approach for now)
     // In production, this should use Firebase Admin session cookies with proper ID tokens
     const expiresIn = 60 * 60 * 24 * 5 * 1000 // 5 days
-    
+
     // Create a session payload
     const sessionPayload = {
       uid,
@@ -58,7 +103,7 @@ export async function POST(request: NextRequest) {
       role: admin.role,
       exp: Date.now() + expiresIn,
     }
-    
+
     // Create a simple session token (in production, use proper JWT signing)
     const sessionToken = Buffer.from(JSON.stringify(sessionPayload)).toString('base64')
 
@@ -89,4 +134,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
