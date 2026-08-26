@@ -1,8 +1,10 @@
-'use client';
+"use client";
 
-import React from 'react';
-import DashboardShell from './DashboardShell';
-import { AuthenticatedAppShell } from './AuthenticatedAppShell';
+import React from "react";
+import DashboardShell from "./DashboardShell";
+import { AuthenticatedAppShell } from "./AuthenticatedAppShell";
+import { ProductShellNormalizer } from "@/components/product/ProductShellNormalizer";
+import { K7AuthenticatedVisualContract } from "@/components/product/K7AuthenticatedVisualContract";
 
 interface DashboardPageShellProps {
   title?: string;
@@ -18,21 +20,30 @@ export default function DashboardPageShell({
   rightActions,
 }: DashboardPageShellProps) {
   return (
-    <div className="relative overflow-hidden">
+    <div
+      data-jyoti-product-shell="true"
+      data-dashboard-product-canvas="true"
+      className="relative overflow-hidden bg-[#050d11] text-[#eee7dc]"
+    >
+      <ProductShellNormalizer />
+      <K7AuthenticatedVisualContract />
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_82%_0%,rgba(242,140,40,0.16),transparent_26rem),radial-gradient(circle_at_16%_16%,rgba(47,125,126,0.12),transparent_22rem)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_82%_0%,rgba(229,154,59,0.10),transparent_26rem),radial-gradient(circle_at_16%_16%,rgba(72,137,140,0.07),transparent_22rem)]"
         aria-hidden="true"
       />
-      <div className="page-container relative">
-      <AuthenticatedAppShell>
-        <DashboardShell
-          title={title}
-          subtitle={subtitle}
-          rightActions={rightActions}
-        >
-          {children}
-        </DashboardShell>
-      </AuthenticatedAppShell>
+      <div
+        data-dashboard-content-canvas="true"
+        className="page-container relative"
+      >
+        <AuthenticatedAppShell>
+          <DashboardShell
+            title={title}
+            subtitle={subtitle}
+            rightActions={rightActions}
+          >
+            {children}
+          </DashboardShell>
+        </AuthenticatedAppShell>
       </div>
     </div>
   );

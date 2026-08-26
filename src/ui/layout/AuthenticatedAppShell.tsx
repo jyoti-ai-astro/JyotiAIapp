@@ -4,17 +4,23 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
+  Activity,
+  BriefcaseBusiness,
   CalendarDays,
   CreditCard,
   FileText,
+  Hand,
+  HeartHandshake,
   HelpCircle,
   Home,
   LogOut,
   MoonStar,
+  ScanFace,
   ScrollText,
   Settings,
   Sparkles,
   User,
+  WandSparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/store/user-store';
@@ -25,6 +31,16 @@ const primaryNav = [
   { href: '/guru', label: 'Guru', icon: Sparkles },
   { href: '/predictions', label: 'Predictions', icon: ScrollText },
   { href: '/reports', label: 'Reports', icon: FileText },
+];
+
+const insightNav = [
+  { href: '/career', label: 'Career', icon: BriefcaseBusiness },
+  { href: '/business', label: 'Business', icon: Activity },
+  { href: '/compatibility', label: 'Compatibility', icon: HeartHandshake },
+  { href: '/numerology', label: 'Numerology', icon: WandSparkles },
+  { href: '/palmistry', label: 'Palmistry', icon: Hand },
+  { href: '/aura', label: 'Aura', icon: Sparkles },
+  { href: '/face', label: 'Face Reading', icon: ScanFace },
 ];
 
 const secondaryNav = [
@@ -52,6 +68,7 @@ function NavLink({ href, label, icon: Icon }: { href: string; label: string; ico
   return (
     <Link
       href={href}
+      aria-current={isActive ? 'page' : undefined}
       className={cn(
         'flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -76,13 +93,31 @@ export function AuthenticatedAppShell({ children }: { children: React.ReactNode 
 
   return (
     <div className="grid gap-6 md:grid-cols-[16rem_minmax(0,1fr)]">
-      <aside className="hidden md:block">
-        <div className="sticky top-28 space-y-5 rounded-xl border border-border bg-surface-raised p-3 shadow-[0_8px_24px_rgba(24,33,63,0.08)]">
+      <aside
+        data-dashboard-sidebar="true"
+        className="hidden self-start md:block md:pt-10"
+      >
+        <div
+          data-dashboard-sidebar-surface="true"
+          className="sticky top-28 max-h-[calc(100vh-8rem)] space-y-5 overflow-y-auto rounded-xl border border-border bg-surface-raised p-3 shadow-[0_8px_24px_rgba(24,33,63,0.08)]"
+        >
           <nav className="space-y-1" aria-label="Primary app navigation">
             {primaryNav.map((item) => (
               <NavLink key={item.href} {...item} />
             ))}
           </nav>
+
+          <div className="border-t border-border pt-4">
+            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+              Insights
+            </p>
+            <nav className="space-y-1" aria-label="Insight navigation">
+              {insightNav.map((item) => (
+                <NavLink key={item.href} {...item} />
+              ))}
+            </nav>
+          </div>
+
           <div className="border-t border-border pt-4">
             <nav className="space-y-1" aria-label="Account and secondary navigation">
               {secondaryNav.map((item) => (
