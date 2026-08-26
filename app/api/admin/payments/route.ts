@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
-import Razorpay from 'razorpay'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * List Payments API
- * Milestone 10 - Step 5
- */
+function toDate(value: any): Date | null {
+  if (!value) return null
+  if (typeof value?.toDate === 'function') return value.toDate()
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 export async function GET(request: NextRequest) {
   return withAdminAuth(
-    async (req, admin) => {
+    async (req) => {
       if (!adminDb) {
         return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
       }
@@ -19,49 +21,60 @@ export async function GET(request: NextRequest) {
       try {
         const { searchParams } = new URL(req.url)
         const status = searchParams.get('status')
-        const limit = parseInt(searchParams.get('limit') || '50')
+        const requestedLimit = Number.parseInt(searchParams.get('limit') || '50', 10)
+        const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 50
 
         let query: any = adminDb.collection('payments')
-
-        if (status) {
-          query = query.where('status', '==', status)
-        }
+        if (status) query = query.where('status', '==', status)
 
         const snapshot = await query.orderBy('createdAt', 'desc').limit(limit).get()
+        const payments = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }))
 
-        const payments = snapshot.docs.map((doc: { id: string; data: () => Record<string, any> }) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
+        const [allPayments, subscriptionsSnapshot] = await Promise.all([
+          adminDb.collection('payments').get(),
+          adminDb.collection('subscriptions').get(),
+        ])
 
-        // Calculate revenue stats
-        const allPayments = await adminDb.collection('payments').get()
-        let totalRevenue = 0
-        let todayRevenue = 0
-        let activeSubscriptions = 0
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
+        let verifiedRevenueTotal = 0
+        let verifiedRevenueToday = 0
+        let successfulPayments = 0
+        let failedPayments = 0
+
         allPayments.forEach((doc) => {
           const data = doc.data()
-          const amount = data.amount || 0
-          totalRevenue += amount
-
-          if (data.createdAt && data.createdAt.toDate() >= today) {
-            todayRevenue += amount
+          if (data.status === 'success') {
+            const amount = Number(data.amount || 0)
+            verifiedRevenueTotal += Number.isFinite(amount) ? amount : 0
+            successfulPayments += 1
+            const createdAt = toDate(data.createdAt)
+            if (createdAt && createdAt >= today) {
+              verifiedRevenueToday += Number.isFinite(amount) ? amount : 0
+            }
+          } else if (data.status === 'failed') {
+            failedPayments += 1
           }
+        })
 
-          if (data.status === 'success' && data.type === 'subscription') {
-            activeSubscriptions++
-          }
+        const now = new Date()
+        let activeSubscriptions = 0
+        subscriptionsSnapshot.forEach((doc) => {
+          const data = doc.data()
+          const expiry = toDate(data.expiry ?? data.expiresAt ?? data.subscriptionExpiry)
+          const activeByStatus = data.status === 'active' || data.status === 'authenticated' || data.active === true
+          if (activeByStatus && (!expiry || expiry > now)) activeSubscriptions += 1
         })
 
         return NextResponse.json({
           success: true,
           payments,
           stats: {
-            totalRevenue,
-            todayRevenue,
+            verifiedRevenueTotal,
+            verifiedRevenueToday,
+            successfulPayments,
+            failedPayments,
             activeSubscriptions,
           },
         })
@@ -77,16 +90,11 @@ export async function GET(request: NextRequest) {
   )(request)
 }
 
-/**
- * Verify Payment Signature API
- * Milestone 10 - Step 5
- */
 export async function POST(request: NextRequest) {
   return withAdminAuth(
-    async (req, admin) => {
+    async (req) => {
       try {
         const { paymentId, signature, orderId } = await req.json()
-
         if (!paymentId || !signature || !orderId) {
           return NextResponse.json(
             { error: 'paymentId, signature, and orderId are required' },
@@ -94,25 +102,22 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // Phase 31 - F46: Use validated environment variables
         const razorpayKeySecret = (await import('@/lib/env/env.mjs')).envVars.razorpay.keySecret
         if (!razorpayKeySecret) {
           return NextResponse.json({ error: 'Razorpay not configured' }, { status: 500 })
         }
 
-        const crypto = require('crypto')
+        const crypto = await import('crypto')
         const generatedSignature = crypto
           .createHmac('sha256', razorpayKeySecret)
-          .update(orderId + '|' + paymentId)
+          .update(`${orderId}|${paymentId}`)
           .digest('hex')
 
-        const isValid = generatedSignature === signature
+        const provided = Buffer.from(String(signature))
+        const expected = Buffer.from(generatedSignature)
+        const isValid = provided.length === expected.length && crypto.timingSafeEqual(provided, expected)
 
-        return NextResponse.json({
-          success: true,
-          isValid,
-          generatedSignature,
-        })
+        return NextResponse.json({ success: true, isValid })
       } catch (error: any) {
         console.error('Verify payment error:', error)
         return NextResponse.json(
@@ -124,4 +129,3 @@ export async function POST(request: NextRequest) {
     'payments.read'
   )(request)
 }
-
