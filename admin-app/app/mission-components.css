@@ -23,5 +23,18 @@
 .connection-row:first-child { border-top:0; }
 .connection-row > div { display:grid; gap:4px; }
 .connection-row > div > span { color:#7d7467; font-size:12px; line-height:1.5; }
-@media (max-width:1180px) { .smart-filterbar { grid-template-columns:1fr 1fr 1fr; } .filter-field.wide { grid-column:span 2; } .action-primary { width:100%; } }
-@media (max-width:760px) { .smart-filterbar { grid-template-columns:1fr; } .filter-field.wide { grid-column:auto; } .header-actions { width:100%; } .header-actions > * { flex:1; } .table-toolbar { align-items:flex-start; } }
+.payment-filterbar { grid-template-columns:minmax(300px,1.6fr) minmax(150px,.7fr) minmax(150px,.7fr) auto; }
+.finance-breakdowns { margin:16px 0; }
+.rank-list { display:grid; }
+.rank-row { display:grid; grid-template-columns:28px minmax(0,1fr) auto; align-items:center; gap:12px; padding:13px 0; border-top:1px solid #efe4cd; }
+.rank-row:first-child { border-top:0; }
+.rank-row .rank { width:26px; height:26px; display:grid; place-items:center; border-radius:9px; background:#fff1d4; color:#925f1b; font-size:11px; font-weight:900; }
+.rank-row > div { display:grid; gap:3px; min-width:0; }
+.rank-row > div strong { color:var(--navy); overflow:hidden; text-overflow:ellipsis; }
+.rank-row > div span { color:#7d7467; font-size:11px; }
+.rank-row > strong { color:var(--navy); white-space:nowrap; }
+.empty-state { padding:16px 0; color:#84796b; font-size:13px; }
+.payment-ledger { margin-top:16px; }
+.payment-ledger code { color:#3e555d; }
+@media (max-width:1180px) { .smart-filterbar, .payment-filterbar { grid-template-columns:1fr 1fr 1fr; } .filter-field.wide { grid-column:span 2; } .action-primary { width:100%; } }
+@media (max-width:760px) { .smart-filterbar, .payment-filterbar { grid-template-columns:1fr; } .filter-field.wide { grid-column:auto; } .header-actions { width:100%; } .header-actions > * { flex:1; } .table-toolbar { align-items:flex-start; } .rank-row { grid-template-columns:28px minmax(0,1fr); } .rank-row > strong { grid-column:2; } }
