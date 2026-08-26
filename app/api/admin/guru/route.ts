@@ -4,85 +4,58 @@ import { withAdminAuth } from '@/lib/middleware/admin-middleware'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * List Guru Chats API
- * Milestone 10 - Step 6
- */
+function toIso(value: any): string | null {
+  if (!value) return null
+  if (typeof value?.toDate === 'function') return value.toDate().toISOString()
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? null : d.toISOString()
+}
+
+function sanitizeMessage(id: string, userId: string, data: Record<string, any>) {
+  const content = String(data.content ?? data.message ?? data.text ?? '')
+  return {
+    id,
+    userId,
+    role: data.role || data.sender || 'unknown',
+    createdAt: toIso(data.createdAt),
+    model: data.model || data.provider || null,
+    contentPreview: content.slice(0, 240),
+    contentLength: content.length,
+    error: data.error || data.errorMessage || null,
+  }
+}
+
 export async function GET(request: NextRequest) {
   return withAdminAuth(
-    async (req, admin) => {
-      if (!adminDb) {
-        return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
-      }
+    async (req) => {
+      if (!adminDb) return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
 
       try {
         const { searchParams } = new URL(req.url)
-        const userId = searchParams.get('userId')
-        const limit = parseInt(searchParams.get('limit') || '100')
-
+        const userId = (searchParams.get('userId') || '').trim()
+        const requestedLimit = Number.parseInt(searchParams.get('limit') || '100', 10)
+        const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 100
         let chats: any[] = []
 
         if (userId) {
-          // Get chats for specific user
-          const chatsSnapshot = await adminDb
-            .collection('guruChat')
-            .doc(userId)
-            .collection('messages')
-            .orderBy('createdAt', 'desc')
-            .limit(limit)
-            .get()
-
-          chats = chatsSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            userId,
-            ...doc.data(),
-          }))
+          const snapshot = await adminDb.collection('guruChat').doc(userId).collection('messages').orderBy('createdAt', 'desc').limit(limit).get()
+          chats = snapshot.docs.map((doc) => sanitizeMessage(doc.id, userId, doc.data()))
         } else {
-          // Get all chats (requires iterating through users)
           const usersSnapshot = await adminDb.collection('users').limit(50).get()
-
           for (const userDoc of usersSnapshot.docs) {
-            const userChatsSnapshot = await adminDb
-              .collection('guruChat')
-              .doc(userDoc.id)
-              .collection('messages')
-              .orderBy('createdAt', 'desc')
-              .limit(10)
-              .get()
-
-            userChatsSnapshot.docs.forEach((doc) => {
-              chats.push({
-                id: doc.id,
-                userId: userDoc.id,
-                ...doc.data(),
-              })
-            })
+            const snapshot = await adminDb.collection('guruChat').doc(userDoc.id).collection('messages').orderBy('createdAt', 'desc').limit(10).get()
+            snapshot.docs.forEach((doc) => chats.push(sanitizeMessage(doc.id, userDoc.id, doc.data())))
           }
-
-          // Sort by createdAt
-          chats.sort((a, b) => {
-            const aTime = a.createdAt?.toDate?.()?.getTime() || 0
-            const bTime = b.createdAt?.toDate?.()?.getTime() || 0
-            return bTime - aTime
-          })
-
+          chats.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
           chats = chats.slice(0, limit)
         }
 
-        return NextResponse.json({
-          success: true,
-          chats,
-          count: chats.length,
-        })
+        return NextResponse.json({ success: true, chats, count: chats.length })
       } catch (error: any) {
         console.error('List Guru chats error:', error)
-        return NextResponse.json(
-          { error: error.message || 'Failed to list chats' },
-          { status: 500 }
-        )
+        return NextResponse.json({ error: error.message || 'Failed to list chats' }, { status: 500 })
       }
     },
     'guru.read'
   )(request)
 }
-
