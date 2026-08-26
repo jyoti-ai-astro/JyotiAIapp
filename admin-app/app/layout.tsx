@@ -1,16 +1,17 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import AdminShell from '@/components/admin-shell'
 
 export const metadata: Metadata = {
-  title: 'JyotiAI Admin',
-  description: 'JyotiAI secure administration portal',
+  title: 'JyotiAI Mission Control',
+  description: 'JyotiAI secure administration and operations portal',
   robots: { index: false, follow: false, nocache: true },
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><AdminShell>{children}</AdminShell></body>
     </html>
   )
 }
