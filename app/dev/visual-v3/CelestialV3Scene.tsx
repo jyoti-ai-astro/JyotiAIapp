@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef } from 'react'
 
 type Props = {
   progress: number
+  extensionProgress: number
+  extensionActive: boolean
 }
 
 type GrahaDefinition = {
@@ -1156,7 +1158,562 @@ function TemporalArchitecture({
   )
 }
 
-function Scene({ progress }: Props) {
+
+function ProductConstellation({
+  opacity,
+}: {
+  opacity: number
+}) {
+  const group = useRef<THREE.Group>(null)
+
+  const nodes = useMemo(
+    () => [
+      [-2.55, 1.15, 0.15],
+      [-0.9, 1.75, 0.62],
+      [1.15, 1.45, 0.25],
+      [2.55, 0.05, 0.55],
+      [1.25, -1.45, 0.1],
+      [-1.2, -1.65, 0.48],
+    ] as const,
+    []
+  )
+
+  useFrame((state, delta) => {
+    if (!group.current) return
+
+    group.current.rotation.y += delta * 0.035
+    group.current.rotation.z =
+      Math.sin(state.clock.getElapsedTime() * 0.16) * 0.055
+  })
+
+  return (
+    <group
+      ref={group}
+      visible={opacity > 0.02}
+      scale={opacity}
+    >
+      <mesh>
+        <icosahedronGeometry args={[0.46, 2]} />
+        <meshStandardMaterial
+          color="#f0bd62"
+          emissive="#a96713"
+          emissiveIntensity={0.75}
+          roughness={0.42}
+          metalness={0.18}
+        />
+      </mesh>
+
+      <pointLight
+        color="#f3a53a"
+        intensity={3.8}
+        distance={8}
+      />
+
+      {[2.25, 3.15, 4.05].map((radius, index) => (
+        <mesh
+          key={`product-orbit-${radius}`}
+          rotation={[
+            0.72 + index * 0.16,
+            -0.28 + index * 0.22,
+            index * 0.38,
+          ]}
+        >
+          <torusGeometry
+            args={[radius, 0.012, 8, 160]}
+          />
+          <meshBasicMaterial
+            color={
+              index === 1
+                ? '#4e8582'
+                : '#d9b75f'
+            }
+            transparent
+            opacity={0.22 - index * 0.035}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+
+      {nodes.map((node, index) => (
+        <group
+          key={`product-node-${index}`}
+          position={[...node]}
+        >
+          <mesh>
+            <sphereGeometry
+              args={[
+                index === 0
+                  ? 0.18
+                  : 0.12,
+                28,
+                28,
+              ]}
+            />
+            <meshStandardMaterial
+              color={
+                index % 3 === 0
+                  ? '#ff9d31'
+                  : index % 3 === 1
+                    ? '#4e8582'
+                    : '#e8dfbd'
+              }
+              emissive={
+                index % 3 === 0
+                  ? '#7a2d08'
+                  : '#153c3a'
+              }
+              emissiveIntensity={0.55}
+              roughness={0.55}
+            />
+          </mesh>
+
+          <mesh scale={2.1}>
+            <sphereGeometry args={[0.12, 18, 18]} />
+            <meshBasicMaterial
+              color="#d9b75f"
+              transparent
+              opacity={0.055}
+              depthWrite={false}
+            />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  )
+}
+
+function IdentityPipeline({
+  opacity,
+}: {
+  opacity: number
+}) {
+  const group = useRef<THREE.Group>(null)
+
+  useFrame((state) => {
+    if (!group.current) return
+
+    const elapsed = state.clock.getElapsedTime()
+
+    group.current.rotation.y =
+      -0.12 + Math.sin(elapsed * 0.14) * 0.065
+
+    group.current.rotation.x =
+      Math.cos(elapsed * 0.12) * 0.025
+  })
+
+  return (
+    <group
+      ref={group}
+      visible={opacity > 0.02}
+      scale={opacity}
+    >
+      {Array.from({ length: 4 }).map((_, index) => {
+        const x = (index - 1.5) * 1.65
+
+        return (
+          <group
+            key={`identity-stage-${index}`}
+            position={[x, 0, index * -0.35]}
+          >
+            <mesh
+              rotation={[
+                Math.PI / 2,
+                index * 0.25,
+                index * 0.18,
+              ]}
+            >
+              <torusGeometry
+                args={[
+                  0.72 + index * 0.1,
+                  0.018,
+                  8,
+                  96,
+                ]}
+              />
+              <meshBasicMaterial
+                color={
+                  index === 0
+                    ? '#4e8582'
+                    : index === 3
+                      ? '#ff9d31'
+                      : '#d9b75f'
+                }
+                transparent
+                opacity={0.42 - index * 0.045}
+              />
+            </mesh>
+
+            <mesh>
+              {index < 2 ? (
+                <sphereGeometry
+                  args={[
+                    0.09 + index * 0.045,
+                    22,
+                    22,
+                  ]}
+                />
+              ) : (
+                <icosahedronGeometry
+                  args={[
+                    0.12 + index * 0.035,
+                    1,
+                  ]}
+                />
+              )}
+
+              <meshStandardMaterial
+                color={
+                  index === 0
+                    ? '#4e8582'
+                    : index === 3
+                      ? '#ff9d31'
+                      : '#ead29a'
+                }
+                emissive={
+                  index === 3
+                    ? '#913507'
+                    : '#574315'
+                }
+                emissiveIntensity={0.55}
+              />
+            </mesh>
+          </group>
+        )
+      })}
+
+      <mesh
+        position={[0, 0, -0.6]}
+        rotation={[0, 0, Math.PI / 2]}
+      >
+        <cylinderGeometry
+          args={[0.012, 0.012, 5.2, 8]}
+        />
+        <meshBasicMaterial
+          color="#d9b75f"
+          transparent
+          opacity={0.22}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+function TrustVault({
+  opacity,
+}: {
+  opacity: number
+}) {
+  const group = useRef<THREE.Group>(null)
+
+  useFrame((state, delta) => {
+    if (!group.current) return
+
+    const elapsed = state.clock.getElapsedTime()
+
+    group.current.rotation.y += delta * 0.022
+    group.current.rotation.z =
+      Math.sin(elapsed * 0.18) * 0.035
+  })
+
+  return (
+    <group
+      ref={group}
+      visible={opacity > 0.02}
+      scale={opacity}
+    >
+      <mesh>
+        <octahedronGeometry args={[0.58, 2]} />
+        <meshStandardMaterial
+          color="#4e8582"
+          emissive="#123c3b"
+          emissiveIntensity={0.8}
+          roughness={0.36}
+          metalness={0.22}
+        />
+      </mesh>
+
+      <pointLight
+        color="#4e8582"
+        intensity={3}
+        distance={7}
+      />
+
+      {[1.35, 2.05, 2.78, 3.55].map(
+        (radius, index) => (
+          <mesh
+            key={`trust-ring-${radius}`}
+            rotation={[
+              index * 0.34,
+              index % 2 === 0 ? 0.45 : -0.42,
+              index * 0.51,
+            ]}
+          >
+            <torusGeometry
+              args={[
+                radius,
+                index === 0 ? 0.022 : 0.012,
+                8,
+                144,
+              ]}
+            />
+            <meshBasicMaterial
+              color={
+                index % 2 === 0
+                  ? '#4e8582'
+                  : '#d9b75f'
+              }
+              transparent
+              opacity={0.34 - index * 0.045}
+              depthWrite={false}
+            />
+          </mesh>
+        )
+      )}
+
+      {Array.from({ length: 8 }).map(
+        (_, index) => {
+          const angle =
+            (index / 8) * Math.PI * 2
+
+          return (
+            <mesh
+              key={`trust-node-${index}`}
+              position={[
+                Math.cos(angle) * 2.78,
+                Math.sin(angle) * 1.55,
+                Math.sin(angle * 1.7) * 0.8,
+              ]}
+            >
+              <sphereGeometry args={[0.07, 18, 18]} />
+              <meshBasicMaterial
+                color={
+                  index % 3 === 0
+                    ? '#fff0c8'
+                    : index % 3 === 1
+                      ? '#4e8582'
+                      : '#d9b75f'
+                }
+              />
+            </mesh>
+          )
+        }
+      )}
+    </group>
+  )
+}
+
+function CelestialConvergence({
+  opacity,
+}: {
+  opacity: number
+}) {
+  const group = useRef<THREE.Group>(null)
+
+  useFrame((state, delta) => {
+    if (!group.current) return
+
+    group.current.rotation.y += delta * 0.04
+    group.current.rotation.x =
+      Math.sin(state.clock.getElapsedTime() * 0.16) * 0.05
+  })
+
+  return (
+    <group
+      ref={group}
+      visible={opacity > 0.02}
+      scale={opacity}
+    >
+      <mesh>
+        <sphereGeometry args={[0.78, 64, 64]} />
+        <meshStandardMaterial
+          color="#f18a22"
+          emissive="#8b2b08"
+          emissiveIntensity={1.0}
+          roughness={0.38}
+        />
+      </mesh>
+
+      <mesh scale={1.28}>
+        <sphereGeometry args={[0.78, 48, 48]} />
+        <meshBasicMaterial
+          color="#ffb24f"
+          transparent
+          opacity={0.07}
+          side={THREE.BackSide}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {[1.45, 2.2, 3.05].map((radius, index) => (
+        <mesh
+          key={`convergence-ring-${radius}`}
+          rotation={[
+            0.72 + index * 0.21,
+            -0.35 + index * 0.28,
+            index * 0.6,
+          ]}
+        >
+          <torusGeometry
+            args={[radius, 0.016, 8, 160]}
+          />
+          <meshBasicMaterial
+            color={
+              index === 1
+                ? '#4e8582'
+                : '#d9b75f'
+            }
+            transparent
+            opacity={0.3 - index * 0.055}
+          />
+        </mesh>
+      ))}
+
+      {Array.from({ length: 6 }).map(
+        (_, index) => {
+          const angle =
+            (index / 6) * Math.PI * 2 +
+            0.35
+
+          return (
+            <mesh
+              key={`convergence-node-${index}`}
+              position={[
+                Math.cos(angle) *
+                  (2.05 + (index % 2) * 0.55),
+                Math.sin(angle) *
+                  (1.2 + (index % 3) * 0.24),
+                Math.sin(angle * 1.5) * 0.55,
+              ]}
+            >
+              <sphereGeometry
+                args={[
+                  0.08 + (index % 2) * 0.035,
+                  20,
+                  20,
+                ]}
+              />
+              <meshBasicMaterial
+                color={
+                  index % 3 === 0
+                    ? '#ff9d31'
+                    : index % 3 === 1
+                      ? '#d9c48b'
+                      : '#4e8582'
+                }
+              />
+            </mesh>
+          )
+        }
+      )}
+
+      <pointLight
+        color="#ff982d"
+        intensity={5}
+        distance={10}
+      />
+    </group>
+  )
+}
+
+function QuietHorizon({
+  opacity,
+}: {
+  opacity: number
+}) {
+  const group = useRef<THREE.Group>(null)
+
+  useFrame((state) => {
+    if (!group.current) return
+
+    const elapsed = state.clock.getElapsedTime()
+
+    group.current.rotation.z =
+      Math.sin(elapsed * 0.08) * 0.018
+
+    group.current.rotation.y =
+      Math.cos(elapsed * 0.06) * 0.025
+  })
+
+  return (
+    <group
+      ref={group}
+      visible={opacity > 0.02}
+      scale={opacity}
+    >
+      {[2.4, 3.55, 4.7].map((radius, index) => (
+        <mesh
+          key={`horizon-ring-${radius}`}
+          rotation={[
+            1.02,
+            -0.18 + index * 0.08,
+            index * 0.2,
+          ]}
+        >
+          <torusGeometry
+            args={[radius, 0.009, 8, 160]}
+          />
+          <meshBasicMaterial
+            color={
+              index === 1
+                ? '#4e8582'
+                : '#8f7545'
+            }
+            transparent
+            opacity={0.14 - index * 0.025}
+          />
+        </mesh>
+      ))}
+
+      {Array.from({ length: 11 }).map(
+        (_, index) => {
+          const angle =
+            (index / 11) * Math.PI * 2
+
+          const radius =
+            2.1 + (index % 4) * 0.63
+
+          return (
+            <mesh
+              key={`horizon-node-${index}`}
+              position={[
+                Math.cos(angle) * radius,
+                Math.sin(angle) * radius * 0.48,
+                Math.sin(angle * 1.3) * 0.65,
+              ]}
+            >
+              <sphereGeometry
+                args={[
+                  index % 4 === 0
+                    ? 0.085
+                    : 0.045,
+                  16,
+                  16,
+                ]}
+              />
+              <meshBasicMaterial
+                color={
+                  index % 4 === 0
+                    ? '#f3a53a'
+                    : index % 3 === 0
+                      ? '#4e8582'
+                      : '#d9c48b'
+                }
+                transparent
+                opacity={0.74}
+              />
+            </mesh>
+          )
+        }
+      )}
+    </group>
+  )
+}
+
+function Scene({
+  progress,
+  extensionProgress,
+  extensionActive,
+}: Props) {
   const universe = useRef<THREE.Group>(null)
   const chart = useRef<THREE.Group>(null)
   const timeTunnel = useRef<THREE.Group>(null)
@@ -1168,8 +1725,23 @@ function Scene({ progress }: Props) {
   const timelineArchitecture =
     useRef<THREE.Group>(null)
 
+  const productArchitecture =
+    useRef<THREE.Group>(null)
+  const identityArchitecture =
+    useRef<THREE.Group>(null)
+  const trustArchitecture =
+    useRef<THREE.Group>(null)
+  const convergenceArchitecture =
+    useRef<THREE.Group>(null)
+  const quietArchitecture =
+    useRef<THREE.Group>(null)
+
   const { camera, pointer } = useThree()
   const smooth = useRef(progress)
+  const smoothExtension = useRef(extensionProgress)
+  const smoothExtensionActive = useRef(
+    extensionActive ? 1 : 0
+  )
 
   useFrame((state, delta) => {
     smooth.current = THREE.MathUtils.damp(
@@ -1179,7 +1751,27 @@ function Scene({ progress }: Props) {
       delta
     )
 
+    smoothExtension.current =
+      THREE.MathUtils.damp(
+        smoothExtension.current,
+        extensionProgress,
+        3.2,
+        delta
+      )
+
+    smoothExtensionActive.current =
+      THREE.MathUtils.damp(
+        smoothExtensionActive.current,
+        extensionActive ? 1 : 0,
+        3.4,
+        delta
+      )
+
     const p = smooth.current
+    const ep = smoothExtension.current
+    const extensionPresence =
+      smoothExtensionActive.current
+
     const elapsed = state.clock.getElapsedTime()
 
     const heroToKundali = THREE.MathUtils.smoothstep(
@@ -1271,7 +1863,13 @@ function Scene({ progress }: Props) {
         guruToTime
       ) +
       pointer.x * 0.3 +
-      Math.sin(elapsed * 0.08) * 0.07
+      Math.sin(elapsed * 0.08) * 0.07 +
+      THREE.MathUtils.lerp(
+        0,
+        -0.65 +
+          Math.sin(ep * Math.PI * 2) * 0.8,
+        extensionPresence
+      )
 
     const targetY =
       THREE.MathUtils.lerp(
@@ -1290,7 +1888,12 @@ function Scene({ progress }: Props) {
         guruToTime
       ) +
       pointer.y * 0.18 +
-      Math.cos(elapsed * 0.07) * 0.05
+      Math.cos(elapsed * 0.07) * 0.05 +
+      THREE.MathUtils.lerp(
+        0,
+        Math.cos(ep * Math.PI * 2) * 0.22,
+        extensionPresence
+      )
 
     const targetZ =
       THREE.MathUtils.lerp(
@@ -1318,6 +1921,16 @@ function Scene({ progress }: Props) {
         0,
         3.15,
         finalPullback
+      ) +
+      THREE.MathUtils.lerp(
+        0,
+        -1.15 +
+          THREE.MathUtils.smoothstep(
+            ep,
+            0.72,
+            1.0
+          ) * 2.1,
+        extensionPresence
       )
 
     camera.position.x = THREE.MathUtils.damp(
@@ -1874,6 +2487,261 @@ function Scene({ progress }: Props) {
         )
     }
 
+
+    // ------------------------------------------------------------
+    // V3 PRODUCTION CONTINUATION
+    // Each lower homepage section receives its own spatial identity
+    // while the underlying celestial universe remains continuous.
+    // ------------------------------------------------------------
+
+    const productIdentity =
+      THREE.MathUtils.smoothstep(
+        ep,
+        0.0,
+        0.08
+      ) *
+      (1 -
+        THREE.MathUtils.smoothstep(
+          ep,
+          0.18,
+          0.28
+        )) *
+      extensionPresence
+
+    const identityIdentity =
+      THREE.MathUtils.smoothstep(
+        ep,
+        0.16,
+        0.27
+      ) *
+      (1 -
+        THREE.MathUtils.smoothstep(
+          ep,
+          0.38,
+          0.48
+        )) *
+      extensionPresence
+
+    const trustIdentity =
+      THREE.MathUtils.smoothstep(
+        ep,
+        0.36,
+        0.47
+      ) *
+      (1 -
+        THREE.MathUtils.smoothstep(
+          ep,
+          0.58,
+          0.68
+        )) *
+      extensionPresence
+
+    const convergenceIdentity =
+      THREE.MathUtils.smoothstep(
+        ep,
+        0.56,
+        0.67
+      ) *
+      (1 -
+        THREE.MathUtils.smoothstep(
+          ep,
+          0.76,
+          0.86
+        )) *
+      extensionPresence
+
+    const quietIdentity =
+      THREE.MathUtils.smoothstep(
+        ep,
+        0.74,
+        0.84
+      ) *
+      extensionPresence
+
+    if (productArchitecture.current) {
+      productArchitecture.current.visible =
+        productIdentity > 0.02
+
+      productArchitecture.current.scale.setScalar(
+        THREE.MathUtils.lerp(
+          0.46,
+          1.08,
+          productIdentity
+        )
+      )
+
+      productArchitecture.current.position.set(
+        THREE.MathUtils.lerp(
+          4.8,
+          2.0,
+          productIdentity
+        ),
+        THREE.MathUtils.lerp(
+          -0.5,
+          0.15,
+          productIdentity
+        ),
+        THREE.MathUtils.lerp(
+          -5.0,
+          1.9,
+          productIdentity
+        )
+      )
+
+      productArchitecture.current.rotation.y =
+        THREE.MathUtils.lerp(
+          -0.8,
+          -0.12,
+          productIdentity
+        )
+    }
+
+    if (identityArchitecture.current) {
+      identityArchitecture.current.visible =
+        identityIdentity > 0.02
+
+      identityArchitecture.current.scale.setScalar(
+        THREE.MathUtils.lerp(
+          0.42,
+          1.05,
+          identityIdentity
+        )
+      )
+
+      identityArchitecture.current.position.set(
+        THREE.MathUtils.lerp(
+          -4.8,
+          -0.25,
+          identityIdentity
+        ),
+        THREE.MathUtils.lerp(
+          -0.65,
+          0.05,
+          identityIdentity
+        ),
+        THREE.MathUtils.lerp(
+          -5.2,
+          2.0,
+          identityIdentity
+        )
+      )
+    }
+
+    if (trustArchitecture.current) {
+      trustArchitecture.current.visible =
+        trustIdentity > 0.02
+
+      trustArchitecture.current.scale.setScalar(
+        THREE.MathUtils.lerp(
+          0.38,
+          1.0,
+          trustIdentity
+        )
+      )
+
+      trustArchitecture.current.position.set(
+        THREE.MathUtils.lerp(
+          4.8,
+          2.1,
+          trustIdentity
+        ),
+        THREE.MathUtils.lerp(
+          -0.7,
+          0.05,
+          trustIdentity
+        ),
+        THREE.MathUtils.lerp(
+          -5.4,
+          2.0,
+          trustIdentity
+        )
+      )
+    }
+
+    if (convergenceArchitecture.current) {
+      convergenceArchitecture.current.visible =
+        convergenceIdentity > 0.02
+
+      convergenceArchitecture.current.scale.setScalar(
+        THREE.MathUtils.lerp(
+          0.42,
+          1.08,
+          convergenceIdentity
+        )
+      )
+
+      convergenceArchitecture.current.position.set(
+        0.7,
+        0.02,
+        THREE.MathUtils.lerp(
+          -5.0,
+          2.05,
+          convergenceIdentity
+        )
+      )
+    }
+
+    if (quietArchitecture.current) {
+      quietArchitecture.current.visible =
+        quietIdentity > 0.02
+
+      quietArchitecture.current.scale.setScalar(
+        THREE.MathUtils.lerp(
+          0.48,
+          1.12,
+          quietIdentity
+        )
+      )
+
+      quietArchitecture.current.position.set(
+        THREE.MathUtils.lerp(
+          2.4,
+          0.9,
+          quietIdentity
+        ),
+        THREE.MathUtils.lerp(
+          -0.8,
+          -0.05,
+          quietIdentity
+        ),
+        THREE.MathUtils.lerp(
+          -5.8,
+          1.4,
+          quietIdentity
+        )
+      )
+    }
+
+    // During the website continuation, keep the original Graha
+    // universe as atmosphere rather than letting it compete with
+    // the section-specific architecture.
+    if (universe.current && extensionPresence > 0.01) {
+      const extensionUniverseScale =
+        THREE.MathUtils.lerp(
+          universe.current.scale.x,
+          0.31,
+          extensionPresence
+        )
+
+      universe.current.scale.setScalar(
+        extensionUniverseScale
+      )
+
+      universe.current.position.x =
+        THREE.MathUtils.lerp(
+          universe.current.position.x,
+          -1.2,
+          extensionPresence
+        )
+
+      universe.current.position.z =
+        THREE.MathUtils.lerp(
+          universe.current.position.z,
+          -5.2,
+          extensionPresence
+        )
+    }
+
     if (guruField.current) {
       // A2.7: superseded by GuruIntelligenceField.
       // Keep mounted for rollback, but do not render both systems.
@@ -1958,6 +2826,26 @@ function Scene({ progress }: Props) {
         <TemporalArchitecture
           opacity={1}
         />
+      </group>
+
+      <group ref={productArchitecture}>
+        <ProductConstellation opacity={1} />
+      </group>
+
+      <group ref={identityArchitecture}>
+        <IdentityPipeline opacity={1} />
+      </group>
+
+      <group ref={trustArchitecture}>
+        <TrustVault opacity={1} />
+      </group>
+
+      <group ref={convergenceArchitecture}>
+        <CelestialConvergence opacity={1} />
+      </group>
+
+      <group ref={quietArchitecture}>
+        <QuietHorizon opacity={1} />
       </group>
 
       <group ref={guruField}>
@@ -2075,6 +2963,8 @@ function Scene({ progress }: Props) {
 
 export default function CelestialV3Scene({
   progress,
+  extensionProgress,
+  extensionActive,
 }: Props) {
   return (
     <Canvas
@@ -2091,7 +2981,11 @@ export default function CelestialV3Scene({
         powerPreference: 'high-performance',
       }}
     >
-      <Scene progress={progress} />
+      <Scene
+        progress={progress}
+        extensionProgress={extensionProgress}
+        extensionActive={extensionActive}
+      />
     </Canvas>
   )
 }
