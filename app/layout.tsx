@@ -8,11 +8,9 @@ import { GlobalErrorBoundary } from '@/components/error-boundaries/GlobalErrorBo
 
 import { AudioProvider } from '@/providers/audio-provider'
 
-import { Header } from '@/src/ui/layout/Header'
-import { Footer } from '@/src/ui/layout/Footer'
 import { MotionProvider } from '@/components/providers/MotionProvider'
 import { GlobalProviders } from '@/components/providers/GlobalProviders'
-import { GuruChatWidget } from '@/components/guru/GuruChatWidget'
+import { RootSiteShell } from '@/components/layout/RootSiteShell'
 
 const inter = Inter({ 
 
@@ -90,19 +88,9 @@ export default function RootLayout({
                   }}
                 />
 
-                {/* GLOBAL HEADER */}
-                <Header />
-
-                {/* PAGE CONTENT */}
-                <main className="relative z-10 pt-20 md:pt-24">
+                <RootSiteShell>
                   {children}
-                </main>
-
-                {/* GLOBAL FOOTER */}
-                <Footer />
-
-                {/* GLOBAL GURU CHAT WIDGET */}
-                <GuruChatWidget />
+                </RootSiteShell>
               </GlobalProviders>
 
             </AudioProvider>
