@@ -31,7 +31,8 @@ export const ADMIN_PERMISSIONS: Record<AdminRole, string[]> = {
     'guru.read', 'guru.write',
     'knowledge.read', 'knowledge.write', 'knowledge.delete',
     'content.read', 'content.write',
-    'logs.read', 'jobs.trigger',
+    'logs.read', 'monitoring.read',
+    'jobs.read', 'jobs.trigger',
     'settings.read', 'settings.write',
     'backup.read', 'backup.write',
   ],
@@ -41,7 +42,7 @@ export const ADMIN_PERMISSIONS: Record<AdminRole, string[]> = {
   ],
   Support: [
     'users.read', 'users.write', 'reports.read', 'payments.read',
-    'tickets.read', 'logs.read',
+    'tickets.read', 'logs.read', 'monitoring.read', 'jobs.read',
   ],
   ContentManager: [
     'knowledge.read', 'knowledge.write', 'knowledge.delete',
@@ -49,7 +50,7 @@ export const ADMIN_PERMISSIONS: Record<AdminRole, string[]> = {
   ],
   Finance: [
     'users.read', 'payments.read', 'payments.write', 'payments.refund',
-    'tickets.read', 'tickets.adjust', 'reports.read',
+    'tickets.read', 'tickets.adjust', 'reports.read', 'monitoring.read',
   ],
 }
 
