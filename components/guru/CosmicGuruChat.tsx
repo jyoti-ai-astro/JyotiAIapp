@@ -232,7 +232,7 @@ export function CosmicGuruChat({
       <CardContent className="flex min-h-[70vh] flex-1 flex-col p-0">
         <div className="border-b border-border bg-surface-raised px-4 py-3 md:px-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-center gap-2">
+            <div data-guru-status-strip="true" className="flex flex-wrap items-center gap-2">
               <Badge variant="guru">Personal guidance</Badge>
               <Badge variant={tickets?.hasSubscription ? 'success' : 'secondary'}>{entitlementLabel}</Badge>
               {source && initialPrompt && <Badge variant="outline">Prompt prefilled</Badge>}
@@ -399,7 +399,7 @@ function FirstRunPrompts({ onSelect }: { onSelect: (prompt: string) => void }) {
       </p>
       <div className="mt-6 grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {PROMPT_GROUPS.map((prompt) => (
-          <button
+          <button data-guru-prompt-card="true"
             key={prompt.category}
             type="button"
             onClick={() => onSelect(prompt.question)}
