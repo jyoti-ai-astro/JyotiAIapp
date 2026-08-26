@@ -12,7 +12,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useGlobalProgress } from '@/hooks/use-global-progress';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
 import { gsapHeroReveal, scrollParallaxY } from '@/lib/motion/gsap-motion-bridge';
 import { useSectionMotion } from '@/hooks/motion/useSectionMotion';
@@ -120,6 +120,8 @@ export function CosmicHero({
   const mouseY = useMotionValue(0);
   const springX = useSpring(mouseX, { stiffness: 50, damping: 20 });
   const springY = useSpring(mouseY, { stiffness: 50, damping: 20 });
+  const springXHalf = useTransform(springX, (value) => value * 0.5);
+  const springYHalf = useTransform(springY, (value) => value * 0.5);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -233,9 +235,16 @@ export function CosmicHero({
       description: 'text-base md:text-lg text-white/80 max-w-2xl mx-auto',
       decoration: 'absolute inset-0 flex items-center justify-center pointer-events-none',
     },
+    guru: {
+      container: 'relative',
+      title: 'text-5xl md:text-7xl font-display font-bold text-gold mb-6',
+      subtitle: 'text-xl md:text-2xl text-white/90 font-heading mb-4',
+      description: 'text-base md:text-lg text-white/80 max-w-2xl mx-auto',
+      decoration: 'absolute inset-0 flex items-center justify-center pointer-events-none',
+    },
   };
 
-  const styles = variantStyles[variant];
+  const styles = variantStyles[variant] ?? variantStyles.cosmos;
 
   // Memoize style objects to prevent infinite re-renders
   const contentStyle = useMemo(() => ({ opacity: globalProgress }), [globalProgress]);
@@ -358,8 +367,8 @@ export function CosmicHero({
                   linear-gradient(90deg, rgba(23, 232, 246, 0.1) 1px, transparent 1px)
                 `,
                 backgroundSize: '50px 50px',
-                x: springX * 0.5,
-                y: springY * 0.5,
+                x: springXHalf,
+                y: springYHalf,
               }}
             />
             {/* Cosmic engine icons */}
@@ -873,4 +882,3 @@ export function CosmicHero({
     </section>
   );
 }
-

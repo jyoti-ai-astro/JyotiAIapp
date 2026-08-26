@@ -41,8 +41,8 @@ export class AstralBloomEngine {
   private mesh: THREE.Mesh;
   private config: AstralBloomEngineConfig;
   
-  private disc: DiscData;
-  private ring: RingData;
+  private disc!: DiscData;
+  private ring!: RingData;
   private particles: ParticleData[] = [];
   
   private discSegments: number;
@@ -431,4 +431,3 @@ export class AstralBloomEngine {
     this.material.dispose();
   }
 }
-

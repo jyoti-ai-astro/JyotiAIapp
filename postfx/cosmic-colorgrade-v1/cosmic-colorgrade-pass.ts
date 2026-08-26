@@ -84,7 +84,7 @@ export class CosmicColorGradePass extends Effect {
 
     super('CosmicColorGradePass', cosmicColorGradeShader.fragmentShader, {
       blendFunction: BlendFunction.NORMAL, // Normal blending for color grading
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uLutStrength', lutStrengthUniform],
         ['uTemperature', temperatureUniform],
@@ -238,4 +238,3 @@ export class CosmicColorGradePass extends Effect {
     }
   }
 }
-

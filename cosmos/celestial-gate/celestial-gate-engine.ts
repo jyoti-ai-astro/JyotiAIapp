@@ -42,9 +42,9 @@ export class CelestialGateEngine {
   private mesh: THREE.Mesh;
   private config: CelestialGateEngineConfig;
   
-  private halo: HaloData;
+  private halo!: HaloData;
   private sigils: SigilData[] = [];
-  private core: CoreData;
+  private core!: CoreData;
   
   private haloSegments: number;
   private numSigils: number;
@@ -432,4 +432,3 @@ export class CelestialGateEngine {
     this.material.dispose();
   }
 }
-

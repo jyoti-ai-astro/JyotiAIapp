@@ -31,6 +31,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (!storage) {
+      return NextResponse.json(
+        { error: 'Firebase Storage not initialized' },
+        { status: 500 }
+      )
+    }
+
     // Upload images to Firebase Storage
     const timestamp = Date.now()
     const leftPath = `user_uploads/${uid}/palm-left-${timestamp}.jpg`

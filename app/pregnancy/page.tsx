@@ -1,141 +1,205 @@
-/**
- * Pregnancy Page
- * 
- * Batch 4 - App Internal Screens Part 2
- * 
- * Pregnancy insights and predictions
- */
+'use client'
 
-'use client';
+export const dynamic = 'force-dynamic'
 
-export const dynamic = 'force-dynamic';
+import { useEffect } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import {
+  Baby,
+  Heart,
+  LockKeyhole,
+  ShieldAlert,
+  Sparkles,
+} from 'lucide-react'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUserStore } from '@/store/user-store';
-import { usePregnancy } from '@/lib/hooks/usePregnancy';
-import { motion } from 'framer-motion';
-import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { SkeletonCard } from '@/components/ui/skeleton';
-import { ErrorBoundary } from '@/components/global/ErrorBoundary';
-import { Baby, Sparkles } from 'lucide-react';
-import Link from 'next/link';
-import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
-import { useTicketAccess } from '@/lib/access/useTicketAccess';
-import { getFeatureAccess } from '@/lib/payments/feature-access';
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
+import { useTicketAccess } from '@/lib/access/useTicketAccess'
+import { getFeatureAccess } from '@/lib/payments/feature-access'
+import { useUserStore } from '@/store/user-store'
 
 export default function PregnancyPage() {
-  const router = useRouter();
-  const { user } = useUserStore();
-  const featureKey = 'pregnancy' as const;
-  const { hasAccess, hasSubscription, tickets, loading: ticketLoading, config } = useTicketAccess(featureKey);
-  const featureConfig = getFeatureAccess(featureKey);
-  const { insights, loading, error, refetch } = usePregnancy();
+  const router = useRouter()
+  const { user } = useUserStore()
+
+  const featureKey = 'pregnancy' as const
+  const {
+    hasAccess,
+    loading: ticketLoading,
+  } = useTicketAccess(featureKey)
+
+  const featureConfig = getFeatureAccess(featureKey)
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      router.push('/login')
     }
-  }, [user, router]);
+  }, [user, router])
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null
 
-  // Phase R: Check ticket access
   if (ticketLoading) {
     return (
-      <DashboardPageShell title={featureConfig.label} subtitle="Loading...">
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
-        </div>
+      <DashboardPageShell
+        title="Pregnancy Insights"
+        subtitle="Preparing your JyotiAI access"
+      >
+        <Card>
+          <CardContent className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center text-center">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-muted border-b-amber-500" />
+              <p className="mt-4 text-sm text-muted-foreground">
+                Checking your plan and reading credits…
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </DashboardPageShell>
-    );
+    )
   }
 
   if (!hasAccess) {
     return (
-      <DashboardPageShell title={featureConfig.label} subtitle="Unlock pregnancy insights">
-        <OneTimeOfferBanner feature={featureConfig.label} productId={featureConfig.defaultProductId} />
+      <DashboardPageShell
+        title="Pregnancy Insights"
+        subtitle="Astrological family-planning guidance"
+      >
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-amber-300/25 bg-amber-300/10">
+                  <LockKeyhole className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <CardTitle>Premium astrology module</CardTitle>
+                  <CardDescription className="mt-1">
+                    Pregnancy Insights uses prediction access from your current
+                    plan or reading-credit balance.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          <OneTimeOfferBanner
+            feature={featureConfig.label}
+            productId={featureConfig.defaultProductId}
+          />
+
+          <div className="flex justify-center">
+            <Link href="/dashboard">
+              <Button variant="outline">Back to Dashboard</Button>
+            </Link>
+          </div>
+        </div>
       </DashboardPageShell>
-    );
+    )
   }
 
   return (
     <DashboardPageShell
       title="Pregnancy Insights"
-      subtitle="Astrological guidance for pregnancy and conception"
+      subtitle="Astrological family-planning guidance from JyotiAI"
     >
+      <div className="space-y-6">
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <div className="flex items-start gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-amber-300/30 bg-amber-300/10">
+                <Baby className="h-6 w-6 text-amber-500" />
+              </div>
 
-          {loading && !insights ? (
-            <SkeletonCard />
-          ) : insights ? (
-            <ErrorBoundary>
-              <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white shadow-cosmic-glow">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-display text-gold">Pregnancy Insights</CardTitle>
-                  <CardDescription className="text-white/70">Based on your astrological profile</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-white/80">{insights.predictions}</p>
-                  {insights.favorablePeriods && insights.favorablePeriods.length > 0 && (
-                    <div>
-                      <p className="text-gold font-semibold mb-2">Favorable Periods:</p>
-                      <ul className="list-disc list-inside space-y-1 text-white/70">
-                        {insights.favorablePeriods.map((period: string, index: number) => (
-                          <li key={index}>{new Date(period).toLocaleDateString()}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white/5 p-3 rounded-lg">
-                      <p className="text-sm text-white/60 font-semibold mb-2">Favorable Factors:</p>
-                      <ul className="list-disc list-inside text-white/80 space-y-1 text-sm">
-                        {insights.astrologicalFactors.favorable.map((f: string, i: number) => (
-                          <li key={i}>{f}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="bg-white/5 p-3 rounded-lg">
-                      <p className="text-sm text-white/60 font-semibold mb-2">Considerations:</p>
-                      <ul className="list-disc list-inside text-white/80 space-y-1 text-sm">
-                        {insights.astrologicalFactors.considerations.map((c: string, i: number) => (
-                          <li key={i}>{c}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  <div className="bg-white/5 p-3 rounded-lg">
-                    <p className="text-sm text-white/60 font-semibold mb-2">Recommendations:</p>
-                    <ul className="list-disc list-inside text-white/80 space-y-1 text-sm">
-                      {insights.recommendations.map((r: string, i: number) => (
-                        <li key={i}>{r}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            </ErrorBoundary>
-          ) : (
-            <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-              <CardContent className="pt-6 text-center">
-                <p className="text-white/70">No insights available yet</p>
-                <Button onClick={refetch} className="mt-4 spiritual-gradient">Load Insights</Button>
-              </CardContent>
-            </Card>
-          )}
+              <div>
+                <Badge variant="secondary" className="mb-3">
+                  Family observatory
+                </Badge>
+                <CardTitle className="font-display text-2xl">
+                  Pregnancy & conception guidance
+                </CardTitle>
+                <CardDescription className="mt-2 max-w-3xl leading-6">
+                  This JyotiAI module is reserved for chart-led astrological
+                  timing and reflective guidance around family planning.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
 
-          <div className="text-center">
-            <Link href="/dashboard">
-              <Button variant="outline" className="border-cosmic-purple/50 text-white/80 hover:bg-cosmic-purple/20">
-                Back to Dashboard
-              </Button>
-            </Link>
-          </div>
+          <CardContent>
+            <div className="rounded-xl border border-amber-300/30 bg-amber-50/40 p-5 dark:bg-amber-300/[0.04]">
+              <div className="flex items-start gap-3">
+                <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                <div>
+                  <p className="font-semibold">
+                    Production astrology engine pending
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Your access is valid, but JyotiAI will not present the
+                    current placeholder pregnancy engine as a personalized
+                    production reading. The chart-derived production engine
+                    must be connected before this module is released.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <Heart className="h-5 w-5 text-amber-500" />
+              <CardTitle className="text-lg">Chart context</CardTitle>
+              <CardDescription>
+                Future guidance can incorporate the relevant houses, planetary
+                periods, and chart state.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              <CardTitle className="text-lg">Timing context</CardTitle>
+              <CardDescription>
+                Production results should be calculated from real JyotiAI
+                astrology data rather than fixed example dates.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <ShieldAlert className="h-5 w-5 text-amber-500" />
+              <CardTitle className="text-lg">Important boundary</CardTitle>
+              <CardDescription>
+                Astrology guidance is not medical advice, diagnosis, fertility
+                assessment, or a substitute for qualified healthcare.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link href="/kundali">
+            <Button>View Kundali</Button>
+          </Link>
+
+          <Link href="/dashboard">
+            <Button variant="outline">Back to Dashboard</Button>
+          </Link>
+        </div>
+      </div>
     </DashboardPageShell>
-  );
+  )
 }
-

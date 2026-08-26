@@ -7,4 +7,6 @@
  */
 
 // Placeholder for accessibility provider implementation
+export const AccessibilityProvider = ({ children }: { children?: React.ReactNode }) => children;
+
 

@@ -13,7 +13,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { JyotiComponentProps } from '@/components/ui/types';
 
-export interface ToggleProps extends Omit<JyotiComponentProps, 'motion'> {
+export interface ToggleProps extends Omit<JyotiComponentProps, 'motion' | 'variant'> {
   /** Toggle variant */
   variant?: 'default' | 'sound' | 'motion' | 'theme';
   

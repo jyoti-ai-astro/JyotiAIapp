@@ -7,6 +7,7 @@
 
 import { adminDb } from '@/lib/firebase/admin'
 import type { GuruMessage, GuruResponse } from '@/lib/engines/guru-engine'
+import { Timestamp } from 'firebase-admin/firestore'
 
 const MAX_HISTORY_TOKENS_APPROX = 4000 // Approximate token limit for context
 
@@ -113,7 +114,7 @@ export async function saveGuruTurn(
     await messagesRef.add({
       role: message.role,
       content: message.content,
-      createdAt: adminDb.Timestamp.now(),
+      createdAt: Timestamp.now(),
     })
 
     // Save assistant response
@@ -124,13 +125,13 @@ export async function saveGuruTurn(
         usedAstroContext: reply.usedAstroContext,
         usedRag: reply.usedRag,
       },
-      createdAt: adminDb.Timestamp.now(),
+      createdAt: Timestamp.now(),
     })
 
     // Update session metadata
     await sessionRef.set(
       {
-        updatedAt: adminDb.Timestamp.now(),
+        updatedAt: Timestamp.now(),
         lastMessage: message.content.substring(0, 100),
       },
       { merge: true }

@@ -13,7 +13,8 @@ import { saveGuruTurn } from '@/lib/guru/guru-session-store'
 import { rateLimit, getRateLimitHeaders } from '@/lib/middleware/rate-limit'
 import { sanitizeMessage } from '@/lib/security/xss-protection'
 import { rateLimitConfig } from '@/lib/security/validation-schemas'
-import { fetchUserTickets, consumeTickets, splitSubscriptionAndTickets } from '@/lib/payments/ticket-service'
+import { consumeTickets, splitSubscriptionAndTickets } from '@/lib/payments/ticket-service'
+import { deriveGuruModeFromQuestion } from '@/lib/guru/guru-context'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,25 +44,40 @@ export async function POST(request: NextRequest) {
     let userName: string | undefined
     let gender: string | undefined
 
-    if (sessionCookie && adminAuth) {
-      try {
-        const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
-        userId = decodedClaims.uid
+    if (!sessionCookie || !adminAuth) {
+      return NextResponse.json(
+        {
+          status: 'error',
+          code: 'UNAUTHENTICATED',
+          message: 'Please log in to ask Guru.',
+        },
+        { status: 401 }
+      )
+    }
 
-        // Get user profile for name/gender
-        if (adminDb && userId) {
-          const userRef = adminDb.collection('users').doc(userId)
-          const userSnap = await userRef.get()
-          if (userSnap.exists) {
-            const userData = userSnap.data()
-            userName = userData?.name || undefined
-            gender = userData?.gender || undefined
-          }
+    try {
+      const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true)
+      userId = decodedClaims.uid
+
+      // Get user profile for name/gender
+      if (adminDb && userId) {
+        const userRef = adminDb.collection('users').doc(userId)
+        const userSnap = await userRef.get()
+        if (userSnap.exists) {
+          const userData = userSnap.data()
+          userName = userData?.name || undefined
+          gender = userData?.gender || undefined
         }
-      } catch (error) {
-        // Not authenticated - continue as guest
-        userId = null
       }
+    } catch (error) {
+      return NextResponse.json(
+        {
+          status: 'error',
+          code: 'UNAUTHENTICATED',
+          message: 'Please log in again to ask Guru.',
+        },
+        { status: 401 }
+      )
     }
 
     // Rate limiting (use fingerprint or userId)
@@ -69,7 +85,11 @@ export async function POST(request: NextRequest) {
     const rateLimitResult = rateLimit(fingerprint, rateLimitConfig.chat)
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
-        { error: rateLimitResult.error || 'Rate limit exceeded. Please try again later.' },
+        {
+          status: 'error',
+          code: 'RATE_LIMITED',
+          message: rateLimitResult.error || 'Please wait briefly before asking again.',
+        },
         {
           status: 429,
           headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
@@ -115,57 +135,41 @@ export async function POST(request: NextRequest) {
     }
 
     // Phase G: Check if user has tickets (if authenticated)
-    if (userId) {
-      try {
-        const accessInfo = await splitSubscriptionAndTickets(userId)
-        
-        // If no subscription, check for tickets
-        if (!accessInfo.hasSubscription) {
-          if (accessInfo.tickets.aiGuruTickets <= 0) {
-            return NextResponse.json(
-              {
-                status: 'error',
-                code: 'NO_TICKETS',
-                message: 'You have 0 AI Guru credits. Please purchase a one-time reading to continue.',
-              },
-              {
-                status: 403,
-                headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
-              }
-            )
-          }
-        }
-      } catch (ticketError: any) {
-        // If ticket check fails, log but don't block (graceful degradation)
-        console.error('Ticket check error:', ticketError)
-      }
-    }
+    try {
+      const accessInfo = await splitSubscriptionAndTickets(userId);
 
-    // Phase G: Check if user has tickets (if authenticated)
-    if (userId) {
-      try {
-        const accessInfo = await splitSubscriptionAndTickets(userId)
-        
-        // If no subscription, check for tickets
-        if (!accessInfo.hasSubscription) {
-          if (accessInfo.tickets.aiGuruTickets <= 0) {
-            return NextResponse.json(
-              {
-                status: 'error',
-                code: 'NO_TICKETS',
-                message: 'You have 0 AI Guru credits. Please purchase a one-time reading to continue.',
-              },
-              {
-                status: 403,
-                headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
-              }
-            )
-          }
+      // If user has an active subscription, allow access without tickets
+      if (!accessInfo.hasSubscription) {
+        const aiGuruCredits = accessInfo.tickets.aiGuruTickets ?? 0;
+
+        if (aiGuruCredits <= 0) {
+          return NextResponse.json(
+            {
+              status: 'error',
+              code: 'NO_TICKETS',
+              message:
+                'You have 0 AI Guru credits. Please purchase a one-time reading to continue.',
+            },
+            {
+              status: 403,
+              headers: getRateLimitHeaders(
+                rateLimitResult.remaining,
+                rateLimitResult.resetTime
+              ),
+            }
+          );
         }
-      } catch (ticketError: any) {
-        // If ticket check fails, log but don't block (graceful degradation)
-        console.error('Ticket check error:', ticketError)
       }
+    } catch (ticketError: any) {
+      console.error('Ticket check error:', ticketError);
+      return NextResponse.json(
+        {
+          status: 'error',
+          code: 'ACCESS_CHECK_FAILED',
+          message: 'Unable to verify Guru access. Please try again.',
+        },
+        { status: 500 }
+      )
     }
 
     // Call Guru Brain with timeout (30 seconds)
@@ -210,6 +214,18 @@ export async function POST(request: NextRequest) {
       if (error.message?.includes('No AI provider configured')) {
         errorCode = 'AI_PROVIDER_MISSING'
         errorMessage = 'AI service is not configured. Please contact support.'
+      } else if (/quota|billing|insufficient_quota/i.test(error.message || '')) {
+        errorCode = 'AI_QUOTA'
+        errorMessage = 'Guru is temporarily unavailable. Please try again later.'
+      } else if (/rate limit|429/i.test(error.message || '')) {
+        errorCode = 'AI_RATE_LIMIT'
+        errorMessage = 'Please wait briefly before asking again.'
+      } else if (/model|not found|unavailable/i.test(error.message || '')) {
+        errorCode = 'MODEL_UNAVAILABLE'
+        errorMessage = 'Guru is temporarily unavailable. Please try again later.'
+      } else if (/malformed|empty response|invalid response/i.test(error.message || '')) {
+        errorCode = 'MALFORMED_RESPONSE'
+        errorMessage = 'Guru returned an unreadable response. Please retry.'
       } else if (error.message?.includes('Pinecone') || error.message?.includes('RAG')) {
         errorCode = 'RAG_UNAVAILABLE'
         errorMessage = 'Knowledge base is temporarily unavailable. The Guru will still respond without enhanced context.'
@@ -229,38 +245,42 @@ export async function POST(request: NextRequest) {
     }
 
     // Phase G: Consume ticket AFTER successful response (if authenticated and no subscription)
-    if (userId && result.status !== 'error' && result.status !== 'degraded') {
+    if (userId && result.status !== 'error' && result.answer?.trim()) {
       try {
-        const accessInfo = await splitSubscriptionAndTickets(userId)
-        
-        // Only consume ticket if user doesn't have subscription
-        if (!accessInfo.hasSubscription && accessInfo.tickets.aiGuruTickets > 0) {
-          const consumed = await consumeTickets(userId, { aiGuruTickets: 1 })
-          if (!consumed) {
-            console.warn('Failed to consume ticket for user:', userId)
-          }
-        }
-      } catch (ticketError: any) {
-        // Log but don't fail the request if ticket consumption fails
-        console.error('Ticket consumption error:', ticketError)
-      }
-    }
+        const accessInfo = await splitSubscriptionAndTickets(userId);
 
-    // Phase G: Consume ticket AFTER successful response (if authenticated and no subscription)
-    if (userId && result.status !== 'error' && result.status !== 'degraded') {
-      try {
-        const accessInfo = await splitSubscriptionAndTickets(userId)
-        
         // Only consume ticket if user doesn't have subscription
-        if (!accessInfo.hasSubscription && accessInfo.tickets.aiGuruTickets > 0) {
-          const consumed = await consumeTickets(userId, { aiGuruTickets: 1 })
+        const aiGuruCredits = accessInfo.tickets.aiGuruTickets ?? 0;
+        if (!accessInfo.hasSubscription && aiGuruCredits > 0) {
+          const consumed = await consumeTickets(userId, { aiGuruTickets: 1 });
           if (!consumed) {
-            console.warn('Failed to consume ticket for user:', userId)
+            console.warn('Failed to consume ticket for user:', userId);
+            return NextResponse.json(
+              {
+                status: 'error',
+                code: 'TICKET_CONSUMPTION_FAILED',
+                message: 'Guru could not confirm your credit usage. Please retry.',
+              },
+              {
+                status: 409,
+                headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
+              }
+            )
           }
         }
       } catch (ticketError: any) {
-        // Log but don't fail the request if ticket consumption fails
-        console.error('Ticket consumption error:', ticketError)
+        console.error('Ticket consumption error:', ticketError);
+        return NextResponse.json(
+          {
+            status: 'error',
+            code: 'TICKET_CONSUMPTION_FAILED',
+            message: 'Guru could not confirm your credit usage. Please retry.',
+          },
+          {
+            status: 500,
+            headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
+          }
+        )
       }
     }
 
@@ -274,7 +294,7 @@ export async function POST(request: NextRequest) {
             answer: result.answer || '',
             usedAstroContext: result.usedAstroContext,
             usedRag: result.usedRag,
-            mode: result.mode,
+            mode: deriveGuruModeFromQuestion(lastUserMessage.content),
           },
           'default'
         )
@@ -286,6 +306,12 @@ export async function POST(request: NextRequest) {
 
     // Map result status to HTTP response
     if (result.status === 'error') {
+      const statusByCode: Record<string, number> = {
+        KUNDALI_REQUIRED: 409,
+        ASTRO_CONTEXT_MISSING: 409,
+        GURU_TIMEOUT: 504,
+      }
+
       return NextResponse.json(
         {
           status: 'error',
@@ -293,7 +319,7 @@ export async function POST(request: NextRequest) {
           message: result.errorMessage || 'An error occurred.',
         },
         {
-          status: result.errorCode === 'GURU_TIMEOUT' ? 504 : 500,
+          status: statusByCode[result.errorCode || ''] || 500,
           headers: getRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime),
         }
       )
@@ -337,4 +363,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

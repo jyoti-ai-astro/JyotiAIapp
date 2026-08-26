@@ -26,6 +26,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Image is required' }, { status: 400 })
     }
 
+    if (!storage) {
+      return NextResponse.json(
+        { error: 'Firebase Storage not initialized' },
+        { status: 500 }
+      )
+    }
+
     // Upload image to Firebase Storage
     const timestamp = Date.now()
     const imagePath = `user_uploads/${uid}/aura-${timestamp}.jpg`

@@ -6,5 +6,7 @@
  * Reference: Parallax Layers, Section Reveals, Scroll-Synced Shaders
  */
 
-// Placeholder for scroll animation utilities implementation
+// Placeholder for scroll animations implementation
+export const scrollAnimations = {};
+
 

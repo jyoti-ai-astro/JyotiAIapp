@@ -10,10 +10,10 @@ import { BlogPageClient } from './blog-page-client';
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Blog | Jyoti.ai - Spiritual Knowledge Base',
-  description: 'Read articles about astrology, numerology, spiritual guidance, and ancient wisdom from Jyoti.ai',
+  title: 'Blog | JyotiAI - Spiritual Knowledge Base',
+  description: 'Read articles about astrology, numerology, spiritual guidance, and ancient wisdom from JyotiAI',
   openGraph: {
-    title: 'Blog | Jyoti.ai',
+    title: 'Blog | JyotiAI',
     description: 'Read articles about astrology, numerology, and spiritual guidance',
     type: 'website',
     images: [
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
         url: '/og-image-blog.jpg',
         width: 1200,
         height: 630,
-        alt: 'Jyoti.ai Blog',
+        alt: 'JyotiAI Blog',
       },
     ],
   },

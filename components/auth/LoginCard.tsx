@@ -34,6 +34,9 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess }) => {
     try {
       setLoading(true);
       const provider = new GoogleAuthProvider();
+      if (!auth) {
+        throw new Error('Firebase authentication is not initialized')
+      }
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
 
@@ -56,8 +59,13 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess }) => {
           pob: null,
           rashi: null,
           nakshatra: null,
-          subscription: 'free',
-          subscriptionExpiry: null,
+          subscription: data.subscription || 'free',
+          subscriptionExpiry: data.subscriptionExpiry ? new Date(data.subscriptionExpiry) : null,
+          tickets: data.tickets || 0,
+          aiGuruTickets: data.aiGuruTickets || data.tickets || 0,
+          kundaliTickets: data.kundaliTickets || 0,
+          lifetimePredictions: data.lifetimePredictions || 0,
+          dailyUsage: data.dailyUsage || { count: 0, date: new Date().toISOString().split('T')[0] },
           onboarded: data.onboarded || false,
         });
 
@@ -132,7 +140,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess }) => {
           >
             <Sparkles className="h-12 w-12 text-gold" />
           </motion.div>
-          <h1 className="text-4xl font-display font-bold text-white mb-2">Jyoti.ai</h1>
+          <h1 className="text-4xl font-display font-bold text-white mb-2">JyotiAI</h1>
           <p className="text-white/80">Sign in to your spiritual journey</p>
         </div>
 

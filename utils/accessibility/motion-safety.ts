@@ -7,4 +7,6 @@
  */
 
 // Placeholder for motion safety utilities implementation
+export const motionSafety = {};
+
 

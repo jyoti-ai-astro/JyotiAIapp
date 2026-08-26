@@ -1,0 +1,884 @@
+.lab {
+  --ink: #07131f;
+  --ink-2: #0b1d2c;
+  --ivory: #fff8e6;
+  --ivory-2: #f5ead0;
+  --solar: #f28c28;
+  --ember: #c9552b;
+  --teal: #2f7d7e;
+  --gold: #c9a24a;
+  --muted: #b9c2bf;
+  --line: rgb(216 181 106 / 30%);
+
+  min-height: 100svh;
+  background:
+    radial-gradient(circle at 74% 6%, rgb(242 140 40 / 16%), transparent 24rem),
+    radial-gradient(circle at 12% 26%, rgb(47 125 126 / 18%), transparent 22rem),
+    linear-gradient(180deg, #06111d 0%, #091522 48%, #fff8e6 48.1%, #f7edd6 100%);
+  color: var(--ivory);
+  font-family: var(--font-body), Inter, system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+.lab * {
+  box-sizing: border-box;
+}
+
+.labHero,
+.section,
+.summary {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.labHero {
+  position: relative;
+  display: grid;
+  min-height: 86svh;
+  grid-template-columns: minmax(0, 0.9fr) minmax(20rem, 1.1fr);
+  align-items: center;
+  gap: clamp(2rem, 6vw, 5rem);
+  padding: 5rem 0 3rem;
+  overflow: hidden;
+}
+
+.labHeroCopy {
+  position: relative;
+  z-index: 2;
+}
+
+.kicker {
+  margin: 0 0 0.75rem;
+  color: #f1c979;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.labHero h1,
+.sectionIntro h2,
+.summary h2 {
+  margin: 0;
+  font-family: var(--font-heading), Marcellus, Georgia, serif;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.labHero h1 {
+  max-width: 11ch;
+  color: #fff7df;
+  font-size: clamp(3.75rem, 8vw, 8.5rem);
+  line-height: 0.94;
+  text-wrap: balance;
+}
+
+.labHeroCopy > p:last-child {
+  max-width: 34rem;
+  margin: 1.4rem 0 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.55vw, 1.2rem);
+  line-height: 1.75;
+}
+
+.labHeroArt {
+  position: relative;
+  min-height: min(58vw, 34rem);
+}
+
+.labHeroSun,
+.labHeroOrbit {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+}
+
+.labHeroSun {
+  width: min(34vw, 22rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #fff7c4 0 16%, #ffd980 27%, var(--solar) 52%, transparent 69%),
+    conic-gradient(from 30deg, transparent, rgb(201 162 74 / 42%), transparent 42%, rgb(242 140 40 / 38%), transparent 72%);
+  box-shadow:
+    0 0 4rem rgb(242 140 40 / 30%),
+    0 0 13rem rgb(201 162 74 / 22%);
+}
+
+.labHeroOrbit {
+  width: min(52vw, 38rem);
+  aspect-ratio: 1;
+  border: 1px solid rgb(216 181 106 / 32%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(-14deg) scaleY(0.42);
+}
+
+.labHeroOrbit::before,
+.labHeroOrbit::after {
+  content: '';
+  position: absolute;
+  inset: 13%;
+  border: 1px solid rgb(245 234 208 / 18%);
+  border-radius: 50%;
+}
+
+.labHeroOrbit::after {
+  inset: 37% 8%;
+  background: #f1c979;
+  border: 0;
+  box-shadow: 0 0 1.5rem rgb(242 140 40 / 55%);
+}
+
+.section {
+  padding: 4rem 0;
+  color: var(--ink);
+}
+
+.sectionIntro {
+  margin-bottom: 1.5rem;
+}
+
+.sectionIntro h2,
+.summary h2 {
+  color: var(--ink);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+}
+
+.paletteGrid,
+.heroGrid,
+.typeGrid,
+.rulesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.paletteCard,
+.logoTile,
+.heroVariant,
+.uiLab,
+.typeCard,
+.ruleCard,
+.performanceCard,
+.summary {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgb(255 248 230 / 82%);
+  box-shadow: 0 1.5rem 4rem rgb(7 19 31 / 8%);
+}
+
+.paletteCard {
+  padding: 1rem;
+}
+
+.recommendedPalette {
+  background: linear-gradient(180deg, #fff8e6, #f6e7bd);
+  border-color: rgb(201 162 74 / 70%);
+  box-shadow: 0 1.5rem 4rem rgb(201 162 74 / 18%);
+}
+
+.paletteHeader {
+  display: flex;
+  min-height: 8.5rem;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.paletteHeader h3,
+.typeCard h3,
+.pricingCard h3,
+.profileCard h3,
+.reportCard h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-heading), Marcellus, Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 500;
+}
+
+.paletteHeader p,
+.typeCard > span,
+.pricingCard span,
+.profileCard span,
+.reportCard span,
+.kundaliCard strong {
+  color: #51616a;
+  line-height: 1.55;
+}
+
+.recommendedBadge {
+  height: fit-content;
+  white-space: nowrap;
+  border: 1px solid rgb(201 162 74 / 60%);
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  background: rgb(242 140 40 / 12%);
+  color: #8e581d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.swatchGrid {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.swatch {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.swatch span {
+  width: 2.25rem;
+  aspect-ratio: 1;
+  border: 1px solid rgb(7 19 31 / 15%);
+  border-radius: 8px;
+}
+
+.swatch strong,
+.swatch code {
+  display: block;
+  color: var(--ink);
+  font-size: 0.78rem;
+}
+
+.swatch code {
+  color: #667071;
+}
+
+.logoGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.logoTile {
+  min-height: 12rem;
+  padding: 1rem;
+}
+
+.logoStage {
+  display: grid;
+  min-height: 8rem;
+  place-items: center;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 50%, rgb(242 140 40 / 12%), transparent 8rem),
+    #07131f;
+  color: var(--ivory);
+}
+
+.logoTile:nth-child(5) .logoStage {
+  background: #fff8e6;
+  color: var(--ink);
+}
+
+.logoTile p {
+  margin: 0.8rem 0 0;
+  color: #566265;
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.wordmark,
+.wordmarkStacked {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.wordmarkStacked {
+  flex-direction: column;
+  text-align: center;
+}
+
+.wordmark span,
+.wordmarkStacked span {
+  display: block;
+  color: currentColor;
+  font-family: var(--font-heading), Marcellus, Georgia, serif;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.wordmark small,
+.wordmarkStacked small {
+  display: block;
+  margin-top: 0.25rem;
+  color: color-mix(in srgb, currentColor 72%, transparent);
+  font-size: 0.7rem;
+}
+
+.logoMark,
+.logoMarkSmall {
+  flex: 0 0 auto;
+  width: 4rem;
+  color: currentColor;
+}
+
+.logoMarkSmall {
+  width: 1.5rem;
+}
+
+.logoOrbit,
+.logoOrbitThin {
+  stroke: currentColor;
+  opacity: 0.38;
+}
+
+.logoFlame {
+  fill: var(--solar);
+}
+
+.logoCore {
+  fill: #fff0a8;
+}
+
+.logoMono,
+.logoMonoCore {
+  fill: currentColor;
+}
+
+.logoMonoCore {
+  opacity: 0.68;
+}
+
+.logoPlanet {
+  fill: var(--gold);
+}
+
+.heroGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.heroVariant {
+  overflow: hidden;
+}
+
+.heroVisual {
+  position: relative;
+  min-height: 29rem;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 64% 40%, rgb(242 140 40 / 18%), transparent 16rem),
+    linear-gradient(145deg, #07131f, #0b1d2c 58%, #16120e);
+}
+
+.heroSceneShell,
+.scene,
+.staticSolarCore {
+  position: absolute;
+  inset: 0;
+}
+
+.scene {
+  z-index: 2;
+}
+
+.staticSolarCore {
+  z-index: 1;
+  background:
+    radial-gradient(circle at 61% 45%, #fff6bd 0 1.8rem, #f6b34b 3.9rem, rgb(242 140 40 / 28%) 8rem, transparent 15rem),
+    radial-gradient(circle at 28% 26%, rgb(245 234 208 / 18%) 0 0.08rem, transparent 0.11rem),
+    radial-gradient(circle at 72% 20%, rgb(245 234 208 / 20%) 0 0.07rem, transparent 0.1rem);
+}
+
+.heroCopy {
+  position: absolute;
+  z-index: 3;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  max-width: 26rem;
+  color: var(--ivory);
+}
+
+.heroCopy p,
+.heroCopy span {
+  display: block;
+  margin: 0;
+  color: #f1c979;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.heroCopy h3 {
+  margin: 0.35rem 0 0.65rem;
+  color: #fff7df;
+  font-family: var(--font-heading), Marcellus, Georgia, serif;
+  font-size: clamp(2rem, 3.4vw, 3.7rem);
+  font-weight: 500;
+  line-height: 1;
+  text-wrap: balance;
+}
+
+.heroCopy span {
+  color: var(--muted);
+  text-transform: none;
+}
+
+.horizonHero {
+  background:
+    linear-gradient(180deg, #07131f 0%, #0b1d2c 54%, #3f2d1d 54.2%, #f0b85f 100%);
+}
+
+.horizonSun {
+  position: absolute;
+  right: 12%;
+  bottom: 18%;
+  width: min(42vw, 19rem);
+  aspect-ratio: 1;
+  border-radius: 50% 50% 0 0;
+  background: radial-gradient(circle at 50% 34%, #fff3b8, #f28c28 55%, transparent 70%);
+  box-shadow: 0 -2rem 8rem rgb(242 140 40 / 34%);
+}
+
+.horizonRings {
+  position: absolute;
+  right: -2rem;
+  bottom: 9rem;
+  width: min(55vw, 34rem);
+  aspect-ratio: 1;
+  border: 1px solid rgb(255 248 230 / 24%);
+  border-radius: 50%;
+  transform: scaleY(0.32) rotate(-7deg);
+}
+
+.horizonRings::before,
+.horizonRings::after {
+  content: '';
+  position: absolute;
+  inset: 17%;
+  border: 1px solid rgb(201 162 74 / 30%);
+  border-radius: inherit;
+}
+
+.horizonRings::after {
+  inset: 33%;
+}
+
+.uiLab {
+  padding: 1rem;
+  background: #07131f;
+}
+
+.sampleNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid rgb(216 181 106 / 24%);
+  border-radius: 8px;
+  padding: 0.8rem;
+  background: rgb(255 248 230 / 6%);
+}
+
+.navBrand,
+.navLinks,
+.buttonRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.navBrand {
+  color: var(--ivory);
+  font-family: var(--font-heading), Marcellus, Georgia, serif;
+  font-size: 1.25rem;
+}
+
+.navLinks {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.navButton,
+.primaryButton,
+.secondaryButton,
+.typeCard button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 8px;
+  padding: 0 1rem;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.navButton,
+.secondaryButton {
+  border: 1px solid rgb(201 162 74 / 42%);
+  background: transparent;
+  color: #f1c979;
+}
+
+.primaryButton,
+.typeCard button {
+  border: 1px solid rgb(255 218 128 / 42%);
+  background: linear-gradient(180deg, #f7a844, #c9552b);
+  color: #160e08;
+}
+
+.buttonRow {
+  margin: 1rem 0;
+}
+
+.sampleGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.pricingCard,
+.profileCard,
+.chatBubble,
+.reportCard,
+.kundaliCard {
+  border: 1px solid rgb(216 181 106 / 24%);
+  border-radius: 8px;
+  padding: 1rem;
+  background: rgb(255 248 230 / 8%);
+  color: var(--ivory);
+}
+
+.pricingCard p,
+.profileCard p,
+.chatBubble p,
+.reportCard p,
+.kundaliCard p {
+  margin: 0 0 0.35rem;
+  color: #f1c979;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pricingCard h3,
+.profileCard h3,
+.reportCard h3 {
+  color: var(--ivory);
+}
+
+.pricingCard strong {
+  display: block;
+  margin: 0.65rem 0;
+  color: #fff0a8;
+  font-size: 2.4rem;
+}
+
+.pricingCard button {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.profileCard,
+.reportCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  display: grid;
+  width: 3.5rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff0a8, #f28c28);
+  color: #07131f;
+  font-weight: 900;
+}
+
+.chatBubble {
+  border-color: rgb(47 125 126 / 48%);
+  background: linear-gradient(135deg, rgb(47 125 126 / 26%), rgb(255 248 230 / 7%));
+}
+
+.chatBubble span,
+.kundaliCard strong {
+  display: block;
+  color: var(--ivory);
+  line-height: 1.6;
+}
+
+.reportCard svg {
+  flex: 0 0 auto;
+  color: #f1c979;
+}
+
+.kundaliWheel {
+  position: relative;
+  display: grid;
+  width: 8rem;
+  aspect-ratio: 1;
+  place-items: center;
+  margin: 0.7rem 0;
+  border: 1px solid rgb(201 162 74 / 45%);
+  border-radius: 50%;
+  background:
+    linear-gradient(45deg, transparent 49.5%, rgb(201 162 74 / 36%) 50%, transparent 50.5%),
+    linear-gradient(135deg, transparent 49.5%, rgb(201 162 74 / 32%) 50%, transparent 50.5%);
+  color: #fff0a8;
+}
+
+.kundaliWheel span {
+  position: absolute;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.kundaliWheel span:nth-child(1) {
+  top: 15%;
+}
+
+.kundaliWheel span:nth-child(2) {
+  right: 17%;
+  bottom: 28%;
+}
+
+.kundaliWheel span:nth-child(3) {
+  bottom: 17%;
+  left: 24%;
+}
+
+.typeGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.typeCard {
+  padding: 1rem;
+}
+
+.typeRecommended {
+  border-color: rgb(201 162 74 / 70%);
+  background: #fff8e6;
+}
+
+.typeCard > p {
+  margin: 0 0 0.5rem;
+  color: #8e581d;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.typeCard h4,
+.typeCard h5 {
+  margin: 1rem 0 0.5rem;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.typeCard h4 {
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.typeCard h5 {
+  font-size: 1.35rem;
+}
+
+.typeBody {
+  display: block;
+  color: #42525a;
+  line-height: 1.65;
+}
+
+.typeCard button {
+  margin: 1rem 0 0.8rem;
+}
+
+.typeCard small {
+  display: block;
+  color: #6d7676;
+}
+
+.typeMarcellus h4,
+.typeMarcellus h5 {
+  font-family: var(--font-heading), Marcellus, Georgia, serif;
+}
+
+.typePlayfair h4,
+.typePlayfair h5 {
+  font-family: var(--font-display), "Playfair Display", Georgia, serif;
+}
+
+.typeCormorant h4,
+.typeCormorant h5 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+}
+
+.rulesGrid {
+  grid-template-columns: 0.8fr 0.8fr 1.4fr;
+}
+
+.ruleCard,
+.performanceCard {
+  padding: 1rem;
+}
+
+.ruleCard h2,
+.performanceCard h2 {
+  margin: 0 0 1rem;
+  color: var(--ink);
+  font-family: var(--font-heading), Marcellus, Georgia, serif;
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.ruleCard span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.35rem;
+  color: #34434b;
+  text-transform: capitalize;
+}
+
+.ruleCard svg {
+  color: var(--teal);
+}
+
+.ruleCard:nth-child(2) svg {
+  color: var(--ember);
+}
+
+.performanceCard dl {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.performanceCard div {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 1rem;
+  border-top: 1px solid rgb(7 19 31 / 10%);
+  padding-top: 0.7rem;
+}
+
+.performanceCard dt {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.performanceCard dd {
+  margin: 0;
+  color: #51616a;
+}
+
+.summary {
+  margin-bottom: 4rem;
+  padding: 1.25rem;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(242 140 40 / 14%), transparent 16rem),
+    #fff8e6;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1.25rem;
+}
+
+.summaryGrid span {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 3.2rem;
+  border: 1px solid rgb(216 181 106 / 30%);
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: #34434b;
+  background: rgb(255 255 255 / 42%);
+}
+
+.summaryGrid svg {
+  flex: 0 0 auto;
+  color: #a66b20;
+}
+
+@media (max-width: 980px) {
+  .labHero,
+  .paletteGrid,
+  .logoGrid,
+  .heroGrid,
+  .typeGrid,
+  .rulesGrid,
+  .sampleGrid,
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .labHero {
+    min-height: auto;
+    padding-top: 3rem;
+  }
+
+  .labHeroArt {
+    order: -1;
+    min-height: 22rem;
+  }
+
+  .paletteHeader {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .lab {
+    background: linear-gradient(180deg, #06111d 0%, #091522 34rem, #fff8e6 34.1rem, #f7edd6 100%);
+  }
+
+  .labHero h1 {
+    font-size: clamp(3rem, 14vw, 5rem);
+  }
+
+  .section {
+    padding: 2.5rem 0;
+  }
+
+  .sampleNav,
+  .navLinks,
+  .buttonRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .navLinks {
+    gap: 0.45rem;
+  }
+
+  .heroVisual {
+    min-height: 24rem;
+  }
+
+  .scene {
+    display: none;
+  }
+
+  .performanceCard div {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene {
+    display: none;
+  }
+
+  .labHeroSun {
+    box-shadow: 0 0 5rem rgb(242 140 40 / 20%);
+  }
+}

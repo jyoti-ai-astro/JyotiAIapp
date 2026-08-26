@@ -22,6 +22,9 @@ const GalaxyScene = dynamic(
   }
 );
 
+type GalaxyScrollMotion = ReturnType<typeof useScrollMotion>;
+type GalaxyMouseMotion = ReturnType<typeof useMouseMotion>;
+
 /**
  * Loading shimmer fallback
  */
@@ -73,8 +76,21 @@ export function GalaxySceneWrapper({
   const [hasError, setHasError] = useState(false);
   
   // Get scroll and mouse from orchestrator if available (with error handling)
-  let scrollMotion = { scrollY: 0, scrollVelocity: 0, direction: 'none' as const, sectionProgress: {}, sectionActive: null };
-  let mouseMotion = { mouseX: 0, mouseY: 0, deltaX: 0, deltaY: 0, velocity: 0, direction: 'none' as const };
+  let scrollMotion: GalaxyScrollMotion = {
+    scrollY: 0,
+    scrollVelocity: 0,
+    direction: 'none',
+    sectionProgress: {},
+    sectionActive: null,
+  };
+  let mouseMotion: GalaxyMouseMotion = {
+    mouseX: 0,
+    mouseY: 0,
+    deltaX: 0,
+    deltaY: 0,
+    velocity: 0,
+    direction: 'none',
+  };
   
   try {
     scrollMotion = useScrollMotion();
@@ -138,4 +154,3 @@ export function GalaxySceneWrapper({
     </div>
   );
 }
-

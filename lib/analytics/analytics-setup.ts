@@ -13,11 +13,9 @@ export async function initMixpanel(): Promise<void> {
     return
   }
 
-  // Phase 31 - F46: Use validated environment variables
-  const { envVars } = await import('@/lib/env/env.mjs')
-  
   try {
-    const mixpanelToken = envVars.analytics.mixpanelToken
+    const { publicEnv } = await import('@/lib/env/client')
+    const mixpanelToken = publicEnv.analytics.mixpanelToken
     if (!mixpanelToken) {
       console.warn('Mixpanel token not configured')
       return
@@ -27,7 +25,7 @@ export async function initMixpanel(): Promise<void> {
     // This is a wrapper for tracking
     if (window.mixpanel) {
       window.mixpanel.init(mixpanelToken, {
-        debug: envVars.isDevelopment,
+        debug: publicEnv.isDevelopment,
         track_pageview: true,
         persistence: 'localStorage',
       })
@@ -136,4 +134,3 @@ declare global {
     gtag?: (command: string, eventName: string, properties?: Record<string, any>) => void
   }
 }
-

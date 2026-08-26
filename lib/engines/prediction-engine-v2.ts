@@ -63,70 +63,15 @@ export async function runPredictionEngine(params: {
   let usedAstroContext = false
   let usedRag = false
 
-  // If astroContext is missing, return degraded with generic content
+  // Production callers must supply canonical AstroContext. Returning generic
+  // personalized astrology would violate JyotiAI's Launch v1 data contract.
   if (!astroContext) {
     return {
-      status: 'degraded',
-      overview:
-        'Based on general astrological principles, the next 12 months offer opportunities for growth and transformation across all areas of life.',
-      sections: [
-        {
-          id: 'career',
-          title: 'Career',
-          summary: 'Focus on building skills and networking. Opportunities may arise through persistence.',
-          score: 6,
-          opportunities: ['Skill development', 'Networking events', 'Professional growth'],
-          cautions: ['Avoid hasty decisions', 'Maintain work-life balance'],
-          recommendedActions: ['Set clear goals', 'Seek mentorship', 'Stay adaptable'],
-          timeframe: 'Next 12 months',
-        },
-        {
-          id: 'love',
-          title: 'Relationships',
-          summary: 'Nurture existing relationships and remain open to new connections.',
-          score: 7,
-          opportunities: ['Deepen bonds', 'New connections', 'Harmony'],
-          cautions: ['Communication is key', 'Avoid assumptions'],
-          recommendedActions: ['Express gratitude', 'Spend quality time', 'Practice empathy'],
-          timeframe: 'Next 12 months',
-        },
-        {
-          id: 'money',
-          title: 'Finance',
-          summary: 'Financial stability through careful planning and wise investments.',
-          score: 6,
-          opportunities: ['Savings growth', 'Investment opportunities'],
-          cautions: ['Avoid impulsive spending', 'Plan for emergencies'],
-          recommendedActions: ['Create budget', 'Save regularly', 'Seek financial advice'],
-          timeframe: 'Next 12 months',
-        },
-        {
-          id: 'health',
-          title: 'Health',
-          summary: 'Maintain wellness through balanced lifestyle and preventive care.',
-          score: 7,
-          opportunities: ['Fitness goals', 'Wellness routines'],
-          cautions: ['Listen to your body', 'Regular check-ups'],
-          recommendedActions: ['Exercise regularly', 'Eat balanced meals', 'Manage stress'],
-          timeframe: 'Next 12 months',
-        },
-        {
-          id: 'spiritual',
-          title: 'Spiritual Growth',
-          summary: 'A period of inner reflection and spiritual awakening.',
-          score: 8,
-          opportunities: ['Meditation practice', 'Spiritual learning'],
-          cautions: ['Avoid overthinking', 'Balance material and spiritual'],
-          recommendedActions: ['Daily meditation', 'Read spiritual texts', 'Connect with nature'],
-          timeframe: 'Next 12 months',
-        },
-      ],
+      status: 'error',
+      overview: 'Canonical Kundali context is required before generating personalized predictions.',
+      sections: [],
       astroSignals: [],
-      disclaimers: [
-        'These predictions are general guidance based on astrological principles.',
-        'Individual results may vary. Consult professionals for medical, legal, or financial advice.',
-        'These insights are for spiritual guidance only, not absolute certainty.',
-      ],
+      disclaimers: [],
       usedRag: false,
       usedAstroContext: false,
     }
@@ -541,4 +486,3 @@ function getDefaultDisclaimers(): string[] {
     'These insights are for spiritual guidance only, not absolute fate.',
   ]
 }
-

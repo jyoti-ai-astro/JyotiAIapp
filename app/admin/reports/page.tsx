@@ -96,8 +96,9 @@ export default function ReportsPage() {
 
   const handleEmail = async (userId: string, reportId: string, email: string) => {
     if (!email) {
-      email = prompt('Enter email address:')
-      if (!email) return
+      const promptedEmail = prompt('Enter email address:')
+      if (!promptedEmail) return
+      email = promptedEmail
     }
 
     try {
@@ -230,4 +231,3 @@ export default function ReportsPage() {
     </div>
   )
 }
-

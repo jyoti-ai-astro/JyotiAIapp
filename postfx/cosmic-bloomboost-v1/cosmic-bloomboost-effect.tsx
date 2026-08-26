@@ -9,14 +9,15 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
-import { CosmicBloomBoostPass } from './cosmic-bloomboost-pass';
+import { CosmicBloomBoostPass, type CosmicBloomBoostPassConfig } from './cosmic-bloomboost-pass';
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
-const Effect = wrapEffect(CosmicBloomBoostPass);
+const Effect = wrapEffect(CosmicBloomBoostPass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicBloomBoostPassConfig> & React.RefAttributes<CosmicBloomBoostPass>
+>;
 
 export interface CosmicBloomBoostEffectProps {
   /** Boost intensity */
@@ -112,8 +113,8 @@ export const CosmicBloomBoostEffect: React.FC<CosmicBloomBoostEffectProps> = ({
     passRef.current.setBlessingWaveProgress(blessingWaveProgress);
 
     // Update camera FOV
-    if (camera && 'fov' in camera) {
-      passRef.current.setCameraFOV((camera as any).fov);
+    if ('fov' in camera && typeof camera.fov === 'number') {
+      passRef.current.setCameraFOV(camera.fov);
     } else {
       passRef.current.setCameraFOV(cameraFOV);
     }
@@ -136,4 +137,3 @@ export const CosmicBloomBoostEffect: React.FC<CosmicBloomBoostEffectProps> = ({
     />
   );
 };
-

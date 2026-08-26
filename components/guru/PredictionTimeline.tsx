@@ -10,7 +10,8 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TimelineMonth, Prediction } from '@/lib/guru/timeline-builder';
+import { TimelineMonth } from '@/lib/guru/timeline-builder';
+import type { Prediction } from '@/lib/guru/prediction-engine';
 import { scrollParallaxY } from '@/lib/motion/gsap-motion-bridge';
 
 export interface PredictionTimelineProps {

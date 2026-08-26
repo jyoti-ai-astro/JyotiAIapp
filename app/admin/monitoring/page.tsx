@@ -54,7 +54,7 @@ export default function AdminMonitoringPage() {
     setRefreshing(true)
     try {
       // Fetch payments config
-      const configRes = await fetch('/api/dev/payments-config')
+      const configRes = await fetch('/api/admin/monitoring/payments-config')
       if (configRes.ok) {
         const config = await configRes.json()
         setPaymentsConfig(config)

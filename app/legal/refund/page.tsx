@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic';
 import React from 'react';
 import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
 import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
 // Footer removed - using global FooterWrapper from app/layout.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -21,7 +20,6 @@ export default function RefundPage() {
   return (
     <PageTransitionWrapper>
       <CosmicCursor />
-      <SoundscapeController />
       
       <div className="min-h-screen bg-cosmic-navy text-white">
         <div className="container mx-auto px-4 py-16 space-y-8">
@@ -37,7 +35,7 @@ export default function RefundPage() {
             <CardContent className="space-y-4 text-white/80">
               <p>
                 This Refund Policy outlines the terms and conditions for refunds and cancellations of subscriptions
-                and services purchased through Jyoti.ai.
+                and services purchased through JyotiAI.
               </p>
             </CardContent>
           </Card>
@@ -79,7 +77,7 @@ export default function RefundPage() {
             <CardContent className="space-y-4 text-white/80">
               <p>To request a refund:</p>
               <ol className="list-decimal list-inside space-y-2">
-                <li>Contact our support team at refunds@jyoti.ai</li>
+                <li>Contact our support team at refunds@jyotiai.in</li>
                 <li>Provide your order number and reason for refund</li>
                 <li>Wait for our team to review your request (typically within 5 business days)</li>
                 <li>Receive refund to your original payment method (5-10 business days)</li>
@@ -96,7 +94,7 @@ export default function RefundPage() {
                 For refund inquiries, please contact us at:
               </p>
               <p className="text-gold">
-                Email: refunds@jyoti.ai<br />
+                Email: refunds@jyotiai.in<br />
                 Address: [Your Company Address]
               </p>
             </CardContent>
@@ -108,4 +106,3 @@ export default function RefundPage() {
     </PageTransitionWrapper>
   );
 }
-

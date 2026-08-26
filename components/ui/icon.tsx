@@ -10,10 +10,16 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import type { SVGMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { JyotiComponentProps } from './types';
 
-export interface IconProps extends Omit<JyotiComponentProps, 'motion'>, React.SVGProps<SVGSVGElement> {
+type IconMotionProps = Omit<
+  SVGMotionProps<SVGSVGElement>,
+  keyof JyotiComponentProps | 'ref' | 'size'
+>;
+
+export interface IconProps extends Omit<JyotiComponentProps, 'motion' | 'variant' | 'size'>, IconMotionProps {
   /** Icon variant */
   variant?: 'default' | 'astro' | 'chakra' | 'planet' | 'element' | 'festival' | 'arrow' | 'mandala' | 'rune';
   

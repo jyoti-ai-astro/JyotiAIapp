@@ -3,6 +3,34 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 
 export const dynamic = 'force-dynamic'
 
+function formatNakshatraForDisplay(value: any): string | null {
+  if (!value) return null
+  if (typeof value === 'string') return value
+  if (typeof value !== 'object') return null
+
+  const name =
+    typeof value.nakshatra === 'string'
+      ? value.nakshatra.trim()
+      : typeof value.name === 'string'
+        ? value.name.trim()
+        : typeof value.label === 'string'
+          ? value.label.trim()
+          : null
+
+  if (!name) return null
+
+  const pada = value.pada
+  if (typeof pada === 'number' && Number.isFinite(pada) && pada > 0) {
+    return `${name} · Pada ${pada}`
+  }
+
+  if (typeof pada === 'string' && pada.trim() && pada.trim() !== '0') {
+    return `${name} · Pada ${pada.trim()}`
+  }
+
+  return name
+}
+
 /**
  * Dashboard Summary API
  * Part B - Section 4: Milestone 3 - Step 1
@@ -74,56 +102,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Placeholder for today's prediction (will be implemented in later milestone)
-    const todayPrediction = {
-      summary: 'Your daily prediction will appear here once the prediction engine is activated.',
-      career: 'Career insights coming soon...',
-      love: 'Relationship guidance coming soon...',
-      health: 'Health recommendations coming soon...',
-      remedy: 'Daily remedy suggestions coming soon...',
-    }
-
-    // Placeholder for next 5 transits (will be implemented in later milestone)
-    const nextTransits = [
-      {
-        planet: 'Jupiter',
-        event: 'Transit into new sign',
-        date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        impact: 'Positive',
-      },
-      {
-        planet: 'Saturn',
-        event: 'Transit aspect',
-        date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
-        impact: 'Neutral',
-      },
-      {
-        planet: 'Mars',
-        event: 'Transit into new house',
-        date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        impact: 'Moderate',
-      },
-      {
-        planet: 'Mercury',
-        event: 'Retrograde period',
-        date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-        impact: 'Caution',
-      },
-      {
-        planet: 'Venus',
-        event: 'Transit conjunction',
-        date: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(),
-        impact: 'Positive',
-      },
-    ]
-
     // Check profile completeness
     const profileComplete =
       userData?.dob &&
       userData?.tob &&
       userData?.pob &&
       userData?.rashi &&
-      userData?.nakshatra
+      formatNakshatraForDisplay(userData?.nakshatra)
 
     return NextResponse.json({
       success: true,
@@ -131,7 +116,7 @@ export async function GET(request: NextRequest) {
         name: userData?.name || 'User',
         photo: userData?.photo || null,
         rashi: userData?.rashi || null,
-        nakshatra: userData?.nakshatra || null,
+        nakshatra: formatNakshatraForDisplay(userData?.nakshatra),
         lagna: lagna?.sign || null,
         lagnaDetails: lagna,
       },
@@ -142,9 +127,8 @@ export async function GET(request: NextRequest) {
           : null,
       },
       dasha: dashaSummary,
-      todayPrediction,
-      nextTransits,
       profileComplete,
+      derivedAstrologyStatus: userData?.derivedAstrologyStatus || 'current',
     })
   } catch (error: any) {
     console.error('Dashboard summary error:', error)
@@ -154,4 +138,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

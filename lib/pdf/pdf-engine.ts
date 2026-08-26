@@ -27,7 +27,7 @@ export interface PDFImageOptions {
 }
 
 export class PDFEngine {
-  private doc: PDFDocument;
+  private doc!: PDFDocument;
   private currentPage: PDFPage | null = null;
   private fonts: { [key: string]: PDFFont } = {};
   private yPosition: number = 0;
@@ -39,7 +39,6 @@ export class PDFEngine {
   private contentWidth: number = PDFLayout.content.width;
 
   constructor() {
-    this.doc = PDFDocument.create();
     this.yPosition = this.pageHeight - this.marginTop;
   }
 
@@ -57,6 +56,7 @@ export class PDFEngine {
    */
   static async create(): Promise<PDFEngine> {
     const engine = new PDFEngine();
+    engine.doc = await PDFDocument.create();
     await engine.initializeFonts();
     return engine;
   }
@@ -441,4 +441,3 @@ export class PDFEngine {
     return await this.doc.save();
   }
 }
-

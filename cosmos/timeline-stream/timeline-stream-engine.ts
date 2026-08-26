@@ -39,7 +39,7 @@ export class TimelineStreamEngine {
   private config: TimelineStreamEngineConfig;
   
   private particles: ParticleData[] = [];
-  private ribbon: RibbonData;
+  private ribbon!: RibbonData;
   private lines: LineData[] = [];
   
   private numParticles: number;
@@ -458,4 +458,3 @@ export class TimelineStreamEngine {
     this.material.dispose();
   }
 }
-

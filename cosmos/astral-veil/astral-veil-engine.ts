@@ -39,8 +39,8 @@ export class AstralVeilEngine {
   private mesh: THREE.Mesh;
   private config: AstralVeilEngineConfig;
   
-  private frontVeil: FrontVeilData;
-  private rearVeil: RearVeilData;
+  private frontVeil!: FrontVeilData;
+  private rearVeil!: RearVeilData;
   private mistParticles: MistParticleData[] = [];
   
   private frontVeilSegments: number;
@@ -424,4 +424,3 @@ export class AstralVeilEngine {
     this.material.dispose();
   }
 }
-

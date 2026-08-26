@@ -6,7 +6,7 @@
 
 import { MetadataRoute } from 'next';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://jyoti.ai';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jyotiai.in';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [
@@ -17,10 +17,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/about',
     '/blog',
     '/contact',
-    '/cosmos',
     '/astro',
     '/guru',
-    '/premium',
     
     // App pages (require auth)
     '/dashboard',
@@ -38,7 +36,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/palmistry',
     '/planets',
     '/houses',
-    '/charts',
     '/dasha',
     '/settings',
     '/payments',
@@ -47,8 +44,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/login',
     '/signup',
     '/magic-link',
-    '/profile-setup',
-    '/rasi-confirmation',
     
     // Legal pages
     '/legal/terms',
@@ -73,4 +68,3 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: route === '' ? 1.0 : route.startsWith('/dashboard') || route.startsWith('/guru') ? 0.9 : 0.7,
   }));
 }
-

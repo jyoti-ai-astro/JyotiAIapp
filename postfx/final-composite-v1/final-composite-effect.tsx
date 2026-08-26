@@ -9,13 +9,14 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Vector2 } from 'three';
-import { FinalCompositePass } from './final-composite-pass';
+import { FinalCompositePass, type FinalCompositePassConfig } from './final-composite-pass';
 
-const Effect = wrapEffect(FinalCompositePass);
+const Effect = wrapEffect(FinalCompositePass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<FinalCompositePassConfig> & React.RefAttributes<FinalCompositePass>
+>;
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
 export interface FinalCompositeEffectProps {
@@ -80,37 +81,17 @@ export const FinalCompositeEffect: React.FC<FinalCompositeEffectProps> = ({
 }) => {
   const { size, camera } = useThree();
   const timeRef = useRef<number>(0);
+  const passRef = useRef<FinalCompositePass | null>(null);
   
   // Mobile fallback: reduce vibrance + reduce highlight repair strength
   const adjustedVibrance = isMobile ? vibrance * 0.8 : vibrance;
   const adjustedHighlightRepair = isMobile ? highlightRepair * 0.7 : highlightRepair;
   
-  // Create pass
-  const pass = useMemo(() => {
-    return new FinalCompositePass({
-      intensity,
-      exposure,
-      fade: globalFade,
-      vibrance: adjustedVibrance,
-      highlightRepair: adjustedHighlightRepair,
-      ditherStrength,
-      lift,
-      gamma,
-      gain,
-      bass: audioReactive?.bass ?? 0,
-      mid: audioReactive?.mid ?? 0,
-      high: audioReactive?.high ?? 0,
-      blessingWaveProgress,
-      cameraFOV,
-      time: 0,
-    });
-  }, [intensity, exposure, globalFade, adjustedVibrance, adjustedHighlightRepair, ditherStrength, lift, gamma, gain, blessingWaveProgress, cameraFOV]);
-
   // Register with motion orchestrator
   useEffect(() => {
     motionOrchestrator.registerEngine('final-composite', (motionState) => {
       // Update audio reactive values
-      pass.setAudioReactive(
+      passRef.current?.setAudioReactive(
         motionState.bassMotion,
         motionState.midMotion,
         motionState.highMotion
@@ -120,10 +101,13 @@ export const FinalCompositeEffect: React.FC<FinalCompositeEffectProps> = ({
     return () => {
       motionOrchestrator.unregisterEngine('final-composite');
     };
-  }, [pass]);
+  }, []);
 
   // Update pass each frame
   useFrame((state, delta) => {
+    const pass = passRef.current;
+    if (!pass) return;
+
     timeRef.current += delta;
 
     // Update time
@@ -139,8 +123,8 @@ export const FinalCompositeEffect: React.FC<FinalCompositeEffectProps> = ({
     pass.setBlessingWaveProgress(blessingWaveProgress);
 
     // Update camera FOV
-    if (camera && 'fov' in camera) {
-      pass.setCameraFOV((camera as any).fov);
+    if ('fov' in camera && typeof camera.fov === 'number') {
+      pass.setCameraFOV(camera.fov);
     } else {
       pass.setCameraFOV(cameraFOV);
     }
@@ -152,6 +136,26 @@ export const FinalCompositeEffect: React.FC<FinalCompositeEffectProps> = ({
     }
   });
 
-  return <Effect effect={pass} />;
+  return (
+    <Effect
+      ref={(instance: FinalCompositePass | null) => {
+        passRef.current = instance;
+      }}
+      intensity={intensity}
+      exposure={exposure}
+      fade={globalFade}
+      vibrance={adjustedVibrance}
+      highlightRepair={adjustedHighlightRepair}
+      ditherStrength={ditherStrength}
+      lift={lift}
+      gamma={gamma}
+      gain={gain}
+      bass={audioReactive?.bass ?? 0}
+      mid={audioReactive?.mid ?? 0}
+      high={audioReactive?.high ?? 0}
+      blessingWaveProgress={blessingWaveProgress}
+      cameraFOV={cameraFOV}
+      time={0}
+    />
+  );
 };
-

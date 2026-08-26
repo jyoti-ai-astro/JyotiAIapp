@@ -81,7 +81,7 @@ export class CosmicDepthPass extends Effect {
     super('CosmicDepthPass', cosmicDepthShader.fragmentShader, {
       blendFunction: BlendFunction.NORMAL,
       attributes: EffectAttribute.DEPTH, // Enable depth buffer access
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uBass', bassUniform],
         ['uMid', midUniform],
@@ -193,4 +193,3 @@ export class CosmicDepthPass extends Effect {
     }
   }
 }
-

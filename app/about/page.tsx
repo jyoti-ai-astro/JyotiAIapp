@@ -10,18 +10,18 @@ import { AboutPageClient } from './about-page-client';
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'About | Jyoti.ai - Our Story & Mission',
-  description: 'Learn about Jyoti.ai, our mission to combine ancient Indian sciences with modern AI technology for spiritual guidance',
+  title: 'About | JyotiAI - Our Story & Mission',
+  description: 'Learn about JyotiAI, our mission to combine ancient Indian sciences with modern AI technology for spiritual guidance',
   openGraph: {
-    title: 'About | Jyoti.ai',
-    description: 'Learn about Jyoti.ai, our mission to combine ancient Indian sciences with modern AI technology',
+    title: 'About | JyotiAI',
+    description: 'Learn about JyotiAI, our mission to combine ancient Indian sciences with modern AI technology',
     type: 'website',
     images: [
       {
         url: '/og-image-about.jpg',
         width: 1200,
         height: 630,
-        alt: 'About Jyoti.ai',
+        alt: 'About JyotiAI',
       },
     ],
   },

@@ -42,7 +42,7 @@ export class SoulStarEngine {
   private mesh: THREE.Mesh;
   private config: SoulStarEngineConfig;
   
-  private coreStar: CoreStarData;
+  private coreStar!: CoreStarData;
   private spikes: SpikeData[] = [];
   private particles: ParticleData[] = [];
   
@@ -440,4 +440,3 @@ export class SoulStarEngine {
     this.material.dispose();
   }
 }
-

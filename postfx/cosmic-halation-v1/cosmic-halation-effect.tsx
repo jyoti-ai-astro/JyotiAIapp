@@ -9,13 +9,14 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
-import { CosmicHalationPass } from './cosmic-halation-pass';
+import { CosmicHalationPass, type CosmicHalationPassConfig } from './cosmic-halation-pass';
 
-const Effect = wrapEffect(CosmicHalationPass);
+const Effect = wrapEffect(CosmicHalationPass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicHalationPassConfig> & React.RefAttributes<CosmicHalationPass>
+>;
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
 export interface CosmicHalationEffectProps {
@@ -60,31 +61,16 @@ export const CosmicHalationEffect: React.FC<CosmicHalationEffectProps> = ({
 }) => {
   const { size, camera } = useThree();
   const timeRef = useRef<number>(0);
+  const passRef = useRef<CosmicHalationPass | null>(null);
   
   // Mobile fallback: reduce diffusion radius
   const adjustedRadius = isMobile ? radius * 0.5 : radius;
   
-  // Create pass
-  const pass = useMemo(() => {
-    return new CosmicHalationPass({
-      intensity,
-      halationIntensity,
-      radius: adjustedRadius,
-      tintStrength,
-      bass: audioReactive?.bass ?? 0,
-      mid: audioReactive?.mid ?? 0,
-      high: audioReactive?.high ?? 0,
-      blessingWaveProgress,
-      cameraFOV,
-      time: 0,
-    });
-  }, [intensity, halationIntensity, adjustedRadius, tintStrength, blessingWaveProgress, cameraFOV]);
-
   // Register with motion orchestrator
   useEffect(() => {
     motionOrchestrator.registerEngine('cosmic-halation', (motionState) => {
       // Update audio reactive values
-      pass.setAudioReactive(
+      passRef.current?.setAudioReactive(
         motionState.bassMotion,
         motionState.midMotion,
         motionState.highMotion
@@ -94,10 +80,13 @@ export const CosmicHalationEffect: React.FC<CosmicHalationEffectProps> = ({
     return () => {
       motionOrchestrator.unregisterEngine('cosmic-halation');
     };
-  }, [pass]);
+  }, []);
 
   // Update pass each frame
   useFrame((state, delta) => {
+    const pass = passRef.current;
+    if (!pass) return;
+
     timeRef.current += delta;
 
     // Update time
@@ -108,7 +97,6 @@ export const CosmicHalationEffect: React.FC<CosmicHalationEffectProps> = ({
 
     // Update halation intensity (motion-reactive: bass → halo width, high → tint strength)
     const bass = audioReactive?.bass ?? 0;
-    const mid = audioReactive?.mid ?? 0;
     const high = audioReactive?.high ?? 0;
     
     // Motion-reactive halo width: bass → wider halation
@@ -123,8 +111,8 @@ export const CosmicHalationEffect: React.FC<CosmicHalationEffectProps> = ({
     pass.setBlessingWaveProgress(blessingWaveProgress);
 
     // Update camera FOV
-    if (camera && 'fov' in camera) {
-      pass.setCameraFOV((camera as any).fov);
+    if ('fov' in camera && typeof camera.fov === 'number') {
+      pass.setCameraFOV(camera.fov);
     } else {
       pass.setCameraFOV(cameraFOV);
     }
@@ -135,6 +123,21 @@ export const CosmicHalationEffect: React.FC<CosmicHalationEffectProps> = ({
     }
   });
 
-  return <Effect effect={pass} />;
+  return (
+    <Effect
+      ref={(instance: CosmicHalationPass | null) => {
+        passRef.current = instance;
+      }}
+      intensity={intensity}
+      halationIntensity={halationIntensity}
+      radius={adjustedRadius}
+      tintStrength={tintStrength}
+      bass={audioReactive?.bass ?? 0}
+      mid={audioReactive?.mid ?? 0}
+      high={audioReactive?.high ?? 0}
+      blessingWaveProgress={blessingWaveProgress}
+      cameraFOV={cameraFOV}
+      time={0}
+    />
+  );
 };
-

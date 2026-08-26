@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-import { Inter, Marcellus, Playfair_Display } from 'next/font/google'
+import { Inter, Marcellus } from 'next/font/google'
 
 import './globals.css'
 
@@ -8,12 +8,9 @@ import { GlobalErrorBoundary } from '@/components/error-boundaries/GlobalErrorBo
 
 import { AudioProvider } from '@/providers/audio-provider'
 
-import { GlobalShaderBackground } from '@/src/ui/background/GlobalShaderBackground'
-import { Header } from '@/src/ui/layout/Header'
-import { Footer } from '@/src/ui/layout/Footer'
 import { MotionProvider } from '@/components/providers/MotionProvider'
 import { GlobalProviders } from '@/components/providers/GlobalProviders'
-import { GuruChatWidget } from '@/components/guru/GuruChatWidget'
+import { RootSiteShell } from '@/components/layout/RootSiteShell'
 
 const inter = Inter({ 
 
@@ -34,18 +31,6 @@ const marcellus = Marcellus({
   subsets: ['latin'],
 
   variable: '--font-heading',
-
-  display: 'swap',
-
-  preload: true,
-
-})
-
-const playfair = Playfair_Display({
-
-  subsets: ['latin'],
-
-  variable: '--font-display',
 
   display: 'swap',
 
@@ -84,7 +69,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
 
       <body
-        className={`${inter.variable} ${marcellus.variable} ${playfair.variable} font-body antialiased bg-[#05050A] text-white overflow-x-hidden`}
+        className={`${inter.variable} ${marcellus.variable} font-body antialiased bg-background text-foreground overflow-x-hidden`}
       >
 
         <GlobalErrorBoundary>
@@ -94,22 +79,18 @@ export default function RootLayout({
             <AudioProvider>
 
               <GlobalProviders>
-                {/* GLOBAL SHADER BACKGROUND */}
-                <GlobalShaderBackground />
+                <div
+                  aria-hidden="true"
+                  className="fixed inset-0 z-0 pointer-events-none bg-background"
+                  style={{
+                    background:
+                      'radial-gradient(circle at 16% 0%, hsl(var(--saffron) / 0.14), transparent 28rem), radial-gradient(circle at 84% 8%, hsl(var(--teal) / 0.1), transparent 26rem), linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--surface-sunken)) 100%)',
+                  }}
+                />
 
-                {/* GLOBAL HEADER */}
-                <Header />
-
-                {/* PAGE CONTENT */}
-                <main className="relative z-10 pt-20 md:pt-24">
+                <RootSiteShell>
                   {children}
-                </main>
-
-                {/* GLOBAL FOOTER */}
-                <Footer />
-
-                {/* GLOBAL GURU CHAT WIDGET */}
-                <GuruChatWidget />
+                </RootSiteShell>
               </GlobalProviders>
 
             </AudioProvider>

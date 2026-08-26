@@ -178,23 +178,23 @@ function calculatePersonalImpact(
 ): string {
   // Simplified impact calculation
   // In production, use actual astrological rules
-  
+
   const planet = transit.planet.toLowerCase()
   const userPlanet = userKundali.grahas[planet]
-  
+  const affectedAreas = transit.affectedHouses.map(getHouseArea)
+  const affectedLabel = affectedAreas.length > 0 ? affectedAreas.join(', ') : 'life areas'
+
   if (!userPlanet) {
-    return `This transit may have a general impact on ${transit.affectedAreas.join(', ')}.`
+    return `This transit may have a general impact on ${affectedLabel}.`
   }
-  
-  // Check if transit planet aspects user's planets
+
   const impactLevel = transit.impact
-  
+
   if (impactLevel === 'strong') {
-    return `This transit will significantly affect your ${transit.affectedAreas.join(', ')}. Pay attention to opportunities and challenges.`
+    return `This transit will significantly affect your ${affectedLabel}. Pay attention to opportunities and challenges.`
   } else if (impactLevel === 'medium') {
-    return `This transit will moderately affect your ${transit.affectedAreas.join(', ')}. Stay aware and adaptable.`
+    return `This transit will moderately affect your ${affectedLabel}. Stay aware and adaptable.`
   } else {
-    return `This transit will have a subtle influence on your ${transit.affectedAreas.join(', ')}.`
+    return `This transit will have a subtle influence on your ${affectedLabel}.`
   }
 }
-

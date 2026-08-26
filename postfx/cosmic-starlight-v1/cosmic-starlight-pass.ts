@@ -72,7 +72,7 @@ export class CosmicStarlightPass extends Effect {
 
     super('CosmicStarlightPass', cosmicStarlightShader.fragmentShader, {
       blendFunction: BlendFunction.SCREEN, // Screen blend for overlay
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uStarIntensity', starIntensityUniform],
         ['uTwinkleStrength', twinkleStrengthUniform],
@@ -199,4 +199,3 @@ export class CosmicStarlightPass extends Effect {
     }
   }
 }
-

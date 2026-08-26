@@ -6,7 +6,7 @@
  */
 
 import { adminDb } from '@/lib/firebase/admin'
-import { getCachedAstroContext } from '@/lib/engines/astro-context-builder'
+import { buildAstroContext } from '@/lib/engines/astro-context-builder'
 import { runPredictionEngine } from '@/lib/engines/prediction-engine-v2'
 import { runTimelineEngine } from '@/lib/engines/timeline-engine-v2'
 import { generateKundaliReportDoc } from './kundali-report'
@@ -35,8 +35,8 @@ export async function generateKundaliReportPdf(
   const userData = userSnap.data()
   const userName = userData?.name || undefined
 
-  // Fetch AstroContext
-  const astroContext = await getCachedAstroContext(userId)
+  // Fetch canonical AstroContext
+  const astroContext = await buildAstroContext(userId)
 
   if (!astroContext) {
     throw new Error('NO_ASTRO_CONTEXT')
@@ -81,8 +81,8 @@ export async function generatePredictionsReportPdf(
   const userData = userSnap.data()
   const userName = userData?.name || undefined
 
-  // Fetch AstroContext
-  const astroContext = await getCachedAstroContext(userId)
+  // Fetch canonical AstroContext
+  const astroContext = await buildAstroContext(userId)
 
   // Run Prediction Engine
   const predictionResult = await runPredictionEngine({
@@ -90,6 +90,14 @@ export async function generatePredictionsReportPdf(
     userQuestion: null,
     ragMode: 'light',
   })
+
+  if (
+    predictionResult.status === 'error' ||
+    !predictionResult.usedAstroContext ||
+    predictionResult.sections.length === 0
+  ) {
+    throw new Error('PREDICTION_REPORT_GENERATION_FAILED')
+  }
 
   // Generate document
   const doc = generatePredictionsReportDoc({
@@ -131,8 +139,8 @@ export async function generateTimelineReportPdf(
   const userData = userSnap.data()
   const userName = userData?.name || undefined
 
-  // Fetch AstroContext
-  const astroContext = await getCachedAstroContext(userId)
+  // Fetch canonical AstroContext
+  const astroContext = await buildAstroContext(userId)
 
   // Run Timeline Engine
   const timelineResult = await runTimelineEngine({
@@ -141,6 +149,14 @@ export async function generateTimelineReportPdf(
     months: 12,
     ragMode: 'light',
   })
+
+  if (
+    timelineResult.status === 'error' ||
+    !timelineResult.usedAstroContext ||
+    timelineResult.events.length === 0
+  ) {
+    throw new Error('TIMELINE_REPORT_GENERATION_FAILED')
+  }
 
   // Generate document
   const doc = generateTimelineReportDoc({
@@ -160,4 +176,3 @@ export async function generateTimelineReportPdf(
 
   return { buffer, fileName }
 }
-

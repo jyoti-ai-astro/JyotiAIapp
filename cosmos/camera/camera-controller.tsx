@@ -64,6 +64,9 @@ export interface CameraControllerProps {
   
   /** Far plane */
   far?: number;
+
+  /** Notifies parent when camera FOV changes */
+  onFOVChange?: (fov: number) => void;
 }
 
 export const CameraController = forwardRef<CameraControllerRef, CameraControllerProps>(
@@ -80,6 +83,7 @@ export const CameraController = forwardRef<CameraControllerRef, CameraController
       fov = 50,
       near = 0.1,
       far = 1000,
+      onFOVChange,
     },
     ref
   ) => {
@@ -206,4 +210,3 @@ export const CameraController = forwardRef<CameraControllerRef, CameraController
 );
 
 CameraController.displayName = 'CameraController';
-

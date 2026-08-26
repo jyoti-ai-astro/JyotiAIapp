@@ -1,35 +1,33 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Sparkles } from 'lucide-react';
-import { fadeIn, scaleIn } from '@/src/ui/theme/global-motion';
+import { Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { SolarJyotiMark } from '@/src/ui/brand/SolarJyotiMark';
 
-// Get app environment for client-side display
-const appEnv = (process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || 'development') as 'development' | 'staging' | 'production';
+const appEnv = (process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || 'development') as
+  | 'development'
+  | 'staging'
+  | 'production';
+
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/guru', label: 'Guru' },
+  { href: '/kundali', label: 'Kundali' },
+  { href: '/pricing', label: 'Pricing' },
+];
 
 export function Header() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/features', label: 'Features' },
-    { href: '/modules', label: 'Modules' },
-    { href: '/guru', label: 'Guru' },
-    { href: '/pricing', label: 'Pricing' },
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/company/about', label: 'About' },
-    { href: '/support', label: 'Support' },
-  ];
-
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 12);
+    handleScroll();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -39,162 +37,111 @@ export function Header() {
   }, [pathname]);
 
   useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
   }, [isMobileMenuOpen]);
 
   return (
-    <motion.header
-      initial="hidden"
-      animate="visible"
-      variants={fadeIn}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    <header
+      className={cn(
+        'fixed left-0 right-0 top-0 z-50 border-b transition-colors duration-200',
         isScrolled
-          ? 'backdrop-blur-xl bg-[#0A0F1F]/90'
-          : 'backdrop-blur-md bg-[#0A0F1F]/60'
-      }`}
-      style={{
-        borderBottom: `1px solid rgba(255, 213, 122, ${isScrolled ? 0.25 : 0.15})`,
-      }}
+          ? 'border-[#D8B56A]/35 bg-[#07131F]/94 shadow-[0_12px_34px_rgba(7,19,31,0.26)] backdrop-blur'
+          : 'border-[#D8B56A]/20 bg-[#07131F]/82 backdrop-blur'
+      )}
     >
-      <div className="page-container">
-        <div className="flex items-center justify-between h-16 md:h-20 py-3 md:py-4">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="flex items-center space-x-2 group"
-            aria-label="Jyoti.ai Home"
-          >
-            <motion.div
-              className="relative"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#FFD57A] via-[#FFB347] to-[#4B1E92] flex items-center justify-center border-2 border-[#FFD57A]/40 shadow-[0_0_20px_rgba(255,213,122,0.3)]">
-                <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-[#FFD57A]" />
-              </div>
-            </motion.div>
-            <span className="text-xl md:text-2xl font-heading font-bold bg-gradient-to-r from-[#FFD57A] to-[#FFB347] bg-clip-text text-transparent">
+      <div className="page-container py-0">
+        <div className="flex min-h-20 items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-3" aria-label="JyotiAI home">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#C9A24A]/45 bg-[#F28C28]/12 text-[#FFF7E8] shadow-[0_0_24px_rgba(242,140,40,0.16)]">
+              <SolarJyotiMark className="h-6 w-6" />
+            </span>
+            <span className="font-heading text-2xl font-semibold tracking-normal text-[#FFF7E8]">
               JyotiAI
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'text-[#FFD57A]'
-                      : 'text-white/80 hover:text-[#FFD57A]'
-                  }`}
+                  className={cn(
+                    'rounded-lg px-4 py-3 text-sm font-medium transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                    isActive ? 'bg-[#FFF8E6]/12 text-[#FFF7E8]' : 'text-[#B9C2BF] hover:text-[#FFF7E8]'
+                  )}
                 >
                   {link.label}
-                  {isActive && (
-                    <motion.div
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#FFD57A] to-[#FFB347]"
-                      layoutId="activeTab"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                  <motion.div
-                    className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#FFD57A]/10 to-[#FFB347]/10 opacity-0 hover:opacity-100 transition-opacity duration-200"
-                    whileHover={{ scale: 1.05 }}
-                  />
                 </Link>
               );
             })}
           </nav>
 
-          {/* CTA Button + Environment Badge */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden items-center gap-3 md:flex">
             {appEnv !== 'production' && (
-              <span
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                  appEnv === 'development'
-                    ? 'border-purple-500/40 bg-purple-500/10 text-purple-300'
-                    : 'border-blue-500/40 bg-blue-500/10 text-blue-300'
-                }`}
-              >
-                {appEnv.toUpperCase()} MODE
+              <span className="rounded-full border border-[#D9962E]/35 bg-[#D9962E]/12 px-3 py-1 text-xs font-medium text-[#FFF7E8]">
+                {appEnv.toUpperCase()}
               </span>
             )}
-            <Link href="/guru">
-              <motion.button
-                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#0A0F1F] font-semibold text-sm shadow-[0_4px_20px_rgba(255,213,122,0.25)] hover:shadow-[0_8px_32px_rgba(255,213,122,0.35)] transition-all duration-200"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Ask The Guru
-              </motion.button>
+            <Link href="/login">
+              <Button variant="ghost" className="text-[#FFF7E8] hover:bg-[#FFF8E6]/10">
+                Sign in
+              </Button>
+            </Link>
+            <Link href="/onboarding">
+              <Button className="bg-[#F28C28] text-[#07131F] hover:bg-[#F28C28]/90">
+                Get my free reading
+              </Button>
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-white/80 hover:text-[#FFD57A] transition-colors"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#D8B56A]/30 bg-[#FFF8E6]/10 text-[#FFF7E8] md:hidden"
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMobileMenuOpen}
           >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden backdrop-blur-xl bg-[#0A0F1F]/95 border-t border-[#FFD57A]/20"
-          >
-            <nav className="page-container py-4 space-y-2">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`block px-4 py-3 rounded-lg text-base font-medium transition-all ${
-                      isActive
-                        ? 'text-[#FFD57A] bg-gradient-to-r from-[#FFD57A]/10 to-[#FFB347]/10'
-                        : 'text-white/80 hover:text-[#FFD57A] hover:bg-[#FFD57A]/5'
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-              <Link
-                href="/guru"
-                className="block mt-4 px-4 py-3 rounded-lg bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#0A0F1F] font-semibold text-center shadow-[0_4px_20px_rgba(255,213,122,0.25)]"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Ask The Guru
+      {isMobileMenuOpen && (
+        <div className="border-t border-[#D8B56A]/25 bg-[#07131F] md:hidden">
+          <nav className="page-container flex flex-col gap-2 py-4" aria-label="Mobile navigation">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    'min-h-11 rounded-lg px-4 py-3 text-base font-medium',
+                    isActive ? 'bg-[#FFF8E6]/12 text-[#FFF7E8]' : 'text-[#B9C2BF]'
+                  )}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Link href="/login">
+                <Button variant="outline" fullWidth>
+                  Sign in
+                </Button>
               </Link>
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.header>
+              <Link href="/onboarding">
+                <Button fullWidth>Free reading</Button>
+              </Link>
+            </div>
+          </nav>
+        </div>
+      )}
+    </header>
   );
 }
-

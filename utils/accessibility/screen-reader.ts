@@ -6,4 +6,6 @@
  */
 
 // Placeholder for screen reader utilities implementation
+export const screenReader = {};
+
 

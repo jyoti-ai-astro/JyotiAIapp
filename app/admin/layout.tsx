@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside className="w-64 border-r border-white/10 bg-[#020617]/90 p-4">
         <div className="mb-6">
-          <h2 className="text-xl font-bold">Jyoti.ai Admin</h2>
+          <h2 className="text-xl font-bold">JyotiAI Admin</h2>
           <p className="text-sm text-muted-foreground">{admin.role}</p>
         </div>
 

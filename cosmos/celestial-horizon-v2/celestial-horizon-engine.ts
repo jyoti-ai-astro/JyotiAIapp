@@ -58,9 +58,9 @@ export class CelestialHorizonEngine {
   private mesh: THREE.Mesh;
   private config: CelestialHorizonEngineConfig;
   
-  private gradientPlane: GradientPlaneData;
+  private gradientPlane!: GradientPlaneData;
   private fogBands: FogBandData[] = [];
-  private diffractionEdge: DiffractionEdgeData;
+  private diffractionEdge!: DiffractionEdgeData;
   private auroraBands: AuroraBandData[] = [];
   private lightRays: LightRayData[] = [];
   private particles: ParticleData[] = [];
@@ -695,4 +695,3 @@ export class CelestialHorizonEngine {
     this.material.dispose();
   }
 }
-

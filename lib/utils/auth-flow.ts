@@ -20,14 +20,7 @@ export function useAuthFlow() {
     }
 
     if (!user.onboarded) {
-      // Check which step they're on
-      if (!user.dob || !user.pob) {
-        router.push('/profile-setup');
-      } else if (!user.rashi) {
-        router.push('/rasi-confirmation');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push('/onboarding');
     } else {
       router.push('/dashboard');
     }
@@ -48,11 +41,11 @@ export function useAuthFlow() {
   };
 
   const handleSignupSuccess = () => {
-    router.push('/profile-setup');
+    router.push('/onboarding');
   };
 
   const handleProfileSetupSuccess = () => {
-    router.push('/rasi-confirmation');
+    router.push('/onboarding');
   };
 
   const handleRasiConfirmationSuccess = () => {
@@ -67,4 +60,3 @@ export function useAuthFlow() {
     handleRasiConfirmationSuccess,
   };
 }
-

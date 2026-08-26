@@ -14,64 +14,147 @@ import { Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function SoundscapeController() {
-  const [isMuted, setIsMuted] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [audioStarted, setAudioStarted] = useState(false);
   const [volume, setVolume] = useState(0.3);
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorRef = useRef<OscillatorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const settingsRef = useRef({
+    notifications: true,
+    emailUpdates: true,
+    soundEnabled: false,
+  });
 
   useEffect(() => {
-    // Initialize Web Audio API
-    if (typeof window !== 'undefined' && !audioContextRef.current) {
-      try {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        audioContextRef.current = new AudioContextClass();
-        const gainNode = audioContextRef.current.createGain();
-        gainNodeRef.current = gainNode;
-        gainNode.connect(audioContextRef.current.destination);
-        gainNode.gain.value = isMuted ? 0 : volume;
+    let cancelled = false;
 
-        // Create low-frequency hum (cosmic drone)
-        const oscillator = audioContextRef.current.createOscillator();
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 60; // Low frequency hum
-        oscillator.connect(gainNode);
-        oscillator.start();
-        oscillatorRef.current = oscillator;
-      } catch (error) {
-        console.warn('Web Audio API not supported:', error);
+    async function loadSoundPreference() {
+      try {
+        const response = await fetch('/api/user/get', { credentials: 'include' });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!cancelled) {
+          const settings = {
+            notifications: data.user?.settings?.notifications ?? true,
+            emailUpdates: data.user?.settings?.emailUpdates ?? true,
+            soundEnabled: Boolean(data.user?.settings?.soundEnabled),
+          };
+          settingsRef.current = settings;
+          setSoundEnabled(settings.soundEnabled);
+        }
+      } catch {
+        // Anonymous and offline sessions keep launch audio off by default.
       }
     }
 
+    loadSoundPreference();
+
     return () => {
-      if (oscillatorRef.current) {
-        oscillatorRef.current.stop();
-        oscillatorRef.current = null;
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
+      cancelled = true;
+      stopAudio(false);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (gainNodeRef.current) {
-      gainNodeRef.current.gain.value = isMuted ? 0 : volume;
+      gainNodeRef.current.gain.value = soundEnabled ? volume : 0;
     }
-  }, [isMuted, volume]);
+  }, [soundEnabled, volume]);
+
+  const persistSoundPreference = async (enabled: boolean) => {
+    settingsRef.current = {
+      ...settingsRef.current,
+      soundEnabled: enabled,
+    };
+
+    try {
+      await fetch('/api/user/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          settings: settingsRef.current,
+        }),
+      });
+    } catch {
+      // Preference persistence is best-effort for unauthenticated pages.
+    }
+  };
+
+  const stopAudio = (updateState = true) => {
+    if (oscillatorRef.current) {
+      try {
+        oscillatorRef.current.stop();
+      } catch {
+        // Already stopped.
+      }
+      oscillatorRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+    gainNodeRef.current = null;
+    if (updateState) {
+      setAudioStarted(false);
+    }
+  };
+
+  const startAudio = async () => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContextClass();
+      audioContextRef.current = ctx;
+
+      const gainNode = ctx.createGain();
+      gainNodeRef.current = gainNode;
+      gainNode.connect(ctx.destination);
+      gainNode.gain.value = volume;
+
+      const oscillator = ctx.createOscillator();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = 60;
+      oscillator.connect(gainNode);
+      oscillator.start();
+      oscillatorRef.current = oscillator;
+
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+
+      setAudioStarted(true);
+      setSoundEnabled(true);
+      await persistSoundPreference(true);
+    } catch (error) {
+      console.warn('Web Audio API not supported:', error);
+      stopAudio();
+    }
+  };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
-    if (!isMuted && gainNodeRef.current) {
+    if (soundEnabled && gainNodeRef.current) {
       gainNodeRef.current.gain.value = newVolume;
     }
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
+    if (audioStarted && soundEnabled) {
+      stopAudio();
+      setSoundEnabled(false);
+      void persistSoundPreference(false);
+      return;
+    }
+
+    void startAudio();
   };
+
+  const isMuted = !audioStarted || !soundEnabled;
 
   return (
     <div className="fixed bottom-4 left-4 z-[9998] flex items-center gap-2">
@@ -113,4 +196,3 @@ export function SoundscapeController() {
     </div>
   );
 }
-

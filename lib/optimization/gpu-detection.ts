@@ -33,7 +33,8 @@ export function detectGPU(): GPUInfo {
   }
 
   const canvas = document.createElement('canvas');
-  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  const gl = (canvas.getContext('webgl') ||
+    canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null;
   
   let tier: PerformanceTier = 'mid';
   let renderer: string | undefined;
@@ -42,8 +43,8 @@ export function detectGPU(): GPUInfo {
   if (gl) {
     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
     if (debugInfo) {
-      renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-      vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+      renderer = String(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
+      vendor = String(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL));
       
       // Phase 30 - F45: Determine tier based on GPU
       const rendererLower = renderer.toLowerCase();
@@ -128,4 +129,3 @@ export function getPerformanceSettings(tier: PerformanceTier) {
       };
   }
 }
-

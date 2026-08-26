@@ -13,22 +13,30 @@ import { Sparkles } from 'lucide-react';
 interface LoadingOverlayProps {
   message?: string;
   fullScreen?: boolean;
+  active?: boolean;
 }
 
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   message = 'Loading...',
   fullScreen = true,
+  active = false,
 }) => {
+  if (!active) {
+    return null;
+  }
+
+  const containerClasses = fullScreen
+    ? 'fixed inset-0'
+    : 'absolute inset-0 pointer-events-none';
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className={`${
-        fullScreen ? 'fixed inset-0' : 'absolute inset-0'
-      } bg-cosmic-navy/95 backdrop-blur-sm z-50 flex items-center justify-center`}
+      className={`${containerClasses} bg-cosmic-navy/95 backdrop-blur-sm z-50 flex items-center justify-center`}
     >
-      <div className="text-center space-y-6">
+      <div className={fullScreen ? 'text-center space-y-6' : 'pointer-events-auto text-center space-y-6'}>
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
@@ -48,4 +56,3 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     </motion.div>
   );
 };
-

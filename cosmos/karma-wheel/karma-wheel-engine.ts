@@ -43,9 +43,9 @@ export class KarmaWheelEngine {
   private mesh: THREE.Mesh;
   private config: KarmaWheelEngineConfig;
   
-  private outerRing: OuterRingData;
+  private outerRing!: OuterRingData;
   private glyphs: GlyphData[] = [];
-  private core: CoreData;
+  private core!: CoreData;
   
   private ringSegments: number;
   private numGlyphs: number;
@@ -436,4 +436,3 @@ export class KarmaWheelEngine {
     this.material.dispose();
   }
 }
-

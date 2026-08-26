@@ -65,30 +65,14 @@ export async function runTimelineEngine(params: {
     )
   }
 
-  // If astroContext is missing, return degraded with generic month-by-month themes
+  // Personalized timeline must never fabricate astrology without canonical AstroContext.
   if (!astroContext) {
-    const genericEvents: TimelineEvent[] = monthLabels.map((label, index) => ({
-      id: `month-${index}`,
-      monthIndex: index,
-      monthLabel: label,
-      theme: ['Growth Period', 'Transformation', 'Stability', 'Expansion'][index % 4],
-      description: `This month brings opportunities for personal growth and spiritual development. Focus on maintaining balance in all areas of life.`,
-      intensity: index % 3 === 0 ? 'high' : index % 3 === 1 ? 'medium' : 'low',
-      focusAreas: ['general', 'spiritual'],
-      recommendedActions: ['Practice mindfulness', 'Set clear intentions', 'Stay adaptable'],
-      cautions: ['Avoid hasty decisions', 'Maintain balance'],
-      astroSignals: [],
-    }))
-
     return {
-      status: 'degraded',
-      overview:
-        'Based on general astrological principles, the next 12 months offer a journey of growth and transformation. Each month presents unique opportunities for spiritual and personal development.',
-      events: genericEvents,
+      status: 'error',
+      overview: 'Timeline requires a completed birth profile and generated Kundali.',
+      events: [],
       disclaimers: [
-        'These timeline predictions are general guidance based on astrological principles.',
-        'Individual results may vary. Consult professionals for medical, legal, or financial advice.',
-        'These insights are for spiritual guidance only, not absolute certainty.',
+        'Complete your birth profile and generate your Kundali before creating a personalized timeline.',
       ],
       usedRag: false,
       usedAstroContext: false,
@@ -559,4 +543,3 @@ function getDefaultTimelineDisclaimers(): string[] {
     'These insights are for spiritual guidance only, not absolute fate.',
   ]
 }
-

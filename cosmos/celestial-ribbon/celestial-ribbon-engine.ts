@@ -122,7 +122,7 @@ export class CelestialRibbonEngine {
     
     for (let i = 0; i < this.numRibbons; i++) {
       const ribbonOffset = i * 0.3;
-      const controlPoints: [vec2, vec2, vec2, vec2] = [
+      const controlPoints: RibbonData['controlPoints'] = [
         [-0.8, -0.5 + ribbonOffset],
         [-0.2, 0.0 + ribbonOffset],
         [0.2, 0.0 + ribbonOffset],
@@ -481,4 +481,3 @@ export class CelestialRibbonEngine {
     this.material.dispose();
   }
 }
-

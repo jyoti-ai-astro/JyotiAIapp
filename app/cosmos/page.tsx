@@ -10,10 +10,10 @@ import { CosmosPageClient } from './cosmos-page-client';
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Cosmos | Jyoti.ai - Immersive Cosmic Experience',
+  title: 'Cosmos | JyotiAI - Immersive Cosmic Experience',
   description: 'Explore the cosmic universe with our immersive 3D galaxy scene and spiritual visualizations',
   openGraph: {
-    title: 'Cosmos | Jyoti.ai',
+    title: 'Cosmos | JyotiAI',
     description: 'Explore the cosmic universe with our immersive 3D galaxy scene',
     type: 'website',
     images: [
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
         url: '/og-image-cosmos.jpg',
         width: 1200,
         height: 630,
-        alt: 'Jyoti.ai Cosmos',
+        alt: 'JyotiAI Cosmos',
       },
     ],
   },

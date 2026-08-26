@@ -76,7 +76,7 @@ export class CosmicMotionBlurPass extends Effect {
 
     super('CosmicMotionBlurPass', cosmicMotionBlurShader.fragmentShader, {
       blendFunction: BlendFunction.NORMAL, // Normal blending for motion blur
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uBlurStrength', blurStrengthUniform],
         ['uRadialStrength', radialStrengthUniform],
@@ -212,4 +212,3 @@ export class CosmicMotionBlurPass extends Effect {
     }
   }
 }
-

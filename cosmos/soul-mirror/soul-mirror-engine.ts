@@ -40,7 +40,7 @@ export class SoulMirrorEngine {
   private mesh: THREE.Mesh;
   private config: SoulMirrorEngineConfig;
   
-  private mirrorDisc: MirrorDiscData;
+  private mirrorDisc!: MirrorDiscData;
   private echoRings: EchoRingData[] = [];
   private glyphs: GlyphData[] = [];
   
@@ -441,4 +441,3 @@ export class SoulMirrorEngine {
     this.material.dispose();
   }
 }
-

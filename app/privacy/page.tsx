@@ -10,18 +10,18 @@ import { PrivacyPageClient } from './privacy-page-client';
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Jyoti.ai',
-  description: 'Read Jyoti.ai privacy policy to understand how we collect, use, and protect your personal information',
+  title: 'Privacy Policy | JyotiAI',
+  description: 'Read JyotiAI privacy policy to understand how we collect, use, and protect your personal information',
   openGraph: {
-    title: 'Privacy Policy | Jyoti.ai',
-    description: 'Read Jyoti.ai privacy policy to understand how we protect your personal information',
+    title: 'Privacy Policy | JyotiAI',
+    description: 'Read JyotiAI privacy policy to understand how we protect your personal information',
     type: 'website',
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Jyoti.ai Privacy Policy',
+        alt: 'JyotiAI Privacy Policy',
       },
     ],
   },

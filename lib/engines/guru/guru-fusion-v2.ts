@@ -7,8 +7,10 @@
  */
 
 import { generateGuruResponse, type GuruContext } from './guru-engine'
-import { consolidatePredictions } from '@/lib/engines/prediction/consolidation-layer'
-import type { PredictionReport } from '@/lib/engines/reports/prediction-engine'
+import {
+  consolidatePredictions,
+  type PredictionReport,
+} from '@/lib/engines/prediction/consolidation-layer'
 
 export interface EnhancedGuruResponse {
   answer: string
@@ -217,4 +219,3 @@ function calculateResponseConfidence(
 
   return Math.min(confidence, 100)
 }
-

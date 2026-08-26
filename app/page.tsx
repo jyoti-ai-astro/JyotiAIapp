@@ -1,39 +1,13 @@
-'use client';
+import type { Metadata } from 'next'
 
-import React from 'react';
-import HomeHero from '@/src/ui/sections/home/HomeHero';
-import HomeValueProps from '@/src/ui/sections/home/HomeValueProps';
-import HomeHowItWorks from '@/src/ui/sections/home/HomeHowItWorks';
-import HomeSocialProof from '@/src/ui/sections/home/HomeSocialProof';
-import HomePricingTeaser from '@/src/ui/sections/home/HomePricingTeaser';
-import HomeFinalCTA from '@/src/ui/sections/home/HomeFinalCTA';
+import { CelestialV3Client } from './dev/visual-v3/CelestialV3Client'
+
+export const metadata: Metadata = {
+  title: 'JyotiAI — Your Celestial Intelligence',
+  description:
+    'Explore your Kundali, planetary timing, Jyoti Guru, predictions, timelines and deeper Vedic guidance through JyotiAI.',
+}
 
 export default function HomePage() {
-  return (
-    <div className="relative">
-      <section className="page-container pt-8 md:pt-16">
-        <HomeHero />
-      </section>
-
-      <section className="page-container pt-8 md:pt-16">
-        <HomeValueProps />
-      </section>
-
-      <section className="page-container pt-8 md:pt-20">
-        <HomeHowItWorks />
-      </section>
-
-      <section className="page-container pt-12 md:pt-20">
-        <HomeSocialProof />
-      </section>
-
-      <section className="page-container pt-12 md:pt-20">
-        <HomePricingTeaser />
-      </section>
-
-      <section className="page-container pt-16 md:pt-24 pb-16 md:pb-24">
-        <HomeFinalCTA />
-      </section>
-    </div>
-  );
+  return <CelestialV3Client />
 }

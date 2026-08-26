@@ -8,9 +8,13 @@
 
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useGlobalProgress } from '@/hooks/use-global-progress';
+import { useMotionOrchestrator } from '@/components/providers/MotionProvider';
+import { useSectionMotion } from '@/hooks/motion/useSectionMotion';
+import { useScrollMotion } from '@/hooks/motion/useScrollMotion';
+import { scrollDividerReveal } from '@/lib/motion/gsap-motion-bridge';
 
 export interface CosmicSectionDividerProps {
   /** Additional className */

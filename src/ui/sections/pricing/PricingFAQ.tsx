@@ -7,34 +7,34 @@ import { fadeUp, staggerChildren } from '@/src/ui/theme/global-motion';
 
 const faqs = [
   {
-    question: 'Is JyotiAI replacing real astrologers?',
+    question: 'What can I use for free?',
     answer:
-      'No. JyotiAI is a tool that augments traditional astrology with AI precision. Many users consult both JyotiAI and traditional astrologers for a complete perspective.',
+      'A new user can complete onboarding and generate the first basic Kundali without buying a paid Kundali ticket.',
   },
   {
-    question: "Can I use this if I don't know my birth time?",
+    question: 'When should I choose a one-time pack?',
     answer:
-      'Yes, but accuracy improves with exact birth time. If you only know your date of birth, we can still provide insights based on your sun sign and general planetary positions.',
+      'Choose a one-time pack when you need a specific Guru question, Kundali use, or prediction credit without starting a monthly subscription.',
   },
   {
-    question: 'What happens when I hit my free question limit?',
+    question: 'When should I choose a subscription?',
     answer:
-      'You can upgrade to Premium for unlimited questions, or wait for your monthly free questions to reset. We also offer one-time question packs.',
+      'Choose a subscription when you expect to use JyotiAI regularly. Access is based on the active subscription state confirmed by the server.',
   },
   {
-    question: 'How is my data stored?',
+    question: 'When is access added?',
     answer:
-      'All birth details and conversations are encrypted end-to-end. We never share your data with third parties. Your privacy is sacred to us.',
+      'Access is applied after payment verification. The checkout page may receive a payment result, but JyotiAI grants tickets or subscription access only after server verification.',
   },
   {
-    question: 'Do you support multiple birth charts?',
+    question: 'Can I change plans later?',
     answer:
-      'Yes! Premium users can create and manage multiple profiles (family members, friends) and compare compatibility between charts.',
+      'Plan management is handled through the Payments page and Razorpay subscription lifecycle. The app should only show access for active subscription states.',
   },
   {
-    question: 'What makes JyotiAI different from other astrology apps?',
+    question: 'Do I need accurate birth details?',
     answer:
-      'JyotiAI combines Vedic-grade calculations (Brihat Parashara Hora Shastra) with real-time AI guidance. Our Guru understands context, remembers your chart, and provides personalized insights—not generic horoscopes.',
+      'Yes. Personalized Kundali, Guru context, predictions, timelines, and reports depend on verified birth details and generated Kundali data.',
   },
 ];
 
@@ -50,14 +50,11 @@ export default function PricingFAQ() {
       className="space-y-8"
     >
       <motion.div variants={fadeUp} className="text-center space-y-3">
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-white">
-          Frequently asked{' '}
-          <span className="bg-gradient-to-r from-[#FFD57A] to-[#FFB347] bg-clip-text text-transparent">
-            questions
-          </span>
+        <h2 className="font-heading text-3xl font-semibold text-primary md:text-4xl lg:text-5xl">
+          Payment questions
         </h2>
-        <p className="text-lg text-white/60 max-w-2xl mx-auto">
-          Everything you need to know about JyotiAI plans and features.
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          Clear answers about free onboarding, one-time credits, subscriptions, and verified access.
         </p>
       </motion.div>
 
@@ -66,19 +63,21 @@ export default function PricingFAQ() {
           <motion.div
             key={index}
             variants={fadeUp}
-            className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm overflow-hidden hover:border-[#FFD57A]/30 transition-all duration-300"
+            className="overflow-hidden rounded-xl border border-border bg-card transition-colors duration-200 hover:border-saffron/50"
           >
             <button
               onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-white/5 transition-colors"
+              className="flex min-h-14 w-full items-center justify-between gap-4 p-6 text-left transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-expanded={openIndex === index}
             >
-              <h3 className="text-lg font-semibold text-white pr-4">
+              <h3 className="pr-4 text-lg font-semibold text-primary">
                 {faq.question}
               </h3>
               <ChevronDown
-                className={`w-5 h-5 text-[#FFD57A] flex-shrink-0 transition-transform duration-200 ${
+                className={`h-5 w-5 flex-shrink-0 text-saffron transition-transform duration-200 ${
                   openIndex === index ? 'rotate-180' : ''
                 }`}
+                aria-hidden="true"
               />
             </button>
             {openIndex === index && (
@@ -89,7 +88,7 @@ export default function PricingFAQ() {
                 transition={{ duration: 0.2 }}
                 className="px-6 pb-6"
               >
-                <p className="text-sm md:text-base text-white/70 leading-relaxed">
+                <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
                   {faq.answer}
                 </p>
               </motion.div>
@@ -100,4 +99,3 @@ export default function PricingFAQ() {
     </motion.div>
   );
 }
-

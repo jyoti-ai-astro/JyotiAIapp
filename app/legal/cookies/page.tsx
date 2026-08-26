@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic';
 import React from 'react';
 import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
 import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
 // Footer removed - using global FooterWrapper from app/layout.tsx from '@/components/sections/Footer/CosmicFooter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -21,7 +20,6 @@ export default function CookiesPage() {
   return (
     <PageTransitionWrapper>
       <CosmicCursor />
-      <SoundscapeController />
       
       <div className="min-h-screen bg-cosmic-navy text-white">
         <div className="container mx-auto px-4 py-16 space-y-8">
@@ -36,7 +34,7 @@ export default function CookiesPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-white/80">
               <p>
-                This Cookie Policy explains how Jyoti.ai uses cookies and similar technologies to recognize you when
+                This Cookie Policy explains how JyotiAI uses cookies and similar technologies to recognize you when
                 you visit our website and use our Service.
               </p>
             </CardContent>
@@ -90,7 +88,7 @@ export default function CookiesPage() {
                 For questions about our use of cookies, please contact us at:
               </p>
               <p className="text-gold">
-                Email: privacy@jyoti.ai<br />
+                Email: privacy@jyotiai.in<br />
                 Address: [Your Company Address]
               </p>
             </CardContent>
@@ -102,4 +100,3 @@ export default function CookiesPage() {
     </PageTransitionWrapper>
   );
 }
-

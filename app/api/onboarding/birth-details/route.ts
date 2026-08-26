@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
-import { geocodePlace, getDefaultGeocode } from '@/lib/services/geocoding'
+import {
+  GeocodingError,
+  geocodePlace,
+  isValidCoordinate,
+  resolveTimezoneForCoordinates,
+} from '@/lib/services/geocoding'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,50 +40,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid date of birth' }, { status: 400 })
     }
 
-    // Geocode place of birth (use provided coordinates if available, otherwise geocode)
     let geocodeResult
-    if (lat && lng && typeof lat === 'number' && typeof lng === 'number') {
-      // Use provided coordinates from location autocomplete
-      try {
-        // Get timezone for the coordinates
-        const { envVars } = await import('@/lib/env/env.mjs')
-        const timezoneDbKey = envVars.geocoding.timezoneDbKey
-        
-        let timezone = 'UTC'
-        if (timezoneDbKey) {
-          try {
-            const timezoneResponse = await fetch(
-              `https://api.timezonedb.com/v2.1/get-time-zone?key=${timezoneDbKey}&format=json&by=position&lat=${lat}&lng=${lng}`
-            )
-            const timezoneData = await timezoneResponse.json()
-            if (timezoneData.status === 'OK') {
-              timezone = timezoneData.zoneName || 'UTC'
-            }
-          } catch (err) {
-            console.warn('Timezone lookup failed:', err)
-          }
+    try {
+      if (lat !== undefined || lng !== undefined) {
+        if (!isValidCoordinate(lat, lng)) {
+          throw new GeocodingError('INVALID_COORDINATES', 'Selected birth location has invalid coordinates.')
         }
-        
+
+        const timezone = await resolveTimezoneForCoordinates(lat, lng)
         geocodeResult = {
           lat,
           lng,
           formattedAddress: pob,
           timezone,
+          provider: 'client_coordinates' as const,
         }
-      } catch (error) {
-        console.warn('Using provided coordinates failed, falling back to geocoding:', error)
-        // Fall through to geocoding
-      }
-    }
-    
-    // If coordinates weren't provided or failed, geocode the place name
-    if (!geocodeResult) {
-      try {
+      } else {
         geocodeResult = await geocodePlace(pob)
-      } catch (error) {
-        console.warn('Geocoding failed, using default:', error)
-        geocodeResult = getDefaultGeocode(pob)
       }
+    } catch (error: any) {
+      const code = error instanceof GeocodingError ? error.code : 'LOCATION_NOT_VERIFIED'
+      return NextResponse.json(
+        {
+          success: false,
+          code,
+          error:
+            error?.message ||
+            'We could not verify your birth location. Please choose a location from suggestions and retry.',
+        },
+        { status: code === 'INVALID_COORDINATES' ? 400 : 422 }
+      )
     }
 
     // Update user profile
@@ -94,6 +85,10 @@ export async function POST(request: NextRequest) {
       lat: geocodeResult.lat,
       lng: geocodeResult.lng,
       timezone: geocodeResult.timezone,
+      locationVerified: true,
+      locationVerifiedAt: new Date(),
+      geocodingProvider: geocodeResult.provider || 'unknown',
+      geocodedAddress: geocodeResult.formattedAddress,
       updatedAt: new Date(),
     })
 
@@ -109,4 +104,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

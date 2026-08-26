@@ -57,7 +57,6 @@ export function FeatureCard({ feature, index, isInView, intensity = 1.0 }: Featu
       orchestrator?.cardTilt?.(progress, sectionId);
       orchestrator?.scrollParallax?.(sectionId, progress);
       orchestrator?.scrollGlow?.(sectionId, progress);
-      orchestrator?.scrollDepthShift?.(sectionId, progress);
     },
   });
   
@@ -148,13 +147,13 @@ export function FeatureCard({ feature, index, isInView, intensity = 1.0 }: Featu
       className="relative group"
       initial={{ opacity: 0, y: 50 }}
       animate={cardInView && isInView ? { y: 0 } : { opacity: 0, y: 50 }}
-      style={cardInView && isInView ? { opacity: globalProgress * intensity } : undefined}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
       style={{
+        opacity: cardInView && isInView ? globalProgress * intensity : undefined,
         rotateX: tiltX,
         rotateY: tiltY,
         transformStyle: 'preserve-3d',
       }}
+      transition={{ duration: 0.6, delay: index * 0.1 }}
       whileHover={{ scale: 1.02 }}
     >
       {/* Cosmic Hovered Glow (gold → violet aura) */}
@@ -342,4 +341,3 @@ export function FeatureCard({ feature, index, isInView, intensity = 1.0 }: Featu
     </motion.div>
   );
 }
-

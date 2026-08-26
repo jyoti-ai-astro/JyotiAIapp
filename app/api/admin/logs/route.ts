@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
+import { Timestamp } from 'firebase-admin/firestore'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,16 +42,16 @@ export async function GET(request: NextRequest) {
         }
 
         if (startDate) {
-          query = query.where('timestamp', '>=', adminDb.Timestamp.fromDate(new Date(startDate)))
+          query = query.where('timestamp', '>=', Timestamp.fromDate(new Date(startDate)))
         }
 
         if (endDate) {
-          query = query.where('timestamp', '<=', adminDb.Timestamp.fromDate(new Date(endDate)))
+          query = query.where('timestamp', '<=', Timestamp.fromDate(new Date(endDate)))
         }
 
         const snapshot = await query.orderBy('timestamp', 'desc').limit(limit).get()
 
-        const logs = snapshot.docs.map((doc) => ({
+        const logs = snapshot.docs.map((doc: { id: string; data: () => Record<string, any> }) => ({
           id: doc.id,
           ...doc.data(),
         }))

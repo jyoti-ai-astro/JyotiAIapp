@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       if (!emailSent) {
         console.error('Magic link email sending returned false')
         return NextResponse.json(
-          { error: 'Failed to send email. Please check if ZEPTO_API_KEY is configured in Vercel environment variables.' },
+          { error: 'Failed to send email. Please check if ZEPTO_API_TOKEN is configured in Vercel environment variables.' },
           { status: 500 }
         )
       }
@@ -71,4 +71,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

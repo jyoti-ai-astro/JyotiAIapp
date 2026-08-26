@@ -10,6 +10,12 @@ import { adminDb } from '@/lib/firebase/admin'
 import { getUpcomingTransits, matchTransitsWithKundali } from '@/lib/engines/transit/transit-engine'
 import { queueNotification } from '@/lib/services/notification-service'
 
+type ScheduledEvent = Event
+type ExecutionContext = {
+  waitUntil(promise: Promise<unknown>): void
+  passThroughOnException?(): void
+}
+
 /**
  * Transit Alert Job
  * Detects transits in next 24 hours and queues alerts
@@ -99,4 +105,3 @@ export default {
     await runTransitAlertJob()
   },
 }
-

@@ -6,7 +6,14 @@
  * Generates daily horoscope predictions based on user's Rashi
  */
 
-import { retrieveRelevantDocuments } from '@/lib/rag/rag-service'
+import { envVars } from '@/lib/env/env.mjs'
+import {
+  aiMalformedResponse,
+  aiNetworkError,
+  aiNotConfigured,
+  classifyAIResponseError,
+} from '@/lib/ai/provider-errors'
+import { retrieveRelevantDocuments, type RAGResult } from '@/lib/rag/rag-service'
 
 export interface DailyHoroscope {
   date: string
@@ -40,13 +47,13 @@ export async function generateDailyHoroscope(
   
   // Retrieve RAG insights for the Rashi
   const ragQuery = `Daily horoscope for ${rashi} rashi on ${dateString}`
-  const ragResults = await retrieveRelevantDocuments(ragQuery, 5, 'astrology')
+  const ragResults = await retrieveHoroscopeKnowledge(ragQuery)
   
   // Build AI prompt
   const prompt = buildHoroscopePrompt(rashi, moonSign, sunSign, ascendant, ragResults, dateString)
   
   // Generate horoscope using AI
-  const horoscope = await generateAIHoroscope(prompt, rashi)
+  const horoscope = await generateAIHoroscope(prompt, rashi, moonSign, sunSign, ascendant)
   
   return horoscope
 }
@@ -59,7 +66,7 @@ function buildHoroscopePrompt(
   moonSign: string | undefined,
   sunSign: string | undefined,
   ascendant: string | undefined,
-  ragResults: any,
+  ragResults: RAGResult,
   dateString: string
 ): string {
   const systemPrompt = `You are an expert Vedic astrologer. Generate a daily horoscope for the given Rashi.
@@ -108,155 +115,176 @@ Generate horoscope in JSON format:
 /**
  * Generate horoscope using AI
  */
-// Phase 31 - F46: Use validated environment variables
-import { envVars } from '@/lib/env/env.mjs'
+async function retrieveHoroscopeKnowledge(query: string): Promise<RAGResult> {
+  try {
+    return await retrieveRelevantDocuments(query, 5, 'astrology')
+  } catch (error) {
+    console.error('Daily horoscope RAG retrieval degraded:', error)
+    return { documents: [], query, totalResults: 0 }
+  }
+}
 
-async function generateAIHoroscope(prompt: string, rashi: string): Promise<DailyHoroscope> {
+async function generateAIHoroscope(
+  prompt: string,
+  rashi: string,
+  moonSign?: string,
+  sunSign?: string,
+  ascendant?: string
+): Promise<DailyHoroscope> {
   const provider = envVars.ai.provider
   const openaiApiKey = envVars.ai.openaiApiKey
   const geminiApiKey = envVars.ai.geminiApiKey
   
   if (provider === 'gemini' && geminiApiKey) {
-    return generateGeminiHoroscope(prompt, rashi)
+    return generateGeminiHoroscope(prompt, rashi, moonSign, sunSign, ascendant)
   } else if (openaiApiKey) {
-    return generateOpenAIHoroscope(prompt, rashi)
-  } else {
-    return createFallbackHoroscope(rashi)
+    return generateOpenAIHoroscope(prompt, rashi, moonSign, sunSign, ascendant)
   }
+
+  throw aiNotConfigured('Daily horoscope AI')
 }
 
 /**
  * Generate horoscope using OpenAI
  */
-async function generateOpenAIHoroscope(prompt: string, rashi: string): Promise<DailyHoroscope> {
+async function generateOpenAIHoroscope(
+  prompt: string,
+  rashi: string,
+  moonSign?: string,
+  sunSign?: string,
+  ascendant?: string
+): Promise<DailyHoroscope> {
   const openaiApiKey = envVars.ai.openaiApiKey
+  const openaiModel = envVars.ai.predictionModelName
   if (!openaiApiKey) {
-    throw new Error('OpenAI API key not configured')
+    throw aiNotConfigured('OpenAI')
   }
   
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${openaiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: 'You are an expert Vedic astrologer. Always respond with valid JSON only.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      response_format: { type: 'json_object' },
-    }),
-  })
+  let response: Response
+  try {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: openaiModel,
+        messages: [
+          { role: 'system', content: 'You are an expert Vedic astrologer. Always respond with valid JSON only.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' },
+      }),
+    })
+  } catch {
+    throw aiNetworkError('OpenAI')
+  }
   
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`OpenAI error: ${error.error?.message || 'Unknown error'}`)
+    const error = await response.json().catch(() => ({}))
+    throw classifyAIResponseError('OpenAI', response, error)
   }
   
   const data = await response.json()
-  const content = data.choices[0].message.content
+  const content = data.choices?.[0]?.message?.content
+  if (!content || typeof content !== 'string') {
+    throw aiMalformedResponse('OpenAI')
+  }
   
   try {
     const horoscope = JSON.parse(content)
-    return {
-      date: new Date().toISOString().split('T')[0],
-      rashi,
-      moonSign: rashi,
-      general: horoscope.general || '',
-      love: horoscope.love || '',
-      career: horoscope.career || '',
-      money: horoscope.money || '',
-      health: horoscope.health || '',
-      luckyColor: horoscope.luckyColor || 'Gold',
-      luckyNumber: horoscope.luckyNumber || 7,
-      dos: horoscope.dos || [],
-      donts: horoscope.donts || [],
-      energyLevel: horoscope.energyLevel || 'medium',
-    }
-  } catch (e) {
-    return createFallbackHoroscope(rashi)
+    return normalizeHoroscope(horoscope, rashi, moonSign, sunSign, ascendant)
+  } catch {
+    throw aiMalformedResponse('OpenAI')
   }
 }
 
 /**
  * Generate horoscope using Gemini
  */
-async function generateGeminiHoroscope(prompt: string, rashi: string): Promise<DailyHoroscope> {
+async function generateGeminiHoroscope(
+  prompt: string,
+  rashi: string,
+  moonSign?: string,
+  sunSign?: string,
+  ascendant?: string
+): Promise<DailyHoroscope> {
   const geminiApiKey = envVars.ai.geminiApiKey
   if (!geminiApiKey) {
-    throw new Error('Gemini API key not configured')
+    throw aiNotConfigured('Gemini')
   }
   
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: 'You are an expert Vedic astrologer. Always respond with valid JSON only.\n\n' + prompt },
-            ],
-          },
-        ],
-      }),
-    }
-  )
+  let response: Response
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: 'You are an expert Vedic astrologer. Always respond with valid JSON only.\n\n' + prompt },
+              ],
+            },
+          ],
+        }),
+      }
+    )
+  } catch {
+    throw aiNetworkError('Gemini')
+  }
   
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`Gemini error: ${error.error?.message || 'Unknown error'}`)
+    const error = await response.json().catch(() => ({}))
+    throw classifyAIResponseError('Gemini', response, error)
   }
   
   const data = await response.json()
-  const content = data.candidates[0].content.parts[0].text
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text
+  if (!content || typeof content !== 'string') {
+    throw aiMalformedResponse('Gemini')
+  }
   
   try {
     const horoscope = JSON.parse(content)
-    return {
-      date: new Date().toISOString().split('T')[0],
-      rashi,
-      moonSign: rashi,
-      general: horoscope.general || '',
-      love: horoscope.love || '',
-      career: horoscope.career || '',
-      money: horoscope.money || '',
-      health: horoscope.health || '',
-      luckyColor: horoscope.luckyColor || 'Gold',
-      luckyNumber: horoscope.luckyNumber || 7,
-      dos: horoscope.dos || [],
-      donts: horoscope.donts || [],
-      energyLevel: horoscope.energyLevel || 'medium',
-    }
-  } catch (e) {
-    return createFallbackHoroscope(rashi)
+    return normalizeHoroscope(horoscope, rashi, moonSign, sunSign, ascendant)
+  } catch {
+    throw aiMalformedResponse('Gemini')
   }
 }
 
-/**
- * Create fallback horoscope
- */
-function createFallbackHoroscope(rashi: string): DailyHoroscope {
+function normalizeHoroscope(
+  horoscope: any,
+  rashi: string,
+  moonSign?: string,
+  sunSign?: string,
+  ascendant?: string
+): DailyHoroscope {
+  const energyLevel = ['low', 'medium', 'high'].includes(horoscope.energyLevel)
+    ? horoscope.energyLevel
+    : 'medium'
+
   return {
     date: new Date().toISOString().split('T')[0],
     rashi,
-    moonSign: rashi,
-    general: `Today brings positive energy for ${rashi} natives. Focus on your goals and maintain balance.`,
-    love: 'Relationships are harmonious. Express your feelings openly.',
-    career: 'Good opportunities may arise. Stay focused and professional.',
-    money: 'Financial matters are stable. Avoid impulsive spending.',
-    health: 'Maintain regular exercise and balanced diet. Take care of your well-being.',
-    luckyColor: 'Gold',
-    luckyNumber: 7,
-    dos: ['Meditate', 'Express gratitude', 'Stay positive'],
-    donts: ['Avoid conflicts', 'Don\'t make hasty decisions', 'Avoid negative thoughts'],
-    energyLevel: 'medium',
+    moonSign: moonSign || rashi,
+    sunSign,
+    ascendant,
+    general: String(horoscope.general || ''),
+    love: String(horoscope.love || ''),
+    career: String(horoscope.career || ''),
+    money: String(horoscope.money || ''),
+    health: String(horoscope.health || ''),
+    luckyColor: String(horoscope.luckyColor || 'Gold'),
+    luckyNumber: Number.isInteger(horoscope.luckyNumber) ? horoscope.luckyNumber : 7,
+    dos: Array.isArray(horoscope.dos) ? horoscope.dos.map(String) : [],
+    donts: Array.isArray(horoscope.donts) ? horoscope.donts.map(String) : [],
+    energyLevel,
   }
 }
-

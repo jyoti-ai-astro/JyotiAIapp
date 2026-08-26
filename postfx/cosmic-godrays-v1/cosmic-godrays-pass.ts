@@ -8,11 +8,7 @@
  */
 
 import { Effect, BlendFunction } from 'postprocessing';
-
-import * as THREE from 'three';
-const { Uniform, Vector2, Vector3 } = THREE;
-
-
+import { Uniform, Vector2, Vector3, type Texture } from 'three';
 import { cosmicGodRaysShader } from './cosmic-godrays-shader';
 
 export interface CosmicGodRaysPassConfig {
@@ -27,7 +23,7 @@ export interface CosmicGodRaysPassConfig {
   high?: number;
   blessingWaveProgress?: number;
   cameraFOV?: number;
-  depthTexture?: THREE.Texture | null;
+  depthTexture?: Texture | null;
   time?: number;
   mouse?: Vector2;
 }
@@ -84,7 +80,7 @@ export class CosmicGodRaysPass extends Effect {
 
     super('CosmicGodRaysPass', cosmicGodRaysShader.fragmentShader, {
       blendFunction: BlendFunction.ADD, // Additive blending for god rays
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uSunPos', sunPosUniform],
         ['uLightDir', lightDirUniform],
@@ -154,7 +150,7 @@ export class CosmicGodRaysPass extends Effect {
   /**
    * Update depth texture
    */
-  setDepthTexture(texture: THREE.Texture | null): void {
+  setDepthTexture(texture: Texture | null): void {
     this.depthTextureUniform.value = texture;
   }
 
@@ -229,4 +225,3 @@ export class CosmicGodRaysPass extends Effect {
     }
   }
 }
-

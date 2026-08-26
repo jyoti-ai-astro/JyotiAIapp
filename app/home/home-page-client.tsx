@@ -34,7 +34,7 @@ export function HomePageClient() {
           }}
           secondaryCTA={{
             label: 'Explore Features',
-            href: '/cosmos',
+            href: '/features',
           }}
         />
 
@@ -58,4 +58,3 @@ export function HomePageClient() {
       </div>
   );
 }
-

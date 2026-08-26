@@ -6,4 +6,6 @@
  */
 
 // Placeholder for light theme implementation
+export const lightTheme = {};
+
 

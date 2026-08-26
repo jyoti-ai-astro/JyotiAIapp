@@ -72,7 +72,7 @@ export class CosmicFilmGrainPass extends Effect {
 
     super('CosmicFilmGrainPass', cosmicFilmGrainShader.fragmentShader, {
       blendFunction: BlendFunction.NORMAL,
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uIntensity', intensityUniform],
         ['uGrainIntensity', grainIntensityUniform],
@@ -199,4 +199,3 @@ export class CosmicFilmGrainPass extends Effect {
     }
   }
 }
-

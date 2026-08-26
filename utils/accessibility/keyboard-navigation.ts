@@ -7,4 +7,6 @@
  */
 
 // Placeholder for keyboard navigation utilities implementation
+export const keyboardNavigation = {};
+
 

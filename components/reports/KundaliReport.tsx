@@ -32,7 +32,8 @@ export function KundaliReport({ kundali }: KundaliReportProps) {
     );
   }
 
-  const houses = kundali.houses || Array.from({ length: 12 }, (_, i) => ({ number: i + 1 }));
+  const houses: NonNullable<KundaliReportProps['kundali']>['houses'] =
+    kundali.houses ?? Array.from({ length: 12 }, (_, i) => ({ number: i + 1 }));
 
   return (
     <div className="space-y-8">
