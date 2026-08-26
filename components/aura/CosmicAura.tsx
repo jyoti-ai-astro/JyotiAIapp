@@ -1,22 +1,26 @@
 /**
  * Cosmic Aura Component
- * 
+ *
  * Master Plan v1.0 - Section 7: Aura Scan Screen
  * Animated aura ring with chakra visualization
  */
 
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CosmicBackground } from '@/components/dashboard/CosmicBackground';
-import { Upload, Camera, Zap, Sparkles } from 'lucide-react';
-import { useUserStore } from '@/store/user-store';
-import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
-import { decrementTicket } from '@/lib/access/ticket-access';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Upload, Camera, Zap, Sparkles } from "lucide-react";
+import { useUserStore } from "@/store/user-store";
+import { checkFeatureAccess } from "@/lib/access/checkFeatureAccess";
+import { useRouter } from "next/navigation";
 
 interface CosmicAuraProps {
   imageFile: File | null;
@@ -30,16 +34,16 @@ interface CosmicAuraProps {
 
 // Animated Aura Ring Component
 function AuraRing({ colors, energy }: { colors: string[]; energy: number }) {
-  const auraColors = colors.length > 0 ? colors : ['#17E8F6', '#9D4EDD'];
-  
+  const auraColors = colors.length > 0 ? colors : ["#17E8F6", "#9D4EDD"];
+
   return (
     <div className="relative w-64 h-64 mx-auto">
       {/* Outer glow ring */}
       <motion.div
         className="absolute inset-0 rounded-full"
         style={{
-          background: `conic-gradient(from 0deg, ${auraColors.join(', ')}, ${auraColors[0]})`,
-          filter: 'blur(20px)',
+          background: `conic-gradient(from 0deg, ${auraColors.join(", ")}, ${auraColors[0]})`,
+          filter: "blur(20px)",
           opacity: 0.6,
         }}
         animate={{
@@ -48,15 +52,15 @@ function AuraRing({ colors, energy }: { colors: string[]; energy: number }) {
         transition={{
           duration: 20,
           repeat: Infinity,
-          ease: 'linear',
+          ease: "linear",
         }}
       />
-      
+
       {/* Main aura ring */}
       <motion.div
         className="absolute inset-4 rounded-full border-4"
         style={{
-          borderImage: `conic-gradient(from 0deg, ${auraColors.join(', ')}, ${auraColors[0]}) 1`,
+          borderImage: `conic-gradient(from 0deg, ${auraColors.join(", ")}, ${auraColors[0]}) 1`,
           borderImageSlice: 1,
         }}
         animate={{
@@ -65,10 +69,10 @@ function AuraRing({ colors, energy }: { colors: string[]; energy: number }) {
         transition={{
           duration: 15,
           repeat: Infinity,
-          ease: 'linear',
+          ease: "linear",
         }}
       />
-      
+
       {/* Center energy indicator */}
       <div className="absolute inset-0 flex items-center justify-center">
         <motion.div
@@ -80,7 +84,7 @@ function AuraRing({ colors, energy }: { colors: string[]; energy: number }) {
           transition={{
             duration: 2,
             repeat: Infinity,
-            ease: 'easeInOut',
+            ease: "easeInOut",
           }}
         >
           <div className="w-full h-full flex items-center justify-center">
@@ -95,23 +99,23 @@ function AuraRing({ colors, energy }: { colors: string[]; energy: number }) {
 // Chakra Bars Component
 function ChakraBars({ chakras }: { chakras: Record<string, number> }) {
   const chakraColors: Record<string, string> = {
-    root: '#FF6B6B',
-    sacral: '#FF8C42',
-    solar: '#F2C94C',
-    heart: '#4ECB71',
-    throat: '#17E8F6',
-    thirdEye: '#6E2DEB',
-    crown: '#9D4EDD',
+    root: "#FF6B6B",
+    sacral: "#FF8C42",
+    solar: "#F2C94C",
+    heart: "#4ECB71",
+    throat: "#17E8F6",
+    thirdEye: "#6E2DEB",
+    crown: "#9D4EDD",
   };
 
   const chakraNames: Record<string, string> = {
-    root: 'Root',
-    sacral: 'Sacral',
-    solar: 'Solar Plexus',
-    heart: 'Heart',
-    throat: 'Throat',
-    thirdEye: 'Third Eye',
-    crown: 'Crown',
+    root: "Root",
+    sacral: "Sacral",
+    solar: "Solar Plexus",
+    heart: "Heart",
+    throat: "Throat",
+    thirdEye: "Third Eye",
+    crown: "Crown",
   };
 
   return (
@@ -133,7 +137,7 @@ function ChakraBars({ chakras }: { chakras: Record<string, number> }) {
             <motion.div
               className="h-full rounded-full"
               style={{
-                backgroundColor: chakraColors[chakra] || '#17E8F6',
+                backgroundColor: chakraColors[chakra] || "#17E8F6",
                 width: `${score}%`,
               }}
               initial={{ width: 0 }}
@@ -166,27 +170,15 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
 
   const handleScan = async () => {
     // Check access before scanning
-    const access = await checkFeatureAccess(user, 'aura');
+    const access = await checkFeatureAccess(user, "aura");
     if (!access.allowed) {
       if (access.redirectTo) {
         router.push(access.redirectTo);
       }
       return;
     }
-
-    // If user has tickets (not subscription), decrement after successful scan
-    const hasSubscription =
-      ['advanced', 'supreme'].includes(user?.subscription ?? 'free') &&
-      user?.subscriptionExpiry &&
-      new Date(user.subscriptionExpiry) > new Date();
-
-    // Call the original onUpload handler
     await onUpload();
 
-    // Decrement ticket if not subscription
-    if (!hasSubscription && (user?.kundaliTickets ?? user?.legacyTickets?.kundali_basic ?? 0) > 0) {
-      await decrementTicket('kundali_basic');
-    }
   };
 
   useEffect(() => {
@@ -200,10 +192,11 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
   }, [analysis]);
 
   return (
-    <div className="min-h-screen bg-cosmic-navy text-white relative overflow-hidden">
-      <CosmicBackground />
-      
-      <div className="container mx-auto p-6 space-y-8 relative z-10">
+    <div
+      data-visual-reading-product="true"
+      className="relative overflow-hidden text-[#eee7dc]"
+    >
+      <div className="relative z-10 space-y-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -213,7 +206,7 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring' }}
+            transition={{ delay: 0.2, type: "spring" }}
           >
             <Zap className="w-16 h-16 text-cosmic-gold mx-auto mb-4" />
           </motion.div>
@@ -235,9 +228,12 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
           >
             <Card className="cosmic-card border-aura-cyan/30 bg-cosmic-indigo/10">
               <CardHeader>
-                <CardTitle className="text-aura-cyan">Upload Your Selfie</CardTitle>
+                <CardTitle className="text-aura-cyan">
+                  Upload Your Selfie
+                </CardTitle>
                 <CardDescription className="text-aura-cyan/80">
-                  Use natural lighting, face the camera directly, ensure clear visibility
+                  Use natural lighting, face the camera directly, ensure clear
+                  visibility
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -251,7 +247,9 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
                   ) : (
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <Camera className="w-16 h-16 text-aura-cyan mb-4" />
-                      <p className="text-sm text-aura-cyan">Click to upload or drag and drop</p>
+                      <p className="text-sm text-aura-cyan">
+                        Click to upload or drag and drop
+                      </p>
                     </div>
                   )}
                   <input
@@ -266,7 +264,11 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
                   disabled={!imageFile || uploading || analyzing}
                   className="cosmic-button w-full hover-glow bg-gradient-to-r from-cosmic-purple to-aura-cyan text-white"
                 >
-                  {uploading ? 'Uploading...' : analyzing ? 'Analyzing Aura...' : 'Analyze My Aura'}
+                  {uploading
+                    ? "Uploading..."
+                    : analyzing
+                      ? "Analyzing Aura..."
+                      : "Analyze My Aura"}
                 </Button>
               </CardContent>
             </Card>
@@ -283,26 +285,35 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
             {/* Aura Ring */}
             <Card className="cosmic-card border-aura-violet/30 bg-cosmic-indigo/10">
               <CardHeader>
-                <CardTitle className="text-aura-violet text-center">Aura Colors</CardTitle>
+                <CardTitle className="text-aura-violet text-center">
+                  Aura Colors
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <AuraRing
-                  colors={analysis.auraColors || [analysis.primaryColor || '#17E8F6']}
+                  colors={
+                    analysis.auraColors || [analysis.primaryColor || "#17E8F6"]
+                  }
                   energy={analysis.energyScore || 75}
                 />
                 <div className="mt-6 text-center space-y-2">
                   <p className="text-lg font-semibold text-white">
-                    Primary: <span className="text-aura-cyan capitalize">{analysis.primaryColor || 'Blue'}</span>
+                    Primary:{" "}
+                    <span className="text-aura-cyan capitalize">
+                      {analysis.primaryColor || "Blue"}
+                    </span>
                   </p>
                   <div className="flex justify-center gap-2 flex-wrap">
-                    {(analysis.auraColors || []).map((color: string, i: number) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1 rounded-full bg-cosmic-indigo/30 text-aura-cyan text-sm capitalize"
-                      >
-                        {color}
-                      </span>
-                    ))}
+                    {(analysis.auraColors || []).map(
+                      (color: string, i: number) => (
+                        <span
+                          key={i}
+                          className="px-3 py-1 rounded-full bg-cosmic-indigo/30 text-aura-cyan text-sm capitalize"
+                        >
+                          {color}
+                        </span>
+                      ),
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -316,9 +327,16 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-3">
                   {Object.entries(energyLevels).map(([type, level]) => (
-                    <div key={type} className="text-center p-4 rounded-xl bg-cosmic-indigo/5">
-                      <p className="text-sm text-aura-cyan mb-2 capitalize">{type}</p>
-                      <p className="text-3xl font-bold text-aura-blue">{level}%</p>
+                    <div
+                      key={type}
+                      className="text-center p-4 rounded-xl bg-cosmic-indigo/5"
+                    >
+                      <p className="text-sm text-aura-cyan mb-2 capitalize">
+                        {type}
+                      </p>
+                      <p className="text-3xl font-bold text-aura-blue">
+                        {level}%
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -341,23 +359,31 @@ export const CosmicAura: React.FC<CosmicAuraProps> = ({
             )}
 
             {/* Recommendations */}
-            {analysis.recommendations && analysis.recommendations.length > 0 && (
-              <Card className="cosmic-card border-aura-orange/30 bg-cosmic-indigo/10">
-                <CardHeader>
-                  <CardTitle className="text-aura-orange">Recommendations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {analysis.recommendations.map((rec: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2 text-aura-cyan">
-                        <span className="text-aura-orange mt-1">•</span>
-                        <span>{rec}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
+            {analysis.recommendations &&
+              analysis.recommendations.length > 0 && (
+                <Card className="cosmic-card border-aura-orange/30 bg-cosmic-indigo/10">
+                  <CardHeader>
+                    <CardTitle className="text-aura-orange">
+                      Recommendations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {analysis.recommendations.map(
+                        (rec: string, i: number) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-2 text-aura-cyan"
+                          >
+                            <span className="text-aura-orange mt-1">•</span>
+                            <span>{rec}</span>
+                          </li>
+                        ),
+                      )}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
           </motion.div>
         )}
       </div>
