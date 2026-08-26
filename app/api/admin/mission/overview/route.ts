@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
+import { Timestamp } from 'firebase-admin/firestore'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,6 +10,16 @@ function toDate(value: any): Date | null {
   if (typeof value?.toDate === 'function') return value.toDate()
   const d = new Date(value)
   return Number.isNaN(d.getTime()) ? null : d
+}
+
+function isCanonicalPaymentDoc(doc: any, collectionName: string) {
+  return doc.ref.parent.id === collectionName && doc.ref.parent.parent?.parent?.id === 'payments'
+}
+
+function normalizeSubscription(data: any, userId: string, source: 'current' | 'legacy') {
+  const status = String(data.status || (data.active === true ? 'active' : 'inactive')).toLowerCase()
+  const expiry = toDate(data.expiryDate ?? data.expiry ?? data.expiresAt ?? data.subscriptionExpiry)
+  return { data, userId, status, expiry, source }
 }
 
 export async function GET(request: NextRequest) {
@@ -22,21 +33,30 @@ export async function GET(request: NextRequest) {
       const todayStart = new Date()
       todayStart.setHours(0, 0, 0, 0)
 
-      const [usersCount, usersSnap, paymentsSnap, subscriptionsSnap, analyticsSnap] = await Promise.all([
+      const [
+        usersCount,
+        newUsersCount,
+        newUsersTodayCount,
+        ordersSnap,
+        oneTimeOrdersSnap,
+        legacySubscriptionsSnap,
+        nestedSubscriptionsSnap,
+        analyticsSnap,
+      ] = await Promise.all([
         adminDb.collection('users').count().get(),
-        adminDb.collection('users').limit(5000).get(),
-        adminDb.collection('payments').get(),
-        adminDb.collection('subscriptions').limit(2000).get(),
+        adminDb.collection('users').where('createdAt', '>=', Timestamp.fromDate(since)).count().get(),
+        adminDb.collection('users').where('createdAt', '>=', Timestamp.fromDate(todayStart)).count().get(),
+        adminDb.collectionGroup('orders').limit(5000).get(),
+        adminDb.collectionGroup('one_time_orders').limit(5000).get(),
+        adminDb.collection('subscriptions').limit(5000).get(),
+        adminDb.collectionGroup('subscriptions').limit(5000).get(),
         adminDb.collection('analyticsEvents').limit(5000).get().catch(() => null),
       ])
 
-      let newUsers = 0
-      let newUsersToday = 0
-      usersSnap.forEach((doc) => {
-        const created = toDate(doc.data().createdAt)
-        if (created && created >= since) newUsers += 1
-        if (created && created >= todayStart) newUsersToday += 1
-      })
+      const paymentDocs = [
+        ...ordersSnap.docs.filter((doc: any) => isCanonicalPaymentDoc(doc, 'orders')),
+        ...oneTimeOrdersSnap.docs.filter((doc: any) => isCanonicalPaymentDoc(doc, 'one_time_orders')),
+      ]
 
       let verifiedRevenue = 0
       let verifiedRevenueToday = 0
@@ -45,29 +65,43 @@ export async function GET(request: NextRequest) {
       let pending = 0
       const products = new Map<string, { purchases: number; revenue: number }>()
 
-      paymentsSnap.forEach((doc) => {
+      paymentDocs.forEach((doc: any) => {
         const data = doc.data()
-        const created = toDate(data.createdAt)
+        const status = String(data.status || '').toLowerCase()
+        const created = toDate(data.completedAt ?? data.createdAt)
         if (created && created < since) return
 
-        if (data.status === 'success') {
+        if (status === 'completed' || status === 'success') {
           const amount = Number(data.amount || 0)
           const safeAmount = Number.isFinite(amount) ? amount : 0
           verifiedRevenue += safeAmount
           successful += 1
           if (created && created >= todayStart) verifiedRevenueToday += safeAmount
 
-          const product = String(data.productId || data.planId || data.type || 'Unmapped')
+          const product = String(data.productId || data.productIdInternal || data.planId || data.planName || data.reportType || 'Unmapped')
           const current = products.get(product) || { purchases: 0, revenue: 0 }
           current.purchases += 1
           current.revenue += safeAmount
           products.set(product, current)
-        } else if (data.status === 'failed') {
+        } else if (status === 'failed') {
           failed += 1
-        } else if (data.status === 'pending' || data.status === 'created') {
+        } else if (status === 'pending' || status === 'created') {
           pending += 1
         }
       })
+
+      const subscriptionsByUser = new Map<string, ReturnType<typeof normalizeSubscription>>()
+
+      legacySubscriptionsSnap.docs.forEach((doc: any) => {
+        subscriptionsByUser.set(doc.id, normalizeSubscription(doc.data(), doc.id, 'legacy'))
+      })
+
+      nestedSubscriptionsSnap.docs
+        .filter((doc: any) => doc.id === 'current' && doc.ref.parent.parent?.parent?.id === 'users')
+        .forEach((doc: any) => {
+          const userId = doc.ref.parent.parent?.id
+          if (userId) subscriptionsByUser.set(userId, normalizeSubscription(doc.data(), userId, 'current'))
+        })
 
       let activeSubscriptions = 0
       let expiring7d = 0
@@ -76,11 +110,9 @@ export async function GET(request: NextRequest) {
       const now = new Date()
       const dayMs = 86_400_000
 
-      subscriptionsSnap.forEach((doc) => {
-        const data = doc.data()
-        const status = String(data.status || '').toLowerCase()
-        const expiry = toDate(data.expiry ?? data.expiresAt ?? data.subscriptionExpiry)
-        const active = data.active === true || status === 'active' || status === 'authenticated'
+      subscriptionsByUser.forEach(({ data, status, expiry }) => {
+        const isExpired = !!expiry && expiry <= now
+        const active = !isExpired && (data.active === true || status === 'active' || status === 'authenticated')
 
         if (active) {
           activeSubscriptions += 1
@@ -119,9 +151,9 @@ export async function GET(request: NextRequest) {
         stats: {
           users: {
             total: usersCount.data().count,
-            newPeriod: newUsers,
-            newInWindow: newUsers,
-            newToday: newUsersToday,
+            newPeriod: newUsersCount.data().count,
+            newInWindow: newUsersCount.data().count,
+            newToday: newUsersTodayCount.data().count,
           },
           payments: {
             verifiedRevenuePeriod: verifiedRevenue,
@@ -160,8 +192,10 @@ export async function GET(request: NextRequest) {
           },
           system: {
             dataSource: 'canonical',
+            paymentStores: ['payments/{uid}/orders', 'payments/{uid}/one_time_orders'],
+            subscriptionStores: ['users/{uid}/subscriptions/current', 'subscriptions/{uid} (legacy)'],
             analyticsEventStore: 'analyticsEvents',
-            financialAuthority: 'provider-verified successful payments only',
+            financialAuthority: 'provider-verified completed payments only',
           },
         },
       })
