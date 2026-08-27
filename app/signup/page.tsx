@@ -25,7 +25,7 @@ export default function SignupPage() {
   useProtectedRoute({
     requireAuth: false,
     redirectIfAuthenticated: true,
-    redirectTo: '/dashboard',
+    redirectTo: '/onboarding',
   });
 
   const handleSocialSignup = async (provider: GoogleAuthProvider | FacebookAuthProvider, providerName: string) => {
@@ -87,7 +87,7 @@ export default function SignupPage() {
           onboarded: false,
         });
 
-        router.push('/onboarding');
+        window.location.assign('/onboarding');
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Signup failed');
@@ -211,7 +211,7 @@ export default function SignupPage() {
           onboarded: false,
         });
 
-        router.push('/onboarding');
+        window.location.assign('/onboarding');
       } else {
         throw new Error('Signup failed');
       }

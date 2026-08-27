@@ -101,9 +101,13 @@ export function calculateVimshottariDasha(
   const firstDashaYears = DASHA_PERIODS[startingPlanet]
   const elapsedYears = firstDashaYears * padaOffset
   
-  // Start date of first Mahadasha
-  const firstDashaStart = new Date(birthDate)
-  firstDashaStart.setFullYear(firstDashaStart.getFullYear() - elapsedYears)
+  // Start date of first Mahadasha.
+  // elapsedYears is fractional, so setFullYear() is not appropriate here.
+  // Vimshottari sub-period arithmetic must preserve fractional durations.
+  const YEAR_MS = 365.2425 * 24 * 60 * 60 * 1000
+  const firstDashaStart = new Date(
+    birthDate.getTime() - elapsedYears * YEAR_MS
+  )
   
   // Generate all Mahadasha periods (120 year cycle)
   const allPeriods: DashaPeriod[] = []
@@ -127,10 +131,21 @@ export function calculateVimshottariDasha(
       for (let j = 0; j < DASHA_SEQUENCE.length; j++) {
         const antardashaPlanetIndex = (planetIndex + j) % DASHA_SEQUENCE.length
         const antardashaPlanet = DASHA_SEQUENCE[antardashaPlanetIndex]
-        const antardashaYears = (DASHA_PERIODS[antardashaPlanet] * periodYears) / 120
-        
-        const antardashaEnd = new Date(antardashaStart)
-        antardashaEnd.setFullYear(antardashaEnd.getFullYear() + antardashaYears)
+        const antardashaYears =
+          (DASHA_PERIODS[antardashaPlanet] * periodYears) / 120
+
+        // Antar-dashas are fractional periods. Build them from the exact
+        // Mahadasha duration instead of passing fractional years to
+        // Date.setFullYear(), which can create gaps in period coverage.
+        const mahadashaDurationMs =
+          endDate.getTime() - startDate.getTime()
+        const antardashaDurationMs =
+          mahadashaDurationMs *
+          (DASHA_PERIODS[antardashaPlanet] / 120)
+
+        const antardashaEnd = new Date(
+          antardashaStart.getTime() + antardashaDurationMs
+        )
         
         // Generate Pratyantar Dashas
         const pratyantardashas: DashaPeriod[] = []
@@ -139,10 +154,19 @@ export function calculateVimshottariDasha(
         for (let k = 0; k < DASHA_SEQUENCE.length; k++) {
           const pratyantarPlanetIndex = (antardashaPlanetIndex + k) % DASHA_SEQUENCE.length
           const pratyantarPlanet = DASHA_SEQUENCE[pratyantarPlanetIndex]
-          const pratyantarYears = (DASHA_PERIODS[pratyantarPlanet] * antardashaYears) / 120
-          
-          const pratyantardashaEnd = new Date(pratyantardashaStart)
-          pratyantardashaEnd.setFullYear(pratyantardashaEnd.getFullYear() + pratyantarYears)
+          const pratyantarYears =
+            (DASHA_PERIODS[pratyantarPlanet] * antardashaYears) / 120
+
+          const antardashaDurationForChildrenMs =
+            antardashaEnd.getTime() - antardashaStart.getTime()
+          const pratyantardashaDurationMs =
+            antardashaDurationForChildrenMs *
+            (DASHA_PERIODS[pratyantarPlanet] / 120)
+
+          const pratyantardashaEnd = new Date(
+            pratyantardashaStart.getTime() +
+              pratyantardashaDurationMs
+          )
           
           pratyantardashas.push({
             planet: pratyantarPlanet,
@@ -210,17 +234,46 @@ export function calculateVimshottariDasha(
     }
   }
   
-  // Fallback to first period if none found
+  // Defensive fallback if the generated cycle does not contain `now`.
   if (!currentMahadasha) {
-    currentMahadasha = allPeriods[0]
-    currentAntardasha = currentMahadasha.subPeriods?.[0] || null
-    currentPratyantardasha = currentAntardasha?.subPeriods?.[0] || null
+    currentMahadasha = allPeriods[0] || null
   }
-  
+
+  // A valid Mahadasha must also expose an Antar-dasha. Never rely on a
+  // non-null TypeScript assertion while returning an actual null value.
+  if (currentMahadasha && !currentAntardasha) {
+    currentAntardasha =
+      currentMahadasha.subPeriods?.find(
+        (period) =>
+          now >= period.startDate &&
+          now < period.endDate
+      ) ||
+      currentMahadasha.subPeriods?.[0] ||
+      null
+  }
+
+  if (currentAntardasha && !currentPratyantardasha) {
+    currentPratyantardasha =
+      currentAntardasha.subPeriods?.find(
+        (period) =>
+          now >= period.startDate &&
+          now < period.endDate
+      ) ||
+      currentAntardasha.subPeriods?.[0] ||
+      null
+  }
+
+  if (!currentMahadasha || !currentAntardasha) {
+    throw new Error(
+      'Vimshottari calculation failed to produce a current Mahadasha and Antardasha'
+    )
+  }
+
   return {
-    currentMahadasha: currentMahadasha!,
-    currentAntardasha: currentAntardasha!,
-    currentPratyantardasha: currentPratyantardasha!,
+    currentMahadasha,
+    currentAntardasha,
+    currentPratyantardasha:
+      currentPratyantardasha || currentAntardasha,
     allPeriods,
   }
 }

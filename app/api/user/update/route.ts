@@ -12,11 +12,21 @@ export const dynamic = 'force-dynamic'
 async function hasCurrentCanonicalKundali(uid: string, userData: any): Promise<boolean> {
   if (!adminDb) return false
 
+  const userStateChecks = {
+    locationVerified: userData?.locationVerified === true,
+    coordinatesValid: isValidCoordinate(userData?.lat, userData?.lng),
+    timezoneValid: isValidTimezone(userData?.timezone),
+    derivedAstrologyCurrent: userData?.derivedAstrologyStatus !== 'stale',
+    derivedAstrologyStatus: userData?.derivedAstrologyStatus ?? null,
+  }
+
+  console.log('[onboarding-user-state]', userStateChecks)
+
   if (
-    userData?.locationVerified !== true ||
-    !isValidCoordinate(userData?.lat, userData?.lng) ||
-    !isValidTimezone(userData?.timezone) ||
-    userData?.derivedAstrologyStatus === 'stale'
+    !userStateChecks.locationVerified ||
+    !userStateChecks.coordinatesValid ||
+    !userStateChecks.timezoneValid ||
+    !userStateChecks.derivedAstrologyCurrent
   ) {
     return false
   }
@@ -32,17 +42,25 @@ async function hasCurrentCanonicalKundali(uid: string, userData: any): Promise<b
   const d1Data = d1Snap.data()
   const dashaData = dashaSnap.data()
 
-  return (
-    kundaliSnap.exists &&
-    d1Snap.exists &&
-    dashaSnap.exists &&
-    kundaliData?.meta?.stale !== true &&
-    !!d1Data?.grahas &&
-    !!d1Data?.bhavas &&
-    !!d1Data?.lagna &&
-    !!dashaData?.currentMahadasha &&
-    !!dashaData?.currentAntardasha
-  )
+  const checks = {
+    locationVerified: userData?.locationVerified === true,
+    coordinatesValid: isValidCoordinate(userData?.lat, userData?.lng),
+    timezoneValid: isValidTimezone(userData?.timezone),
+    derivedAstrologyCurrent: userData?.derivedAstrologyStatus !== 'stale',
+    kundaliExists: kundaliSnap.exists,
+    d1Exists: d1Snap.exists,
+    dashaExists: dashaSnap.exists,
+    kundaliNotStale: kundaliData?.meta?.stale !== true,
+    d1Grahas: !!d1Data?.grahas,
+    d1Bhavas: !!d1Data?.bhavas,
+    d1Lagna: !!d1Data?.lagna,
+    currentMahadasha: !!dashaData?.currentMahadasha,
+    currentAntardasha: !!dashaData?.currentAntardasha,
+  }
+
+  console.log('[onboarding-kundali-verifier]', checks)
+
+  return Object.values(checks).every(Boolean)
 }
 
 export async function POST(request: NextRequest) {

@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { LocationAutocomplete } from '@/components/auth/LocationAutocomplete'
 import Link from 'next/link'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { logoutClientSession } from '@/lib/auth/client-session'
 
 interface ProfileData {
   name: string
@@ -70,7 +71,7 @@ function normalizeProfileForm(profile: ProfileData): ProfileForm {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, updateUser, clearUser } = useUserStore()
+  const { user, updateUser } = useUserStore()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -204,16 +205,12 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       setLoggingOut(true)
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      })
-      clearUser()
-      router.push('/login')
+      await logoutClientSession()
+      router.replace('/login')
+      router.refresh()
     } catch (err: any) {
       console.error('Logout error:', err)
       setError(err.message || 'Failed to log out')
-    } finally {
       setLoggingOut(false)
     }
   }

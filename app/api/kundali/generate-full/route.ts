@@ -119,8 +119,20 @@ export async function POST(request: NextRequest) {
 
     const userRef = adminDb.collection('users').doc(uid);
     const kundaliRef = adminDb.collection('kundali').doc(uid);
-    const userSnap = await userRef.get();
-    const kundaliSnap = await kundaliRef.get();
+    const reuseD1Ref = kundaliRef.collection('D1').doc('chart');
+    const reuseDashaRef = kundaliRef.collection('dasha').doc('vimshottari');
+
+    const [
+      userSnap,
+      kundaliSnap,
+      reuseD1Snap,
+      reuseDashaSnap,
+    ] = await Promise.all([
+      userRef.get(),
+      kundaliRef.get(),
+      reuseD1Ref.get(),
+      reuseDashaRef.get(),
+    ]);
 
     if (!userSnap.exists) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -128,10 +140,45 @@ export async function POST(request: NextRequest) {
 
     const userData = userSnap.data();
     const hasFreeOnboardingKundali = !!userData?.freeOnboardingKundaliGeneratedAt;
-    let isFirstOnboardingKundali =
-      isOnboardingRequest && !kundaliSnap.exists && !hasFreeOnboardingKundali;
 
-    if (isOnboardingRequest && (kundaliSnap.exists || hasFreeOnboardingKundali)) {
+    const reuseKundaliData = kundaliSnap.data() || {};
+    const reuseD1Data = reuseD1Snap.data() || {};
+    const reuseDashaData = reuseDashaSnap.data() || {};
+
+    const canonicalKundaliReusable =
+      kundaliSnap.exists &&
+      reuseD1Snap.exists &&
+      reuseDashaSnap.exists &&
+      reuseKundaliData?.meta?.stale !== true &&
+      Array.isArray(reuseD1Data?.grahas) &&
+      reuseD1Data.grahas.length > 0 &&
+      Array.isArray(reuseD1Data?.bhavas) &&
+      reuseD1Data.bhavas.length > 0 &&
+      !!reuseD1Data?.lagna &&
+      !!reuseDashaData?.currentMahadasha &&
+      !!reuseDashaData?.currentAntardasha;
+
+
+    // While onboarding is still incomplete, generation must be allowed to
+    // repair/regenerate a stale or previously-created chart without charging
+    // the user. Birth details may have changed after an earlier onboarding
+    // attempt, so existence alone is NOT proof that the Kundali is current.
+    let isFirstOnboardingKundali =
+      isOnboardingRequest &&
+      (
+        userData?.onboarded !== true ||
+        userData?.derivedAstrologyStatus === 'stale' ||
+        !canonicalKundaliReusable
+      );
+
+    // An already-onboarded user must never receive another free onboarding
+    // generation by spoofing source=onboarding.
+    if (
+      isOnboardingRequest &&
+      userData?.onboarded === true &&
+      userData?.derivedAstrologyStatus !== 'stale' &&
+      canonicalKundaliReusable
+    ) {
       return NextResponse.json({
         success: true,
         reused: true,
@@ -153,13 +200,43 @@ export async function POST(request: NextRequest) {
 
     if (isFirstOnboardingKundali) {
       const claimResult = await adminDb.runTransaction(async (transaction) => {
-        const [freshUserSnap, freshKundaliSnap] = await Promise.all([
+        const [
+          freshUserSnap,
+          freshKundaliSnap,
+          freshD1Snap,
+          freshDashaSnap,
+        ] = await Promise.all([
           transaction.get(userRef),
           transaction.get(kundaliRef),
+          transaction.get(reuseD1Ref),
+          transaction.get(reuseDashaRef),
         ]);
 
         const freshUserData = freshUserSnap.data() || {};
-        if (freshKundaliSnap.exists || freshUserData.freeOnboardingKundaliGeneratedAt) {
+        const freshKundaliData = freshKundaliSnap.data() || {};
+        const freshD1Data = freshD1Snap.data() || {};
+        const freshDashaData = freshDashaSnap.data() || {};
+
+        const freshCanonicalKundaliReusable =
+          freshKundaliSnap.exists &&
+          freshD1Snap.exists &&
+          freshDashaSnap.exists &&
+          freshKundaliData?.meta?.stale !== true &&
+          Array.isArray(freshD1Data?.grahas) &&
+          freshD1Data.grahas.length > 0 &&
+          Array.isArray(freshD1Data?.bhavas) &&
+          freshD1Data.bhavas.length > 0 &&
+          !!freshD1Data?.lagna &&
+          !!freshDashaData?.currentMahadasha &&
+          !!freshDashaData?.currentAntardasha;
+        // Existing Kundali/free-generation markers do not mean the chart is
+        // still valid during incomplete onboarding. A changed birth profile
+        // must be allowed to regenerate the canonical chart.
+        if (
+          freshUserData.onboarded === true &&
+          freshUserData.derivedAstrologyStatus !== 'stale' &&
+          freshCanonicalKundaliReusable
+        ) {
           return 'reused' as const;
         }
 
