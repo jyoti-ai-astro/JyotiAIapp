@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     if (!adminDb) {
       return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
     }
+    const db = adminDb
 
     try {
       const { searchParams } = new URL(req.url)
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       const search = searchParams.get('search') || ''
       const offset = (page - 1) * limit
 
-      let query = adminDb.collection('users').orderBy('createdAt', 'desc')
+      let query = db.collection('users').orderBy('createdAt', 'desc')
 
       // Apply search filter if provided
       if (search) {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 
       const [snapshot, totalSnapshot] = await Promise.all([
         query.get(),
-        adminDb.collection('users').count().get(),
+        db.collection('users').count().get(),
       ])
 
       const totalUsers = Number(totalSnapshot.data().count || 0)
@@ -85,14 +86,31 @@ export async function GET(request: NextRequest) {
       }
 
       // Resolve canonical subscription status for each visible user.
-      for (const user of paginatedUsers) {
-        const subRef = adminDb.collection('subscriptions').doc(user.uid)
-        const subSnap = await subRef.get()
-        if (subSnap.exists) {
-          const subData = subSnap.data()
-          user.subscriptionStatus = subData?.status === 'active' ? 'active' : 'inactive'
-        }
-      }
+      // Current subscriptions live at users/{uid}/subscriptions/current; the
+      // legacy fallback remains subscriptions/{uid}. This mirrors the canonical
+      // subscription reader used by Mission Control.
+      await Promise.all(
+        paginatedUsers.map(async (user) => {
+          const currentSnap = await db
+            .collection('users')
+            .doc(user.uid)
+            .collection('subscriptions')
+            .doc('current')
+            .get()
+
+          let subData = currentSnap.exists ? currentSnap.data() : undefined
+
+          if (!subData) {
+            const legacySnap = await db.collection('subscriptions').doc(user.uid).get()
+            subData = legacySnap.exists ? legacySnap.data() : undefined
+          }
+
+          if (subData) {
+            const rawStatus = String(subData.status || (subData.active === true ? 'active' : 'inactive')).toLowerCase()
+            user.subscriptionStatus = rawStatus === 'active' || rawStatus === 'authenticated' ? 'active' : 'inactive'
+          }
+        })
+      )
 
       const activeOnPage = paginatedUsers.filter((user) => user.subscriptionStatus === 'active').length
       const staffOnPage = paginatedUsers.filter((user) => user.isAdmin).length
