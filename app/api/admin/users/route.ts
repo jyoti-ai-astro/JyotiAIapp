@@ -85,14 +85,31 @@ export async function GET(request: NextRequest) {
       }
 
       // Resolve canonical subscription status for each visible user.
-      for (const user of paginatedUsers) {
-        const subRef = adminDb.collection('subscriptions').doc(user.uid)
-        const subSnap = await subRef.get()
-        if (subSnap.exists) {
-          const subData = subSnap.data()
-          user.subscriptionStatus = subData?.status === 'active' ? 'active' : 'inactive'
-        }
-      }
+      // Current subscriptions live at users/{uid}/subscriptions/current; the
+      // legacy fallback remains subscriptions/{uid}. This mirrors the canonical
+      // subscription reader used by Mission Control.
+      await Promise.all(
+        paginatedUsers.map(async (user) => {
+          const currentSnap = await adminDb
+            .collection('users')
+            .doc(user.uid)
+            .collection('subscriptions')
+            .doc('current')
+            .get()
+
+          let subData = currentSnap.exists ? currentSnap.data() : undefined
+
+          if (!subData) {
+            const legacySnap = await adminDb.collection('subscriptions').doc(user.uid).get()
+            subData = legacySnap.exists ? legacySnap.data() : undefined
+          }
+
+          if (subData) {
+            const rawStatus = String(subData.status || (subData.active === true ? 'active' : 'inactive')).toLowerCase()
+            user.subscriptionStatus = rawStatus === 'active' || rawStatus === 'authenticated' ? 'active' : 'inactive'
+          }
+        })
+      )
 
       const activeOnPage = paginatedUsers.filter((user) => user.subscriptionStatus === 'active').length
       const staffOnPage = paginatedUsers.filter((user) => user.isAdmin).length
