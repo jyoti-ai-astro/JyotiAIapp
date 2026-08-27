@@ -11,6 +11,7 @@ import { AudioProvider } from '@/providers/audio-provider'
 import { MotionProvider } from '@/components/providers/MotionProvider'
 import { GlobalProviders } from '@/components/providers/GlobalProviders'
 import { RootSiteShell } from '@/components/layout/RootSiteShell'
+import { FirstPartyAnalytics } from '@/components/analytics/FirstPartyAnalytics'
 
 const inter = Inter({ 
 
@@ -79,6 +80,7 @@ export default function RootLayout({
             <AudioProvider>
 
               <GlobalProviders>
+                <FirstPartyAnalytics />
                 <div
                   aria-hidden="true"
                   className="fixed inset-0 z-0 pointer-events-none bg-background"
