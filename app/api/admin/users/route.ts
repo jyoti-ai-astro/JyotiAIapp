@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     if (!adminDb) {
       return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
     }
+    const db = adminDb
 
     try {
       const { searchParams } = new URL(req.url)
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       const search = searchParams.get('search') || ''
       const offset = (page - 1) * limit
 
-      let query = adminDb.collection('users').orderBy('createdAt', 'desc')
+      let query = db.collection('users').orderBy('createdAt', 'desc')
 
       // Apply search filter if provided
       if (search) {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 
       const [snapshot, totalSnapshot] = await Promise.all([
         query.get(),
-        adminDb.collection('users').count().get(),
+        db.collection('users').count().get(),
       ])
 
       const totalUsers = Number(totalSnapshot.data().count || 0)
@@ -90,7 +91,7 @@ export async function GET(request: NextRequest) {
       // subscription reader used by Mission Control.
       await Promise.all(
         paginatedUsers.map(async (user) => {
-          const currentSnap = await adminDb
+          const currentSnap = await db
             .collection('users')
             .doc(user.uid)
             .collection('subscriptions')
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
           let subData = currentSnap.exists ? currentSnap.data() : undefined
 
           if (!subData) {
-            const legacySnap = await adminDb.collection('subscriptions').doc(user.uid).get()
+            const legacySnap = await db.collection('subscriptions').doc(user.uid).get()
             subData = legacySnap.exists ? legacySnap.data() : undefined
           }
 
