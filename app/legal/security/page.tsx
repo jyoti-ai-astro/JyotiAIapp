@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic';
 import React from 'react';
 import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
 import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
 // Footer removed - using global FooterWrapper from app/layout.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -21,7 +20,6 @@ export default function SecurityPage() {
   return (
     <PageTransitionWrapper>
       <CosmicCursor />
-      <SoundscapeController />
       
       <div className="min-h-screen bg-cosmic-navy text-white">
         <div className="container mx-auto px-4 py-16 space-y-8">
@@ -36,7 +34,7 @@ export default function SecurityPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-white/80">
               <p>
-                At Jyoti.ai, we take security seriously. This Security Policy outlines the measures we implement to
+                At JyotiAI, we take security seriously. This Security Policy outlines the measures we implement to
                 protect your data and ensure the security of our Service.
               </p>
             </CardContent>
@@ -98,7 +96,7 @@ export default function SecurityPage() {
                 If you discover a security vulnerability, please report it to:
               </p>
               <p className="text-gold">
-                Email: security@jyoti.ai<br />
+                Email: security@jyotiai.in<br />
                 We appreciate responsible disclosure and will respond promptly.
               </p>
             </CardContent>
@@ -110,4 +108,3 @@ export default function SecurityPage() {
     </PageTransitionWrapper>
   );
 }
-

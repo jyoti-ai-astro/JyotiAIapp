@@ -1,28 +1,26 @@
 /**
  * Settings Panel Component
- * 
- * Batch 4 - Intelligence Engines
- * 
- * User settings and preferences
+ *
+ * User settings and preferences.
  */
 
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Settings, Save } from 'lucide-react';
+import React, { useEffect, useState } from 'react'
+import { Bell, Mail, Save, Settings, Volume2 } from 'lucide-react'
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 
 interface SettingsPanelProps {
   initialSettings?: {
-    notifications?: boolean;
-    emailUpdates?: boolean;
-    soundEnabled?: boolean;
-  };
-  onSave?: (settings: any) => Promise<void>;
+    notifications?: boolean
+    emailUpdates?: boolean
+    soundEnabled?: boolean
+  }
+  onSave?: (settings: any) => Promise<void>
 }
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -32,104 +30,151 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [settings, setSettings] = useState({
     notifications: initialSettings?.notifications ?? true,
     emailUpdates: initialSettings?.emailUpdates ?? true,
-    soundEnabled: initialSettings?.soundEnabled ?? true,
-  });
-  const [loading, setLoading] = useState(false);
+    soundEnabled: initialSettings?.soundEnabled ?? false,
+  })
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    setSettings({
+      notifications: initialSettings?.notifications ?? true,
+      emailUpdates: initialSettings?.emailUpdates ?? true,
+      soundEnabled: initialSettings?.soundEnabled ?? false,
+    })
+  }, [initialSettings])
 
   const handleSave = async () => {
     try {
-      setLoading(true);
+      setLoading(true)
+      setMessage(null)
+      setErrorMessage(null)
+
       if (onSave) {
-        await onSave(settings);
+        await onSave(settings)
       } else {
-        // Default save logic
-        await fetch('/api/user/update', {
+        const response = await fetch('/api/user/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ settings }),
-        });
-      }
-      alert('Settings saved successfully');
-    } catch (error) {
-      console.error('Save settings error:', error);
-      alert('Failed to save settings');
-    } finally {
-      setLoading(false);
-    }
-  };
+        })
 
-  const createRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const button = e.currentTarget;
-    const ripple = document.createElement('span');
-    const rect = button.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    ripple.style.width = ripple.style.height = `${size}px`;
-    ripple.style.left = `${x}px`;
-    ripple.style.top = `${y}px`;
-    ripple.className = 'absolute rounded-full bg-gold/30 animate-ping pointer-events-none';
-    button.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 600);
-  };
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}))
+          throw new Error(data.error || 'Failed to save settings')
+        }
+      }
+
+      setMessage('Settings saved.')
+    } catch (error: any) {
+      console.error('Save settings error:', error)
+      setErrorMessage(error?.message || 'Failed to save settings')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const rows = [
+    {
+      id: 'notifications',
+      label: 'Push Notifications',
+      description: 'Receive important JyotiAI updates on your device.',
+      icon: Bell,
+      checked: settings.notifications,
+      onCheckedChange: (checked: boolean) =>
+        setSettings((current) => ({ ...current, notifications: checked })),
+    },
+    {
+      id: 'emailUpdates',
+      label: 'Email Updates',
+      description: 'Receive product updates and relevant JyotiAI communication by email.',
+      icon: Mail,
+      checked: settings.emailUpdates,
+      onCheckedChange: (checked: boolean) =>
+        setSettings((current) => ({ ...current, emailUpdates: checked })),
+    },
+    {
+      id: 'soundEnabled',
+      label: 'Sound Effects',
+      description: 'Enable interface sound effects and supported ambient audio.',
+      icon: Volume2,
+      checked: settings.soundEnabled,
+      onCheckedChange: (checked: boolean) =>
+        setSettings((current) => ({ ...current, soundEnabled: checked })),
+    },
+  ]
 
   return (
-    <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white shadow-cosmic-glow">
-      <CardHeader>
-        <CardTitle className="text-2xl font-display text-aura-cyan flex items-center gap-2">
-          <Settings className="h-6 w-6" />
-          Preferences
-        </CardTitle>
-        <CardDescription className="text-white/70">Customize your experience</CardDescription>
+    <Card className="overflow-hidden border-border bg-card shadow-[0_16px_44px_rgba(0,0,0,0.18)]">
+      <CardHeader className="border-b border-border bg-surface-raised">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-saffron/25 bg-saffron/10 text-saffron">
+            <Settings className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <CardTitle className="font-heading text-2xl text-primary">Preferences</CardTitle>
+            <CardDescription className="mt-1">
+              Choose how JyotiAI communicates with you and behaves on this device.
+            </CardDescription>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-white/80">Push Notifications</Label>
-            <p className="text-sm text-white/60">Receive notifications on your device</p>
+
+      <CardContent className="space-y-6 p-5 md:p-6">
+        {(message || errorMessage) && (
+          <div
+            role={errorMessage ? 'alert' : 'status'}
+            className={
+              errorMessage
+                ? 'rounded-xl border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-primary'
+                : 'rounded-xl border border-success/25 bg-success/10 px-4 py-3 text-sm text-primary'
+            }
+          >
+            {errorMessage || message}
           </div>
-          <Switch
-            checked={settings.notifications}
-            onCheckedChange={(checked) => setSettings({ ...settings, notifications: checked })}
-          />
+        )}
+
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface-raised">
+          {rows.map(({ id, label, description, icon: Icon, checked, onCheckedChange }) => (
+            <div
+              key={id}
+              className="flex min-h-24 items-center justify-between gap-4 p-4 md:p-5"
+            >
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-saffron">
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <Label htmlFor={id} className="font-medium text-primary">
+                    {label}
+                  </Label>
+                  <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
+                    {description}
+                  </p>
+                </div>
+              </div>
+
+              <Switch
+                id={id}
+                checked={checked}
+                onCheckedChange={onCheckedChange}
+              />
+            </div>
+          ))}
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-white/80">Email Updates</Label>
-            <p className="text-sm text-white/60">Receive email updates and newsletters</p>
-          </div>
-          <Switch
-            checked={settings.emailUpdates}
-            onCheckedChange={(checked) => setSettings({ ...settings, emailUpdates: checked })}
-          />
-        </div>
+        <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs leading-5 text-muted-foreground">
+            Changes take effect after you save them.
+          </p>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-white/80">Sound Effects</Label>
-            <p className="text-sm text-white/60">Enable sound effects and ambient sounds</p>
-          </div>
-          <Switch
-            checked={settings.soundEnabled}
-            onCheckedChange={(checked) => setSettings({ ...settings, soundEnabled: checked })}
-          />
+          <Button onClick={handleSave} disabled={loading} className="w-full sm:w-auto">
+            <Save className="h-4 w-4" aria-hidden="true" />
+            {loading ? 'Saving...' : 'Save Settings'}
+          </Button>
         </div>
-
-        <Button
-          onClick={(e) => {
-            createRipple(e);
-            handleSave();
-          }}
-          disabled={loading}
-          className="w-full spiritual-gradient relative overflow-hidden"
-        >
-          <Save className="inline-block mr-2 h-4 w-4" />
-          {loading ? 'Saving...' : 'Save Settings'}
-        </Button>
       </CardContent>
     </Card>
-  );
-};
-
+  )
+}

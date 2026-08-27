@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic';
 import React from 'react';
 import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
 import { CosmicCursor } from '@/components/global/CosmicCursor';
-import { SoundscapeController } from '@/components/global/SoundscapeController';
 // Footer removed - using global FooterWrapper from app/layout.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -21,7 +20,6 @@ export default function LicensesPage() {
   return (
     <PageTransitionWrapper>
       <CosmicCursor />
-      <SoundscapeController />
       
       <div className="min-h-screen bg-cosmic-navy text-white">
         <div className="container mx-auto px-4 py-16 space-y-8">
@@ -36,7 +34,7 @@ export default function LicensesPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-white/80">
               <p>
-                Jyoti.ai uses various open-source libraries and frameworks. This page lists the licenses and
+                JyotiAI uses various open-source libraries and frameworks. This page lists the licenses and
                 attributions for third-party software used in our Service.
               </p>
             </CardContent>
@@ -90,7 +88,7 @@ export default function LicensesPage() {
                 For questions about licenses, please contact us at:
               </p>
               <p className="text-gold">
-                Email: legal@jyoti.ai<br />
+                Email: legal@jyotiai.in<br />
                 Address: [Your Company Address]
               </p>
             </CardContent>
@@ -102,4 +100,3 @@ export default function LicensesPage() {
     </PageTransitionWrapper>
   );
 }
-

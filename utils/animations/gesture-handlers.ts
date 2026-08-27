@@ -5,5 +5,7 @@
  * Reference: Mobile swipe, Desktop mouse orbit, Touch interactions
  */
 
-// Placeholder for gesture handler utilities implementation
+// Placeholder for gesture handlers implementation
+export const gestureHandlers = {};
+
 

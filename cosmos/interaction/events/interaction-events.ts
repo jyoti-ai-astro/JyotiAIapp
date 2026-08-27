@@ -28,6 +28,7 @@ export interface InteractionEvent {
   type: InteractionEventType;
   timestamp: number;
   position?: { x: number; y: number };
+  screenPosition?: { x: number; y: number };
   target?: string;
   data?: any;
 }
@@ -54,4 +55,3 @@ export interface InteractionState {
 }
 
 export type InteractionCallback = (event: InteractionEvent) => void;
-

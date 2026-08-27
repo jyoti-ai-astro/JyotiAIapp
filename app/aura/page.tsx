@@ -9,8 +9,8 @@ import { useAuraScan } from '@/lib/hooks/useAuraScan'
 import { CosmicAura } from '@/components/aura/CosmicAura'
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
-import { decrementTicket } from '@/lib/access/ticket-access'
 import type { AstroContext } from '@/lib/engines/astro-types'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 
 export default function AuraPage() {
   const router = useRouter()
@@ -60,9 +60,6 @@ export default function AuraPage() {
       return
     }
 
-    if (access.decrementTicket) {
-      await decrementTicket('kundali_basic')
-    }
 
     await scan(imagePreview)
   }
@@ -95,7 +92,11 @@ export default function AuraPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <DashboardPageShell
+      title="Aura Scan"
+      subtitle="Explore aura colors, energy balance and visual patterns from your image"
+    >
+    <div data-visual-reading-product="true" className="space-y-8">
       {/* Context Panel */}
       <div className="mb-8">
         <OneTimeOfferBanner
@@ -131,7 +132,7 @@ export default function AuraPage() {
       {astro && (
         <div className="flex justify-center mt-8">
           <button
-            onClick={() => router.push(`/guru?context=${encodeURIComponent(JSON.stringify(astro))}`)}
+            onClick={() => router.push(`/guru?source=aura`)}
             className="gold-btn"
           >
             Ask Guru With My Birth Context
@@ -139,6 +140,7 @@ export default function AuraPage() {
         </div>
       )}
     </div>
+    </DashboardPageShell>
   )
 }
 

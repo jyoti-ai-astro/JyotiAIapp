@@ -12,49 +12,65 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262.1 83.3% 57.8%;
-    --radius: 0.5rem;
+    --background: 43 100% 95%;
+    --foreground: 207 63% 8%;
+    --card: 45 100% 98%;
+    --card-foreground: 207 63% 8%;
+    --popover: 45 100% 98%;
+    --popover-foreground: 207 63% 8%;
+    --primary: 207 63% 8%;
+    --primary-foreground: 39 100% 95%;
+    --secondary: 40 55% 88%;
+    --secondary-foreground: 207 63% 8%;
+    --muted: 42 45% 90%;
+    --muted-foreground: 188 6% 42%;
+    --accent: 30 89% 55%;
+    --accent-foreground: 207 63% 8%;
+    --destructive: 7 54% 49%;
+    --destructive-foreground: 43 100% 95%;
+    --border: 40 53% 67%;
+    --input: 40 43% 76%;
+    --ring: 30 89% 55%;
+    --radius: 0.625rem;
+    --surface: 43 100% 95%;
+    --surface-raised: 45 100% 98%;
+    --surface-sunken: 40 61% 90%;
+    --text: 207 63% 8%;
+    --text-muted: 188 6% 42%;
+    --navy: 207 63% 8%;
+    --saffron: 30 89% 55%;
+    --jyoti-gold: 43 54% 54%;
+    --lotus: 13 65% 48%;
+    --teal: 181 45% 34%;
+    --cosmos: 207 63% 8%;
+    --cosmos-2: 205 57% 11%;
+    --dark-text: 39 100% 95%;
+    --dark-muted: 165 9% 74%;
+    --success: 153 43% 42%;
+    --warning: 35 68% 52%;
+    --danger: 7 54% 49%;
   }
 
   .dark {
-    /* Cosmic Dark Theme - Master Plan v1.0 */
-    --background: 220 40% 3%;        /* Deep Navy #020916 */
-    --foreground: 210 40% 98%;
-    --card: 220 40% 5%;              /* Slightly lighter navy */
-    --card-foreground: 210 40% 98%;
-    --popover: 220 40% 5%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 262 83% 58%;          /* Cosmic Purple #6E2DEB */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 220 30% 15%;        /* Mystic Indigo #0A0F2B */
-    --secondary-foreground: 210 40% 98%;
-    --muted: 220 30% 12%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 262 83% 58%;           /* Cosmic Purple */
-    --accent-foreground: 210 40% 98%;
+    --background: 207 63% 8%;
+    --foreground: 39 100% 95%;
+    --card: 205 57% 11%;
+    --card-foreground: 39 100% 95%;
+    --popover: 205 57% 11%;
+    --popover-foreground: 39 100% 95%;
+    --primary: 30 89% 55%;
+    --primary-foreground: 207 63% 8%;
+    --secondary: 204 42% 16%;
+    --secondary-foreground: 39 100% 95%;
+    --muted: 204 38% 15%;
+    --muted-foreground: 165 9% 74%;
+    --accent: 181 45% 34%;
+    --accent-foreground: 39 100% 95%;
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 30% 20%;
-    --input: 220 30% 15%;
-    --ring: 262 83% 58%;             /* Cosmic Purple */
+    --destructive-foreground: 39 100% 95%;
+    --border: 40 53% 42%;
+    --input: 204 38% 15%;
+    --ring: 30 89% 55%;
   }
 }
 
@@ -64,6 +80,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    background:
+      radial-gradient(circle at 10% 0%, hsl(var(--saffron) / 0.12), transparent 28rem),
+      radial-gradient(circle at 88% 4%, hsl(var(--teal) / 0.1), transparent 24rem),
+      hsl(var(--background));
   }
 }
 
@@ -440,4 +460,3 @@
     animation: marquee var(--duration, 40s) linear infinite;
   }
 }
-

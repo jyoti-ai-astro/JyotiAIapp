@@ -76,7 +76,7 @@ export class CosmicLensFlarePass extends Effect {
 
     super('CosmicLensFlarePass', cosmicLensFlareShader.fragmentShader, {
       blendFunction: BlendFunction.SCREEN, // Additive blending for flares
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uIntensity', intensityUniform],
         ['uFlareIntensity', flareIntensityUniform],
@@ -212,4 +212,3 @@ export class CosmicLensFlarePass extends Effect {
     }
   }
 }
-

@@ -9,13 +9,14 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
-import { CosmicGrainOverlayPass } from './cosmic-grainoverlay-pass';
+import { CosmicGrainOverlayPass, type CosmicGrainOverlayPassConfig } from './cosmic-grainoverlay-pass';
 
-const Effect = wrapEffect(CosmicGrainOverlayPass);
+const Effect = wrapEffect(CosmicGrainOverlayPass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicGrainOverlayPassConfig> & React.RefAttributes<CosmicGrainOverlayPass>
+>;
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
 export interface CosmicGrainOverlayEffectProps {
@@ -60,35 +61,18 @@ export const CosmicGrainOverlayEffect: React.FC<CosmicGrainOverlayEffectProps> =
 }) => {
   const { size, camera } = useThree();
   const timeRef = useRef<number>(0);
+  const passRef = useRef<CosmicGrainOverlayPass | null>(null);
   
   // Mobile fallback: disable chroma noise, reduce dust count by 50%
   const adjustedDustDensity = isMobile ? dustDensity * 0.5 : dustDensity;
   const dustCount = adjustedDustDensity * 50.0;
   const disableChroma = isMobile;
   
-  // Create pass
-  const pass = useMemo(() => {
-    return new CosmicGrainOverlayPass({
-      intensity,
-      overlayIntensity,
-      dustDensity: adjustedDustDensity,
-      shimmerStrength,
-      bass: audioReactive?.bass ?? 0,
-      mid: audioReactive?.mid ?? 0,
-      high: audioReactive?.high ?? 0,
-      blessingWaveProgress,
-      cameraFOV,
-      time: 0,
-      disableChroma,
-      dustCount,
-    });
-  }, [intensity, overlayIntensity, adjustedDustDensity, shimmerStrength, blessingWaveProgress, cameraFOV, disableChroma, dustCount]);
-
   // Register with motion orchestrator
   useEffect(() => {
     motionOrchestrator.registerEngine('cosmic-grainoverlay', (motionState) => {
       // Update audio reactive values
-      pass.setAudioReactive(
+      passRef.current?.setAudioReactive(
         motionState.bassMotion,
         motionState.midMotion,
         motionState.highMotion
@@ -98,10 +82,13 @@ export const CosmicGrainOverlayEffect: React.FC<CosmicGrainOverlayEffectProps> =
     return () => {
       motionOrchestrator.unregisterEngine('cosmic-grainoverlay');
     };
-  }, [pass]);
+  }, []);
 
   // Update pass each frame
   useFrame((state, delta) => {
+    const pass = passRef.current;
+    if (!pass) return;
+
     timeRef.current += delta;
 
     // Update time
@@ -111,8 +98,6 @@ export const CosmicGrainOverlayEffect: React.FC<CosmicGrainOverlayEffectProps> =
     pass.setResolution(size.width, size.height);
 
     // Update shimmer strength (motion-reactive: high → spark density)
-    const bass = audioReactive?.bass ?? 0;
-    const mid = audioReactive?.mid ?? 0;
     const high = audioReactive?.high ?? 0;
     
     // Motion-reactive shimmer: high → spark density
@@ -130,13 +115,30 @@ export const CosmicGrainOverlayEffect: React.FC<CosmicGrainOverlayEffectProps> =
     pass.setBlessingWaveProgress(blessingWaveProgress);
 
     // Update camera FOV
-    if (camera && 'fov' in camera) {
-      pass.setCameraFOV((camera as any).fov);
+    if ('fov' in camera && typeof camera.fov === 'number') {
+      pass.setCameraFOV(camera.fov);
     } else {
       pass.setCameraFOV(cameraFOV);
     }
   });
 
-  return <Effect effect={pass} />;
+  return (
+    <Effect
+      ref={(instance: CosmicGrainOverlayPass | null) => {
+        passRef.current = instance;
+      }}
+      intensity={intensity}
+      overlayIntensity={overlayIntensity}
+      dustDensity={adjustedDustDensity}
+      shimmerStrength={shimmerStrength}
+      bass={audioReactive?.bass ?? 0}
+      mid={audioReactive?.mid ?? 0}
+      high={audioReactive?.high ?? 0}
+      blessingWaveProgress={blessingWaveProgress}
+      cameraFOV={cameraFOV}
+      time={0}
+      disableChroma={disableChroma}
+      dustCount={dustCount}
+    />
+  );
 };
-

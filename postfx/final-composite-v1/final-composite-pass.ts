@@ -84,7 +84,7 @@ export class FinalCompositePass extends Effect {
 
     super('FinalCompositePass', finalCompositeShader.fragmentShader, {
       blendFunction: BlendFunction.NORMAL, // Normal blending for final composite
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform<any>>([
         ['uTime', timeUniform],
         ['uIntensity', intensityUniform],
         ['uBass', bassUniform],

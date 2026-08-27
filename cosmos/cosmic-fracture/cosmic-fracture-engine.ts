@@ -42,7 +42,7 @@ export class CosmicFractureEngine {
   private mesh: THREE.Mesh;
   private config: CosmicFractureEngineConfig;
   
-  private fracturePlane: FracturePlaneData;
+  private fracturePlane!: FracturePlaneData;
   private shards: ShardData[] = [];
   private crystals: CrystalData[] = [];
   
@@ -437,4 +437,3 @@ export class CosmicFractureEngine {
     this.material.dispose();
   }
 }
-

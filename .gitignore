@@ -55,3 +55,4 @@ firebase-service-account.json
 .cursor/config.json
 
 SETUP_INSTRUCTIONS_PRIVATE.txt
+.env*

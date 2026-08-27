@@ -27,14 +27,14 @@ export function CosmosPageClient() {
           variant="cosmos"
           title="Powered by the Universe. Driven by Precision."
           subtitle="Cosmic Features Showcase"
-          description="Experience the full power of Jyoti.ai's spiritual engines: Kundali Engine, Numerology Engine, Aura & Chakra Scan, Palmistry Scanner, AI Guru Chat, and Predictive Reports."
+          description="Experience the full power of JyotiAI's spiritual engines: Kundali Engine, Numerology Engine, Aura & Chakra Scan, Palmistry Scanner, AI Guru Chat, and Predictive Reports."
           primaryCTA={{
             label: 'Explore Features',
             href: '/dashboard',
           }}
           secondaryCTA={{
             label: 'View Pricing',
-            href: '/premium',
+            href: '/pricing',
           }}
         />
         

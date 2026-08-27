@@ -6,4 +6,6 @@
  */
 
 // Placeholder for mystic theme implementation
+export const mysticTheme = {};
+
 

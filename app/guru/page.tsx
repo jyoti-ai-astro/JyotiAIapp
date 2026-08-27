@@ -12,11 +12,11 @@ import { GuruPageClient } from './guru-page-client';
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'AI Guru Chat | Jyoti.ai - Your Spiritual Guide',
-  description: 'Chat with your AI Spiritual Guide. Get personalized answers combining insights from Kundali, Numerology, Aura analysis, and more.',
+  title: 'Jyoti Guru | JyotiAI',
+  description: 'Ask Jyoti Guru for calm guidance using your saved Kundali context.',
   openGraph: {
-    title: 'AI Guru Chat | Jyoti.ai',
-    description: 'Chat with your AI Spiritual Guide for personalized spiritual guidance',
+    title: 'Jyoti Guru | JyotiAI',
+    description: 'Ask for guidance from your saved Vedic birth chart context.',
     type: 'website',
   },
   robots: {

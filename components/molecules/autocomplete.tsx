@@ -19,7 +19,7 @@ export interface AutocompleteOption {
   description?: string;
 }
 
-export interface AutocompleteProps extends Omit<InputProps, 'onChange' | 'value'> {
+export interface AutocompleteProps extends Omit<InputProps, 'value'> {
   /** Options list */
   options: AutocompleteOption[];
   
@@ -61,7 +61,7 @@ const Autocomplete = React.forwardRef<HTMLInputElement, AutocompleteProps>(
     const [query, setQuery] = useState(value || defaultValue || '');
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const autocompleteRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement | null>(null);
     
     useEffect(() => {
       if (value !== undefined) {
@@ -148,7 +148,7 @@ const Autocomplete = React.forwardRef<HTMLInputElement, AutocompleteProps>(
         <Input
           ref={(node) => {
             if (typeof ref === 'function') ref(node);
-            else if (ref) ref.current = node;
+            else if (ref) (ref as React.MutableRefObject<HTMLInputElement | null>).current = node;
             inputRef.current = node;
           }}
           value={query}
@@ -205,4 +205,3 @@ const Autocomplete = React.forwardRef<HTMLInputElement, AutocompleteProps>(
 Autocomplete.displayName = 'Autocomplete';
 
 export { Autocomplete };
-

@@ -56,7 +56,7 @@ export class CosmicBloomPass extends Effect {
 
     super('CosmicBloomPass', cosmicBloomShader.fragmentShader, {
       blendFunction: BlendFunction.ADD, // Additive blending
-      uniforms: new Map([
+      uniforms: new Map<string, Uniform>([
         ['uTime', timeUniform],
         ['uHigh', highUniform],
         ['uMid', midUniform],
@@ -140,4 +140,3 @@ export class CosmicBloomPass extends Effect {
     }
   }
 }
-

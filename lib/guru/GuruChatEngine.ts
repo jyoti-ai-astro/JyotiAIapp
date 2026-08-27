@@ -849,6 +849,14 @@ export class GuruChatEngine {
   /**
    * Get compatibility timeline (Phase 22 - F37)
    */
+
+  /**
+   * Get the latest compatibility report
+   */
+  getCompatibilityReport(): CompatibilityReport | null {
+    return this.compatibilityReport;
+  }
+
   getCompatibilityTimeline(): CompatibilityMonth[] | null {
     return this.compatibilityTimeline;
   }

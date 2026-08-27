@@ -6,9 +6,11 @@
  */
 
 import { adminDb } from '@/lib/firebase/admin'
-import { kundaliEngine, type KundaliData } from '@/lib/engines/kundali-engine'
+import type { KundaliData } from '@/lib/engines/kundali-engine'
 import { predictionEngine, type DailyPrediction } from '@/lib/engines/prediction-engine'
 import { timelineEngine, type MonthTimeline } from '@/lib/engines/timeline-engine'
+import { Timestamp } from 'firebase-admin/firestore'
+import { isValidCoordinate, isValidTimezone } from '@/lib/services/geocoding'
 import type {
   AstroContext,
   AstroBirthData,
@@ -24,6 +26,16 @@ import type {
 } from './astro-types'
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+
+export class AstroContextError extends Error {
+  code: 'ASTRO_CONTEXT_MISSING' | 'KUNDALI_REQUIRED'
+
+  constructor(code: 'ASTRO_CONTEXT_MISSING' | 'KUNDALI_REQUIRED', message: string) {
+    super(message)
+    this.name = 'AstroContextError'
+    this.code = code
+  }
+}
 
 /**
  * Load birth data from Firestore user profile
@@ -41,17 +53,115 @@ async function loadBirthData(userId: string): Promise<AstroBirthData | null> {
   }
 
   const userData = userSnap.data()
-  if (!userData?.dob || !userData?.tob || !userData?.pob) {
+  if (
+    !userData?.dob ||
+    !userData?.tob ||
+    !userData?.pob ||
+    !isValidCoordinate(userData?.lat, userData?.lng) ||
+    !isValidTimezone(userData?.timezone) ||
+    userData?.derivedAstrologyStatus === 'stale' ||
+    userData?.locationVerified !== true
+  ) {
     return null
   }
 
   return {
     dateOfBirth: userData.dob,
     timeOfBirth: userData.tob,
-    timezone: userData.timezone || 'Asia/Kolkata',
+    timezone: userData.timezone,
     placeName: userData.pob,
-    latitude: userData.lat || 0,
-    longitude: userData.lng || 0,
+    latitude: userData.lat,
+    longitude: userData.lng,
+  }
+}
+
+function dateToIso(value: any): string {
+  if (!value) return new Date().toISOString()
+  if (typeof value?.toDate === 'function') return value.toDate().toISOString()
+  if (value instanceof Date) return value.toISOString()
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
+}
+
+async function loadCanonicalKundali(userId: string): Promise<KundaliData | null> {
+  if (!adminDb) {
+    throw new Error('Firestore not initialized')
+  }
+
+  const kundaliRef = adminDb.collection('kundali').doc(userId)
+  const [kundaliSnap, d1Snap, dashaSnap] = await Promise.all([
+    kundaliRef.get(),
+    kundaliRef.collection('D1').doc('chart').get(),
+    kundaliRef.collection('dasha').doc('vimshottari').get(),
+  ])
+
+  if (!kundaliSnap.exists || !d1Snap.exists || !dashaSnap.exists) {
+    return null
+  }
+
+  const kundaliRoot = kundaliSnap.data()
+  if (kundaliRoot?.meta?.stale === true) {
+    return null
+  }
+
+  const d1 = d1Snap.data()
+  const dashaData = dashaSnap.data()
+  if (!d1?.grahas || !d1?.bhavas || !d1?.lagna || !dashaData?.currentMahadasha || !dashaData?.currentAntardasha) {
+    return null
+  }
+
+  const grahas = Object.values(d1.grahas).map((graha: any) => ({
+    planet: graha.planet,
+    sign: graha.sign,
+    nakshatra: graha.nakshatra,
+    pada: graha.pada,
+    house: graha.house,
+    longitude: graha.longitude,
+    latitude: graha.latitude || 0,
+    degreesInSign: graha.degreesInSign,
+    retrograde: graha.retrograde || false,
+  })) as KundaliData['grahas']
+
+  const houses = Object.values(d1.bhavas).map((bhava: any) => ({
+    houseNumber: bhava.houseNumber,
+    sign: bhava.sign,
+    cuspLongitude: bhava.cuspLongitude ?? bhava.degree ?? 0,
+    planets: bhava.planets || [],
+  })) as KundaliData['houses']
+
+  return {
+    grahas,
+    houses,
+    lagna: {
+      sign: d1.lagna.sign,
+      longitude: d1.lagna.longitude || 0,
+    },
+    dasha: {
+      currentMahadasha: {
+        planet: dashaData.currentMahadasha.planet,
+        startDate: dateToIso(dashaData.currentMahadasha.startDate),
+        endDate: dateToIso(dashaData.currentMahadasha.endDate),
+      },
+      currentAntardasha: {
+        planet: dashaData.currentAntardasha.planet,
+        startDate: dateToIso(dashaData.currentAntardasha.startDate),
+        endDate: dateToIso(dashaData.currentAntardasha.endDate),
+      },
+      ...(dashaData.currentPratyantardasha
+        ? {
+            currentPratyantardasha: {
+              planet: dashaData.currentPratyantardasha.planet,
+              startDate: dateToIso(dashaData.currentPratyantardasha.startDate),
+              endDate: dateToIso(dashaData.currentPratyantardasha.endDate),
+            },
+          }
+        : {}),
+    },
+    divisionalCharts: {
+      d1,
+      d9: null,
+      d10: null,
+    },
   }
 }
 
@@ -245,7 +355,10 @@ export async function buildAstroContext(
   // Load birth data
   const birthData = await loadBirthData(userId)
   if (!birthData) {
-    return null // User hasn't completed onboarding
+    throw new AstroContextError(
+      'ASTRO_CONTEXT_MISSING',
+      'Complete your birth profile before asking Jyoti Guru personalized questions.'
+    )
   }
 
   // Get user's rashi for context
@@ -254,12 +367,13 @@ export async function buildAstroContext(
   const userData = userSnap.exists ? userSnap.data() : null
   const rashi = userData?.rashi || userData?.rashiMoon || ''
 
-  // Call existing engines (do NOT change their math)
-  const kundali = await kundaliEngine.generateKundali(
-    birthData.dateOfBirth,
-    birthData.timeOfBirth,
-    birthData.placeName
-  )
+  const kundali = await loadCanonicalKundali(userId)
+  if (!kundali) {
+    throw new AstroContextError(
+      'KUNDALI_REQUIRED',
+      'Complete your birth profile and generate your Kundali before asking Jyoti Guru personalized questions.'
+    )
+  }
 
   const predictions = await predictionEngine.getDailyPrediction(rashi || 'Aries')
 
@@ -313,7 +427,7 @@ export async function buildAstroContext(
   const contextRef = adminDb.collection('users').doc(userId).collection('astroContext').doc('current')
   await contextRef.set({
     ...context,
-    cachedAt: adminDb.Timestamp.now(),
+    cachedAt: Timestamp.now(),
   })
 
   return context
@@ -401,7 +515,7 @@ function computeTransitEvents(chart: AstroChartCore, timeline: AstroTimelineEven
           planet: 'Jupiter', // Default - would need actual transit calculation
           house: houseMap[event.focusArea] || 1,
           start: event.dateRange.from,
-          end: event.dateRange.end,
+          end: event.dateRange.to,
           theme: event.summary,
           intensity: event.intensity,
         })
@@ -499,6 +613,21 @@ export async function getCachedAstroContext(userId: string): Promise<AstroContex
       return null
     }
 
+    if (data.stale === true) {
+      return null
+    }
+
+    const userSnap = await adminDb.collection('users').doc(userId).get()
+    const userData = userSnap.exists ? userSnap.data() : null
+    if (
+      userData?.derivedAstrologyStatus === 'stale' ||
+      userData?.locationVerified !== true ||
+      !isValidCoordinate(userData?.lat, userData?.lng) ||
+      !isValidTimezone(userData?.timezone)
+    ) {
+      return null
+    }
+
     // Check if cache is still valid
     const cachedAt = data.cachedAt?.toDate?.() || new Date(data.cachedAt || 0)
     const age = Date.now() - cachedAt.getTime()
@@ -517,4 +646,3 @@ export async function getCachedAstroContext(userId: string): Promise<AstroContex
     return null
   }
 }
-

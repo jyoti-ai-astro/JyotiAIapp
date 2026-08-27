@@ -9,13 +9,14 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
-import { CosmicLensFlarePass } from './cosmic-lensflare-pass';
+import { CosmicLensFlarePass, type CosmicLensFlarePassConfig } from './cosmic-lensflare-pass';
 
-const Effect = wrapEffect(CosmicLensFlarePass);
+const Effect = wrapEffect(CosmicLensFlarePass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicLensFlarePassConfig> & React.RefAttributes<CosmicLensFlarePass>
+>;
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
 export interface CosmicLensFlareEffectProps {
@@ -68,35 +69,17 @@ export const CosmicLensFlareEffect: React.FC<CosmicLensFlareEffectProps> = ({
 }) => {
   const { size, camera } = useThree();
   const timeRef = useRef<number>(0);
+  const passRef = useRef<CosmicLensFlarePass | null>(null);
   
   // Mobile fallback: reduce ghost count to 3 and streakLength *= 0.5
   const ghostCount = isMobile ? 3.0 : 5.0;
   const adjustedStreakLength = isMobile ? streakLength * 0.5 : streakLength;
   
-  // Create pass
-  const pass = useMemo(() => {
-    return new CosmicLensFlarePass({
-      intensity,
-      flareIntensity,
-      ghostIntensity,
-      chromaStrength,
-      streakLength: adjustedStreakLength,
-      bass: audioReactive?.bass ?? 0,
-      mid: audioReactive?.mid ?? 0,
-      high: audioReactive?.high ?? 0,
-      blessingWaveProgress,
-      cameraFOV,
-      time: 0,
-      ghostCount,
-      flareCenter,
-    });
-  }, [intensity, flareIntensity, ghostIntensity, chromaStrength, adjustedStreakLength, blessingWaveProgress, cameraFOV, ghostCount, flareCenter]);
-
   // Register with motion orchestrator
   useEffect(() => {
     motionOrchestrator.registerEngine('cosmic-lensflare', (motionState) => {
       // Update audio reactive values
-      pass.setAudioReactive(
+      passRef.current?.setAudioReactive(
         motionState.bassMotion,
         motionState.midMotion,
         motionState.highMotion
@@ -106,10 +89,13 @@ export const CosmicLensFlareEffect: React.FC<CosmicLensFlareEffectProps> = ({
     return () => {
       motionOrchestrator.unregisterEngine('cosmic-lensflare');
     };
-  }, [pass]);
+  }, []);
 
   // Update pass each frame
   useFrame((state, delta) => {
+    const pass = passRef.current;
+    if (!pass) return;
+
     timeRef.current += delta;
 
     // Update time
@@ -121,7 +107,6 @@ export const CosmicLensFlareEffect: React.FC<CosmicLensFlareEffectProps> = ({
     // Update flare intensity (motion-reactive: bass → flare length)
     const bass = audioReactive?.bass ?? 0;
     const mid = audioReactive?.mid ?? 0;
-    const high = audioReactive?.high ?? 0;
     
     // Motion-reactive flare length: bass → longer flares
     const reactiveStreakLength = adjustedStreakLength * (1.0 + bass * 0.5);
@@ -135,8 +120,8 @@ export const CosmicLensFlareEffect: React.FC<CosmicLensFlareEffectProps> = ({
     pass.setBlessingWaveProgress(blessingWaveProgress);
 
     // Update camera FOV
-    if (camera && 'fov' in camera) {
-      pass.setCameraFOV((camera as any).fov);
+    if ('fov' in camera && typeof camera.fov === 'number') {
+      pass.setCameraFOV(camera.fov);
     } else {
       pass.setCameraFOV(cameraFOV);
     }
@@ -148,6 +133,24 @@ export const CosmicLensFlareEffect: React.FC<CosmicLensFlareEffectProps> = ({
     }
   });
 
-  return <Effect effect={pass} />;
+  return (
+    <Effect
+      ref={(instance: CosmicLensFlarePass | null) => {
+        passRef.current = instance;
+      }}
+      intensity={intensity}
+      flareIntensity={flareIntensity}
+      ghostIntensity={ghostIntensity}
+      chromaStrength={chromaStrength}
+      streakLength={adjustedStreakLength}
+      bass={audioReactive?.bass ?? 0}
+      mid={audioReactive?.mid ?? 0}
+      high={audioReactive?.high ?? 0}
+      blessingWaveProgress={blessingWaveProgress}
+      cameraFOV={cameraFOV}
+      time={0}
+      ghostCount={ghostCount}
+      flareCenter={flareCenter}
+    />
+  );
 };
-

@@ -77,8 +77,13 @@ export default function SignupPage() {
           pob: null,
           rashi: null,
           nakshatra: null,
-          subscription: 'free',
-          subscriptionExpiry: null,
+          subscription: data.subscription || 'free',
+          subscriptionExpiry: data.subscriptionExpiry ? new Date(data.subscriptionExpiry) : null,
+          tickets: data.tickets || 0,
+          aiGuruTickets: data.aiGuruTickets || data.tickets || 0,
+          kundaliTickets: data.kundaliTickets || 0,
+          lifetimePredictions: data.lifetimePredictions || 0,
+          dailyUsage: data.dailyUsage || { count: 0, date: new Date().toISOString().split('T')[0] },
           onboarded: false,
         });
 
@@ -196,8 +201,13 @@ export default function SignupPage() {
           pob: null,
           rashi: null,
           nakshatra: null,
-          subscription: 'free',
-          subscriptionExpiry: null,
+          subscription: data.subscription || 'free',
+          subscriptionExpiry: data.subscriptionExpiry ? new Date(data.subscriptionExpiry) : null,
+          tickets: data.tickets || 0,
+          aiGuruTickets: data.aiGuruTickets || data.tickets || 0,
+          kundaliTickets: data.kundaliTickets || 0,
+          lifetimePredictions: data.lifetimePredictions || 0,
+          dailyUsage: data.dailyUsage || { count: 0, date: new Date().toISOString().split('T')[0] },
           onboarded: false,
         });
 

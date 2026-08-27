@@ -6,4 +6,6 @@
  */
 
 // Placeholder for dark theme implementation
+export const darkTheme = {};
+
 

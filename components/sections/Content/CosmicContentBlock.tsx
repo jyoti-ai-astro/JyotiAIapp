@@ -219,11 +219,10 @@ export function CosmicContentBlock({
         {image && layout !== 'full-width' && (
           <motion.div
             className={`relative ${imageOrder}`}
-            style={{ y: imageY }}
+            style={isInView ? { y: imageY, opacity: globalProgress } : { y: imageY }}
             data-content-image
             initial={{ opacity: 0, scale: 0.9 }}
             animate={isInView ? { scale: 1 } : { opacity: 0, scale: 0.9 }}
-            style={isInView ? { opacity: globalProgress } : undefined}
             transition={{ duration: 0.8, delay: delay + 0.3 }}
           >
             <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden border border-gold/20">
@@ -254,11 +253,10 @@ export function CosmicContentBlock({
         {image && layout === 'full-width' && (
           <motion.div
             className="relative mt-8"
-            style={{ y: imageY }}
+            style={isInView ? { y: imageY, opacity: globalProgress } : { y: imageY }}
             data-content-image
             initial={{ opacity: 0, scale: 0.95 }}
             animate={isInView ? { scale: 1 } : { opacity: 0, scale: 0.95 }}
-            style={isInView ? { opacity: globalProgress } : undefined}
             transition={{ duration: 0.8, delay: delay + 0.5 }}
           >
             <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden border border-gold/20">
@@ -288,4 +286,3 @@ export function CosmicContentBlock({
     </motion.section>
   );
 }
-

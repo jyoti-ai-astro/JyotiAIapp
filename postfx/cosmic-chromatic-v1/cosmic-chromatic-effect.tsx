@@ -9,14 +9,15 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
-import { CosmicChromaticPass } from './cosmic-chromatic-pass';
+import { CosmicChromaticPass, type CosmicChromaticPassConfig } from './cosmic-chromatic-pass';
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
-const Effect = wrapEffect(CosmicChromaticPass);
+const Effect = wrapEffect(CosmicChromaticPass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicChromaticPassConfig> & React.RefAttributes<CosmicChromaticPass>
+>;
 
 export interface CosmicChromaticEffectProps {
   /** Chromatic aberration intensity */
@@ -60,7 +61,6 @@ export const CosmicChromaticEffect: React.FC<CosmicChromaticEffectProps> = ({
 }) => {
   const { size, camera } = useThree();
   const timeRef = useRef<number>(0);
-  const prevMouseRef = useRef<[number, number]>([0, 0]);
   const motionRef = useRef<[number, number]>([0, 0]);
   const passRef = useRef<CosmicChromaticPass | null>(null);
   
@@ -110,8 +110,8 @@ export const CosmicChromaticEffect: React.FC<CosmicChromaticEffectProps> = ({
     passRef.current.setBlessingWaveProgress(blessingWaveProgress);
 
     // Update camera FOV
-    if (camera && 'fov' in camera) {
-      passRef.current.setCameraFOV((camera as any).fov);
+    if ('fov' in camera && typeof camera.fov === 'number') {
+      passRef.current.setCameraFOV(camera.fov);
     } else {
       passRef.current.setCameraFOV(cameraFOV);
     }
@@ -141,4 +141,3 @@ export const CosmicChromaticEffect: React.FC<CosmicChromaticEffectProps> = ({
     />
   );
 };
-

@@ -192,6 +192,7 @@ async function generateAIReport(prompt: string): Promise<PredictionReport> {
  */
 async function generateOpenAIReport(prompt: string): Promise<PredictionReport> {
   const openaiApiKey = envVars.ai.openaiApiKey
+  const openaiModel = envVars.ai.predictionModelName
   if (!openaiApiKey) {
     throw new Error('OpenAI API key not configured')
   }
@@ -203,7 +204,7 @@ async function generateOpenAIReport(prompt: string): Promise<PredictionReport> {
       Authorization: `Bearer ${openaiApiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4',
+      model: openaiModel,
       messages: [
         { role: 'system', content: 'You are an expert Vedic astrologer. Always respond with valid JSON only.' },
         { role: 'user', content: prompt },
@@ -323,4 +324,3 @@ function createFallbackReport(): PredictionReport {
     ],
   }
 }
-

@@ -10,33 +10,25 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
-import { useTimeline } from '@/lib/hooks/useTimeline';
 import { motion } from 'framer-motion';
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
+import { ProductPageFrame } from '@/components/product';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { SkeletonCard } from '@/components/ui/skeleton';
-import { ErrorBoundary } from '@/components/global/ErrorBoundary';
-import { Calendar, Sparkles, ChevronRight, Download, RefreshCw } from 'lucide-react';
+import { EmptyState, LoadingState } from '@/components/ui/feedback-state';
+import { Calendar, Download, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
-import { MonthDetailModal } from '@/components/timeline/MonthDetailModal';
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
-import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
-import { decrementTicket } from '@/lib/access/ticket-access';
-import type { AstroContext } from '@/lib/engines/astro-types';
 import type { TimelineEngineResult } from '@/lib/engines/timeline-engine-v2';
 import React from 'react';
 
 export default function TimelinePage() {
   const router = useRouter();
   const { user } = useUserStore();
-  const { timeline, loading, error, refetch } = useTimeline();
-  const [selectedMonth, setSelectedMonth] = React.useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [astro, setAstro] = React.useState<AstroContext | null>(null);
+  const [loadingPersistedTimeline, setLoadingPersistedTimeline] = React.useState(false);
   
   // Mega Build 2 - 12-month timeline state
   const [timelineResult, setTimelineResult] = React.useState<TimelineEngineResult | null>(null);
@@ -50,37 +42,40 @@ export default function TimelinePage() {
     if (!user) {
       router.push('/login');
     } else {
-      fetchAstroContext();
+      fetchPersistedTimeline();
     }
   }, [user, router]);
 
-  const fetchAstroContext = async () => {
-    if (!user?.uid) return;
+  const fetchPersistedTimeline = async () => {
     try {
-      const response = await fetch('/api/astro/context', {
+      setLoadingPersistedTimeline(true);
+      const response = await fetch('/api/timeline', {
         credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();
-        setAstro(data.astro);
+        if (data.data) {
+          setTimelineResult(data.data);
+        }
+        return;
       }
-    } catch (err) {
-      console.error('Error fetching astro context:', err);
+
+      if (response.status !== 404) {
+        const data = await response.json().catch(() => ({}));
+        if (data.code === 'TIMELINE_STALE' || data.code === 'KUNDALI_REQUIRED' || data.code === 'ASTRO_CONTEXT_MISSING') {
+          setTimelineError(data.message || 'Regenerate Kundali before creating a new timeline.');
+        }
+      }
+    } catch (err: any) {
+      console.error('Error fetching persisted timeline:', err);
+    } finally {
+      setLoadingPersistedTimeline(false);
     }
   };
 
   // Mega Build 2 - Generate 12-month timeline
   const handleGenerateTimeline = async () => {
     if (!user) return;
-
-    // Check feature access
-    const accessCheck = await checkFeatureAccess(user, 'predictions');
-    if (!accessCheck.allowed) {
-      if (accessCheck.redirectTo) {
-        router.push(accessCheck.redirectTo);
-      }
-      return;
-    }
 
     setTimelineLoading(true);
     setTimelineError(null);
@@ -102,11 +97,6 @@ export default function TimelinePage() {
 
       const data = await response.json();
       setTimelineResult(data.data);
-
-      // Decrement ticket if needed
-      if (accessCheck.decrementTicket) {
-        await decrementTicket(user.uid, 'ai_question');
-      }
     } catch (err: any) {
       console.error('Error generating timeline:', err);
       setTimelineError(err.message || 'Failed to generate timeline. Please try again.');
@@ -119,19 +109,11 @@ export default function TimelinePage() {
   const handleDownloadReport = async () => {
     if (!user) return;
 
-    // Check feature access
-    const accessCheck = await checkFeatureAccess(user, 'predictions');
-    if (!accessCheck.allowed) {
-      if (accessCheck.redirectTo) {
-        router.push(accessCheck.redirectTo);
-      }
-      return;
-    }
-
     setDownloadingReport(true);
+    setTimelineError(null);
 
     try {
-      const response = await fetch('/api/report/generate', {
+      const response = await fetch('/api/reports/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,27 +127,18 @@ export default function TimelinePage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to generate report');
+        throw new Error(errorData.error || errorData.message || 'Failed to generate report');
       }
 
-      // Download PDF
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `12-Month-Timeline-${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      // Decrement ticket if needed
-      if (accessCheck.decrementTicket) {
-        await decrementTicket(user.uid, 'ai_question');
+      const result = await response.json();
+      if (result.report?.pdfUrl) {
+        window.location.href = result.report.pdfUrl;
+      } else if (result.report?.reportId) {
+        router.push(`/reports/${result.report.reportId}`);
       }
     } catch (err: any) {
       console.error('Error downloading report:', err);
-      alert(err.message || 'Failed to download report. Please try again.');
+      setTimelineError(err.message || 'Failed to generate timeline report. Please try again.');
     } finally {
       setDownloadingReport(false);
     }
@@ -176,107 +149,74 @@ export default function TimelinePage() {
   }
 
   return (
-    <DashboardPageShell
-      title="Timeline of Your Life Events"
-      subtitle="12-month astrological timeline with themes, intensity, and focus areas"
-    >
-        {/* Context Panel */}
-        <div className="mb-8">
+    <ProductPageFrame product="timeline">
+      <DashboardPageShell
+        title="Your 12-Month Timeline"
+        subtitle="A month-by-month view of themes, focus areas, and astrological signals"
+      >
+        <div className="mx-auto w-full max-w-[1320px] space-y-7">
           <OneTimeOfferBanner
             title="Unlock Full Insights"
             description="This module uses your birth chart & predictions powered by Guru Brain."
-            priceLabel="₹199"
+            priceLabel="₹299"
             ctaLabel="Unlock Now"
-            ctaHref="/pay/199"
+            ctaHref="/pay/299"
           />
-        </div>
 
-        {/* Astro Summary Block */}
-        {astro && (
-          <div className="glass-card p-6 mb-10 rounded-2xl border border-gold/20">
-            <h3 className="text-gold font-heading text-xl mb-2">Astro Summary</h3>
-            <p className="text-white/80 text-sm">Sun Sign: {astro.coreChart?.sunSign || 'N/A'}</p>
-            <p className="text-white/80 text-sm">Moon Sign: {astro.coreChart?.moonSign || 'N/A'}</p>
-            <p className="text-white/80 text-sm">Ascendant: {astro.coreChart?.ascendantSign || 'N/A'}</p>
-            <p className="text-white/80 text-sm mt-4">Next Major Dasha: {astro.dasha?.currentMahadasha?.planet || 'N/A'}</p>
-            
-            {/* Super Phase B - Enhanced Dasha Timeline */}
-            {astro.dashaTimeline && astro.dashaTimeline.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-gold/20">
-                <h4 className="text-gold font-heading text-lg mb-3">Upcoming Dasha Periods</h4>
-                <div className="space-y-3">
-                  {astro.dashaTimeline.slice(0, 3).map((period, idx) => (
-                    <div key={idx} className="bg-white/5 p-3 rounded-lg border border-white/10">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gold font-semibold">{period.planet} Period</span>
-                        <span className="text-xs text-white/60">Strength: {period.strength}/10</span>
-                      </div>
-                      <p className="text-xs text-white/70">{new Date(period.start).toLocaleDateString()} - {new Date(period.end).toLocaleDateString()}</p>
-                      {period.notes && <p className="text-xs text-white/60 mt-1">{period.notes}</p>}
-                    </div>
-                  ))}
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="relative overflow-hidden rounded-[28px] border border-[#dfa84d]/20 bg-[#091216] p-6 md:p-8"
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 rounded-full border border-[#dfa84d]/10"
+            />
+
+            <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#dfa84d]">
+                  <Calendar className="h-4 w-4" />
+                  Personal timing map
                 </div>
-              </div>
-            )}
 
-            {/* Super Phase B - Transit Events */}
-            {astro.transitEvents && astro.transitEvents.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-gold/20">
-                <h4 className="text-gold font-heading text-lg mb-3">Key Transit Events</h4>
-                <div className="space-y-3">
-                  {astro.transitEvents.slice(0, 3).map((event, idx) => (
-                    <div key={idx} className="bg-white/5 p-3 rounded-lg border border-white/10">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gold font-semibold">{event.planet} in House {event.house}</span>
-                        <span className="text-xs text-white/60">Intensity: {event.intensity}/5</span>
-                      </div>
-                      <p className="text-xs text-white/70">{new Date(event.start).toLocaleDateString()} - {new Date(event.end).toLocaleDateString()}</p>
-                      <p className="text-xs text-white/60 mt-1">{event.theme}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+                <h2 className="mt-4 font-heading text-3xl font-semibold text-[#f8f1e6] md:text-5xl">
+                  Twelve months. One connected timeline.
+                </h2>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto space-y-8"
-        >
-          <div className="text-center">
-            <Calendar className="mx-auto h-16 w-16 text-gold mb-4" />
-            <h1 className="text-4xl font-display font-bold text-gold">12-Month Timeline</h1>
-            <p className="text-white/70 mt-2">Your astrological timeline for the next year</p>
-            
-            {/* Mega Build 2 - Generate Timeline Button */}
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="mt-4 mb-6"
-            >
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-[#aaa69e] md:text-base">
+                  Track monthly themes, intensity, focus areas, cautions,
+                  astrological signals, and recommended actions from your
+                  current Kundali context.
+                </p>
+              </div>
+
               <Button
                 onClick={handleGenerateTimeline}
-                className="bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
                 disabled={timelineLoading}
+                className="min-h-12 border-[#e8aa4f] bg-[#e99a34] px-6 font-semibold text-[#160d04] hover:bg-[#f1aa4d]"
               >
-                <Calendar className={`h-4 w-4 mr-2 ${timelineLoading ? 'animate-spin' : ''}`} />
-                {timelineLoading ? 'Generating Timeline...' : 'Generate 12-Month Timeline'}
+                <Calendar
+                  className={`mr-2 h-4 w-4 ${
+                    timelineLoading ? 'animate-spin' : ''
+                  }`}
+                />
+                {timelineLoading
+                  ? 'Generating Timeline...'
+                  : 'Generate 12-Month Timeline'}
               </Button>
-            </motion.div>
-          </div>
+            </div>
+          </motion.section>
 
-          {/* Mega Build 2 - Timeline Error */}
           {timelineError && (
-            <Card className="bg-red-500/10 border border-red-500/30 text-white mb-6">
+            <Card className="border-[#b85c4e]/35 bg-[#351716]/35 text-[#f5eee2]">
               <CardContent className="pt-6">
-                <p className="text-red-400">{timelineError}</p>
+                <p className="text-sm text-[#f0a79c]">{timelineError}</p>
                 <Button
                   onClick={handleGenerateTimeline}
-                  variant="ghost"
-                  className="mt-4 text-red-400 hover:text-red-300"
+                  variant="outline"
+                  className="mt-4 border-[#b85c4e]/30 bg-transparent text-[#f4ddd8] hover:bg-[#b85c4e]/10"
                 >
                   Try Again
                 </Button>
@@ -284,92 +224,123 @@ export default function TimelinePage() {
             </Card>
           )}
 
-          {/* Mega Build 2 - Timeline Results */}
+          {(loadingPersistedTimeline || timelineLoading) && !timelineResult ? (
+            <Card className="border-[#dca94e]/16 bg-[#091216]">
+              <CardContent>
+                <LoadingState
+                  title={timelineLoading ? 'Generating timeline' : 'Loading timeline'}
+                  description="We are checking your saved timeline state."
+                  className="text-[#f5eee2]"
+                />
+              </CardContent>
+            </Card>
+          ) : !timelineResult ? (
+            <Card className="border-[#dca94e]/16 bg-[#091216]">
+              <CardContent>
+                <EmptyState
+                  title="No timeline yet"
+                  description="Generate a timeline after completing your verified birth profile and Kundali."
+                  className="text-[#f5eee2]"
+                  action={
+                    <Button
+                      onClick={handleGenerateTimeline}
+                      disabled={timelineLoading}
+                      className="min-h-11 border-[#e8aa4f] bg-[#e99a34] text-[#160d04] hover:bg-[#f1aa4d]"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Generate Timeline
+                    </Button>
+                  }
+                />
+              </CardContent>
+            </Card>
+          ) : null}
+
           {timelineResult && (
-            <div className="mb-8 space-y-6">
-              {/* Overview */}
-              <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white">
+            <div className="space-y-6">
+              <Card className="border-[#dca94e]/20 bg-[#091216] text-[#f5eee2]">
                 <CardHeader>
-                  <CardTitle className="text-gold">12-Month Timeline Overview</CardTitle>
+                  <CardTitle className="text-[#f5eee2]">
+                    12-Month Timeline Overview
+                  </CardTitle>
                   {timelineResult.status === 'degraded' && (
-                    <CardDescription className="text-yellow-400">
+                    <CardDescription className="text-[#d5b47b]">
                       Timeline generated with limited context
                     </CardDescription>
                   )}
                 </CardHeader>
                 <CardContent>
-                  <p className="text-white/80">{timelineResult.overview}</p>
+                  <p className="text-sm leading-7 text-[#aaa69e]">
+                    {timelineResult.overview}
+                  </p>
                 </CardContent>
               </Card>
 
-              {/* Timeline Events */}
-              <div className="space-y-4">
+              <div className="relative space-y-5 before:absolute before:bottom-0 before:left-[19px] before:top-0 before:w-px before:bg-[#dfa84d]/12 md:before:left-[23px]">
                 {timelineResult.events.map((event, index) => (
                   <motion.div
                     key={event.id}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                    transition={{ delay: index * 0.05, duration: 0.4 }}
+                    className="relative pl-12 md:pl-14"
                   >
-                    <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white hover:border-gold/50 transition-all">
+                    <span className="absolute left-[13px] top-8 h-3.5 w-3.5 rounded-full border border-[#dfa84d]/60 bg-[#091216] shadow-[0_0_18px_rgba(223,168,77,0.18)] md:left-[17px]" />
+
+                    <Card className="border-[#dca94e]/16 bg-[#0a1418] text-[#f5eee2] hover:border-[#dca94e]/28">
                       <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-gold flex items-center gap-2">
-                              <Calendar className="h-5 w-5" />
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <CardTitle className="flex items-center gap-2 text-[#f5eee2]">
+                              <Calendar className="h-5 w-5 text-[#dfa84d]" />
                               {event.monthLabel}
                             </CardTitle>
-                            <CardDescription className="text-white/70 mt-2">
-                              <div className="flex items-center gap-4 flex-wrap">
-                                <span>
-                                  Intensity:{' '}
-                                  <span
-                                    className={`font-semibold ${
-                                      event.intensity === 'high'
-                                        ? 'text-green-400'
-                                        : event.intensity === 'medium'
-                                        ? 'text-yellow-400'
-                                        : 'text-red-400'
-                                    }`}
-                                  >
-                                    {event.intensity.toUpperCase()}
-                                  </span>
-                                </span>
-                                {event.focusAreas.length > 0 && (
-                                  <span>Focus: {event.focusAreas.join(', ')}</span>
-                                )}
-                              </div>
+
+                            <CardDescription className="mt-2 text-[#9f9b94]">
+                              {event.focusAreas.length > 0
+                                ? `Focus: ${event.focusAreas.join(', ')}`
+                                : 'Monthly astrological guidance'}
                             </CardDescription>
                           </div>
+
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
                               event.intensity === 'high'
-                                ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                                ? 'border-[#66a5a5]/30 bg-[#66a5a5]/10 text-[#86c5c6]'
                                 : event.intensity === 'medium'
-                                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
-                                : 'bg-red-500/20 text-red-400 border border-red-500/50'
+                                  ? 'border-[#dfa84d]/30 bg-[#dfa84d]/10 text-[#e3b66a]'
+                                  : 'border-[#b85c4e]/30 bg-[#b85c4e]/10 text-[#e7a097]'
                             }`}
                           >
                             {event.intensity}
                           </span>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+
+                      <CardContent className="space-y-5">
                         <div>
-                          <h4 className="text-gold text-sm font-semibold mb-1">Theme</h4>
-                          <p className="text-white/80">{event.theme}</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dfa84d]">
+                            Theme
+                          </p>
+                          <p className="mt-2 text-base text-[#eee5d9]">
+                            {event.theme}
+                          </p>
                         </div>
 
-                        <p className="text-white/80">{event.description}</p>
+                        <p className="text-sm leading-7 text-[#aaa69e]">
+                          {event.description}
+                        </p>
 
                         {event.focusAreas.length > 0 && (
                           <div>
-                            <h4 className="text-gold text-sm font-semibold mb-2">Focus Areas</h4>
-                            <div className="flex flex-wrap gap-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f5eee2]">
+                              Focus areas
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
                               {event.focusAreas.map((area, i) => (
                                 <span
                                   key={i}
-                                  className="px-2 py-1 bg-white/5 rounded text-xs text-white/80"
+                                  className="rounded-full border border-[#dca94e]/18 bg-[#dca94e]/[0.055] px-3 py-1.5 text-xs text-[#d8d1c6]"
                                 >
                                   {area}
                                 </span>
@@ -378,58 +349,78 @@ export default function TimelinePage() {
                           </div>
                         )}
 
-                        {event.recommendedActions.length > 0 && (
-                          <div>
-                            <h4 className="text-gold text-sm font-semibold mb-2">Recommended Actions</h4>
-                            <ul className="space-y-1">
-                              {event.recommendedActions.map((action, i) => (
-                                <li key={i} className="text-sm text-white/70 flex items-start gap-2">
-                                  <span className="text-gold mt-1">•</span>
-                                  <span>{action}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        <div className="grid gap-4 lg:grid-cols-2">
+                          {event.recommendedActions.length > 0 && (
+                            <div className="rounded-xl border border-[#66a5a5]/14 bg-[#66a5a5]/[0.04] p-4">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#82bfc0]">
+                                Recommended actions
+                              </p>
+                              <ul className="mt-3 space-y-2">
+                                {event.recommendedActions.map((action, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex gap-2 text-sm leading-6 text-[#aaa69e]"
+                                  >
+                                    <span className="text-[#66a5a5]">•</span>
+                                    <span>{action}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
 
-                        {event.cautions.length > 0 && (
-                          <div>
-                            <h4 className="text-yellow-400 text-sm font-semibold mb-2">Cautions</h4>
-                            <ul className="space-y-1">
-                              {event.cautions.map((caution, i) => (
-                                <li key={i} className="text-sm text-white/70 flex items-start gap-2">
-                                  <span className="text-yellow-400 mt-1">•</span>
-                                  <span>{caution}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                          {event.cautions.length > 0 && (
+                            <div className="rounded-xl border border-[#dfa84d]/14 bg-[#dfa84d]/[0.035] p-4">
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dfa84d]">
+                                Cautions
+                              </p>
+                              <ul className="mt-3 space-y-2">
+                                {event.cautions.map((caution, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex gap-2 text-sm leading-6 text-[#aaa69e]"
+                                  >
+                                    <span className="text-[#dfa84d]">•</span>
+                                    <span>{caution}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
 
                         {event.astroSignals.length > 0 && (
                           <div>
-                            <h4 className="text-gold text-sm font-semibold mb-2">Astrological Signals</h4>
-                            <div className="flex flex-wrap gap-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f5eee2]">
+                              Astrological signals
+                            </p>
+
+                            <div className="mt-3 grid gap-3 md:grid-cols-2">
                               {event.astroSignals.map((signal, i) => (
                                 <div
                                   key={i}
-                                  className="px-3 py-2 bg-white/5 rounded-lg border border-white/10"
+                                  className="rounded-xl border border-[#dca94e]/14 bg-[#071014] p-4"
                                 >
-                                  <p className="text-xs font-semibold text-gold">{signal.label}</p>
-                                  <p className="text-xs text-white/70 mt-1">{signal.description}</p>
+                                  <p className="text-sm font-semibold text-[#e3b66a]">
+                                    {signal.label}
+                                  </p>
+                                  <p className="mt-2 text-xs leading-5 text-[#99958e]">
+                                    {signal.description}
+                                  </p>
                                 </div>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {/* CTA to Ask Guru */}
-                        <div className="pt-2 border-t border-white/10">
+                        <div className="border-t border-[#dca94e]/10 pt-4">
                           <Button
-                            onClick={() => router.push(`/guru?month=${event.monthLabel}`)}
-                            variant="ghost"
-                            className="text-gold hover:text-gold/80 border border-gold/30 hover:bg-gold/10"
+                            onClick={() =>
+                              router.push(`/guru?month=${event.monthLabel}`)
+                            }
+                            variant="outline"
                             size="sm"
+                            className="border-[#dca94e]/20 bg-[#10191d] text-[#f2e9dc] hover:bg-[#162126]"
                           >
                             Ask Guru about this month →
                           </Button>
@@ -440,9 +431,8 @@ export default function TimelinePage() {
                 ))}
               </div>
 
-              {/* Disclaimers */}
               {timelineResult.disclaimers.length > 0 && (
-                <div className="text-xs text-white/50 space-y-1">
+                <div className="space-y-1 px-2 text-xs leading-5 text-[#77756f]">
                   {timelineResult.disclaimers.map((disclaimer, i) => (
                     <p key={i}>{disclaimer}</p>
                   ))}
@@ -451,218 +441,47 @@ export default function TimelinePage() {
             </div>
           )}
 
-              {loading && timeline.length === 0 ? (
-                <SkeletonCard />
-              ) : timeline.length > 0 ? (
-                <ErrorBoundary>
-                  <div className="space-y-4">
-                    {timeline.map((month, index) => {
-                      const energyColors = {
-                        high: 'bg-green-500/20 border-green-500/50',
-                        medium: 'bg-yellow-500/20 border-yellow-500/50',
-                        low: 'bg-red-500/20 border-red-500/50',
-                      };
-
-                      const getEventColor = (type: string, impact: string) => {
-                        if (type === 'auspicious' || impact === 'positive') return 'bg-green-500/20 border-green-500/50';
-                        if (type === 'challenging' || impact === 'challenging') return 'bg-red-500/20 border-red-500/50';
-                        return 'bg-yellow-500/20 border-yellow-500/50';
-                      };
-
-                      return (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1, duration: 0.5 }}
-                        >
-                          <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            className="cursor-pointer"
-                            onClick={() => {
-                              setSelectedMonth(month);
-                              setIsModalOpen(true);
-                            }}
-                          >
-                            <Card className={`bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white hover:border-gold/50 transition-all ${energyColors[month.overallEnergy]}`}>
-                              <CardHeader>
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <CardTitle className="text-gold flex items-center gap-2">
-                                      <Calendar className="h-5 w-5" />
-                                      {month.month} {month.year}
-                                    </CardTitle>
-                                    <CardDescription className="text-white/70 mt-2">
-                                      <div className="flex items-center gap-4 flex-wrap">
-                                        <span>Energy: <span className={`font-semibold ${
-                                          month.overallEnergy === 'high' ? 'text-green-400' :
-                                          month.overallEnergy === 'medium' ? 'text-yellow-400' :
-                                          'text-red-400'
-                                        }`}>{month.overallEnergy.toUpperCase()}</span></span>
-                                        <span>Focus: {month.focusAreas?.join(', ') || 'N/A'}</span>
-                                      </div>
-                                    </CardDescription>
-                                  </div>
-                                  <ChevronRight className="h-5 w-5 text-gold" />
-                                </div>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                <p className="text-white/80">{month.prediction}</p>
-                                
-                                {/* Color-coded timeline bars */}
-                                {month.events && month.events.length > 0 && (
-                                  <div>
-                                    <p className="text-sm font-semibold text-gold mb-2">Key Events ({month.events.length})</p>
-                                    <div className="space-y-2">
-                                      {month.events.slice(0, 3).map((event: any, i: number) => (
-                                        <div
-                                          key={i}
-                                          className={`p-2 rounded-lg border ${getEventColor(event.type || 'transit', event.impact || 'neutral')}`}
-                                        >
-                                          <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                              {event.planet && (
-                                                <p className="text-xs text-white/60 mb-1">{event.planet}</p>
-                                              )}
-                                              <p className="text-sm text-white/80 font-medium">{event.event || 'N/A'}</p>
-                                              <p className="text-xs text-white/70 mt-1 line-clamp-1">{event.description || ''}</p>
-                                            </div>
-                                            <div className={`px-2 py-1 rounded text-xs font-medium ${
-                                              event.type === 'auspicious' || event.impact === 'positive' ? 'bg-green-500/30 text-green-300' :
-                                              event.type === 'challenging' || event.impact === 'challenging' ? 'bg-red-500/30 text-red-300' :
-                                              'bg-yellow-500/30 text-yellow-300'
-                                            }`}>
-                                              {event.type || 'transit'}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                      {month.events.length > 3 && (
-                                        <p className="text-xs text-gold mt-2">+{month.events.length - 3} more events</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Auspicious/Challenging periods preview */}
-                                {(month.auspiciousPeriods?.length > 0 || month.challengingPeriods?.length > 0) && (
-                                  <div className="flex gap-2">
-                                    {month.auspiciousPeriods && month.auspiciousPeriods.length > 0 && (
-                                      <div className="flex-1 p-2 bg-green-500/10 border border-green-500/30 rounded">
-                                        <p className="text-xs text-green-400 font-semibold mb-1">Auspicious</p>
-                                        <p className="text-xs text-white/70">{month.auspiciousPeriods.length} period(s)</p>
-                                      </div>
-                                    )}
-                                    {month.challengingPeriods && month.challengingPeriods.length > 0 && (
-                                      <div className="flex-1 p-2 bg-red-500/10 border border-red-500/30 rounded">
-                                        <p className="text-xs text-red-400 font-semibold mb-1">Challenging</p>
-                                        <p className="text-xs text-white/70">{month.challengingPeriods.length} period(s)</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                <p className="text-xs text-gold mt-2 flex items-center gap-1">
-                                  Click for full details <ChevronRight className="h-3 w-3" />
-                                </p>
-                              </CardContent>
-                            </Card>
-                          </motion.div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </ErrorBoundary>
-              ) : !loading && timeline.length === 0 ? (
-                <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
-                  <CardContent className="pt-12 pb-12 text-center space-y-4">
-                    <Calendar className="w-16 h-16 text-[#FFD57A]/40 mx-auto" />
-                    <h3 className="text-2xl font-display font-semibold text-white">No Timeline Yet</h3>
-                    <p className="text-white/60 max-w-md mx-auto">
-                      Your cosmic timeline will appear here once generated. Click "Generate 12-Month Timeline" to create your personalized astrological journey.
-                    </p>
-                    <Button
-                      onClick={handleGenerateTimeline}
-                      disabled={timelineLoading}
-                      className="mt-4 bg-gradient-to-r from-[#FFD57A] to-[#FFB347] text-[#05050A]"
-                    >
-                      {timelineLoading ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Generate Timeline
-                        </>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <SkeletonCard />
-              )}
-
-          {/* Mega Build 3 - Download Report Section */}
-          <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white mt-8">
+          <Card className="border-[#dca94e]/18 bg-[#091216] text-[#f5eee2]">
             <CardHeader>
-              <CardTitle className="text-gold">Download Full PDF Report</CardTitle>
-              <CardDescription className="text-white/70">
-                Get a comprehensive 12-month timeline report as a PDF document
+              <CardTitle className="text-[#f5eee2]">
+                Save your complete timeline
+              </CardTitle>
+              <CardDescription className="text-[#9f9b94]">
+                Generate the comprehensive 12-month timeline as a PDF document.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+
+            <CardContent className="flex flex-col gap-3 sm:flex-row">
               <Button
                 onClick={handleDownloadReport}
                 disabled={downloadingReport}
-                className="w-full bg-gold/20 border border-gold/50 text-gold hover:bg-gold/30"
+                className="min-h-11 border-[#e8aa4f] bg-[#e99a34] font-semibold text-[#160d04] hover:bg-[#f1aa4d]"
               >
                 {downloadingReport ? (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                     Generating PDF...
                   </>
                 ) : (
                   <>
-                    <Download className="h-4 w-4 mr-2" />
-                    Download 12-Month Timeline PDF
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Timeline PDF
                   </>
                 )}
               </Button>
+
+              <Link href="/dashboard">
+                <Button
+                  variant="outline"
+                  className="min-h-11 border-[#dca94e]/20 bg-[#10191d] text-[#f2e9dc] hover:bg-[#162126]"
+                >
+                  Back to Dashboard
+                </Button>
+              </Link>
             </CardContent>
           </Card>
-
-          {/* Ask Guru With Context Button */}
-          {astro && (
-            <div className="text-center mb-4">
-              <Button
-                onClick={() => router.push(`/guru?context=${encodeURIComponent(JSON.stringify(astro))}`)}
-                className="gold-btn"
-              >
-                Ask Guru With My Birth Context
-              </Button>
-            </div>
-          )}
-
-          <div className="text-center">
-            <Link href="/dashboard">
-              <Button variant="ghost" className="border border-cosmic-purple/50 text-white/80 hover:bg-cosmic-purple/20">
-                Back to Dashboard
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
-
-        <MonthDetailModal
-          month={selectedMonth}
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedMonth(null);
-          }}
-        />
-    </DashboardPageShell>
-  );
+        </div>
+      </DashboardPageShell>
+    </ProductPageFrame>
+  )
 }
-

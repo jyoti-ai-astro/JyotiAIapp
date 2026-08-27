@@ -1,13 +1,15 @@
+// components/auth/LocationAutocomplete.tsx
+
 /**
  * Location Autocomplete Component
- * 
+ *
  * Autocomplete input for place of birth with geocoding
  * Resolves city names to coordinates and handles ambiguous locations
  */
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,18 +35,30 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
   onChange,
   required = false,
   className = '',
-  label,
+  label = 'Place of Birth',
 }) => {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<LocationResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
 
-  // Fetch suggestions from Google Places API or geocoding API
+  const reactId = useId();
+  const inputId = `${reactId}-location`;
+
+  // Keep local query in sync if parent value changes externally
+  useEffect(() => {
+    if (value !== query) {
+      setQuery(value);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  // Fetch suggestions from Google Places API or geocoding API via /api/location/search
   const fetchSuggestions = async (searchQuery: string) => {
     if (!searchQuery || searchQuery.length < 2) {
       setSuggestions([]);
@@ -71,7 +85,10 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.warn('Location search failed:', errorData.error || 'Unknown error');
+        console.warn(
+          'Location search failed:',
+          errorData.error || 'Unknown error'
+        );
         // Allow manual entry even if API fails
       }
     } catch (error) {
@@ -98,14 +115,17 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
         clearTimeout(debounceRef.current);
       }
     };
-  }, [query]);
+  }, [query, value]);
 
   // Handle selection
   const handleSelect = (location: LocationResult) => {
     setQuery(location.formattedAddress);
     setSelectedLocation(location);
     setShowSuggestions(false);
-    onChange(location.formattedAddress, { lat: location.lat, lng: location.lng });
+    onChange(location.formattedAddress, {
+      lat: location.lat,
+      lng: location.lng,
+    });
   };
 
   // Handle input change
@@ -135,14 +155,18 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
 
   return (
     <div className={`relative ${className}`}>
-      {label && (
-        <Label className="text-white/80 mb-2 flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          {label}
-        </Label>
-      )}
+      <Label
+        className="text-white/80 mb-2 flex items-center gap-2"
+        htmlFor={inputId}
+      >
+        <MapPin className="h-4 w-4" />
+        {label}
+        {required && <span className="text-red-400">*</span>}
+      </Label>
       <div className="relative">
         <Input
+          id={inputId}
+          name="place-of-birth"
           ref={inputRef}
           type="text"
           value={query}
@@ -175,7 +199,9 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
               onClick={() => handleSelect(location)}
               className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0"
             >
-              <div className="text-white font-medium">{location.formattedAddress}</div>
+              <div className="text-white font-medium">
+                {location.formattedAddress}
+              </div>
               {location.city && location.country && (
                 <div className="text-white/60 text-sm mt-1">
                   {location.city}, {location.country}
@@ -188,10 +214,10 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
 
       {selectedLocation && (
         <div className="mt-2 text-xs text-white/60">
-          Selected: {selectedLocation.formattedAddress} ({selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)})
+          Selected: {selectedLocation.formattedAddress} (
+          {selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)})
         </div>
       )}
     </div>
   );
 };
-

@@ -6,4 +6,6 @@
  */
 
 // Placeholder for cosmic provider implementation
+export const CosmicProvider = ({ children }: { children?: React.ReactNode }) => children;
+
 

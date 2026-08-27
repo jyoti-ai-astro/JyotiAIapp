@@ -10,10 +10,10 @@ import { AstroPageClient } from './astro-page-client';
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Astrology | Jyoti.ai - Vedic Astrology & Kundali',
+  title: 'Astrology | JyotiAI - Vedic Astrology & Kundali',
   description: 'Get your personalized Vedic astrology readings, kundali analysis, and horoscope predictions powered by AI',
   openGraph: {
-    title: 'Astrology | Jyoti.ai',
+    title: 'Astrology | JyotiAI',
     description: 'Get your personalized Vedic astrology readings, kundali analysis, and horoscope predictions',
     type: 'website',
     images: [
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
         url: '/og-image-astro.jpg',
         width: 1200,
         height: 630,
-        alt: 'Jyoti.ai Astrology',
+        alt: 'JyotiAI Astrology',
       },
     ],
   },

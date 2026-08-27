@@ -1,45 +1,97 @@
+// lib/firebase/admin.ts
 import * as admin from "firebase-admin";
 
-// ⚠️ SERVER-SIDE ONLY ⚠️
-// This file must NEVER be imported in:
-// - Client components
-// - React components
-// - Hooks
-// - UI elements
-// - Cosmos / postfx / shaders
-// Allowed imports only in:
-// - API routes (app/api/**)
-// - Server utilities (lib/services, lib/workers)
-// - Logging / security modules
+/**
+ * SERVER-SIDE ONLY
+ * -----------------
+ * This module is for Firebase Admin SDK.
+ * Use ONLY in:
+ *   - app/api/** route handlers
+ *   - server utilities (lib/**.server.ts, jobs, etc.)
+ *
+ * Do NOT import in:
+ *   - React components
+ *   - client components
+ *   - hooks
+ *   - UI code
+ */
 
-let app: admin.app.App | undefined;
+// Use a global variable so dev hot reload doesn't create duplicate apps
+declare global {
+  // eslint-disable-next-line no-var
+  var _jyotaiAdminApp: admin.app.App | undefined;
+}
 
-export function getFirebaseAdmin() {
-  if (app) return app;
+// Small helper to read env vars safely
+function getAdminEnv() {
+  const rawProjectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+  const rawClientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+  const rawPrivateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
 
-  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
-  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
-  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+  return {
+    rawProjectId,
+    rawClientEmail,
+    rawPrivateKey,
+  };
+}
 
-  if (!projectId || !privateKey || !clientEmail) {
-    console.warn("Firebase Admin credentials missing — admin features disabled.");
+export function getFirebaseAdmin(): admin.app.App | undefined {
+  // Reuse existing instance if already created (survives HMR via `global`)
+  if (global._jyotaiAdminApp) {
+    return global._jyotaiAdminApp;
+  }
+
+  const { rawProjectId, rawClientEmail, rawPrivateKey } = getAdminEnv();
+
+  // Debug: presence only, never log full secrets
+  console.log("[firebase-admin] Env presence:", {
+    hasProjectId: !!rawProjectId,
+    hasClientEmail: !!rawClientEmail,
+    hasPrivateKey: !!rawPrivateKey,
+  });
+
+  if (!rawProjectId || !rawClientEmail || !rawPrivateKey) {
+    console.warn("Firebase Admin credentials missing — admin features disabled.", {
+      hasProjectId: !!rawProjectId,
+      hasClientEmail: !!rawClientEmail,
+      hasPrivateKey: !!rawPrivateKey,
+    });
     return undefined;
   }
+
+  const projectId = rawProjectId;
+  const clientEmail = rawClientEmail;
+  // Stored with \n in .env, convert back to real newlines
+  const privateKey = rawPrivateKey.replace(/\\n/g, "\n");
 
   try {
-    app = admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId,
-        privateKey,
-        clientEmail,
-      }),
-    });
-  } catch (e) {
-    console.warn("Failed to initialize Firebase Admin", e);
-    return undefined;
+    if (!admin.apps.length) {
+      // First-time init
+      global._jyotaiAdminApp = admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        }),
+      });
+      console.log("[firebase-admin] Admin app initialized for project:", projectId);
+    } else {
+      // Reuse existing app (handles dev hot reload / duplicate-app cases)
+      global._jyotaiAdminApp = admin.app();
+      console.log("[firebase-admin] Reusing existing Admin app for project:", projectId);
+    }
+  } catch (e: any) {
+    if (e?.code === "app/duplicate-app") {
+      // In dev, if we somehow race into initialize twice, just reuse
+      console.warn("[firebase-admin] Duplicate app detected, reusing existing instance.");
+      global._jyotaiAdminApp = admin.app();
+    } else {
+      console.error("[firebase-admin] Failed to initialize Firebase Admin", e);
+      return undefined;
+    }
   }
 
-  return app;
+  return global._jyotaiAdminApp;
 }
 
 export function getAdminAuth() {
@@ -54,8 +106,10 @@ export function getAdminStorage() {
   return getFirebaseAdmin()?.storage();
 }
 
-// Lazy exports for backward compatibility
+// Lazy singletons for convenience
 export const adminAuth = getAdminAuth();
 export const adminDb = getAdminDb();
 export const adminStorage = getAdminStorage();
+
+// Backwards-compatible alias
 export { getFirebaseAdmin as getApp };

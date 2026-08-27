@@ -27,7 +27,7 @@ export function AboutPageClient() {
           variant="about"
           title="A Story Written in the Stars"
           subtitle="Vision + Mission + Divinity"
-          description="Jyoti.ai is not just an app—it's a spiritual experience. We combine ancient Vedic wisdom with modern AI technology to create a sacred cosmic chamber where AI, astrology, and divine energy blend into one."
+          description="JyotiAI is not just an app—it's a spiritual experience. We combine ancient Vedic wisdom with modern AI technology to create a sacred cosmic chamber where AI, astrology, and divine energy blend into one."
           primaryCTA={{
             label: 'Explore Our Vision',
             href: '/about#mission',

@@ -1,61 +1,57 @@
-/**
- * Guru Chat Page Client Component
- * 
- * Phase 3 — Section 29: PAGES PHASE 14 (F29)
- * 
- * Client component for Guru Chat page with Super Cosmic UI
- */
+'use client'
 
-'use client';
-
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { UpgradeBanner } from '@/components/ui/upgrade-banner';
-import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
-import { CosmicGuruChat } from '@/components/guru/CosmicGuruChat';
-import GuruHero from '@/src/ui/sections/guru/GuruHero';
-import GuruLayoutShell from '@/src/ui/sections/guru/GuruLayoutShell';
-import { useUserStore } from '@/store/user-store';
+import { useSearchParams } from 'next/navigation'
+import { Badge } from '@/components/ui/badge'
+import { CosmicGuruChat } from '@/components/guru/CosmicGuruChat'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { ProductPageFrame } from '@/components/product'
 
 export function GuruPageClient() {
-  const router = useRouter();
-  const { user } = useUserStore();
-  
-  // Check if user has remaining Guru tickets
-  const aiGuruTickets = user?.aiGuruTickets || 0;
-  const hasNoTickets = aiGuruTickets === 0;
+  const searchParams = useSearchParams()
+  const prompt = searchParams.get('prompt') || ''
+  const source = searchParams.get('source') || undefined
 
   return (
-    <div className="relative">
-      <section className="page-container pt-8 md:pt-16">
-        <GuruHero />
-      </section>
-
-      {hasNoTickets && (
-        <section className="page-container pt-6 md:pt-10">
-          <OneTimeOfferBanner 
-            feature="AI Guru questions"
-            productId="199"
-          />
-        </section>
-      )}
-
-      <section className="page-container pt-6 md:pt-10">
-        <UpgradeBanner
-          buttonText="Upgrade for deeper sessions"
-          description="Unlock longer conversations, priority queue, and advanced karmic insights."
-          onClick={() => router.push('/pricing')}
-        />
-      </section>
-
-      <section
-        id="guru-console"
-        className="page-container pt-6 md:pt-10 pb-16 md:pb-24"
+    <ProductPageFrame product="guru">
+      <DashboardPageShell
+        title="Jyoti Guru"
+        subtitle="Personal guidance from your saved Kundali context"
       >
-        <GuruLayoutShell>
-          <CosmicGuruChat />
-        </GuruLayoutShell>
-      </section>
-    </div>
-  );
+        <div data-guru-product="true" className="mx-auto w-full max-w-[1320px] space-y-6">
+          <section className="relative overflow-hidden rounded-[28px] border border-[#dfa84d]/20 bg-[#091216] px-6 py-7 md:px-8 md:py-9">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full border border-[#dfa84d]/10"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute right-12 top-10 h-40 w-40 rounded-full border border-[#66a5a5]/10"
+            />
+
+            <div className="relative z-10 max-w-3xl">
+              <Badge
+                variant="guru"
+                className="border-[#dfa84d]/25 bg-[#dfa84d]/10 text-[#f5eee2]"
+              >
+                Personal Vedic guidance
+              </Badge>
+
+              <h2 className="mt-5 font-heading text-3xl font-semibold leading-tight text-[#f8f1e6] md:text-5xl">
+                What do you want clarity on?
+              </h2>
+
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-[#aaa69e] md:text-base">
+                Ask from your saved Kundali context. Suggested prompts can prefill
+                the composer, but nothing is sent until you confirm.
+              </p>
+            </div>
+          </section>
+
+          <div className="[&>div]:border-[#dca94e]/20 [&>div]:bg-[#071014] [&>div]:shadow-[0_24px_70px_rgba(0,0,0,0.20)]">
+            <CosmicGuruChat initialPrompt={prompt} source={source} />
+          </div>
+        </div>
+      </DashboardPageShell>
+    </ProductPageFrame>
+  )
 }

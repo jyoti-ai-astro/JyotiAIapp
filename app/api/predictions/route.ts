@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth } from '@/lib/firebase/admin'
-import { getCachedAstroContext } from '@/lib/engines/astro-context-builder'
+import { AstroContextError, buildAstroContext } from '@/lib/engines/astro-context-builder'
 import { runPredictionEngine } from '@/lib/engines/prediction-engine-v2'
 import { ensureFeatureAccess, consumeFeatureTicket } from '@/lib/payments/ticket-service'
 import type { FeatureKey } from '@/lib/payments/feature-access'
@@ -110,13 +110,31 @@ export async function POST(request: NextRequest) {
 
     const { question } = body
 
-    // Get AstroContext
-    let astroContext = null
+    // Get canonical AstroContext before spending OpenAI/report generation work.
+    let astroContext
     try {
-      astroContext = await getCachedAstroContext(userId)
-    } catch (error) {
-      console.error('Error fetching astro context:', error)
-      // Continue with null context (will return degraded mode)
+      astroContext = await buildAstroContext(userId)
+    } catch (error: any) {
+      if (error instanceof AstroContextError) {
+        return NextResponse.json(
+          {
+            status: 'error',
+            code: error.code,
+            message: error.message,
+          },
+          { status: 409 }
+        )
+      }
+
+      console.error('Error building astro context:', error)
+      return NextResponse.json(
+        {
+          status: 'error',
+          code: 'ASTRO_CONTEXT_FAILED',
+          message: 'Unable to load your Kundali context. Please try again.',
+        },
+        { status: 500 }
+      )
     }
 
     // Create AbortController with 30s timeout
@@ -139,10 +157,34 @@ export async function POST(request: NextRequest) {
       clearTimeout(timeoutId)
 
       // Phase S: Consume ticket after successful generation
+      if (
+        result.status === 'error' ||
+        !result.usedAstroContext ||
+        result.sections.length === 0 ||
+        !result.overview
+      ) {
+        return NextResponse.json(
+          {
+            status: 'error',
+            code: 'PREDICTION_GENERATION_FAILED',
+            message: 'Unable to generate personalized predictions. Please try again.',
+          },
+          { status: 502 }
+        )
+      }
+
       try {
         await consumeFeatureTicket(userId, featureKey)
       } catch (err: any) {
         console.error('Ticket consumption error:', err)
+        return NextResponse.json(
+          {
+            status: 'error',
+            code: 'TICKET_CONSUMPTION_FAILED',
+            message: 'Prediction generated, but credit consumption failed. Please retry or contact support.',
+          },
+          { status: 409 }
+        )
       }
 
       // Return result
@@ -199,4 +241,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

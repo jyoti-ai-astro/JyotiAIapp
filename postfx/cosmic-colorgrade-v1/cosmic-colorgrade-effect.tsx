@@ -9,14 +9,15 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
-import { CosmicColorGradePass } from './cosmic-colorgrade-pass';
+import { CosmicColorGradePass, type CosmicColorGradePassConfig } from './cosmic-colorgrade-pass';
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
-const Effect = wrapEffect(CosmicColorGradePass);
+const Effect = wrapEffect(CosmicColorGradePass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicColorGradePassConfig> & React.RefAttributes<CosmicColorGradePass>
+>;
 
 export interface CosmicColorGradeEffectProps {
   /** LUT strength (0-1) */
@@ -116,11 +117,6 @@ export const CosmicColorGradeEffect: React.FC<CosmicColorGradeEffectProps> = ({
     // Update resolution
     passRef.current.setResolution(size.width, size.height);
 
-    // Update vibrance (motion-reactive: high → vibrance, handled in shader)
-    const bass = audioReactive?.bass ?? 0;
-    const mid = audioReactive?.mid ?? 0;
-    const high = audioReactive?.high ?? 0;
-
     // Update mobile settings
     if (isMobile) {
       passRef.current.setLutStrength(adjustedLutStrength);
@@ -131,8 +127,8 @@ export const CosmicColorGradeEffect: React.FC<CosmicColorGradeEffectProps> = ({
     passRef.current.setBlessingWaveProgress(blessingWaveProgress);
 
     // Update camera FOV
-    if (camera && 'fov' in camera) {
-      passRef.current.setCameraFOV((camera as any).fov);
+    if ('fov' in camera && typeof camera.fov === 'number') {
+      passRef.current.setCameraFOV(camera.fov);
     } else {
       passRef.current.setCameraFOV(cameraFOV);
     }
@@ -161,4 +157,3 @@ export const CosmicColorGradeEffect: React.FC<CosmicColorGradeEffectProps> = ({
     />
   );
 };
-

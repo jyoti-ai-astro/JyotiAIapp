@@ -9,14 +9,16 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CosmicDepthPass } from './cosmic-depth-pass';
+import { CosmicDepthPass, type CosmicDepthPassConfig } from './cosmic-depth-pass';
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
-const Effect = wrapEffect(CosmicDepthPass);
+const Effect = wrapEffect(CosmicDepthPass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicDepthPassConfig> & React.RefAttributes<CosmicDepthPass>
+>;
 
 export interface CosmicDepthEffectProps {
   /** Focus distance */
@@ -127,11 +129,18 @@ export const CosmicDepthEffect: React.FC<CosmicDepthEffectProps> = ({
     const near = cameraNear;
     const far = cameraFar;
     const fov = cameraFOV;
-    if (camera && 'near' in camera && 'far' in camera && 'fov' in camera) {
+    if (
+      'near' in camera &&
+      'far' in camera &&
+      'fov' in camera &&
+      typeof camera.near === 'number' &&
+      typeof camera.far === 'number' &&
+      typeof camera.fov === 'number'
+    ) {
       passRef.current.setCameraParams(
-        (camera as any).near || near,
-        (camera as any).far || far,
-        (camera as any).fov || fov
+        camera.near || near,
+        camera.far || far,
+        camera.fov || fov
       );
     } else {
       passRef.current.setCameraParams(near, far, fov);
@@ -165,4 +174,3 @@ export const CosmicDepthEffect: React.FC<CosmicDepthEffectProps> = ({
     />
   );
 };
-

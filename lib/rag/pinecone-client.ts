@@ -12,7 +12,7 @@ import { envVars } from '@/lib/env/env.mjs'
 
 const PINECONE_API_KEY = envVars.pinecone.apiKey
 const PINECONE_ENVIRONMENT = envVars.pinecone.environment
-const PINECONE_INDEX_NAME = envVars.pinecone.indexName
+const PINECONE_INDEX_NAME = envVars.pinecone.guruIndexName || envVars.pinecone.indexName
 const NAMESPACE = 'jyotiai'
 
 let pineconeClient: Pinecone | null = null
@@ -134,4 +134,3 @@ export async function upsertEmbedding(
 export async function deleteEmbedding(id: string): Promise<void> {
   await deleteVectors([id])
 }
-

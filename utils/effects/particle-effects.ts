@@ -5,5 +5,5 @@
  * Reference: Particle distribution, Animation system
  */
 
-// Placeholder for particle effects utilities implementation
-
+// Placeholder for particle effects implementation
+export const particleEffects = {};

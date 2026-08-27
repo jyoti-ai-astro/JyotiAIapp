@@ -1,49 +1,49 @@
 /**
  * Business Page
- * 
+ *
  * Batch 4 - App Internal Screens Part 2
- * 
+ *
  * Business idea compatibility checker
  */
 
-'use client';
+"use client";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUserStore } from '@/store/user-store';
-import { useBusiness } from '@/lib/hooks/useBusiness';
-import { motion } from 'framer-motion';
-import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Briefcase, Sparkles } from 'lucide-react';
-import { BusinessEngine } from '@/components/engines/BusinessEngine';
-import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
-import { useTicketAccess } from '@/lib/access/useTicketAccess';
-import { getFeatureAccess } from '@/lib/payments/feature-access';
-import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
-import { decrementTicket } from '@/lib/access/ticket-access';
-import type { AstroContext } from '@/lib/engines/astro-types';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUserStore } from "@/store/user-store";
+import { useBusiness } from "@/lib/hooks/useBusiness";
+import DashboardPageShell from "@/src/ui/layout/DashboardPageShell";
+import { Button } from "@/components/ui/button";
+import { Briefcase } from "lucide-react";
+import { BusinessEngine } from "@/components/engines/BusinessEngine";
+import { OneTimeOfferBanner } from "@/components/paywall/OneTimeOfferBanner";
+import { useTicketAccess } from "@/lib/access/useTicketAccess";
+import { getFeatureAccess } from "@/lib/payments/feature-access";
+import { checkFeatureAccess } from "@/lib/access/checkFeatureAccess";
+import type { AstroContext } from "@/lib/engines/astro-types";
+import Link from "next/link";
 
 export default function BusinessPage() {
   const router = useRouter();
   const { user } = useUserStore();
-  const featureKey = 'business' as const;
-  const { hasAccess, hasSubscription, tickets, loading: ticketLoading, config } = useTicketAccess(featureKey);
+  const featureKey = "business" as const;
+  const {
+    hasAccess,
+    hasSubscription,
+    tickets,
+    loading: ticketLoading,
+    config,
+  } = useTicketAccess(featureKey);
   const featureConfig = getFeatureAccess(featureKey);
   const { analysis, loading, error, analyze } = useBusiness();
-  const [businessIdea, setBusinessIdea] = useState('');
+  const [businessIdea, setBusinessIdea] = useState("");
   const [astro, setAstro] = useState<AstroContext | null>(null);
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      router.push("/login");
     } else if (hasAccess && !ticketLoading) {
       fetchAstroContext();
     }
@@ -52,49 +52,37 @@ export default function BusinessPage() {
   const fetchAstroContext = async () => {
     if (!user?.uid) return;
     try {
-      const response = await fetch('/api/astro/context', {
-        credentials: 'include',
+      const response = await fetch("/api/astro/context", {
+        credentials: "include",
       });
       if (response.ok) {
         const data = await response.json();
         setAstro(data.astro);
       }
     } catch (err) {
-      console.error('Error fetching astro context:', err);
+      console.error("Error fetching astro context:", err);
     }
   };
 
   const handleAnalyze = async () => {
     if (!businessIdea.trim()) {
-      alert('Please enter a business idea');
+      alert("Please enter a business idea");
       return;
     }
 
     // Check access before analyzing
-    const access = await checkFeatureAccess(user, 'business');
+    const access = await checkFeatureAccess(user, "business");
     if (!access.allowed) {
       if (access.redirect || access.redirectTo) {
-        router.push(access.redirect || access.redirectTo || '/pay/199');
+        router.push(access.redirect || access.redirectTo || "/pay/199");
       }
       return;
     }
 
-    if (access.decrementTicket) {
-      await decrementTicket('kundali_basic');
-    }
 
     await analyze(businessIdea);
 
-    // Decrement ticket if not subscription
-    const hasSubscription =
-      user?.subscription === 'pro' &&
-      user?.subscriptionExpiry &&
-      new Date(user.subscriptionExpiry) > new Date();
 
-    if (!hasSubscription && user?.tickets?.kundali_basic && user.tickets.kundali_basic > 0) {
-      const { decrementTicket } = await import('@/lib/access/ticket-access');
-      await decrementTicket('kundali_basic');
-    }
   };
 
   if (!user) {
@@ -106,56 +94,87 @@ export default function BusinessPage() {
       title="Business Compatibility"
       subtitle="Check if your business idea aligns with your cosmic blueprint"
     >
-          {/* Context Panel */}
-          <div className="mb-8">
-            <OneTimeOfferBanner
-              title="Unlock Full Insights"
-              description="This module uses your birth chart & predictions powered by Guru Brain."
-              priceLabel="₹199"
-              ctaLabel="Unlock Now"
-              ctaHref="/pay/199"
-            />
-          </div>
+      <div className="space-y-8">
+        {/* Context Panel */}
+        <div className="mb-8">
+          <OneTimeOfferBanner
+            title="Unlock Full Insights"
+            description="This module uses your birth chart & predictions powered by Guru Brain."
+            priceLabel="₹199"
+            ctaLabel="Unlock Now"
+            ctaHref="/pay/199"
+          />
+        </div>
 
-          {/* Astro Summary Block */}
-          {astro && (
-            <div className="glass-card p-6 mb-10 rounded-2xl border border-gold/20">
-              <h3 className="text-gold font-heading text-xl mb-2">Astro Summary</h3>
-              <p className="text-white/80 text-sm">Sun Sign: {astro.coreChart?.sunSign || 'N/A'}</p>
-              <p className="text-white/80 text-sm">Moon Sign: {astro.coreChart?.moonSign || 'N/A'}</p>
-              <p className="text-white/80 text-sm">Ascendant: {astro.coreChart?.ascendantSign || 'N/A'}</p>
-              <p className="text-white/80 text-sm mt-4">Next Major Dasha: {astro.dasha?.currentMahadasha?.planet || 'N/A'}</p>
+        <section className="relative overflow-hidden rounded-2xl border border-[#dba84c]/15 bg-[linear-gradient(145deg,rgba(15,25,28,0.97),rgba(8,17,21,0.97))] p-6 shadow-[0_18px_55px_rgba(0,0,0,0.16)] md:p-8">
+          <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full border border-[#dba84c]/20 bg-[#dba84c]/10">
+            <Briefcase className="h-5 w-5 text-[#e5a44a]" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#c99445]">
+            Venture Observatory
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#f5eee2] md:text-4xl">
+            Business Compatibility
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#a9a49b] md:text-base">
+            Evaluate whether a venture aligns with your current astrological
+            blueprint.
+          </p>
+        </section>
+
+        {astro && (
+          <section className="rounded-2xl border border-[#dba84c]/15 bg-[linear-gradient(145deg,rgba(15,25,28,0.97),rgba(8,17,21,0.97))] p-5 md:p-6">
+            <h2 className="font-semibold text-[#f5eee2]">Birth Context</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                ["Sun Sign", astro.coreChart?.sunSign || "N/A"],
+                ["Moon Sign", astro.coreChart?.moonSign || "N/A"],
+                ["Ascendant", astro.coreChart?.ascendantSign || "N/A"],
+                ["Major Dasha", astro.dasha?.currentMahadasha?.planet || "N/A"],
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  className="rounded-xl border border-[#dba84c]/10 bg-[#0b1519]/80 p-4"
+                >
+                  <p className="text-xs uppercase tracking-[0.14em] text-[#777b77]">
+                    {label}
+                  </p>
+                  <p className="mt-2 font-medium text-[#eee7dc]">{value}</p>
+                </div>
+              ))}
             </div>
-          )}
+          </section>
+        )}
 
-          <div className="text-center">
-            <Briefcase className="mx-auto h-16 w-16 text-gold mb-4" />
-            <h1 className="text-4xl font-display font-bold text-gold">Business Compatibility</h1>
-            <p className="text-white/70 mt-2">Check if your business idea aligns with your cosmic blueprint</p>
+        <BusinessEngine />
+
+        {/* Ask Guru With Context Button */}
+        {astro && (
+          <div className="text-center mb-4">
+            <Button
+              onClick={() =>
+                router.push(
+                  `/guru?source=business`,
+                )
+              }
+              className="min-h-11 border border-[#e0a84d]/60 bg-[#e99a34] px-5 font-semibold text-[#160d04] hover:bg-[#f1aa4d]"
+            >
+              Ask Guru With My Birth Context
+            </Button>
           </div>
+        )}
 
-          <BusinessEngine onAnalysisComplete={(analysis) => setAnalysis(analysis)} />
-
-          {/* Ask Guru With Context Button */}
-          {astro && (
-            <div className="text-center mb-4">
-              <Button
-                onClick={() => router.push(`/guru?context=${encodeURIComponent(JSON.stringify(astro))}`)}
-                className="gold-btn"
-              >
-                Ask Guru With My Birth Context
-              </Button>
-            </div>
-          )}
-
-          <div className="text-center">
-            <Link href="/dashboard">
-              <Button variant="outline" className="border-cosmic-purple/50 text-white/80 hover:bg-cosmic-purple/20">
-                Back to Dashboard
-              </Button>
-            </Link>
-          </div>
+        <div className="text-center">
+          <Link href="/dashboard">
+            <Button
+              variant="outline"
+              className="min-h-11 border-[#dba84c]/20 bg-transparent text-[#d8d2c7] hover:bg-[#dba84c]/[0.06] hover:text-[#fff8eb]"
+            >
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
+      </div>
     </DashboardPageShell>
   );
 }
-

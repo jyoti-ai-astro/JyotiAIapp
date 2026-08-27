@@ -88,6 +88,13 @@ export async function POST(request: NextRequest) {
       await consumeFeatureTicket(uid, featureKey)
     } catch (err: any) {
       console.error('Ticket consumption error:', err)
+      return NextResponse.json(
+        {
+          error: 'TICKET_CONSUMPTION_FAILED',
+          message: 'The analysis completed, but credit consumption could not be confirmed. Please retry.',
+        },
+        { status: 409 }
+      )
     }
 
     return NextResponse.json({

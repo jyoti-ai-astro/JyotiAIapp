@@ -6,4 +6,4 @@
  */
 
 // Placeholder for glass morphism utilities implementation
-
+export const glassMorphism = {};

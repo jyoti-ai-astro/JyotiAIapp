@@ -382,8 +382,7 @@ export class OrchestratorV2 {
       fused.push({
         type: 'past-life',
         title: 'Past Life Insight',
-        description: `Your past life role: ${pastLife.pastLifeRole}`,
-        confidence: 0.8,
+        content: `Your past life role: ${pastLife.pastLifeRole}`,
       });
     }
 
@@ -393,8 +392,7 @@ export class OrchestratorV2 {
       fused.push({
         type: 'synergy',
         title: 'High Cosmic Synergy',
-        description: 'Your spiritual energies are in harmony',
-        confidence: userGraph.synergyScore,
+        content: 'Your spiritual energies are in harmony',
       });
     }
 
@@ -503,7 +501,7 @@ export class OrchestratorV2 {
   /**
    * Fuse vision
    */
-  async fuseVision(imageFile: File): Promise<VisionResult | null> {
+  async fuseVision(imageFile: File): Promise<VisionResult[] | null> {
     try {
       return await this.visionEngine.analyzeImage(imageFile);
     } catch (error) {
@@ -527,7 +525,7 @@ export class OrchestratorV2 {
       );
     }
     if (insight.gesture) {
-      this.memory.trackGestureFrequency(insight.gesture);
+      this.memory.trackGestureFrequency(insight.gesture.type);
     }
   }
 
@@ -538,7 +536,7 @@ export class OrchestratorV2 {
     if (!this.voiceEngine) return null;
 
     try {
-      return await this.voiceEngine.transcribe(audioBlob);
+      return await this.voiceEngine.streamToWhisper(audioBlob);
     } catch (error) {
       console.error('Voice fusion error:', error);
       return null;
@@ -558,7 +556,7 @@ export class OrchestratorV2 {
   ): OrchestratedSummary {
     const summary: OrchestratedSummary = {
       memory: this.memory.getMemorySummary(),
-      insights: insights?.map(i => `${i.title}: ${i.description}`) || [],
+      insights: insights?.map(i => `${i.title}: ${i.content}`) || [],
       predictions: predictions ? this.timelineBuilder.generateSummary(predictions).next30Days.summary : '',
       compatibility: compatibility ? `Rating: ${compatibility.rating}/100, Synergy: ${(compatibility.synergyScore * 100).toFixed(0)}%` : '',
       pastLife: pastLife ? `Role: ${pastLife.pastLifeRole}, Strength: ${pastLife.soulStrength}/5` : '',
@@ -684,6 +682,7 @@ export class OrchestratorV2 {
 
     // Phase 29 - F44: Generate response with failover path
     // Fallback chain: memory → predictionSummary → compatibilitySummary → simpleGuruReply
+    const memorySummary = this.memory.getMemorySummary();
     let response = '';
 
     try {

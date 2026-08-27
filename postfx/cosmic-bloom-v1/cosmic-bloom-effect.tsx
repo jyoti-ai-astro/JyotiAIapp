@@ -9,13 +9,15 @@
 
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
-import { CosmicBloomPass } from './cosmic-bloom-pass';
+import { CosmicBloomPass, type CosmicBloomPassConfig } from './cosmic-bloom-pass';
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
-const Effect = wrapEffect(CosmicBloomPass);
+const Effect = wrapEffect(CosmicBloomPass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicBloomPassConfig> & React.RefAttributes<CosmicBloomPass>
+>;
 
 export interface CosmicBloomEffectProps {
   /** Bloom threshold */
@@ -92,8 +94,8 @@ export const CosmicBloomEffect: React.FC<CosmicBloomEffectProps> = ({
     passRef.current.setBlessingWaveProgress(blessingWaveProgress);
 
     // Update FOV
-    if (camera && 'fov' in camera) {
-      passRef.current.setFOV((camera as any).fov);
+    if ('fov' in camera && typeof camera.fov === 'number') {
+      passRef.current.setFOV(camera.fov);
     } else {
       passRef.current.setFOV(cameraFOV);
     }
@@ -115,4 +117,3 @@ export const CosmicBloomEffect: React.FC<CosmicBloomEffectProps> = ({
     />
   );
 };
-

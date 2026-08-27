@@ -19,6 +19,11 @@ export type { CardProps } from './card';
 export { Badge } from './badge';
 export type { BadgeProps } from './badge';
 
+export { Section } from './section';
+export type { SectionProps } from './section';
+
+export { LoadingState, ErrorState, EmptyState, RetryButton } from './feedback-state';
+
 export { Icon } from './icon';
 export type { IconProps } from './icon';
 

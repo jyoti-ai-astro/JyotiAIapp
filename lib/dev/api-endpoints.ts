@@ -76,7 +76,7 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     category: 'guru',
     requiresAuth: true,
     ticketGuarded: true,
-    featureKey: 'ai_question', // Special case for Guru
+    featureKey: 'palmistry', // Guru currently consumes aiGuruTickets like AI vision features
     sampleBody: {
       messages: [{ role: 'user', content: 'Test question' }],
     },
@@ -238,30 +238,6 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     expectedStatus: 401,
   },
   {
-    key: 'payments-order',
-    method: 'POST',
-    path: '/api/payments/order',
-    label: 'Create Subscription Order',
-    category: 'payments',
-    requiresAuth: true,
-    sampleBody: { amount: 299, planName: 'premium' },
-    expectedStatus: 401,
-  },
-  {
-    key: 'payments-verify',
-    method: 'POST',
-    path: '/api/payments/verify',
-    label: 'Verify Payment',
-    category: 'payments',
-    requiresAuth: true,
-    sampleBody: {
-      razorpay_order_id: 'test',
-      razorpay_payment_id: 'test',
-      razorpay_signature: 'test',
-    },
-    expectedStatus: 401,
-  },
-  {
     key: 'pay-success',
     method: 'POST',
     path: '/api/pay/success-one-time',
@@ -373,4 +349,3 @@ export function getEndpointsByCategory(category: ApiEndpoint['category']): ApiEn
 export function getAllCategories(): ApiEndpoint['category'][] {
   return Array.from(new Set(API_ENDPOINTS.map((ep) => ep.category)))
 }
-

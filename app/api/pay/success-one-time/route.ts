@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
+import { FieldValue } from 'firebase-admin/firestore'
 import crypto from 'crypto'
 import { envVars } from '@/lib/env/env.mjs'
 import { getOneTimeProduct } from '@/lib/pricing/plans'
@@ -54,6 +55,15 @@ export async function POST(req: NextRequest) {
     const orderSnap = await orderRef.get()
     const orderData = orderSnap.exists ? orderSnap.data() : {}
     const productIdStr = String(orderData?.productId || productId)
+    if (orderData?.fulfilledAt) {
+      return NextResponse.json({
+        success: true,
+        orderId: order_id,
+        paymentId: payment_id,
+        productId: productIdStr,
+        alreadyFulfilled: true,
+      })
+    }
 
     // Get one-time product from single source of truth
     const product = getOneTimeProduct(productIdStr)
@@ -61,37 +71,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid product' }, { status: 400 })
     }
 
-    // Get user document
     const userRef = adminDb.collection('users').doc(uid)
-    const userSnap = await userRef.get()
-    const currentUserData = userSnap.exists ? userSnap.data() : {}
 
-    // Fulfillment Logic based on product tickets
-    const updates: any = {}
+    // ============================================
+    // ✅ Unified Ticket Fulfillment (Clean + Correct)
+    // ============================================
+    const updates: any = {
+      updatedAt: new Date(),
+    };
 
-    // Add AI Guru tickets
+    // ✔ AI Guru Tickets
     if (product.tickets.aiQuestions) {
-      const currentAiGuruTickets = currentUserData?.aiGuruTickets || 0
-      updates.aiGuruTickets = currentAiGuruTickets + product.tickets.aiQuestions
-      
-      // Also update legacy tickets field for backward compatibility
-      const currentTickets = currentUserData?.tickets || 0
-      updates.tickets = currentTickets + product.tickets.aiQuestions
+      const qty = product.tickets.aiQuestions;
+      updates.aiGuruTickets = FieldValue.increment(qty);
+      updates.tickets = FieldValue.increment(qty); // legacy
+      updates["legacyTickets.ai_questions"] = FieldValue.increment(qty);
     }
 
-    // Add Kundali basic tickets
+    // ✔ Kundali Tickets
     if (product.tickets.kundaliBasic) {
-      const currentKundaliTickets = currentUserData?.kundaliTickets || 0
-      updates.kundaliTickets = currentKundaliTickets + product.tickets.kundaliBasic
+      const qty = product.tickets.kundaliBasic;
+      updates.kundaliTickets = FieldValue.increment(qty);
+      updates["legacyTickets.kundali_basic"] = FieldValue.increment(qty);
     }
 
-    // Add prediction credits if specified
+    // ✔ Prediction Tickets
     if (product.tickets.predictions) {
-      const currentPredictions = currentUserData?.lifetimePredictions || 0
-      updates.lifetimePredictions = currentPredictions + product.tickets.predictions
+      const qty = product.tickets.predictions;
+      updates.lifetimePredictions = FieldValue.increment(qty);
     }
 
-    // Update user document
     const oneTimePurchase = {
       productId: String(productId),
       productIdInternal: product.id,
@@ -101,22 +110,49 @@ export async function POST(req: NextRequest) {
       tickets: product.tickets,
       amount: product.amountInINR,
     }
-    
-    await userRef.set(
-      {
-        ...updates,
-        oneTimePurchases: adminDb.FieldValue.arrayUnion(oneTimePurchase),
-      },
-      { merge: true }
-    )
 
-    // Update order status
-    await orderRef.update({
-      paymentId: payment_id,
-      signature: signature,
-      status: 'completed',
-      completedAt: new Date(),
+    const fulfillment = await adminDb.runTransaction(async (transaction) => {
+      const lockedOrderSnap = await transaction.get(orderRef)
+      const lockedOrderData = lockedOrderSnap.exists ? lockedOrderSnap.data() : {}
+
+      if (lockedOrderData?.fulfilledAt) {
+        return { alreadyFulfilled: true }
+      }
+
+      transaction.set(
+        userRef,
+        {
+          ...updates,
+          oneTimePurchases: FieldValue.arrayUnion(oneTimePurchase),
+        },
+        { merge: true }
+      )
+
+      transaction.set(
+        orderRef,
+        {
+          paymentId: payment_id,
+          signature: signature,
+          status: 'completed',
+          completedAt: new Date(),
+          fulfilledAt: new Date(),
+          fulfillmentSource: 'success-endpoint',
+        },
+        { merge: true }
+      )
+
+      return { alreadyFulfilled: false }
     })
+
+    if (fulfillment.alreadyFulfilled) {
+      return NextResponse.json({
+        success: true,
+        orderId: order_id,
+        paymentId: payment_id,
+        productId: productIdStr,
+        alreadyFulfilled: true,
+      })
+    }
 
     // Phase Z3: Log successful payment
     await logEvent('payment.success', {
@@ -130,6 +166,7 @@ export async function POST(req: NextRequest) {
     // Send payment receipt email
     try {
       const { sendPaymentReceipt } = await import('@/lib/email/email-service')
+      const userSnap = await userRef.get()
       const userData = userSnap.exists ? userSnap.data() : {}
       const userEmail = userData?.email || decodedClaims.email
       
@@ -148,7 +185,13 @@ export async function POST(req: NextRequest) {
       // Don't fail the payment if email fails
     }
 
-    return NextResponse.redirect(new URL('/thanks?payment=success', req.url))
+    return NextResponse.json({
+      success: true,
+      orderId: order_id,
+      paymentId: payment_id,
+      productId: String(productId),
+      ticketsGranted: product.tickets,
+    })
   } catch (err: any) {
     console.error('One-time payment success error:', err)
     // Phase Z3: Log error
@@ -160,4 +203,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message || 'Failed to process payment' }, { status: 500 })
   }
 }
-

@@ -4,11 +4,45 @@
  * Part B - Section 3: Onboarding Flow
  */
 
-interface GeocodeResult {
+export interface GeocodeResult {
   lat: number
   lng: number
   timezone: string
   formattedAddress: string
+  provider?: 'google' | 'geonames' | 'client_coordinates'
+}
+
+export class GeocodingError extends Error {
+  code: 'LOCATION_NOT_VERIFIED' | 'TIMEZONE_NOT_VERIFIED' | 'INVALID_COORDINATES'
+
+  constructor(code: GeocodingError['code'], message: string) {
+    super(message)
+    this.name = 'GeocodingError'
+    this.code = code
+  }
+}
+
+export function isValidCoordinate(lat: unknown, lng: unknown): lat is number {
+  return (
+    typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  )
+}
+
+export function isValidTimezone(timezone: unknown): timezone is string {
+  if (typeof timezone !== 'string' || timezone.trim().length === 0) return false
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone })
+    return true
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -16,32 +50,30 @@ interface GeocodeResult {
  * Falls back to GeoNames if TimezoneDB fails
  */
 export async function geocodePlace(placeName: string): Promise<GeocodeResult> {
-  // First try: TimezoneDB (more accurate for timezone)
-  try {
-    // Phase 31 - F46: Use validated environment variables
-    const timezoneDbKey = (await import('@/lib/env/env.mjs')).envVars.geocoding.timezoneDbKey
-    if (timezoneDbKey) {
-      // Use Google Geocoding for coordinates first
-      const geoResult = await geocodeWithGoogle(placeName)
-      if (geoResult) {
-        // Then get timezone from TimezoneDB
-        const timezone = await getTimezoneFromTimezoneDB(geoResult.lat, geoResult.lng, timezoneDbKey)
-        return {
-          ...geoResult,
-          timezone: timezone || geoResult.timezone,
-        }
-      }
-    }
-  } catch (error) {
-    console.warn('TimezoneDB geocoding failed, trying GeoNames:', error)
+  const trimmedPlace = placeName.trim()
+  if (!trimmedPlace) {
+    throw new GeocodingError('LOCATION_NOT_VERIFIED', 'Place of birth is required.')
   }
 
-  // Fallback: GeoNames (free, no API key required for basic usage)
+  // First try Google when configured. It provides both coordinates and timezone.
   try {
-    return await geocodeWithGeoNames(placeName)
+    const geoResult = await geocodeWithGoogle(trimmedPlace)
+    if (geoResult) {
+      return geoResult
+    }
+  } catch (error) {
+    console.warn('Google geocoding failed, trying GeoNames:', error)
+  }
+
+  // Secondary provider: GeoNames. Results are accepted only with a real timezone.
+  try {
+    return await geocodeWithGeoNames(trimmedPlace)
   } catch (error) {
     console.error('GeoNames geocoding failed:', error)
-    throw new Error(`Could not geocode place: ${placeName}`)
+    throw new GeocodingError(
+      'LOCATION_NOT_VERIFIED',
+      `Could not verify place of birth: ${trimmedPlace}`
+    )
   }
 }
 
@@ -63,18 +95,27 @@ async function geocodeWithGoogle(placeName: string): Promise<GeocodeResult | nul
     if (data.status === 'OK' && data.results.length > 0) {
       const result = data.results[0]
       const location = result.geometry.location
+      if (!isValidCoordinate(location.lat, location.lng)) {
+        throw new GeocodingError('INVALID_COORDINATES', 'Google returned invalid coordinates.')
+      }
 
       // Get timezone from Google Time Zone API
       const timezoneResponse = await fetch(
         `https://maps.googleapis.com/maps/api/timezone/json?location=${location.lat},${location.lng}&timestamp=${Math.floor(Date.now() / 1000)}&key=${googleApiKey}`
       )
       const timezoneData = await timezoneResponse.json()
+      const timezone = timezoneData.status === 'OK' ? timezoneData.timeZoneId : null
+
+      if (!isValidTimezone(timezone)) {
+        throw new GeocodingError('TIMEZONE_NOT_VERIFIED', 'Google did not return a valid timezone.')
+      }
 
       return {
         lat: location.lat,
         lng: location.lng,
-        timezone: timezoneData.timeZoneId || 'UTC',
+        timezone,
         formattedAddress: result.formatted_address,
+        provider: 'google',
       }
     }
   } catch (error) {
@@ -82,6 +123,44 @@ async function geocodeWithGoogle(placeName: string): Promise<GeocodeResult | nul
   }
 
   return null
+}
+
+export async function resolveTimezoneForCoordinates(
+  lat: number,
+  lng: number
+): Promise<string> {
+  if (!isValidCoordinate(lat, lng)) {
+    throw new GeocodingError('INVALID_COORDINATES', 'Birth coordinates are invalid.')
+  }
+
+  const { envVars } = await import('@/lib/env/env.mjs')
+  const googleApiKey = envVars.geocoding.googleApiKey
+  if (googleApiKey) {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${Math.floor(Date.now() / 1000)}&key=${googleApiKey}`
+      )
+      const data = await response.json()
+      if (data.status === 'OK' && isValidTimezone(data.timeZoneId)) {
+        return data.timeZoneId
+      }
+    } catch (error) {
+      console.warn('Google timezone lookup failed:', error)
+    }
+  }
+
+  const timezoneDbKey = envVars.geocoding.timezoneDbKey
+  if (timezoneDbKey) {
+    const timezone = await getTimezoneFromTimezoneDB(lat, lng, timezoneDbKey)
+    if (isValidTimezone(timezone)) {
+      return timezone
+    }
+  }
+
+  throw new GeocodingError(
+    'TIMEZONE_NOT_VERIFIED',
+    'Could not verify timezone for the selected birth location.'
+  )
 }
 
 /**
@@ -98,7 +177,7 @@ async function getTimezoneFromTimezoneDB(
     )
     const data = await response.json()
 
-    if (data.status === 'OK') {
+    if (data.status === 'OK' && isValidTimezone(data.zoneName)) {
       return data.zoneName || null
     }
   } catch (error) {
@@ -121,22 +200,33 @@ async function geocodeWithGeoNames(placeName: string): Promise<GeocodeResult> {
 
     if (data.geonames && data.geonames.length > 0) {
       const place = data.geonames[0]
+      const lat = parseFloat(place.lat)
+      const lng = parseFloat(place.lng)
+      if (!isValidCoordinate(lat, lng)) {
+        throw new GeocodingError('INVALID_COORDINATES', 'GeoNames returned invalid coordinates.')
+      }
 
       // Get timezone from GeoNames timezone API
       const timezoneResponse = await fetch(
-        `http://api.geonames.org/timezoneJSON?lat=${place.lat}&lng=${place.lng}&username=demo`
+        `http://api.geonames.org/timezoneJSON?lat=${lat}&lng=${lng}&username=demo`
       )
       const timezoneData = await timezoneResponse.json()
+      const timezone = timezoneData.timezoneId
+
+      if (!isValidTimezone(timezone)) {
+        throw new GeocodingError('TIMEZONE_NOT_VERIFIED', 'GeoNames did not return a valid timezone.')
+      }
 
       return {
-        lat: parseFloat(place.lat),
-        lng: parseFloat(place.lng),
-        timezone: timezoneData.timezoneId || 'UTC',
+        lat,
+        lng,
+        timezone,
         formattedAddress: `${place.name}, ${place.countryName}`,
+        provider: 'geonames',
       }
     }
 
-    throw new Error('No results found')
+    throw new GeocodingError('LOCATION_NOT_VERIFIED', 'No geocoding results found.')
   } catch (error) {
     console.error('GeoNames error:', error)
     throw error
@@ -144,7 +234,8 @@ async function geocodeWithGeoNames(placeName: string): Promise<GeocodeResult> {
 }
 
 /**
- * Simple fallback: return default values if all geocoding fails
+ * Deprecated test/dev helper. Production onboarding and profile updates must
+ * never use these synthetic coordinates.
  */
 export function getDefaultGeocode(placeName: string): GeocodeResult {
   // Common Indian cities fallback
@@ -166,4 +257,3 @@ export function getDefaultGeocode(placeName: string): GeocodeResult {
   // Default to Delhi if unknown
   return indianCities.delhi
 }
-

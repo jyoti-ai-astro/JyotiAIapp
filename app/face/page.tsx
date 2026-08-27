@@ -25,7 +25,6 @@ import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner';
 import { useTicketAccess } from '@/lib/access/useTicketAccess';
 import { getFeatureAccess } from '@/lib/payments/feature-access';
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
-import { decrementTicket } from '@/lib/access/ticket-access';
 import type { AstroContext } from '@/lib/engines/astro-types';
 import Link from 'next/link';
 
@@ -97,22 +96,13 @@ export default function FacePage() {
       return;
     }
 
-    if (access.decrementTicket) {
-      await decrementTicket('kundali_basic');
-    }
+
 
     await analyze(imagePreview);
 
-    // Decrement ticket if not subscription
-    const hasSubscription =
-      user?.subscription === 'pro' &&
-      user?.subscriptionExpiry &&
-      new Date(user.subscriptionExpiry) > new Date();
-
-    if (!hasSubscription && user?.tickets?.kundali_basic && user.tickets.kundali_basic > 0) {
-      const { decrementTicket } = await import('@/lib/access/ticket-access');
-      await decrementTicket('kundali_basic');
-    }
+    // Billing intentionally remains server-disabled for Face Reading until
+    // the mock client engine is replaced by a verified server analysis path.
+    // Do not consume tickets for this client-only result.
   };
 
   if (!user) {
@@ -124,6 +114,7 @@ export default function FacePage() {
       title="Face Reading"
       subtitle="Discover your personality through AI-powered face analysis"
     >
+      <div data-visual-reading-product="true" className="space-y-8">
           {/* Context Panel */}
           <div className="mb-8">
             <OneTimeOfferBanner
@@ -201,7 +192,7 @@ export default function FacePage() {
           {astro && (
             <div className="text-center mb-4">
               <Button
-                onClick={() => router.push(`/guru?context=${encodeURIComponent(JSON.stringify(astro))}`)}
+                onClick={() => router.push(`/guru?source=face`)}
                 className="gold-btn"
               >
                 Ask Guru With My Birth Context
@@ -211,11 +202,15 @@ export default function FacePage() {
 
           <div className="text-center">
             <Link href="/dashboard">
-              <Button variant="outline" className="border-cosmic-purple/50 text-white/80 hover:bg-cosmic-purple/20">
+              <Button
+                variant="outline"
+                className="!border-[#d8b56a]/30 !bg-[#0b171b] !text-[#f3ecdf] hover:!border-[#e0b75f]/50 hover:!bg-[#111f24] hover:!text-[#fff8eb]"
+              >
                 Back to Dashboard
               </Button>
             </Link>
           </div>
+      </div>
     </DashboardPageShell>
   );
 }

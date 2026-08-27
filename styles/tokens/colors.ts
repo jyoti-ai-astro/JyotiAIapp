@@ -6,13 +6,41 @@
  */
 
 // Base Core Colors (Spiritual)
+export const launchV1 = {
+  surfaces: {
+    canvas: '#FFF8E6',
+    raised: '#FFFDF4',
+    sunken: '#F5EAD0',
+  },
+  text: {
+    primary: '#07131F',
+    muted: '#56666A',
+    inverse: '#FFF7E8',
+  },
+  brand: {
+    navy: '#07131F',
+    indigo: '#0B1D2C',
+    saffron: '#F28C28',
+    gold: '#C9A24A',
+    lotus: '#C9552B',
+    teal: '#2F7D7E',
+  },
+  semantic: {
+    success: '#3D9B72',
+    warning: '#D9962E',
+    danger: '#C04A3A',
+  },
+  border: '#D8B56A',
+  focus: '#F28C28',
+} as const;
+
 export const colors = {
-  navyDeep: '#060B1B',
-  indigoAura: '#1A1F3C',
-  purpleCosmic: '#7B2CBF',
-  violetMystic: '#9D4EDD',
-  goldPrana: '#F4CE65',
-  whiteShakti: '#F8F8FF',
+  navyDeep: launchV1.brand.navy,
+  indigoAura: launchV1.brand.indigo,
+  purpleCosmic: '#2F3B59',
+  violetMystic: '#47536A',
+  goldPrana: launchV1.brand.gold,
+  whiteShakti: launchV1.surfaces.raised,
 } as const;
 
 // Nebula Gradient Tokens
@@ -26,10 +54,10 @@ export const nebula = {
 
 // Aurora Tokens
 export const aurora = {
-  green: '#4ef3c3',
-  blue: '#4e9df3',
-  purple: '#b44ef3',
-  cyan: '#4ef3e2',
+  green: '#3D9B72',
+  blue: '#2F7D7E',
+  purple: '#47536A',
+  cyan: '#2F7D7E',
 } as const;
 
 // Chakra Spectrum
@@ -58,30 +86,30 @@ export const planets = {
 
 // Utility Colors
 export const utility = {
-  success: '#42d87c',
-  warning: '#f7c948',
-  error: '#e85555',
-  info: '#4e9df3',
-  muted: 'rgba(255,255,255,0.6)',
+  success: launchV1.semantic.success,
+  warning: launchV1.semantic.warning,
+  error: launchV1.semantic.danger,
+  info: launchV1.brand.indigo,
+  muted: launchV1.text.muted,
 } as const;
 
 // State Colors (Phase 3 — Section 13.4)
 export const states = {
-  default: 'rgba(255,255,255,0.9)',
-  hover: 'rgba(255,255,255,1)',
-  active: 'rgba(255,255,255,0.8)',
-  focusRing: '#8ab4f8',
+  default: launchV1.text.primary,
+  hover: launchV1.brand.navy,
+  active: launchV1.brand.indigo,
+  focusRing: launchV1.focus,
   loading: '#d0d0d0',
-  success: '#42d87c',
-  warning: '#f7c948',
-  error: '#e85555',
-  disabled: 'rgba(255,255,255,0.4)',
+  success: launchV1.semantic.success,
+  warning: launchV1.semantic.warning,
+  error: launchV1.semantic.danger,
+  disabled: '#9A8D72',
 } as const;
 
 // Accessibility Colors
 export const a11y = {
-  focusRing: '#8ab4f8',
-  focusRingDark: '#d0e0ff',
+  focusRing: launchV1.focus,
+  focusRingDark: '#F2D488',
   contrastHighBg: '#000000',
   contrastHighText: '#ffffff',
 } as const;

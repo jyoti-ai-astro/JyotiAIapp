@@ -77,9 +77,9 @@ export default function ChartsPage() {
           {kundali ? (
             <ErrorBoundary>
               <DivisionalCharts
-                d1Data={kundali?.D1}
-                d9Data={kundali?.D9}
-                d10Data={kundali?.D10}
+                d1Data={kundali.D1}
+                d9Data={undefined}
+                d10Data={undefined}
               />
             </ErrorBoundary>
           ) : !loading ? (

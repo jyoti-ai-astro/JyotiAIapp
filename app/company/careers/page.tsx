@@ -64,9 +64,9 @@ export default function CareersPage() {
         <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm p-8">
           <h2 className="text-2xl font-heading font-bold text-white mb-4">Our Culture</h2>
           <p className="text-white/70 leading-relaxed">
-            We're building a platform that combines the timeless wisdom of Vedic astrology with cutting-edge AI.
-            We value curiosity, spiritual growth, and technical excellence. If you're passionate about making
-            spiritual guidance accessible to everyone, we'd love to hear from you.
+            We&apos;re building a platform that combines the timeless wisdom of Vedic astrology with cutting-edge AI.
+            We value curiosity, spiritual growth, and technical excellence. If you&apos;re passionate about making
+            spiritual guidance accessible to everyone, we&apos;d love to hear from you.
           </p>
         </div>
       </div>

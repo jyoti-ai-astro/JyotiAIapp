@@ -13,10 +13,12 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CosmicVignettePass } from './cosmic-vignette-pass';
+import { CosmicVignettePass, type CosmicVignettePassConfig } from './cosmic-vignette-pass';
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
-const Effect = wrapEffect(CosmicVignettePass);
+const Effect = wrapEffect(CosmicVignettePass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicVignettePassConfig> & React.RefAttributes<CosmicVignettePass>
+>;
 
 export interface CosmicVignetteEffectProps {
   /** Vignette intensity */
@@ -131,4 +133,3 @@ export const CosmicVignetteEffect: React.FC<CosmicVignetteEffectProps> = ({
     />
   );
 };
-

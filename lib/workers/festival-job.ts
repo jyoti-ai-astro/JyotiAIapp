@@ -10,6 +10,12 @@ import { adminDb } from '@/lib/firebase/admin'
 import { getFestivalToday, checkDashaSensitivity } from '@/lib/engines/festival/festival-engine'
 import { queueNotification } from '@/lib/services/notification-service'
 
+type ScheduledEvent = Event
+type ExecutionContext = {
+  waitUntil(promise: Promise<unknown>): void
+  passThroughOnException?(): void
+}
+
 /**
  * Festival Job
  * Checks if today is a festival and queues notifications
@@ -97,4 +103,3 @@ export default {
     await runFestivalJob()
   },
 }
-

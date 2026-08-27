@@ -27,6 +27,7 @@ function sanitizeMessage(id: string, userId: string, data: Record<string, any>) 
 export async function GET(request: NextRequest) {
   return withAdminAuth(async (req) => {
     if (!adminDb) return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
+    const db = adminDb
     try {
       const { searchParams } = new URL(req.url)
       const userId = (searchParams.get('userId') || '').trim()
@@ -35,12 +36,12 @@ export async function GET(request: NextRequest) {
       let chats: any[] = []
 
       if (userId) {
-        const snapshot = await adminDb.collection('guruChat').doc(userId).collection('messages').orderBy('createdAt', 'desc').limit(limit).get()
+        const snapshot = await db.collection('guruChat').doc(userId).collection('messages').orderBy('createdAt', 'desc').limit(limit).get()
         chats = snapshot.docs.map((doc) => sanitizeMessage(doc.id, userId, doc.data()))
       } else {
-        const usersSnapshot = await adminDb.collection('users').limit(50).get()
+        const usersSnapshot = await db.collection('users').limit(50).get()
         const messageSnaps = await Promise.all(usersSnapshot.docs.map(async (userDoc) => {
-          const snapshot = await adminDb.collection('guruChat').doc(userDoc.id).collection('messages').orderBy('createdAt', 'desc').limit(10).get()
+          const snapshot = await db.collection('guruChat').doc(userDoc.id).collection('messages').orderBy('createdAt', 'desc').limit(10).get()
           return snapshot.docs.map((doc) => sanitizeMessage(doc.id, userDoc.id, doc.data()))
         }))
         chats = messageSnaps.flat().sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, limit)

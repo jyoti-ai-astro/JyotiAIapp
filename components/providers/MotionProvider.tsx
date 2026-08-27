@@ -94,7 +94,7 @@ export function MotionProvider({ children }: MotionProviderProps) {
       register: () => {},
       unregister: () => {},
       emit: () => {},
-    } as MotionOrchestrator;
+    } as unknown as MotionOrchestrator;
     
     return (
       <MotionContext.Provider value={{ orchestrator: fallbackOrchestrator, isReady: false }}>
@@ -109,4 +109,3 @@ export function MotionProvider({ children }: MotionProviderProps) {
     </MotionContext.Provider>
   );
 }
-

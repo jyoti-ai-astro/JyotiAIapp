@@ -7,4 +7,6 @@
  */
 
 // Placeholder for cosmic theme implementation
+export const cosmicTheme = {};
+
 

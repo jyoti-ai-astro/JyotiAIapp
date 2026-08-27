@@ -13,15 +13,15 @@ export const homePageContent: ContentBlockData[] = [
   {
     id: 'why-jyoti',
     layout: 'left-text-right-image',
-    title: 'Why Jyoti.ai Exists',
+    title: 'Why JyotiAI Exists',
     subtitle: 'Cosmic Philosophy',
     content: [
-      'Jyoti.ai is not an app—it is a spiritual experience. We exist to make every user feel they have entered a sacred cosmic chamber where AI, astrology, and divine energy blend into one.',
+      'JyotiAI is not an app—it is a spiritual experience. We exist to make every user feel they have entered a sacred cosmic chamber where AI, astrology, and divine energy blend into one.',
       'Our mission is to bridge the ancient wisdom of Vedic astrology, numerology, palmistry, and aura reading with cutting-edge AI technology, creating a unique spiritual operating system that guides users on their cosmic journey.',
       'We believe that everyone deserves access to personalized spiritual guidance that combines the depth of ancient wisdom with the precision of modern technology.',
     ],
     image: '/content/home-1.png',
-    imageAlt: 'Why Jyoti.ai Exists',
+    imageAlt: 'Why JyotiAI Exists',
   },
   {
     id: 'science-spirituality',
@@ -29,7 +29,7 @@ export const homePageContent: ContentBlockData[] = [
     title: 'Science + Spirituality Fusion',
     subtitle: 'Where Ancient Wisdom Meets Modern AI',
     content: [
-      'Jyoti.ai represents a revolutionary fusion of science and spirituality. We combine the mathematical precision of AI with the timeless wisdom of Vedic astrology, numerology, and other ancient practices.',
+      'JyotiAI represents a revolutionary fusion of science and spirituality. We combine the mathematical precision of AI with the timeless wisdom of Vedic astrology, numerology, and other ancient practices.',
       'Our AI Guru is powered by advanced RAG (Retrieval-Augmented Generation) technology, trained on thousands of years of astrological texts, spiritual teachings, and cosmic knowledge.',
       'This fusion allows us to provide personalized insights that are both scientifically accurate and spiritually profound, creating a unique experience that honors both the analytical and the mystical.',
     ],
@@ -308,7 +308,7 @@ export const aboutPageContent: ContentBlockData[] = [
     title: 'Divinity',
     subtitle: 'Honoring the Sacred',
     content: [
-      'At Jyoti.ai, we approach spirituality with reverence and respect. We honor the sacred traditions of Vedic astrology, numerology, palmistry, and aura reading, recognizing their profound wisdom and transformative power.',
+      'At JyotiAI, we approach spirituality with reverence and respect. We honor the sacred traditions of Vedic astrology, numerology, palmistry, and aura reading, recognizing their profound wisdom and transformative power.',
       'Our platform is designed to feel like entering a sacred cosmic chamber—a space where the divine and the technological merge seamlessly, creating an experience that is both modern and deeply spiritual.',
       'We believe that technology should serve spirituality, not replace it. Every feature, every animation, and every interaction is designed to honor the sacred nature of the spiritual journey.',
     ],
@@ -321,7 +321,7 @@ export const aboutPageContent: ContentBlockData[] = [
     title: 'Technology Fusion',
     subtitle: 'Ancient Wisdom + Modern AI',
     content: [
-      'Jyoti.ai represents a revolutionary fusion of ancient spiritual wisdom and cutting-edge AI technology. Our AI Guru is powered by advanced RAG (Retrieval-Augmented Generation) technology, trained on thousands of years of astrological texts and spiritual teachings.',
+      'JyotiAI represents a revolutionary fusion of ancient spiritual wisdom and cutting-edge AI technology. Our AI Guru is powered by advanced RAG (Retrieval-Augmented Generation) technology, trained on thousands of years of astrological texts and spiritual teachings.',
       'We use computer vision for palmistry analysis, advanced algorithms for numerology calculations, and sophisticated visualization techniques for aura and chakra scanning.',
       'This fusion allows us to provide insights that are both scientifically accurate and spiritually profound, creating a unique experience that honors both the analytical and the mystical.',
     ],
@@ -331,15 +331,15 @@ export const aboutPageContent: ContentBlockData[] = [
   {
     id: 'story',
     layout: 'full-width',
-    title: 'The Story of Jyoti.ai',
+    title: 'The Story of JyotiAI',
     subtitle: 'A Journey Written in the Stars',
     content: [
-      'Jyoti.ai was born from a vision to bridge the ancient wisdom of Vedic astrology with the power of modern AI technology. Our founders, deeply passionate about both spirituality and technology, recognized the need for a platform that could make personalized spiritual guidance accessible to everyone.',
+      'JyotiAI was born from a vision to bridge the ancient wisdom of Vedic astrology with the power of modern AI technology. Our founders, deeply passionate about both spirituality and technology, recognized the need for a platform that could make personalized spiritual guidance accessible to everyone.',
       'We spent years studying ancient texts, consulting with Vedic astrologers, numerologists, and spiritual teachers, while simultaneously developing cutting-edge AI systems that could understand and interpret this profound wisdom.',
-      'Today, Jyoti.ai stands as a testament to the power of fusion—where ancient wisdom meets modern technology, where spirituality meets science, and where every user can access the cosmic insights they need to navigate their spiritual journey with confidence and clarity.',
+      'Today, JyotiAI stands as a testament to the power of fusion—where ancient wisdom meets modern technology, where spirituality meets science, and where every user can access the cosmic insights they need to navigate their spiritual journey with confidence and clarity.',
     ],
     image: '/content/about-5.png',
-    imageAlt: 'Story of Jyoti.ai',
+    imageAlt: 'Story of JyotiAI',
   },
   {
     id: 'cosmic-philosophy',
@@ -358,7 +358,7 @@ export const aboutPageContent: ContentBlockData[] = [
     id: 'roadmap',
     layout: 'right-text-left-image',
     title: 'Roadmap / Evolution Path',
-    subtitle: 'The Future of Jyoti.ai',
+    subtitle: 'The Future of JyotiAI',
     content: [
       'Our roadmap includes expanding our spiritual engines, adding new features like compatibility matching, relationship analysis, and advanced predictive models.',
       'We are continuously improving our AI Guru with better RAG systems, more comprehensive training data, and enhanced personalization capabilities.',

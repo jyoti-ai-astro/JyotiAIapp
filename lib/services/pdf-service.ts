@@ -73,7 +73,7 @@ async function htmlToPDF(html: string): Promise<Buffer> {
       },
       header: {
         height: '20mm',
-        contents: '<div style="text-align: center; color: #8B4513;">Jyoti.ai</div>',
+        contents: '<div style="text-align: center; color: #8B4513;">JyotiAI</div>',
       },
       footer: {
         height: '20mm',

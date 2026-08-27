@@ -13,10 +13,12 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { wrapEffect } from '@react-three/postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CosmicGlarePass } from './cosmic-glare-pass';
+import { CosmicGlarePass, type CosmicGlarePassConfig } from './cosmic-glare-pass';
 import { motionOrchestrator } from '../../cosmos/motion/orchestrator';
 
-const Effect = wrapEffect(CosmicGlarePass);
+const Effect = wrapEffect(CosmicGlarePass) as unknown as React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<CosmicGlarePassConfig> & React.RefAttributes<CosmicGlarePass>
+>;
 
 export interface CosmicGlareEffectProps {
   /** Glare intensity */
@@ -134,4 +136,3 @@ export const CosmicGlareEffect: React.FC<CosmicGlareEffectProps> = ({
     />
   );
 };
-

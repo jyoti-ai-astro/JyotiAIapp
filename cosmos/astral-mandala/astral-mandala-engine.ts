@@ -44,7 +44,7 @@ export class AstralMandalaEngine {
   
   private rings: RingData[] = [];
   private glyphs: GlyphData[] = [];
-  private core: CoreData;
+  private core!: CoreData;
   
   private numRings: number;
   private numGlyphs: number;
@@ -449,4 +449,3 @@ export class AstralMandalaEngine {
     this.material.dispose();
   }
 }
-

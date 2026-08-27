@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         <Card className="glass-card p-6 sm:p-8">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-display text-white">Jyoti.ai Admin</CardTitle>
+            <CardTitle className="text-3xl font-display text-white">JyotiAI Admin</CardTitle>
             <CardDescription className="text-white/70">Sign in to access the admin panel</CardDescription>
           </CardHeader>
           <CardContent>
@@ -64,7 +64,7 @@ export default function AdminLoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@jyoti.ai"
+                  placeholder="admin@jyotiai.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="rounded-xl border border-white/10 bg-white/5 text-white placeholder-white/40 focus:border-gold/60 focus:shadow-[0_0_0_1px_rgba(242,201,76,0.5)]"

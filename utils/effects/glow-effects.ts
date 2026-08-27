@@ -5,5 +5,5 @@
  * Reference: Cosmic Glow, Aurora Glow, Soft Ambient Shadow
  */
 
-// Placeholder for glow effects utilities implementation
-
+// Placeholder for glow effects implementation
+export const glowEffects = {};

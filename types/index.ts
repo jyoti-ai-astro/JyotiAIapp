@@ -1,3 +1,5 @@
+import type { SubscriptionTier } from '@/store/user-store'
+
 /**
  * Global TypeScript type definitions for Jyoti.ai
  */
@@ -19,7 +21,7 @@ export interface User {
   rashiSun?: string
   ascendant?: string
   nakshatra: string | null
-  subscription: 'free' | 'pro'
+  subscription: SubscriptionTier
   subscriptionExpiry: Date | null
   onboarded: boolean
   createdAt: Date

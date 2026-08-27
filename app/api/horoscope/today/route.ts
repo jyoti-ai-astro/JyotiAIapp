@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
 import { generateDailyHoroscope } from '@/lib/engines/horoscope/daily-horoscope'
+import { logEvent } from '@/lib/logging/log-event'
+import { getAIErrorStatus } from '@/lib/ai/provider-errors'
+import { isValidCoordinate, isValidTimezone } from '@/lib/services/geocoding'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,6 +11,11 @@ export const dynamic = 'force-dynamic'
  * Get Today's Horoscope
  * Part B - Section 8: Notifications & Daily Insights
  * Milestone 7 - Step 2
+ *
+ * Design:
+ * - Auth + Firestore failures still return proper error codes.
+ * - Personalized horoscope requires the canonical, current Kundali.
+ * - AI failures return explicit retryable error semantics.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -33,46 +41,123 @@ export async function GET(request: NextRequest) {
     }
 
     const userData = userSnap.data()
-    const rashi = userData?.rashi
-
-    if (!rashi) {
+    if (userData?.derivedAstrologyStatus === 'stale') {
       return NextResponse.json(
-        { error: 'Rashi not found. Please complete onboarding.' },
-        { status: 400 }
+        {
+          success: false,
+          error: 'KUNDALI_STALE',
+          message: 'Your birth details changed. Regenerate your Kundali before requesting a personalized horoscope.',
+        },
+        { status: 409 }
       )
     }
 
-    // Get Kundali for additional signs
-    let moonSign = rashi
-    let sunSign = undefined
-    let ascendant = undefined
-
-    const kundaliRef = adminDb.collection('kundali').doc(uid)
-    const kundaliSnap = await kundaliRef.get()
-
-    if (kundaliSnap.exists) {
-      const D1Snap = await kundaliRef.collection('D1').doc('chart').get()
-      if (D1Snap.exists) {
-        const D1Data = D1Snap.data()
-        moonSign = D1Data?.grahas?.moon?.sign || rashi
-        sunSign = D1Data?.grahas?.sun?.sign
-        ascendant = D1Data?.lagna?.sign
-      }
+    if (
+      userData?.locationVerified !== true ||
+      !isValidCoordinate(userData?.lat, userData?.lng) ||
+      !isValidTimezone(userData?.timezone)
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'LOCATION_NOT_VERIFIED',
+          message: 'Verify your birth location before requesting a personalized horoscope.',
+        },
+        { status: 409 }
+      )
     }
 
-    // Generate horoscope
-    const horoscope = await generateDailyHoroscope(rashi, moonSign, sunSign, ascendant)
+    const kundaliRef = adminDb.collection('kundali').doc(uid)
+    const [kundaliSnap, D1Snap] = await Promise.all([
+      kundaliRef.get(),
+      kundaliRef.collection('D1').doc('chart').get(),
+    ])
 
-    return NextResponse.json({
-      success: true,
-      horoscope,
-    })
+    if (!kundaliSnap.exists || kundaliSnap.data()?.meta?.stale === true) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'KUNDALI_REQUIRED',
+          message: 'Generate your Kundali before requesting a personalized horoscope.',
+        },
+        { status: 409 }
+      )
+    }
+
+    if (!D1Snap.exists) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'KUNDALI_INCOMPLETE',
+          message: 'Your Kundali is incomplete. Regenerate it before requesting a personalized horoscope.',
+        },
+        { status: 409 }
+      )
+    }
+
+    const D1Data = D1Snap.data()
+    const moonSign = D1Data?.grahas?.moon?.sign
+    const sunSign = D1Data?.grahas?.sun?.sign
+    const ascendant = D1Data?.lagna?.sign
+    const rashiPreference = userData?.rashiPreferred || 'moon'
+    const rashi =
+      rashiPreference === 'sun'
+        ? sunSign
+        : rashiPreference === 'ascendant'
+          ? ascendant
+          : moonSign
+
+    if (!rashi || !moonSign) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'KUNDALI_INCOMPLETE',
+          message: 'Your Kundali is missing required sign data. Regenerate it before requesting a personalized horoscope.',
+        },
+        { status: 409 }
+      )
+    }
+
+    try {
+      const generated = await generateDailyHoroscope(rashi, moonSign, sunSign, ascendant)
+      return NextResponse.json({
+        success: true,
+        mode: 'live',
+        horoscope: generated,
+      })
+    } catch (engineError: any) {
+      console.error('Daily horoscope generation error:', engineError)
+      try {
+        await logEvent(
+          'horoscope.error',
+          {
+            endpoint: '/api/horoscope/today',
+            errorCode: engineError?.code || 'UNKNOWN',
+          },
+          uid
+        )
+      } catch (logErr) {
+        console.error('Failed to log horoscope error:', logErr)
+      }
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: engineError?.code || 'HOROSCOPE_GENERATION_FAILED',
+          message: engineError?.clientMessage || 'Daily horoscope generation is temporarily unavailable. Please retry.',
+        },
+        { status: getAIErrorStatus(engineError) }
+      )
+    }
   } catch (error: any) {
-    console.error('Get horoscope error:', error)
+    console.error('Get horoscope error (outer):', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to get horoscope' },
+      {
+        success: false,
+        error: 'HOROSCOPE_UNAVAILABLE',
+        message: 'Daily horoscope is temporarily unavailable. Please retry.',
+      },
       { status: 500 }
     )
   }
 }
-

@@ -43,7 +43,7 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
       if (isOnboarded) {
         router.push(redirectTo || '/dashboard');
       } else {
-        router.push('/profile-setup');
+        router.push('/onboarding');
       }
       return;
     }
@@ -58,7 +58,7 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
     // Require onboarding
     if (requireOnboarded && isAuthenticated && !isOnboarded) {
       setHasRedirected(true);
-      router.push('/profile-setup');
+      router.push('/onboarding');
       return;
     }
   }, [
@@ -80,4 +80,3 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
     isOnboarded,
   };
 }
-

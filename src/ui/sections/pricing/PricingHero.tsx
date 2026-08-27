@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Sparkles } from 'lucide-react';
+import { Shield, Ticket } from 'lucide-react';
 import { fadeUp, staggerChildren } from '@/src/ui/theme/global-motion';
 
 export default function PricingHero() {
@@ -14,42 +14,34 @@ export default function PricingHero() {
       className="text-center space-y-6 max-w-3xl mx-auto"
     >
       <motion.div variants={fadeUp} className="space-y-2">
-        <p className="text-sm md:text-base font-medium text-[#FFD57A]/80 uppercase tracking-wider">
-          Plans for every seeker
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-saffron md:text-base">
+          JyotiAI pricing
         </p>
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold leading-tight">
-          <span className="bg-gradient-to-r from-[#FFD57A] to-[#FFB347] bg-clip-text text-transparent">
-            Simple pricing
-          </span>
-          <span className="block text-white mt-2">
-            for cosmic clarity
-          </span>
+        <h1 className="font-heading text-4xl font-semibold leading-tight text-primary md:text-5xl lg:text-6xl">
+          Start free. Pay only when you need deeper guidance.
         </h1>
       </motion.div>
 
       <motion.p
         variants={fadeUp}
-        className="text-lg md:text-xl text-white/70 leading-relaxed max-w-2xl mx-auto"
+        className="mx-auto max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl"
       >
-        Choose the plan that fits your spiritual journey. Start free, upgrade
-        anytime. Every plan includes access to The Guru, personalized insights,
-        and ongoing cosmic guidance.
+        Complete onboarding and generate your first basic Kundali for free. Choose a one-time reading pack for a specific need, or subscribe for ongoing access.
       </motion.p>
 
       <motion.div
         variants={fadeUp}
-        className="flex flex-wrap items-center justify-center gap-4 pt-4"
+        className="flex flex-wrap items-center justify-center gap-3 pt-4"
       >
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFD57A]/10 border border-[#FFD57A]/30 text-sm text-[#FFD57A]">
-          <Shield className="w-4 h-4" />
+        <div className="flex min-h-11 items-center gap-2 rounded-full border border-jyoti-gold/35 bg-jyoti-gold/12 px-4 py-2 text-sm font-medium text-primary">
+          <Shield className="h-4 w-4 text-saffron" aria-hidden="true" />
           <span>No hidden fees</span>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFD57A]/10 border border-[#FFD57A]/30 text-sm text-[#FFD57A]">
-          <Sparkles className="w-4 h-4" />
-          <span>Cancel anytime</span>
+        <div className="flex min-h-11 items-center gap-2 rounded-full border border-jyoti-gold/35 bg-jyoti-gold/12 px-4 py-2 text-sm font-medium text-primary">
+          <Ticket className="h-4 w-4 text-saffron" aria-hidden="true" />
+          <span>One-time packs available</span>
         </div>
       </motion.div>
     </motion.div>
   );
 }
-

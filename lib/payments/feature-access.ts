@@ -16,6 +16,7 @@ export type FeatureKey =
   | 'career'
   | 'business'
   | 'compatibility'
+  | 'numerology'
   | 'face'
   | 'palmistry'
   | 'aura'
@@ -65,6 +66,13 @@ export const FEATURE_ACCESS: Record<FeatureKey, FeatureAccessConfig> = {
     ticketField: 'lifetimePredictions',
     costPerUse: 1,
     defaultProductId: '299',
+  },
+  numerology: {
+    key: 'numerology',
+    label: 'Numerology',
+    ticketField: 'kundaliTickets',
+    costPerUse: 1,
+    defaultProductId: '199',
   },
   face: {
     key: 'face',
@@ -141,14 +149,14 @@ export const FEATURE_ACCESS: Record<FeatureKey, FeatureAccessConfig> = {
     label: 'Predictions',
     ticketField: 'lifetimePredictions',
     costPerUse: 1,
-    defaultProductId: '199',
+    defaultProductId: '299',
   },
   timeline: {
     key: 'timeline',
     label: 'Life Timeline',
     ticketField: 'lifetimePredictions',
     costPerUse: 1,
-    defaultProductId: '199',
+    defaultProductId: '299',
   },
 }
 
@@ -165,4 +173,3 @@ export function getFeatureAccess(key: FeatureKey): FeatureAccessConfig {
 export function getAllFeatureKeys(): FeatureKey[] {
   return Object.keys(FEATURE_ACCESS) as FeatureKey[]
 }
-

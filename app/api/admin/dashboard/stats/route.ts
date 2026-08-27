@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
+import { Timestamp } from 'firebase-admin/firestore'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
       // New users today
       const newUsersSnapshot = await adminDb
         .collection('users')
-        .where('createdAt', '>=', adminDb.Timestamp.fromDate(todayStart))
+        .where('createdAt', '>=', Timestamp.fromDate(todayStart))
         .count()
         .get()
       const newUsersToday = newUsersSnapshot.data().count
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
       // Reports today
       const reportsSnapshot = await adminDb
         .collection('reports')
-        .where('createdAt', '>=', adminDb.Timestamp.fromDate(todayStart))
+        .where('createdAt', '>=', Timestamp.fromDate(todayStart))
         .count()
         .get()
       const reportsToday = reportsSnapshot.data().count
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
       // AI Guru usage (chats today)
       const guruChatsSnapshot = await adminDb
         .collectionGroup('messages')
-        .where('createdAt', '>=', adminDb.Timestamp.fromDate(todayStart))
+        .where('createdAt', '>=', Timestamp.fromDate(todayStart))
         .count()
         .get()
       const guruUsageToday = guruChatsSnapshot.data().count
@@ -49,12 +50,12 @@ export async function GET(request: NextRequest) {
       // Uploads today (palmistry + aura)
       const palmistrySnapshot = await adminDb
         .collectionGroup('palmistry')
-        .where('createdAt', '>=', adminDb.Timestamp.fromDate(todayStart))
+        .where('createdAt', '>=', Timestamp.fromDate(todayStart))
         .count()
         .get()
       const auraSnapshot = await adminDb
         .collectionGroup('aura')
-        .where('createdAt', '>=', adminDb.Timestamp.fromDate(todayStart))
+        .where('createdAt', '>=', Timestamp.fromDate(todayStart))
         .count()
         .get()
       const uploadsToday = palmistrySnapshot.data().count + auraSnapshot.data().count

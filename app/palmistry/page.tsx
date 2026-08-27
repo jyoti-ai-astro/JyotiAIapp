@@ -9,8 +9,8 @@ import { usePalmistry } from '@/lib/hooks/usePalmistry'
 import { CosmicPalmistry } from '@/components/palmistry/CosmicPalmistry'
 import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
-import { decrementTicket } from '@/lib/access/ticket-access'
 import type { AstroContext } from '@/lib/engines/astro-types'
+import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 
 export default function PalmistryPage() {
   const router = useRouter()
@@ -71,9 +71,6 @@ export default function PalmistryPage() {
       return
     }
 
-    if (access.decrementTicket) {
-      await decrementTicket('kundali_basic')
-    }
 
     await analyze(leftPalmPreview, rightPalmPreview)
   }
@@ -106,7 +103,11 @@ export default function PalmistryPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <DashboardPageShell
+      title="Palmistry"
+      subtitle="Read the patterns of both palms through JyotiAI's visual analysis"
+    >
+    <div data-visual-reading-product="true" className="space-y-8">
       {/* Context Panel */}
       <div className="mb-8">
         <OneTimeOfferBanner
@@ -144,7 +145,7 @@ export default function PalmistryPage() {
       {astro && (
         <div className="flex justify-center mt-8">
           <button
-            onClick={() => router.push(`/guru?context=${encodeURIComponent(JSON.stringify(astro))}`)}
+            onClick={() => router.push(`/guru?source=palmistry`)}
             className="gold-btn"
           >
             Ask Guru With My Birth Context
@@ -152,6 +153,7 @@ export default function PalmistryPage() {
         </div>
       )}
     </div>
+    </DashboardPageShell>
   )
 }
 

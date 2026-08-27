@@ -5,5 +5,5 @@
  * Reference: Shader compilation, Uniform management
  */
 
-// Placeholder for shader effects utilities implementation
-
+// Placeholder for shader effects implementation
+export const shaderEffects = {};

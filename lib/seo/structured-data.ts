@@ -93,10 +93,10 @@ export function generateFAQSchema(data: FAQSchema) {
 }
 
 // Predefined schemas
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://jyoti.ai';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jyotiai.in';
 
 export const defaultOrganizationSchema = generateOrganizationSchema({
-  name: 'Jyoti.ai',
+  name: 'JyotiAI',
   url: siteUrl,
   logo: `${siteUrl}/logo.png`,
   description: 'AI-Powered Spiritual Guidance Platform',
@@ -108,7 +108,7 @@ export const defaultOrganizationSchema = generateOrganizationSchema({
 });
 
 export const defaultWebSiteSchema = generateWebSiteSchema({
-  name: 'Jyoti.ai',
+  name: 'JyotiAI',
   url: siteUrl,
   description: 'Your Destiny, Decoded by AI + Ancient Wisdom',
   potentialAction: {

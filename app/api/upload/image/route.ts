@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase/admin'
-import { uploadImage, validateImage } from '@/lib/services/upload-service'
+import { uploadImageServer, validateImage } from '@/lib/services/upload-service'
 
 /**
  * Upload Image Endpoint
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Upload image (client-side compression will be handled in UI)
     // For server-side, we'll use the file as-is for now
-    const result = await uploadImage(file, uid, type as any, false)
+    const result = await uploadImageServer(file, uid, type as any)
 
     return NextResponse.json({
       success: true,
@@ -54,4 +54,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

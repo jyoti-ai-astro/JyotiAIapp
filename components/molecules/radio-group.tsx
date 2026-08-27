@@ -51,7 +51,7 @@ export interface RadioItemProps {
   value: string;
   
   /** Item label */
-  label: string;
+  label: React.ReactNode;
   
   /** Disabled state */
   disabled?: boolean;
@@ -129,7 +129,7 @@ const RadioItem = React.forwardRef<HTMLButtonElement, RadioItemProps>(
       throw new Error('RadioItem must be used within RadioGroup');
     }
     
-    const { value: selectedValue, onChange, name, disabled: groupDisabled, size } = context;
+    const { value: selectedValue, onChange, name, disabled: groupDisabled, size = 'md' } = context;
     const disabled = groupDisabled || itemDisabled;
     const checked = selectedValue === value;
     
@@ -167,7 +167,7 @@ const RadioItem = React.forwardRef<HTMLButtonElement, RadioItemProps>(
           type="button"
           role="radio"
           aria-checked={checked}
-          aria-label={label}
+          aria-label={typeof label === 'string' ? label : undefined}
           disabled={disabled}
           onClick={() => !disabled && onChange(value)}
           className={baseClasses}
@@ -240,4 +240,3 @@ const RadioItem = React.forwardRef<HTMLButtonElement, RadioItemProps>(
 RadioItem.displayName = 'RadioItem';
 
 export { RadioGroup, RadioItem };
-

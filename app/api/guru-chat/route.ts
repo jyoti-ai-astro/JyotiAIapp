@@ -307,7 +307,7 @@ function safetyCheck(response: string): string {
  */
 function generateGuruResponse(
   message: string,
-  context?: GuruChatRequest['context']
+  context?: GuruContext
 ): string {
   // Placeholder response generator
   // In production, this would call OpenAI, Anthropic, or another AI service

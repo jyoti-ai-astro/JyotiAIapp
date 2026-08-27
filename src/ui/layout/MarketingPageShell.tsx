@@ -27,18 +27,18 @@ export default function MarketingPageShell({
       >
         {eyebrow && (
           <motion.div variants={fadeUp}>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFD57A]/10 border border-[#FFD57A]/30 text-sm font-medium text-[#FFD57A]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#C9A24A]/35 bg-[#F28C28]/12 px-4 py-2 text-sm font-medium text-primary">
               {eyebrow}
             </div>
           </motion.div>
         )}
 
         <motion.div variants={fadeUp} className="space-y-4">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-white leading-tight">
+          <h1 className="font-heading text-4xl font-semibold leading-tight text-primary md:text-5xl lg:text-6xl">
             {title}
           </h1>
           {description && (
-            <p className="text-lg md:text-xl text-white/70 max-w-3xl leading-relaxed">
+            <p className="max-w-3xl text-lg leading-relaxed text-muted-foreground md:text-xl">
               {description}
             </p>
           )}
@@ -56,4 +56,3 @@ export default function MarketingPageShell({
     </div>
   );
 }
-

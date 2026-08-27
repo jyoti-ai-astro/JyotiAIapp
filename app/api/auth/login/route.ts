@@ -3,6 +3,16 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin'
 
 export const dynamic = 'force-dynamic'
 
+type SubscriptionTier = 'free' | 'starter' | 'advanced' | 'supreme'
+
+function normalizeSubscriptionTier(userData: any): SubscriptionTier {
+  const raw = userData?.subscription
+  const candidate = typeof raw === 'string' ? raw : raw?.planId
+  return ['starter', 'advanced', 'supreme'].includes(candidate)
+    ? (candidate as SubscriptionTier)
+    : 'free'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { idToken } = await request.json()
@@ -59,6 +69,11 @@ export async function POST(request: NextRequest) {
         subscription: 'free',
         subscriptionExpiry: null,
         onboarded: false,
+        tickets: 0,
+        aiGuruTickets: 0,
+        kundaliTickets: 0,
+        lifetimePredictions: 0,
+        dailyUsage: { count: 0, date: new Date().toISOString().split('T')[0] },
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -75,13 +90,26 @@ export async function POST(request: NextRequest) {
       expiresIn,
     })
 
-    const userData = userSnap.exists ? userSnap.data() : null
+    // Re-read after potential creation so the response always reflects Firestore.
+    const latestUserSnap = await userRef.get()
+    const userData = latestUserSnap.exists ? latestUserSnap.data() : null
+    const subscription = normalizeSubscriptionTier(userData)
 
     const response = NextResponse.json({
       success: true,
       uid,
-      onboarded: userSnap.exists ? (userData?.onboarded || false) : false,
+      onboarded: userData?.onboarded || false,
       isAdmin: isAdmin || false,
+      subscription,
+      subscriptionExpiry: userData?.subscriptionExpiry?.toDate?.()?.toISOString?.() ?? userData?.subscriptionExpiry ?? null,
+      tickets: userData?.tickets || userData?.aiGuruTickets || 0,
+      aiGuruTickets: userData?.aiGuruTickets || userData?.tickets || 0,
+      kundaliTickets: userData?.kundaliTickets || 0,
+      lifetimePredictions: userData?.lifetimePredictions || 0,
+      dailyUsage: userData?.dailyUsage || {
+        count: 0,
+        date: new Date().toISOString().split('T')[0],
+      },
     })
 
     // Set secure HTTP-only cookie
