@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
+import { getGa4GrowthSnapshot } from '@/lib/analytics/ga4-reader'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,10 +25,11 @@ export async function GET(request: NextRequest) {
       const days = Math.min(90, Math.max(1, Number.parseInt(searchParams.get('days') || '30', 10) || 30))
       const since = new Date(Date.now() - days * 86_400_000)
 
-      const [eventsSnap, ordersSnap, oneTimeOrdersSnap] = await Promise.all([
+      const [eventsSnap, ordersSnap, oneTimeOrdersSnap, ga4] = await Promise.all([
         adminDb.collection('analyticsEvents').limit(5000).get(),
         adminDb.collectionGroup('orders').limit(5000).get(),
         adminDb.collectionGroup('one_time_orders').limit(5000).get(),
+        getGa4GrowthSnapshot(days),
       ])
 
       const events = eventsSnap.docs.map((doc) => doc.data()).filter((event) => {
@@ -119,11 +121,26 @@ export async function GET(request: NextRequest) {
           }))
           .sort((a, b) => b.sessions - a.sessions)
           .slice(0, 12),
+        ga4: {
+          configured: ga4.configured,
+          available: ga4.configured && !ga4.error,
+          propertyId: ga4.propertyId,
+          metrics: {
+            activeUsers: ga4.activeUsers,
+            sessions: ga4.sessions,
+            newUsers: ga4.newUsers,
+            pageViews: ga4.screenPageViews,
+          },
+          sources: ga4.sources,
+          error: ga4.error || null,
+        },
         contract: {
           revenueAuthority: 'provider-verified JyotiAI payments',
           paymentStores: ['payments/{uid}/orders', 'payments/{uid}/one_time_orders'],
           eventStore: 'analyticsEvents',
           attribution: 'first-party',
+          externalAnalytics: 'Google Analytics Data API (read-only)',
+          externalAnalyticsProperty: ga4.propertyId,
         },
       })
     } catch (error) {
