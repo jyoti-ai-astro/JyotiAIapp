@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
       }
 
       try {
-        // Get job statuses from Firestore
         const jobsRef = adminDb.collection('background_jobs')
         const snapshot = await jobsRef.get()
 
@@ -24,66 +23,26 @@ export async function GET(request: NextRequest) {
           ...doc.data(),
         }))
 
-        // Default jobs if not in Firestore
         const defaultJobs = [
-          {
-            id: 'daily-horoscope',
-            name: 'Daily Horoscope Job',
-            schedule: '5 AM daily',
-            status: 'active',
-            lastRun: null,
-            nextRun: null,
-            failures: 0,
-          },
-          {
-            id: 'transit-alert',
-            name: 'Transit Alert Job',
-            schedule: 'Hourly',
-            status: 'active',
-            lastRun: null,
-            nextRun: null,
-            failures: 0,
-          },
-          {
-            id: 'festival',
-            name: 'Festival Job',
-            schedule: 'Midnight daily',
-            status: 'active',
-            lastRun: null,
-            nextRun: null,
-            failures: 0,
-          },
-          {
-            id: 'notification-queue',
-            name: 'Notification Queue Worker',
-            schedule: 'Every 5 minutes',
-            status: 'active',
-            lastRun: null,
-            nextRun: null,
-            failures: 0,
-          },
+          { id: 'daily-horoscope', name: 'Daily Horoscope Job', schedule: '5 AM daily', status: 'active', lastRun: null, nextRun: null, failures: 0 },
+          { id: 'transit-alert', name: 'Transit Alert Job', schedule: 'Hourly', status: 'active', lastRun: null, nextRun: null, failures: 0 },
+          { id: 'festival', name: 'Festival Job', schedule: 'Midnight daily', status: 'active', lastRun: null, nextRun: null, failures: 0 },
+          { id: 'notification-queue', name: 'Notification Queue Worker', schedule: 'Every 5 minutes', status: 'active', lastRun: null, nextRun: null, failures: 0 },
         ]
 
-        // Merge with Firestore data
         const jobMap = new Map(jobs.map((j) => [j.id, j]))
         const allJobs = defaultJobs.map((job) => ({
           ...job,
           ...(jobMap.get(job.id) || {}),
         }))
 
-        return NextResponse.json({
-          success: true,
-          jobs: allJobs,
-        })
+        return NextResponse.json({ success: true, jobs: allJobs })
       } catch (error: any) {
         console.error('Get jobs error:', error)
-        return NextResponse.json(
-          { error: error.message || 'Failed to get jobs' },
-          { status: 500 }
-        )
+        return NextResponse.json({ error: error.message || 'Failed to get jobs' }, { status: 500 })
       }
     },
-    'jobs.trigger'
+    'logs.read'
   )(request)
 }
 
@@ -101,7 +60,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'jobId is required' }, { status: 400 })
         }
 
-        // Trigger job based on ID
         const jobEndpoints: Record<string, string> = {
           'daily-horoscope': '/api/workers/daily-horoscope',
           'transit-alert': '/api/workers/transit-alert',
@@ -114,7 +72,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Invalid job ID' }, { status: 400 })
         }
 
-        // Trigger the job
         const response = await fetch(`${req.nextUrl.origin}${endpoint}`, {
           method: 'POST',
           headers: {
@@ -127,7 +84,6 @@ export async function POST(request: NextRequest) {
           throw new Error('Failed to trigger job')
         }
 
-        // Update job status
         if (adminDb) {
           await adminDb.collection('background_jobs').doc(jobId).set(
             {
@@ -142,13 +98,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true })
       } catch (error: any) {
         console.error('Trigger job error:', error)
-        return NextResponse.json(
-          { error: error.message || 'Failed to trigger job' },
-          { status: 500 }
-        )
+        return NextResponse.json({ error: error.message || 'Failed to trigger job' }, { status: 500 })
       }
     },
     'jobs.trigger'
   )(request)
 }
-
