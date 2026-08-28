@@ -17,6 +17,7 @@ import {
 import { useRouter } from 'next/navigation'
 
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { LoadingState } from '@/components/ui/feedback-state'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -106,7 +107,19 @@ export default function RitualsPage() {
   }
 
   if (!user) {
-    return null
+    return (
+      <DashboardPageShell
+        title="Vedic Rituals"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Vedic Rituals"
+            description="Preparing your ritual workspace."
+          />
+        </div>
+      </DashboardPageShell>
+    )
   }
 
   return (

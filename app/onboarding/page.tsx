@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { CosmicOnboarding } from '@/components/onboarding/CosmicOnboarding';
+import { invalidateAuthenticatedRead } from '@/lib/client/authenticated-read'
 
 interface RashiData {
   moon: string;
@@ -224,6 +225,11 @@ export default function OnboardingPage() {
         const kundaliError = await kundaliResponse.json().catch(() => ({}));
         throw new Error(kundaliError.message || kundaliError.error || 'Failed to generate Kundali');
       }
+
+      // Canonical Kundali changed: invalidate only dependent authenticated reads.
+      invalidateAuthenticatedRead('/api/kundali/get')
+      invalidateAuthenticatedRead('/api/astro/context')
+      invalidateAuthenticatedRead('/api/timeline')
 
       // Mark as onboarded after the canonical onboarding Kundali exists.
       const response = await fetch('/api/user/update', {

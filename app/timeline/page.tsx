@@ -145,7 +145,19 @@ export default function TimelinePage() {
   };
 
   if (!user) {
-    return null;
+    return (
+      <DashboardPageShell
+        title="Your 12-Month Timeline"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Your 12-Month Timeline"
+            description="Restoring your JyotiAI session."
+          />
+        </div>
+      </DashboardPageShell>
+    );
   }
 
   return (

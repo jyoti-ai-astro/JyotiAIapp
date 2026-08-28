@@ -138,12 +138,25 @@ export async function runTimelineEngine(params: {
       throw new Error('Empty response from LLM')
     }
   } catch (error: any) {
-    console.error('Error calling LLM for timeline:', error)
+    console.error(
+      'Error calling LLM for timeline; using canonical degraded fallback:',
+      error
+    )
+
+    // Canonical AstroContext has already been validated above. An AI-provider
+    // outage must not erase the deterministic astrology experience.
     return {
-      status: 'error',
-      overview: 'Unable to generate timeline at this time. Please try again later.',
-      events: [],
-      disclaimers: ['An error occurred while generating timeline. Please try again.'],
+      status: 'degraded',
+      overview:
+        'Your timeline is available in limited mode using your verified astrological chart while live AI interpretation is temporarily unavailable.',
+      events: generateFallbackEvents(
+        monthLabels,
+        astroContext
+      ),
+      disclaimers: [
+        'This limited timeline uses your verified astrological chart without live AI interpretation.',
+        'Astrological guidance is interpretive and should not replace professional medical, legal, or financial advice.',
+      ],
       usedRag,
       usedAstroContext,
     }

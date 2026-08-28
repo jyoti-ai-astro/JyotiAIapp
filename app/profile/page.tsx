@@ -14,6 +14,10 @@ import { LocationAutocomplete } from '@/components/auth/LocationAutocomplete'
 import Link from 'next/link'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 import { logoutClientSession } from '@/lib/auth/client-session'
+import {
+  authenticatedJsonRead,
+  invalidateAuthenticatedRead,
+} from '@/lib/client/authenticated-read'
 
 interface ProfileData {
   name: string
@@ -106,16 +110,9 @@ export default function ProfilePage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('/api/user/get', {
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}))
-        throw new Error(data.error || 'Failed to load profile')
-      }
-
-      const result = await response.json()
+      const result = await authenticatedJsonRead<{ user: ProfileData }>(
+        '/api/user/get'
+      )
       setProfile(result.user)
       setForm(normalizeProfileForm(result.user))
     } catch (err: any) {
@@ -188,7 +185,14 @@ export default function ProfilePage() {
         derivedAstrologyStatus: data.derivedAstrologyStatus,
       } as any)
 
-      await fetchProfile()
+      invalidateAuthenticatedRead('/api/user/get')
+      const freshResult = await authenticatedJsonRead<{ user: ProfileData }>(
+        '/api/user/get',
+        { force: true }
+      )
+      setProfile(freshResult.user)
+      setForm(normalizeProfileForm(freshResult.user))
+
       setMessage(
         data.birthDataChanged
           ? 'Profile saved. Your astrology data is marked stale; regenerate Kundali before using personalized guidance.'

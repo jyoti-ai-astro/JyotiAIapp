@@ -11,7 +11,9 @@ import { OneTimeOfferBanner } from '@/components/paywall/OneTimeOfferBanner'
 import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess'
 import type { AstroContext } from '@/lib/engines/astro-types'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { LoadingState } from '@/components/ui/feedback-state'
 
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 export default function PalmistryPage() {
   const router = useRouter()
   const { user } = useUserStore()
@@ -85,21 +87,32 @@ export default function PalmistryPage() {
 
   const fetchAstroContext = async () => {
     if (!user?.uid) return
+
     try {
-      const response = await fetch('/api/astro/context', {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setAstro(data.astro)
-      }
+      const data = await authenticatedJsonRead<{ astro: AstroContext }>(
+        '/api/astro/context',
+        { ttlMs: 60_000 }
+      )
+      setAstro(data.astro)
     } catch (err) {
       console.error('Error fetching astro context:', err)
     }
   }
 
   if (!user) {
-    return null
+    return (
+      <DashboardPageShell
+        title="Palmistry"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Palmistry"
+            description="Preparing your palmistry workspace."
+          />
+        </div>
+      </DashboardPageShell>
+    )
   }
 
   return (

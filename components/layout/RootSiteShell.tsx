@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Header } from '@/src/ui/layout/Header'
 import { Footer } from '@/src/ui/layout/Footer'
 import { GuruChatWidget } from '@/components/guru/GuruChatWidget'
+import { AuthenticatedAppShell } from '@/src/ui/layout/AuthenticatedAppShell'
 
 const SELF_CONTAINED_PREFIXES = [
   '/login',
@@ -41,12 +42,24 @@ export function RootSiteShell({
     )
   }
 
+  const useExternalAuthenticatedShell =
+    pathname === '/kundali' ||
+    pathname.startsWith('/kundali/')
+
   return (
     <>
       <Header />
 
       <main className="relative z-10 pt-20 md:pt-24">
-        {children}
+        {useExternalAuthenticatedShell ? (
+          <div className="page-container">
+            <AuthenticatedAppShell>
+              {children}
+            </AuthenticatedAppShell>
+          </div>
+        ) : (
+          children
+        )}
       </main>
 
       <Footer />

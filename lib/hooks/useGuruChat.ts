@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useUserStore } from '@/store/user-store'
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 
 export interface GuruMessage {
   id?: string
@@ -38,7 +39,7 @@ export type GuruErrorCode =
   | 'RATE_LIMITED'
   | 'TIMEOUT'
 
-export function useGuruChat(sessionId?: string) {
+export function useGuruChat(sessionId?: string, enabled = true) {
   const { user } = useUserStore()
   const [messages, setMessages] = useState<GuruMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -52,24 +53,27 @@ export function useGuruChat(sessionId?: string) {
   // Load history on mount (from localStorage for now)
   useEffect(() => {
     async function loadHistory() {
+      if (!enabled) return
+
       if (user) {
+        // The dedicated Guru page intentionally uses the canonical "default"
+        // session. Explicit widget sessions remain independently scoped.
+        const canonicalSessionId = sessionId || 'default'
+
         try {
-          const query = sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : ''
-          const response = await fetch(`/api/guru/history${query}`, {
-            credentials: 'include',
+          const url = `/api/guru/history?sessionId=${encodeURIComponent(canonicalSessionId)}`
+          const data = await authenticatedJsonRead<{ messages?: any[] }>(url, {
+            ttlMs: 30_000,
           })
 
-          if (response.ok) {
-            const data = await response.json()
-            const chatMessages: GuruMessage[] = (data.messages || []).map((msg: any) => ({
-              id: msg.id,
-              role: msg.role === 'assistant' ? 'guru' : 'user',
-              content: msg.content,
-              timestamp: msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now(),
-              metadata: msg.metadata,
-            }))
-            setMessages(chatMessages)
-          }
+          const chatMessages: GuruMessage[] = (data.messages || []).map((msg: any) => ({
+            id: msg.id,
+            role: msg.role === 'assistant' ? 'guru' : 'user',
+            content: msg.content,
+            timestamp: msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now(),
+            metadata: msg.metadata,
+          }))
+          setMessages(chatMessages)
         } catch (err) {
           console.error('Error loading server history:', err)
         }
@@ -100,7 +104,7 @@ export function useGuruChat(sessionId?: string) {
     }
 
     loadHistory()
-  }, [sessionId, user])
+  }, [enabled, sessionId, user])
 
   const sendMessage = useCallback(
     async (content: string): Promise<boolean> => {

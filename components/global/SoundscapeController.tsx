@@ -12,6 +12,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  authenticatedJsonRead,
+  invalidateAuthenticatedRead,
+} from '@/lib/client/authenticated-read'
 
 export function SoundscapeController() {
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -31,9 +35,7 @@ export function SoundscapeController() {
 
     async function loadSoundPreference() {
       try {
-        const response = await fetch('/api/user/get', { credentials: 'include' });
-        if (!response.ok) return;
-        const data = await response.json();
+        const data = await authenticatedJsonRead<any>('/api/user/get')
         if (!cancelled) {
           const settings = {
             notifications: data.user?.settings?.notifications ?? true,
@@ -78,6 +80,7 @@ export function SoundscapeController() {
           settings: settingsRef.current,
         }),
       });
+      invalidateAuthenticatedRead('/api/user/get')
     } catch {
       // Preference persistence is best-effort for unauthenticated pages.
     }

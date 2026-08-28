@@ -46,6 +46,9 @@ export interface PredictionEngineResult {
   disclaimers: string[]
   usedRag: boolean
   usedAstroContext: boolean
+  errorCode?: string
+  errorMessage?: string
+  errorStatus?: number
 }
 
 /**
@@ -147,6 +150,18 @@ export async function runPredictionEngine(params: {
       ],
       usedRag,
       usedAstroContext,
+      errorCode:
+        typeof error?.code === 'string'
+          ? error.code
+          : 'LLM_ERROR',
+      errorMessage:
+        typeof error?.clientMessage === 'string'
+          ? error.clientMessage
+          : 'Failed to generate predictions. Please try again.',
+      errorStatus:
+        Number.isInteger(error?.status) && error.status >= 400
+          ? error.status
+          : undefined,
     }
   }
 

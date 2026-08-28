@@ -112,7 +112,19 @@ export default function ReportsPage() {
   }
 
   if (!user) {
-    return null
+    return (
+      <DashboardPageShell
+        title="Your Reports"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Your Reports"
+            description="Restoring your saved reports."
+          />
+        </div>
+      </DashboardPageShell>
+    )
   }
 
   const displayReports = reports

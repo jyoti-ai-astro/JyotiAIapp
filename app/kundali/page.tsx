@@ -32,6 +32,7 @@ import {
 } from '@/lib/astrology/display-formatters'
 import { useUserStore } from '@/store/user-store'
 import { KundaliProductionVisualSystem } from '@/components/celestial/KundaliProductionVisualSystem'
+import { invalidateAuthenticatedRead } from '@/lib/client/authenticated-read'
 
 type DashaPeriod = {
   planet?: string | null
@@ -211,6 +212,11 @@ export default function KundaliPage() {
         throw new Error(data.message || data.error || 'Kundali generation failed')
       }
 
+      // Canonical Kundali changed: invalidate only dependent authenticated reads.
+      invalidateAuthenticatedRead('/api/kundali/get')
+      invalidateAuthenticatedRead('/api/astro/context')
+      invalidateAuthenticatedRead('/api/timeline')
+
       await fetchKundali()
       setShow3D(false)
     } catch (err: any) {
@@ -245,7 +251,21 @@ export default function KundaliPage() {
     }
   }
 
-  if (!user) return null
+  if (!user) {
+    return (
+      <DashboardPageShell
+        title="Your Vedic Birth Chart"
+        subtitle="Preparing your JyotiAI chart workspace."
+      >
+        <Card>
+          <LoadingState
+            title="Opening Kundali"
+            description="Restoring your saved JyotiAI session."
+          />
+        </Card>
+      </DashboardPageShell>
+    )
+  }
 
   if (loading || ticketLoading) {
     return (
@@ -382,24 +402,6 @@ export default function KundaliPage() {
         [data-kundali-experience="observatory"]
           button:not([class*="bg-primary"]):not([class*="variant-ghost"]) {
           border-color: rgba(225, 173, 96, 0.25);
-        }
-
-        body:has([data-kundali-experience="observatory"]) header {
-          background: rgba(2, 8, 13, 0.975) !important;
-          border-bottom-color: rgba(226, 166, 82, 0.14) !important;
-          backdrop-filter: blur(18px) saturate(120%) !important;
-          box-shadow: none !important;
-        }
-
-        body:has([data-kundali-experience="observatory"]) header::before,
-        body:has([data-kundali-experience="observatory"]) header::after {
-          opacity: 0 !important;
-          display: none !important;
-        }
-
-        body:has([data-kundali-experience="observatory"]) footer {
-          background: #07111f !important;
-          border-top-color: rgba(225, 173, 96, 0.12) !important;
         }
 
         @media (max-width: 1023px) {

@@ -12,8 +12,9 @@ const navItems = [
   { href: '/guru', label: 'Guru' },
   { href: '/kundali', label: 'Kundali' },
   { href: '/predictions', label: 'Predictions' },
+  { href: '/timeline', label: 'Timeline' },
+  { href: '/reports', label: 'Reports' },
   { href: '/pricing', label: 'Pricing' },
-  { href: '/company/about', label: 'About' },
 ]
 
 export function Header() {

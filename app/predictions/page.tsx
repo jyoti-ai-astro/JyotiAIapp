@@ -11,6 +11,7 @@ import {
   TrendingUp,
   ShieldAlert,
   Target,
+  LoaderCircle,
 } from 'lucide-react'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 import { ProductPageFrame } from '@/components/product'
@@ -111,7 +112,25 @@ export default function PredictionsPage() {
     }
   }
 
-  if (!user) return null
+  if (!user) {
+    return (
+      <ProductPageFrame product="predictions">
+        <DashboardPageShell
+          title="Predictions"
+          subtitle="Preparing your JyotiAI forecast workspace."
+        >
+          <div className="flex min-h-[320px] items-center justify-center rounded-[28px] border border-[#dfa84d]/15 bg-[#091216]">
+            <div className="text-center">
+              <LoaderCircle className="mx-auto h-6 w-6 animate-spin text-[#dfa84d]" />
+              <p className="mt-4 text-sm text-[#aaa69e]">
+                Restoring your saved JyotiAI session.
+              </p>
+            </div>
+          </div>
+        </DashboardPageShell>
+      </ProductPageFrame>
+    )
+  }
 
   return (
     <ProductPageFrame product="predictions">

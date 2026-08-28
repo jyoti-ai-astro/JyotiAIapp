@@ -14,6 +14,11 @@ import {
   classifyAIResponseError,
 } from '@/lib/ai/provider-errors'
 import { retrieveRelevantDocuments, type RAGResult } from '@/lib/rag/rag-service'
+import {
+  assertAIProviderAvailable,
+  clearAIProviderFailure,
+  recordAIProviderFailure,
+} from '@/lib/ai/provider-health'
 
 export interface DailyHoroscope {
   date: string
@@ -160,6 +165,8 @@ async function generateOpenAIHoroscope(
     throw aiNotConfigured('OpenAI')
   }
   
+  assertAIProviderAvailable('OpenAI')
+
   let response: Response
   try {
     response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -179,12 +186,20 @@ async function generateOpenAIHoroscope(
       }),
     })
   } catch {
-    throw aiNetworkError('OpenAI')
+    const providerError = aiNetworkError('OpenAI')
+    recordAIProviderFailure('OpenAI', providerError)
+    throw providerError
   }
   
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
-    throw classifyAIResponseError('OpenAI', response, error)
+    const providerError = classifyAIResponseError(
+      'OpenAI',
+      response,
+      error
+    )
+    recordAIProviderFailure('OpenAI', providerError)
+    throw providerError
   }
   
   const data = await response.json()
@@ -195,7 +210,15 @@ async function generateOpenAIHoroscope(
   
   try {
     const horoscope = JSON.parse(content)
-    return normalizeHoroscope(horoscope, rashi, moonSign, sunSign, ascendant)
+    const normalized = normalizeHoroscope(
+      horoscope,
+      rashi,
+      moonSign,
+      sunSign,
+      ascendant
+    )
+    clearAIProviderFailure('OpenAI')
+    return normalized
   } catch {
     throw aiMalformedResponse('OpenAI')
   }

@@ -8,6 +8,8 @@
 
 // Phase 31 - F46: Use validated environment variables
 import { envVars } from '@/lib/env/env.mjs'
+import { classifyAIResponseError } from '@/lib/ai/provider-errors'
+import { assertAIProviderAvailable, clearAIProviderFailure, recordAIProviderFailure } from '@/lib/ai/provider-health'
 
 const EMBEDDING_PROVIDER = envVars.ai.embeddingProvider
 const OPENAI_API_KEY = envVars.ai.openaiApiKey
@@ -34,25 +36,46 @@ async function generateOpenAIEmbedding(text: string): Promise<number[]> {
     throw new Error('OpenAI API key not configured')
   }
 
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'text-embedding-3-small',
-      input: text,
-    }),
-  })
+  assertAIProviderAvailable('OpenAI')
+
+  let response: Response
+  try {
+    response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'text-embedding-3-small',
+        input: text,
+      }),
+    })
+  } catch {
+    const error: any = new Error('OpenAI embedding network error')
+    error.code = 'AI_NETWORK_ERROR'
+    recordAIProviderFailure('OpenAI', error)
+    throw error
+  }
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`OpenAI embedding error: ${error.error?.message || 'Unknown error'}`)
+    const body = await response.json().catch(() => ({}))
+    const error = classifyAIResponseError('OpenAI', response, body)
+    recordAIProviderFailure('OpenAI', error)
+    throw error
   }
 
   const data = await response.json()
-  return data.data[0].embedding
+  const embedding = data.data?.[0]?.embedding
+
+  if (!Array.isArray(embedding) || embedding.length === 0) {
+    const error: any = new Error('OpenAI returned an unusable embedding')
+    error.code = 'AI_MALFORMED_RESPONSE'
+    throw error
+  }
+
+  clearAIProviderFailure('OpenAI')
+  return embedding
 }
 
 /**
@@ -89,4 +112,3 @@ async function generateGeminiEmbedding(text: string): Promise<number[]> {
   const data = await response.json()
   return data.embedding.values
 }
-

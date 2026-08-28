@@ -6,6 +6,15 @@
  */
 
 import { envVars } from '@/lib/env/env.mjs'
+import {
+  aiNetworkError,
+  classifyAIResponseError,
+} from '@/lib/ai/provider-errors'
+import {
+  assertAIProviderAvailable,
+  clearAIProviderFailure,
+  recordAIProviderFailure,
+} from '@/lib/ai/provider-health'
 
 export interface LLMMessage {
   role: 'user' | 'assistant' | 'system'
@@ -50,31 +59,63 @@ async function callOpenAI(
     maxTokens?: number
   }
 ): Promise<string> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
-      temperature: options?.temperature ?? 0.7,
-      max_tokens: options?.maxTokens ?? 2000,
-    }),
-    signal,
-  })
+  assertAIProviderAvailable('OpenAI')
+
+  let response: Response
+
+  try {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        temperature: options?.temperature ?? 0.7,
+        max_tokens: options?.maxTokens ?? 2000,
+      }),
+      signal,
+    })
+  } catch (error: any) {
+    if (error?.name === 'AbortError' || signal?.aborted) {
+      throw error
+    }
+
+    const providerError = aiNetworkError('OpenAI')
+    recordAIProviderFailure('OpenAI', providerError)
+    throw providerError
+  }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(`OpenAI error: ${error.error?.message || 'Unknown error'}`)
+    const body = await response.json().catch(() => ({}))
+    const providerError = classifyAIResponseError(
+      'OpenAI',
+      response,
+      body
+    )
+
+    recordAIProviderFailure('OpenAI', providerError)
+    throw providerError
   }
 
   const data = await response.json()
-  return data.choices[0]?.message?.content || 'I apologize, but I could not generate a response.'
+  const content = data.choices?.[0]?.message?.content
+
+  if (!content || typeof content !== 'string') {
+    const error: any = new Error('OpenAI returned an unusable response')
+    error.code = 'AI_MALFORMED_RESPONSE'
+    error.clientMessage =
+      'AI generation returned an invalid response. Please try again.'
+    throw error
+  }
+
+  clearAIProviderFailure('OpenAI')
+  return content
 }
 
 /**

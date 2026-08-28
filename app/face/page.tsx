@@ -16,6 +16,7 @@ import { useUserStore } from '@/store/user-store';
 import { useFaceReading } from '@/lib/hooks/useFaceReading';
 import { motion } from 'framer-motion';
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
+import { LoadingState } from '@/components/ui/feedback-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,7 @@ import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
 import type { AstroContext } from '@/lib/engines/astro-types';
 import Link from 'next/link';
 
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 export default function FacePage() {
   const router = useRouter();
   const { user } = useUserStore();
@@ -48,19 +50,18 @@ export default function FacePage() {
   }, [user, router, hasAccess, ticketLoading]);
 
   const fetchAstroContext = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) return
+
     try {
-      const response = await fetch('/api/astro/context', {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAstro(data.astro);
-      }
+      const data = await authenticatedJsonRead<{ astro: AstroContext }>(
+        '/api/astro/context',
+        { ttlMs: 60_000 }
+      )
+      setAstro(data.astro)
     } catch (err) {
-      console.error('Error fetching astro context:', err);
+      console.error('Error fetching astro context:', err)
     }
-  };
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -106,7 +107,19 @@ export default function FacePage() {
   };
 
   if (!user) {
-    return null;
+    return (
+      <DashboardPageShell
+        title="Face Reading"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Face Reading"
+            description="Preparing your face reading workspace."
+          />
+        </div>
+      </DashboardPageShell>
+    );
   }
 
   return (

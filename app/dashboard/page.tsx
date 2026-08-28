@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState, ErrorState, LoadingState, RetryButton } from '@/components/ui/feedback-state'
 import { useUserStore } from '@/store/user-store'
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 
 type RequestState<T> = {
   loading: boolean
@@ -118,16 +119,7 @@ const defaultRequestState = <T,>(): RequestState<T> => ({
 })
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { credentials: 'include' })
-  const data = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    const error = new Error(data.message || data.error || `Failed to load ${url}`) as Error & {
-      code?: string
-    }
-    error.code = data.code || data.error || null
-    throw error
-  }
-  return data
+  return authenticatedJsonRead<T>(url)
 }
 
 function formatDate(date = new Date()) {
@@ -229,7 +221,19 @@ export default function DashboardPage() {
     void load(setHoroscope, '/api/horoscope/today', (data) => data.horoscope)
     void load(setKundali, '/api/kundali/get', (data) => data.kundali)
     void load(setReports, '/api/reports/list?limit=2', (data) => data.reports || [])
-    void load(setTickets, '/api/user/tickets', (data) => data)
+    void (async () => {
+      try {
+        const data = await authenticatedJsonRead<TicketSummary>('/api/user/tickets', { ttlMs: 60_000 })
+        setTickets({ loading: false, data, error: null, code: null })
+      } catch (error: any) {
+        setTickets({
+          loading: false,
+          data: null,
+          error: error.message || 'Unable to load this section.',
+          code: error.code || null,
+        })
+      }
+    })()
     void load(setFestival, '/api/festival/today', (data) => data)
     void load(setNotifications, '/api/notifications/list?limit=1', (data) => ({
       unreadCount: data.unreadCount || 0,
@@ -381,7 +385,19 @@ export default function DashboardPage() {
   ])
 
   if (!user) {
-    return null
+    return (
+      <DashboardPageShell
+        title="Dashboard"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Dashboard"
+            description="Restoring your JyotiAI workspace."
+          />
+        </div>
+      </DashboardPageShell>
+    )
   }
 
   const displayName = user.name || summary.data?.user.name || 'there'

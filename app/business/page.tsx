@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/user-store";
 import { useBusiness } from "@/lib/hooks/useBusiness";
 import DashboardPageShell from "@/src/ui/layout/DashboardPageShell";
+import { LoadingState } from '@/components/ui/feedback-state'
 import { Button } from "@/components/ui/button";
 import { Briefcase } from "lucide-react";
 import { BusinessEngine } from "@/components/engines/BusinessEngine";
@@ -25,6 +26,7 @@ import { checkFeatureAccess } from "@/lib/access/checkFeatureAccess";
 import type { AstroContext } from "@/lib/engines/astro-types";
 import Link from "next/link";
 
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 export default function BusinessPage() {
   const router = useRouter();
   const { user } = useUserStore();
@@ -50,19 +52,18 @@ export default function BusinessPage() {
   }, [user, router, hasAccess, ticketLoading]);
 
   const fetchAstroContext = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) return
+
     try {
-      const response = await fetch("/api/astro/context", {
-        credentials: "include",
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAstro(data.astro);
-      }
+      const data = await authenticatedJsonRead<{ astro: AstroContext }>(
+        '/api/astro/context',
+        { ttlMs: 60_000 }
+      )
+      setAstro(data.astro)
     } catch (err) {
-      console.error("Error fetching astro context:", err);
+      console.error('Error fetching astro context:', err)
     }
-  };
+  }
 
   const handleAnalyze = async () => {
     if (!businessIdea.trim()) {
@@ -86,7 +87,19 @@ export default function BusinessPage() {
   };
 
   if (!user) {
-    return null;
+    return (
+      <DashboardPageShell
+        title="Business Compatibility"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Business Compatibility"
+            description="Preparing your business workspace."
+          />
+        </div>
+      </DashboardPageShell>
+    );
   }
 
   return (
