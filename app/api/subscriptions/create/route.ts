@@ -165,71 +165,161 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Save subscription to Firestore (non-blocking errors)
-    if (adminDb) {
+    // Firestore is the canonical local subscription mapping used by
+    // status, cancellation and webhook reconciliation. Do not expose a
+    // newly-created Razorpay subscription unless this mapping is durable.
+    if (!adminDb) {
       try {
-        const subscriptionRef = adminDb
-          .collection('users')
-          .doc(uid)
-          .collection('subscriptions')
-          .doc('current');
-
-        await subscriptionRef.set({
-          planId: plan.id,
-          subscriptionProductId: plan.subscriptionProductId,
-          razorpaySubscriptionId: subscription.id,
-          status: subscription.status, // created, authenticated, active, etc.
-          razorpaySnapshot: {
-            id: subscription.id,
-            status: subscription.status,
-            planId: subscription.plan_id,
-            currentStart: subscription.current_start ?? null,
-            currentEnd: subscription.current_end ?? null,
-            chargeAt: subscription.charge_at ?? null,
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-
-        // Also update user doc for quick access
-        const userRef = adminDb.collection('users').doc(uid);
-        const subStatus = subscription.status;
-        const isActiveSnapshot =
-          subStatus === 'active' ||
-          subStatus === 'authenticated';
-
-        await userRef.set(
-          {
-            subscription: {
-              planId: plan.id,
-              subscriptionProductId: plan.subscriptionProductId,
-              razorpaySubscriptionId: subscription.id,
-              status: subStatus,
-              active: isActiveSnapshot,
-              lastSyncedAt: new Date(),
-            },
-            updatedAt: new Date(),
-          },
-          { merge: true }
+        await razorpay.subscriptions.cancel(subscription.id, 0);
+      } catch (cleanupErr: any) {
+        console.error(
+          'Subscription compensation failed after Firestore unavailable:',
+          cleanupErr
         );
 
-        // Phase Z3: Log subscription creation
         await logEvent(
-          'subscription.created',
+          'api.error',
           {
-            planId: plan.id,
-            subscriptionProductId: plan.subscriptionProductId,
+            endpoint: '/api/subscriptions/create',
+            phase: 'subscription_compensation',
+            reason: 'firestore_unavailable_cleanup_failed',
             razorpaySubscriptionId: subscription.id,
-            status: subscription.status,
+            error: cleanupErr?.message || 'Unknown Razorpay cancellation error',
           },
           uid
         );
-      } catch (firestoreErr) {
+      }
+
+      return NextResponse.json(
+        { error: 'Unable to initialize subscription. Please try again.' },
+        { status: 503 }
+      );
+    }
+
+    try {
+      const subscriptionRef = adminDb
+        .collection('users')
+        .doc(uid)
+        .collection('subscriptions')
+        .doc('current');
+
+      await subscriptionRef.set({
+        planId: plan.id,
+        subscriptionProductId: plan.subscriptionProductId,
+        razorpaySubscriptionId: subscription.id,
+        status: subscription.status,
+        razorpaySnapshot: {
+          id: subscription.id,
+          status: subscription.status,
+          planId: subscription.plan_id,
+          currentStart: subscription.current_start ?? null,
+          currentEnd: subscription.current_end ?? null,
+          chargeAt: subscription.charge_at ?? null,
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const userRef = adminDb.collection('users').doc(uid);
+      const subStatus = subscription.status;
+      const isActiveSnapshot =
+        subStatus === 'active' ||
+        subStatus === 'authenticated';
+
+      await userRef.set(
+        {
+          subscription: {
+            planId: plan.id,
+            subscriptionProductId: plan.subscriptionProductId,
+            razorpaySubscriptionId: subscription.id,
+            status: subStatus,
+            active: isActiveSnapshot,
+            lastSyncedAt: new Date(),
+          },
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
+    } catch (firestoreErr: any) {
+      console.error(
+        'Canonical subscription persistence failed:',
+        firestoreErr
+      );
+
+      let compensationSucceeded = false;
+
+      try {
+        await razorpay.subscriptions.cancel(subscription.id, 0);
+        compensationSucceeded = true;
+      } catch (cleanupErr: any) {
         console.error(
-          'Subscription Firestore/logEvent error (non-blocking):',
-          firestoreErr
+          'Subscription compensation cancellation failed:',
+          cleanupErr
+        );
+
+        await logEvent(
+          'api.error',
+          {
+            endpoint: '/api/subscriptions/create',
+            phase: 'subscription_compensation',
+            reason: 'cleanup_failed',
+            razorpaySubscriptionId: subscription.id,
+            planId: plan.id,
+            persistenceError:
+              firestoreErr?.message || 'Unknown Firestore error',
+            cleanupError:
+              cleanupErr?.message || 'Unknown Razorpay cancellation error',
+          },
+          uid
         );
       }
+
+      if (compensationSucceeded) {
+        try {
+          await logEvent(
+            'api.error',
+            {
+              endpoint: '/api/subscriptions/create',
+              phase: 'canonical_subscription_persistence',
+              reason: 'firestore_write_failed_subscription_cancelled',
+              razorpaySubscriptionId: subscription.id,
+              planId: plan.id,
+              error: firestoreErr?.message || 'Unknown Firestore error',
+            },
+            uid
+          );
+        } catch (logErr) {
+          console.error(
+            'Failed to log compensated subscription persistence error:',
+            logErr
+          );
+        }
+      }
+
+      return NextResponse.json(
+        {
+          error:
+            'Unable to initialize subscription safely. Please try again.',
+        },
+        { status: 503 }
+      );
+    }
+
+    // Audit logging is useful, but failure here must not invalidate an
+    // already durable provider + Firestore subscription mapping.
+    try {
+      await logEvent(
+        'subscription.created',
+        {
+          planId: plan.id,
+          subscriptionProductId: plan.subscriptionProductId,
+          razorpaySubscriptionId: subscription.id,
+          status: subscription.status,
+        },
+        uid
+      );
+    } catch (logErr) {
+      console.error('Subscription creation audit logging failed:', logErr);
     }
 
     return NextResponse.json({

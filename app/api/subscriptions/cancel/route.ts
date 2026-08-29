@@ -29,29 +29,63 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
     }
 
-    const { subscriptionId } = await request.json()
+    // The authenticated user's stored subscription is authoritative.
+    // Never trust an arbitrary client-supplied Razorpay subscription ID.
+    let requestedSubscriptionId: string | undefined
 
-    // Get subscription from Firestore if subscriptionId not provided
-    let razorpaySubscriptionId = subscriptionId
+    try {
+      const body = await request.json()
+      requestedSubscriptionId =
+        typeof body?.subscriptionId === 'string'
+          ? body.subscriptionId.trim()
+          : undefined
+    } catch {
+      // Body is optional because the server resolves the subscription from Firestore.
+    }
+
+    const storedSubscriptionRef = adminDb
+      .collection('users')
+      .doc(uid)
+      .collection('subscriptions')
+      .doc('current')
+
+    const storedSubscriptionSnap = await storedSubscriptionRef.get()
+    if (!storedSubscriptionSnap.exists) {
+      return NextResponse.json(
+        { error: 'No active subscription found' },
+        { status: 404 }
+      )
+    }
+
+    const storedSubscriptionData = storedSubscriptionSnap.data()
+    const razorpaySubscriptionId =
+      storedSubscriptionData?.razorpaySubscriptionId
 
     if (!razorpaySubscriptionId) {
-      const subscriptionRef = adminDb
-        .collection('users')
-        .doc(uid)
-        .collection('subscriptions')
-        .doc('current')
+      return NextResponse.json(
+        { error: 'No Razorpay subscription ID found' },
+        { status: 404 }
+      )
+    }
 
-      const subscriptionSnap = await subscriptionRef.get()
-      if (!subscriptionSnap.exists) {
-        return NextResponse.json({ error: 'No active subscription found' }, { status: 404 })
-      }
+    if (
+      requestedSubscriptionId &&
+      requestedSubscriptionId !== razorpaySubscriptionId
+    ) {
+      await logEvent(
+        'api.error',
+        {
+          endpoint: '/api/subscriptions/cancel',
+          phase: 'subscription_ownership_validation',
+          reason: 'subscription_id_mismatch',
+        },
+        uid
+      )
 
-      const subscriptionData = subscriptionSnap.data()
-      razorpaySubscriptionId = subscriptionData?.razorpaySubscriptionId
-
-      if (!razorpaySubscriptionId) {
-        return NextResponse.json({ error: 'No Razorpay subscription ID found' }, { status: 404 })
-      }
+      return NextResponse.json(
+        { error: 'Subscription does not belong to the authenticated account' },
+        { status: 403 }
+      )
     }
 
     // Initialize Razorpay

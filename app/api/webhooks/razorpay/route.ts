@@ -264,6 +264,7 @@ export async function POST(request: NextRequest) {
           reason: 'missing_order_id',
           event,
         });
+        throw new Error('Retryable one-time webhook failure: missing order ID');
       } else {
         try {
           // Find our one-time order document by orderId
@@ -280,6 +281,9 @@ export async function POST(request: NextRequest) {
               event,
               orderId,
             });
+            throw new Error(
+              'Retryable one-time webhook failure: canonical order not found'
+            );
           } else {
             const orderRef = oneTimeOrdersSnap.docs[0].ref;
 
@@ -383,6 +387,7 @@ export async function POST(request: NextRequest) {
             orderId,
             error: err?.message,
           });
+          throw err;
         }
       }
     }
@@ -402,48 +407,6 @@ export async function POST(request: NextRequest) {
         },
         payment?.notes?.userId
       );
-    }
-
-    // ============================================
-    // ✅ NEW: Handle one-time payments via webhook
-    // ============================================
-    if (event === 'payment.captured' || event === 'order.paid') {
-      const payment = payload.payload?.payment?.entity;
-      const orderId = payment?.order_id;
-      const userId = payment?.notes?.userId;
-      const productId = payment?.notes?.productId;
-
-      if (orderId && userId && productId && adminDb) {
-        try {
-          const orderRef = adminDb
-            .collection('payments')
-            .doc(userId)
-            .collection('one_time_orders')
-            .doc(orderId);
-
-          await orderRef.set(
-            {
-              status: 'completed',
-              paymentId: payment?.id,
-              completedAt: new Date(),
-            },
-            { merge: true }
-          );
-
-          await logEvent(
-            'ticket.webhook_fulfilled',
-            {
-              orderId,
-              paymentId: payment?.id,
-              productId,
-              amount: payment?.amount / 100,
-            },
-            userId
-          );
-        } catch (err) {
-          console.error("Webhook fulfillment error:", err);
-        }
-      }
     }
 
     // Phase Z3: Log webhook verified
