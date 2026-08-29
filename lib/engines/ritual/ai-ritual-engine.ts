@@ -204,7 +204,7 @@ async function generateGeminiRitual(prompt: string, purpose: string): Promise<Ri
   let response: Response
   try {
     response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${geminiApiKey}`,
       {
         method: 'POST',
         headers: {

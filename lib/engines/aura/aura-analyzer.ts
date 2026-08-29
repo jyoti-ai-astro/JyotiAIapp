@@ -26,7 +26,7 @@ export async function analyzeAura(input: AuraAnalysisInput): Promise<AuraAnalysi
 
   try {
     const genAI = new GoogleGenerativeAI(geminiApiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.7-flash' })
 
     // Handle base64 or URL input
     let base64Data: string
