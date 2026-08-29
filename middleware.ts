@@ -57,6 +57,16 @@ function atobUrl(value: string) {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Development and diagnostic pages may remain in the source tree because
+  // production UI components reuse some of their visual modules. The public
+  // /dev URL namespace itself must never be exposed in production.
+  if (
+    process.env.NODE_ENV === 'production' &&
+    (pathname === '/dev' || pathname.startsWith('/dev/'))
+  ) {
+    return new NextResponse(null, { status: 404 })
+  }
+
   // Canonicalize retired Launch-v0 page aliases before React renders.
   const legacyRedirects: Record<string, string> = {
     '/home': '/',
