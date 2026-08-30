@@ -286,6 +286,14 @@ export default function DashboardPage() {
     summary.loading || kundali.loading
       ? false
       : !summary.data?.kundali.available || kundali.code === 'Kundali not found' || kundali.code === 'KUNDALI_REQUIRED'
+  const canonicalKundaliCurrent =
+    summary.data?.kundali.available === true &&
+    !astrologyStale &&
+    !canonicalKundaliMissing
+  const todayGuidanceBlocked =
+    astrologyStale ||
+    canonicalKundaliMissing ||
+    (!canonicalKundaliCurrent && profileIncomplete)
   const hasGuruAccess =
     tickets.data?.hasSubscription === true || (tickets.data?.tickets?.aiGuruTickets || 0) > 0
   const readyReports = (reports.data || []).filter((report) => report.status === 'ready')
@@ -451,7 +459,7 @@ export default function DashboardPage() {
         <TodayCard
           horoscope={horoscope}
           onRetry={loadDashboard}
-          kundaliBlocked={profileIncomplete || astrologyStale || canonicalKundaliMissing}
+          kundaliBlocked={todayGuidanceBlocked}
         />
 
         <Card>
