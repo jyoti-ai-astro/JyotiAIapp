@@ -132,9 +132,12 @@ export default function PricingSection6() {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-raised text-primary shadow-[0_18px_50px_rgba(7,19,31,0.08)]">
+    <div
+      data-pricing-celestial="true"
+      className="relative overflow-hidden rounded-[30px] border border-[#d9b75f]/18 bg-[#030b10] text-[#fff6df] shadow-[0_28px_90px_rgba(0,0,0,0.38)]"
+    >
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_18%_0%,rgba(242,140,40,0.18),transparent_22rem),radial-gradient(circle_at_86%_12%,rgba(47,125,126,0.14),transparent_22rem)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(239,170,79,0.14),transparent_28rem),radial-gradient(circle_at_86%_12%,rgba(70,145,145,0.09),transparent_30rem),linear-gradient(180deg,rgba(255,255,255,0.018),transparent_34rem)]"
         aria-hidden="true"
       />
       <div className="relative space-y-14 p-5 sm:p-8 lg:p-10">
@@ -147,10 +150,10 @@ export default function PricingSection6() {
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <div className="space-y-4">
             <Badge variant="guru" className="w-fit">Free start</Badge>
-            <h2 className="max-w-3xl font-heading text-3xl font-semibold leading-tight text-primary md:text-5xl">
+            <h2 className="max-w-3xl font-heading text-3xl font-semibold leading-tight text-[#fff6df] md:text-5xl">
               Start with your free Kundali, then choose tickets or a monthly plan.
             </h2>
-            <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+            <p className="max-w-2xl text-base leading-7 text-[#aab5b2] md:text-lg">
               New users can complete onboarding and generate their first basic Kundali for free. Guru questions, additional Kundali use, predictions, and reports follow the paid access shown below.
             </p>
           </div>
@@ -170,11 +173,11 @@ export default function PricingSection6() {
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-saffron">Subscriptions</p>
-              <h3 id="subscription-plans" className="mt-2 font-heading text-2xl font-semibold text-primary md:text-3xl">
+              <h3 id="subscription-plans" className="mt-2 font-heading text-2xl font-semibold text-[#fff6df] md:text-3xl">
                 Monthly plans
               </h3>
             </div>
-            <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+            <p className="max-w-xl text-sm leading-6 text-[#9eaaa6]">
               Subscription access is granted only by the canonical active subscription state after payment processing.
             </p>
           </div>
@@ -185,26 +188,30 @@ export default function PricingSection6() {
                 key={plan.id}
                 variant={plan.highlight ? "glow" : "base"}
                 size="lg"
-                className={cn("flex h-full flex-col bg-card", plan.highlight && "border-saffron/45")}
+                className={cn(
+                  "flex h-full flex-col border-[#d9b75f]/18 bg-[linear-gradient(155deg,rgba(10,24,30,0.99),rgba(5,13,18,0.99))] text-[#fff6df] shadow-[0_24px_70px_rgba(0,0,0,0.34)]",
+                  plan.highlight &&
+                    "border-[#efaa4f]/70 bg-[radial-gradient(circle_at_82%_0%,rgba(239,170,79,0.12),transparent_15rem),linear-gradient(155deg,rgba(13,29,35,0.99),rgba(5,13,18,0.99))] shadow-[0_28px_100px_rgba(239,170,79,0.12)]"
+                )}
               >
                 <CardHeader className="p-0">
                   <div className="flex min-h-10 items-start justify-between gap-3">
                     <div>
                       <CardTitle>{plan.name}</CardTitle>
-                      <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
+                      <p className="mt-2 text-sm text-[#9eaaa6]">{plan.description}</p>
                     </div>
                     {plan.highlight && <Badge variant="premium">{plan.badge}</Badge>}
                   </div>
                   {!plan.highlight && <p className="mt-3 text-sm font-medium text-primary">{plan.badge}</p>}
                   <div className="mt-5 flex items-baseline gap-2">
-                    <span className="font-heading text-4xl font-semibold text-primary">{plan.priceLabel}</span>
-                    <span className="text-sm text-muted-foreground">{plan.period}</span>
+                    <span className="font-heading text-4xl font-semibold text-[#fff6df]">{plan.priceLabel}</span>
+                    <span className="text-sm text-[#9eaaa6]">{plan.period}</span>
                   </div>
                   <p className="mt-3 text-sm font-medium text-teal">{recommendationForPlan(plan)}</p>
                 </CardHeader>
 
                 <CardContent className="flex flex-1 flex-col p-0 pt-6">
-                  <ul className="space-y-3 text-sm leading-6 text-muted-foreground">
+                  <ul className="space-y-3 text-sm leading-6 text-[#aab5b2]">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex gap-2">
                         <Check className="mt-1 h-4 w-4 shrink-0 text-saffron" aria-hidden="true" />
@@ -252,11 +259,11 @@ export default function PricingSection6() {
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-saffron">No subscription</p>
-              <h3 id="one-time-products" className="mt-2 font-heading text-2xl font-semibold text-primary md:text-3xl">
+              <h3 id="one-time-products" className="mt-2 font-heading text-2xl font-semibold text-[#fff6df] md:text-3xl">
                 One-time purchases
               </h3>
             </div>
-            <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+            <p className="max-w-xl text-sm leading-6 text-[#9eaaa6]">
               Buy a specific reading pack when you do not need monthly access.
             </p>
           </div>
@@ -267,29 +274,33 @@ export default function PricingSection6() {
                 key={product.id}
                 variant={product.mostPopular ? "glow" : "base"}
                 size="lg"
-                className={cn("flex h-full flex-col bg-card", product.mostPopular && "border-saffron/45")}
+                className={cn(
+                  "flex h-full flex-col border-[#d9b75f]/18 bg-[linear-gradient(155deg,rgba(10,24,30,0.99),rgba(5,13,18,0.99))] text-[#fff6df] shadow-[0_24px_70px_rgba(0,0,0,0.34)]",
+                  product.mostPopular &&
+                    "border-[#efaa4f]/70 bg-[radial-gradient(circle_at_82%_0%,rgba(239,170,79,0.12),transparent_15rem),linear-gradient(155deg,rgba(13,29,35,0.99),rgba(5,13,18,0.99))] shadow-[0_28px_100px_rgba(239,170,79,0.12)]"
+                )}
               >
                 <CardHeader className="p-0">
                   <div className="flex min-h-10 items-start justify-between gap-3">
                     <div>
                       <CardTitle>{product.name}</CardTitle>
-                      <p className="mt-2 text-sm text-muted-foreground">{product.description}</p>
+                      <p className="mt-2 text-sm text-[#9eaaa6]">{product.description}</p>
                     </div>
                     {product.mostPopular && <Badge variant="premium">Most popular</Badge>}
                   </div>
                   <div className="mt-5 flex items-baseline gap-2">
-                    <span className="font-heading text-4xl font-semibold text-primary">₹{product.amountInINR}</span>
-                    <span className="text-sm text-muted-foreground">one-time</span>
+                    <span className="font-heading text-4xl font-semibold text-[#fff6df]">₹{product.amountInINR}</span>
+                    <span className="text-sm text-[#9eaaa6]">one-time</span>
                   </div>
                   <p className="mt-3 text-sm font-medium text-teal">{recommendationForProduct(product)}</p>
                 </CardHeader>
 
                 <CardContent className="flex flex-1 flex-col p-0 pt-6">
-                  <div className="mb-4 rounded-lg border border-border bg-surface-sunken px-3 py-2 text-sm font-medium text-primary">
+                  <div className="mb-4 rounded-lg border border-[#d9b75f]/18 bg-[#08151b] px-3 py-2 text-sm font-medium text-[#f7f1e7]">
                     <Ticket className="mr-2 inline h-4 w-4 text-saffron" aria-hidden="true" />
                     {productEntitlementSummary(product)}
                   </div>
-                  <ul className="space-y-3 text-sm leading-6 text-muted-foreground">
+                  <ul className="space-y-3 text-sm leading-6 text-[#aab5b2]">
                     {product.bullets.map((bullet) => (
                       <li key={bullet} className="flex gap-2">
                         <Check className="mt-1 h-4 w-4 shrink-0 text-saffron" aria-hidden="true" />
@@ -318,17 +329,25 @@ export default function PricingSection6() {
         </section>
 
         <section className="grid gap-4 md:grid-cols-3" aria-label="Payment and product notes">
-          <Card variant="base" size="lg" className="bg-surface-sunken">
+          <Card
+            variant="base"
+            size="lg"
+            className="border-[#d9b75f]/18 bg-[#08151b] text-[#fff6df]"
+          >
             <ShieldCheck className="h-6 w-6 text-saffron" aria-hidden="true" />
-            <h3 className="mt-4 font-heading text-xl font-semibold text-primary">Secure checkout</h3>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            <h3 className="mt-4 font-heading text-xl font-semibold text-[#fff6df]">Secure checkout</h3>
+            <p className="mt-2 text-sm leading-6 text-[#9eaaa6]">
               Payments are processed through Razorpay. JyotiAI does not store card details.
             </p>
           </Card>
-          <Card variant="base" size="lg" className="bg-surface-sunken">
+          <Card
+            variant="base"
+            size="lg"
+            className="border-[#d9b75f]/18 bg-[#08151b] text-[#fff6df]"
+          >
             <CreditCard className="h-6 w-6 text-saffron" aria-hidden="true" />
-            <h3 className="mt-4 font-heading text-xl font-semibold text-primary">Access after payment</h3>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            <h3 className="mt-4 font-heading text-xl font-semibold text-[#fff6df]">Access after payment</h3>
+            <p className="mt-2 text-sm leading-6 text-[#9eaaa6]">
               Tickets and subscription access are applied by the server after payment verification.
             </p>
           </Card>
@@ -346,6 +365,32 @@ export default function PricingSection6() {
             </Link>
           </Card>
         </section>
+
+      <style jsx global>{`
+        /* P4.8A3.2 pricing celestial fallback */
+        [data-pricing-celestial="true"] .bg-card,
+        [data-pricing-celestial="true"] [class*="bg-card"] {
+          background-color: #08151b !important;
+          color: #fff6df !important;
+        }
+
+        [data-pricing-celestial="true"] .text-primary {
+          color: #fff6df !important;
+        }
+
+        [data-pricing-celestial="true"] .text-muted-foreground {
+          color: #aab5b2 !important;
+        }
+
+        [data-pricing-celestial="true"] .border-border {
+          border-color: rgba(217, 183, 95, 0.18) !important;
+        }
+
+        [data-pricing-celestial="true"] .bg-surface-raised,
+        [data-pricing-celestial="true"] .bg-surface-sunken {
+          background-color: #08151b !important;
+        }
+      `}</style>
       </div>
     </div>
   );

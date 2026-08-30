@@ -193,11 +193,19 @@ export function CelestialV3Client() {
             className={styles.explore}
             onMouseEnter={() => setMenuOpen(true)}
             onMouseLeave={() => setMenuOpen(false)}
+            onFocusCapture={() => setMenuOpen(true)}
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                setMenuOpen(false)
+              }
+            }}
           >
             <button
               type="button"
               className={styles.navItem}
               onClick={() => setMenuOpen((current) => !current)}
+              aria-expanded={menuOpen}
+              aria-haspopup="true"
             >
               Explore
               <ChevronDown size={14} />

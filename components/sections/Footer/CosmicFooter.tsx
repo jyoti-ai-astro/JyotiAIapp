@@ -248,7 +248,7 @@ export function CosmicFooter({ intensity = 1.0, className = '' }: CosmicFooterPr
             <h3 className="text-gold font-heading text-lg mb-4">Company</h3>
             <nav className="space-y-2">
               <FooterLink href="/company/about" label="About" intensity={intensity} />
-              <FooterLink href="/blog" label="Blog" intensity={intensity} />
+              <FooterLink href="/company/blog" label="Blog" intensity={intensity} />
               <FooterLink href="/company/careers" label="Careers" intensity={intensity} />
               <FooterLink href="/company/press-kit" label="Press Kit" intensity={intensity} />
               <FooterLink href="/company/contact" label="Contact" intensity={intensity} />
@@ -261,7 +261,7 @@ export function CosmicFooter({ intensity = 1.0, className = '' }: CosmicFooterPr
             <nav className="space-y-2">
               <FooterLink href="/support" label="Help Center" intensity={intensity} />
               <FooterLink href="/support" label="Community" intensity={intensity} />
-              <FooterLink href="/blog" label="Guides" intensity={intensity} />
+              <FooterLink href="/company/blog" label="Guides" intensity={intensity} />
               <FooterLink href="/status" label="Status" intensity={intensity} />
             </nav>
           </div>
@@ -270,8 +270,8 @@ export function CosmicFooter({ intensity = 1.0, className = '' }: CosmicFooterPr
           <div>
             <h3 className="text-gold font-heading text-lg mb-4">Legal</h3>
             <nav className="space-y-2">
-              <FooterLink href="/privacy" label="Privacy Policy" intensity={intensity} />
-              <FooterLink href="/terms" label="Terms of Service" intensity={intensity} />
+              <FooterLink href="/legal/privacy" label="Privacy Policy" intensity={intensity} />
+              <FooterLink href="/legal/terms" label="Terms of Service" intensity={intensity} />
             </nav>
           </div>
         </div>
