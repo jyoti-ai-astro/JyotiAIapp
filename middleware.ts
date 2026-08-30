@@ -26,9 +26,7 @@ async function verifyAdminSessionToken(token: string) {
     if (expected !== signature) return false
 
     const payload = JSON.parse(atobUrl(body))
-    if (payload.exp && Date.now() > payload.exp) {
-      return false
-    }
+    if (payload.exp && Date.now() > payload.exp) return false
 
     return true
   } catch (error) {
@@ -48,18 +46,15 @@ function base64UrlEncode(bytes: Uint8Array) {
 function atobUrl(value: string) {
   value = value.replace(/-/g, '+').replace(/_/g, '/')
   const pad = value.length % 4
-  if (pad) {
-    value += '='.repeat(4 - pad)
-  }
+  if (pad) value += '='.repeat(4 - pad)
   return Buffer.from(value, 'base64').toString('utf8')
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Development and diagnostic pages may remain in the source tree because
-  // production UI components reuse some of their visual modules. The public
-  // /dev URL namespace itself must never be exposed in production.
+  // Source modules under /dev may be reused by production UI, but the public
+  // development URL namespace itself must not be exposed in production.
   if (
     process.env.NODE_ENV === 'production' &&
     (pathname === '/dev' || pathname.startsWith('/dev/'))
@@ -67,7 +62,6 @@ export async function middleware(request: NextRequest) {
     return new NextResponse(null, { status: 404 })
   }
 
-  // Canonicalize retired Launch-v0 page aliases before React renders.
   const legacyRedirects: Record<string, string> = {
     '/home': '/',
     '/premium': '/pricing',
@@ -81,11 +75,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(legacyDestination, request.url))
   }
 
-  // Public auth routes (always allow)
   const publicAuthRoutes = ['/login', '/signup', '/reset-password', '/magic-link']
   const isPublicAuthRoute = publicAuthRoutes.some((route) => pathname === route)
 
-  // Canonical Launch v1 routes that require an authenticated user session.
   const protectedRoutes = [
     '/dashboard',
     '/onboarding',
@@ -106,17 +98,21 @@ export async function middleware(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
 
-  // Admin routes
   const adminRoutes = ['/admin']
   const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route))
 
-  // Always allow public auth routes
-  if (isPublicAuthRoute) {
-    return NextResponse.next()
-  }
+  if (isPublicAuthRoute) return NextResponse.next()
 
-  // Check for session cookie (will be set by auth API)
   const sessionCookie = request.cookies.get('session')
+
+  // Onboarding is the new-user journey. Public CTAs intentionally point here,
+  // so a signed-out visitor should enter signup rather than a returning-user
+  // login flow. Preserve an explicit redirect back to onboarding after signup.
+  if (pathname === '/onboarding' && !sessionCookie) {
+    const signupUrl = new URL('/signup', request.url)
+    signupUrl.searchParams.set('redirect', '/onboarding')
+    return NextResponse.redirect(signupUrl)
+  }
 
   if (isProtectedRoute && !sessionCookie) {
     const loginUrl = new URL('/login', request.url)
@@ -124,18 +120,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Admin routes require admin_session cookie (not regular session)
   if (isAdminRoute) {
     const adminSessionCookie = request.cookies.get('admin_session')?.value
     if (!adminSessionCookie) {
-      // Allow /admin/login to pass through
-      if (pathname === '/admin/login') {
-        return NextResponse.next()
-      }
+      if (pathname === '/admin/login') return NextResponse.next()
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
 
-    // Validate signed admin session token
     const isValid = !!adminSessionCookie && (await verifyAdminSessionToken(adminSessionCookie))
     if (!isValid) {
       return NextResponse.redirect(new URL('/admin/login', request.url))
@@ -153,13 +144,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }

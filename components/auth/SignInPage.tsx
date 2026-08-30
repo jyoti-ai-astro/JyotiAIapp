@@ -1,20 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-
-export interface Testimonial {
-  avatarSrc: string;
-  name: string;
-  handle: string;
-  text: string;
-}
 
 interface SignInPageProps {
   title?: React.ReactNode;
   description?: React.ReactNode;
-  heroImageSrc?: string;
-  testimonials?: Testimonial[];
   onSignIn?: (event: React.FormEvent<HTMLFormElement>) => void;
   onGoogleSignIn?: () => void;
   onFacebookSignIn?: () => void;
@@ -33,38 +24,9 @@ const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-const TestimonialCard = ({
-  testimonial,
-  delay,
-}: {
-  testimonial: Testimonial;
-  delay: string;
-}) => (
-  <div
-    className={`flex w-64 items-start gap-3 rounded-lg border border-[#D8B56A]/20 bg-[#07131F]/68 p-5 backdrop-blur-xl ${delay}`}
-  >
-    <img
-      src={testimonial.avatarSrc}
-      className="h-10 w-10 object-cover rounded-2xl"
-      alt={testimonial.name}
-    />
-    <div className="text-sm leading-snug">
-      <p className="flex items-center gap-1 font-medium">{testimonial.name}</p>
-      <p className="text-xs text-[#B9C2BF]">{testimonial.handle}</p>
-      <p className="mt-1 text-[#FFF7E8]/90">{testimonial.text}</p>
-    </div>
-  </div>
-);
-
 export const SignInPage: React.FC<SignInPageProps> = ({
-  title = (
-    <span className="font-light tracking-tight text-zinc-100">
-      Welcome back to <span className="font-semibold">JyotiAI</span>
-    </span>
-  ),
-  description = "Sign in to continue your journey with the Cosmic Guru.",
-  heroImageSrc,
-  testimonials = [],
+  title,
+  description,
   onSignIn,
   onGoogleSignIn,
   onFacebookSignIn,
@@ -80,264 +42,109 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   const [showMagicLink, setShowMagicLink] = useState(false);
   const [magicLinkEmail, setMagicLinkEmail] = useState('');
   const [magicLinkLoading, setMagicLinkLoading] = useState(false);
-  
-  // Clear error when user starts typing
+  const isSignup = mode === 'signup';
+
   React.useEffect(() => {
-    if (error && onClearError) {
-      const timer = setTimeout(() => {
-        onClearError();
-      }, 5000); // Auto-dismiss after 5 seconds
-      return () => clearTimeout(timer);
-    }
+    if (!error || !onClearError) return;
+    const timer = setTimeout(onClearError, 5000);
+    return () => clearTimeout(timer);
   }, [error, onClearError]);
 
   return (
-    <div className="flex flex-col md:flex-row w-full">
-      <section className="flex-1 flex items-center justify-center p-6 md:p-10">
+    <div className="w-full">
+      <section className="flex items-center justify-center p-6 md:p-10">
         <div className="w-full max-w-md rounded-lg border border-[#D8B56A]/24 bg-[#07131F]/76 p-8 shadow-[0_24px_70px_rgba(0,0,0,0.32)] backdrop-blur-xl">
           <div className="flex flex-col gap-6">
-            <h1 className="font-heading text-3xl font-semibold leading-tight text-[#FFF7E8] md:text-4xl">
-              {title}
-            </h1>
-            <p className="text-sm leading-6 text-[#B9C2BF]">{description}</p>
+            <h1 className="font-heading text-3xl font-semibold leading-tight text-[#FFF7E8] md:text-4xl">{title}</h1>
+            {description && <p className="text-sm leading-6 text-[#B9C2BF]">{description}</p>}
 
-            <form
-              className="space-y-5"
-              onSubmit={(e) => {
-                e.preventDefault();
-                onSignIn?.(e);
-              }}
-            >
+            {error && (
+              <div role="alert" className="rounded-lg border border-red-400/30 bg-red-950/35 px-4 py-3 text-sm text-red-100">
+                {error}
+              </div>
+            )}
+
+            <form className="space-y-5" onSubmit={(event) => { event.preventDefault(); onSignIn?.(event); }}>
               <div>
-                <label className="text-xs font-medium text-[#B9C2BF]">
-                  Email Address
-                </label>
+                <label htmlFor="auth-email" className="text-xs font-medium text-[#B9C2BF]">Email Address</label>
                 <GlassInputWrapper>
-                  <input
-                    name="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    className="w-full rounded-lg bg-transparent p-4 text-sm text-[#FFF7E8] placeholder:text-[#B9C2BF]/50 focus:outline-none"
-                    required
-                  />
+                  <input id="auth-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" className="w-full rounded-lg bg-transparent p-4 text-sm text-[#FFF7E8] placeholder:text-[#B9C2BF]/50 focus:outline-none" required />
                 </GlassInputWrapper>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-[#B9C2BF]">
-                  Password
-                </label>
+                <label htmlFor="auth-password" className="text-xs font-medium text-[#B9C2BF]">Password</label>
                 <GlassInputWrapper>
                   <div className="relative">
-                    <input
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      className="w-full rounded-lg bg-transparent p-4 pr-12 text-sm text-[#FFF7E8] placeholder:text-[#B9C2BF]/50 focus:outline-none"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-3 flex items-center"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-[#B9C2BF] transition-colors hover:text-[#FFF7E8]" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-[#B9C2BF] transition-colors hover:text-[#FFF7E8]" />
-                      )}
+                    <input id="auth-password" name="password" type={showPassword ? "text" : "password"} autoComplete={isSignup ? 'new-password' : 'current-password'} placeholder={isSignup ? 'Create a password' : 'Enter your password'} className="w-full rounded-lg bg-transparent p-4 pr-12 text-sm text-[#FFF7E8] placeholder:text-[#B9C2BF]/50 focus:outline-none" required />
+                    <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute inset-y-0 right-3 flex items-center" aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                      {showPassword ? <EyeOff className="h-5 w-5 text-[#B9C2BF]" /> : <Eye className="h-5 w-5 text-[#B9C2BF]" />}
                     </button>
                   </div>
                 </GlassInputWrapper>
+                {isSignup && <p className="mt-2 text-[11px] leading-5 text-[#7f8c87]">Use at least 6 characters. You can complete your birth profile after account creation.</p>}
               </div>
 
-              <div className="flex items-center justify-between text-xs text-[#B9C2BF]">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="rememberMe"
-                    className="accent-[#F28C28]"
-                  />
-                  <span>Keep me signed in</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => onResetPassword?.()}
-                  className="text-[#F1C979] hover:text-[#FFF7E8] hover:underline"
-                >
-                  Reset password
-                </button>
-              </div>
+              {!isSignup && (
+                <div className="flex items-center justify-between text-xs text-[#B9C2BF]">
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input type="checkbox" name="rememberMe" className="accent-[#F28C28]" />
+                    <span>Keep me signed in</span>
+                  </label>
+                  <button type="button" onClick={() => onResetPassword?.()} className="text-[#F1C979] hover:text-[#FFF7E8] hover:underline">Reset password</button>
+                </div>
+              )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="min-h-11 w-full rounded-lg bg-[#F28C28] py-3 text-sm font-semibold text-[#07131F] transition-colors hover:bg-[#F28C28]/90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
+              <button type="submit" disabled={loading} className="min-h-11 w-full rounded-lg bg-[#F28C28] py-3 text-sm font-semibold text-[#07131F] transition-colors hover:bg-[#F6A443] disabled:cursor-not-allowed disabled:opacity-50">
+                {loading ? (isSignup ? 'Creating account…' : 'Signing in…') : (isSignup ? 'Create account' : 'Sign in')}
               </button>
             </form>
 
             <div className="relative flex items-center justify-center">
               <span className="w-full border-t border-[#D8B56A]/18" />
-              <span className="rounded-full bg-[#07131F]/80 px-3 text-[10px] uppercase tracking-[0.2em] text-[#B9C2BF]">
-                Or continue with
-              </span>
+              <span className="absolute rounded-full bg-[#07131F] px-3 text-[10px] uppercase tracking-[0.2em] text-[#B9C2BF]">Or continue with</span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 pt-1">
               {onGoogleSignIn && (
-                <button
-                  type="button"
-                  onClick={onGoogleSignIn}
-                  disabled={loading || magicLinkLoading}
-                  className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-[#D8B56A]/22 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path
-                      fill="currentColor"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  Continue with Google
+                <button type="button" onClick={onGoogleSignIn} disabled={loading || magicLinkLoading} className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-[#D8B56A]/22 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:opacity-50">
+                  <span className="text-lg font-semibold">G</span> Continue with Google
                 </button>
               )}
-
               {onFacebookSignIn && (
-                <button
-                  type="button"
-                  onClick={onFacebookSignIn}
-                  disabled={loading || magicLinkLoading}
-                  className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-[#D8B56A]/22 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                  Continue with Facebook
+                <button type="button" onClick={onFacebookSignIn} disabled={loading || magicLinkLoading} className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-[#D8B56A]/22 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:opacity-50">
+                  <span className="text-lg font-semibold">f</span> Continue with Facebook
                 </button>
               )}
-
-              {onMagicLink && (
-                <>
-                  {!showMagicLink ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowMagicLink(true)}
-                      disabled={loading || magicLinkLoading}
-                      className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-[#D8B56A]/22 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      {mode === 'login' ? 'Sign in with Magic Link' : 'Sign up with Magic Link'}
-                    </button>
-                  ) : (
-                    <div className="space-y-2">
-                      <GlassInputWrapper>
-                        <input
-                          type="email"
-                          placeholder="Enter your email"
-                          value={magicLinkEmail}
-                          onChange={(e) => setMagicLinkEmail(e.target.value)}
-                          className="w-full rounded-lg bg-transparent p-4 text-sm text-[#FFF7E8] placeholder:text-[#B9C2BF]/50 focus:outline-none"
-                          disabled={magicLinkLoading}
-                        />
-                      </GlassInputWrapper>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (!magicLinkEmail || !magicLinkEmail.includes('@')) {
-                              return;
-                            }
-                            setMagicLinkLoading(true);
-                            try {
-                              await onMagicLink(magicLinkEmail);
-                            } finally {
-                              setMagicLinkLoading(false);
-                            }
-                          }}
-                          disabled={magicLinkLoading || !magicLinkEmail || !magicLinkEmail.includes('@')}
-                          className="min-h-11 flex-1 rounded-lg bg-[#F28C28] py-3 text-sm font-semibold text-[#07131F] transition-colors hover:bg-[#F28C28]/90 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {magicLinkLoading ? 'Sending...' : 'Send Magic Link'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowMagicLink(false);
-                            setMagicLinkEmail('');
-                          }}
-                          disabled={magicLinkLoading}
-                          className="min-h-11 rounded-lg border border-[#D8B56A]/22 px-4 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:opacity-50"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
+              {onMagicLink && !showMagicLink && (
+                <button type="button" onClick={() => setShowMagicLink(true)} disabled={loading || magicLinkLoading} className="flex min-h-11 w-full items-center justify-center rounded-lg border border-[#D8B56A]/22 py-3 text-sm text-[#FFF7E8] transition-colors hover:bg-[#FFF8E6]/8 disabled:opacity-50">
+                  {isSignup ? 'Sign up with Magic Link' : 'Sign in with Magic Link'}
+                </button>
+              )}
+              {onMagicLink && showMagicLink && (
+                <div className="space-y-2 rounded-xl border border-[#D8B56A]/18 bg-black/10 p-3">
+                  <GlassInputWrapper>
+                    <input type="email" placeholder="Enter your email" value={magicLinkEmail} onChange={(event) => setMagicLinkEmail(event.target.value)} className="w-full rounded-lg bg-transparent p-4 text-sm text-[#FFF7E8] placeholder:text-[#B9C2BF]/50 focus:outline-none" disabled={magicLinkLoading} />
+                  </GlassInputWrapper>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={async () => { if (!magicLinkEmail.includes('@')) return; setMagicLinkLoading(true); try { await onMagicLink(magicLinkEmail); } finally { setMagicLinkLoading(false); } }} disabled={magicLinkLoading || !magicLinkEmail.includes('@')} className="min-h-11 flex-1 rounded-lg bg-[#F28C28] px-4 text-sm font-semibold text-[#07131F] disabled:opacity-50">{magicLinkLoading ? 'Sending…' : 'Send Magic Link'}</button>
+                    <button type="button" onClick={() => { setShowMagicLink(false); setMagicLinkEmail(''); }} disabled={magicLinkLoading} className="min-h-11 rounded-lg border border-[#D8B56A]/22 px-4 text-sm text-[#FFF7E8]">Cancel</button>
+                  </div>
+                </div>
               )}
             </div>
 
             <p className="text-center text-xs text-[#B9C2BF]">
-              New to JyotiAI?{" "}
-              <button
-                type="button"
-                onClick={() => onCreateAccount?.()}
-                className="text-[#F1C979] hover:text-[#FFF7E8] hover:underline"
-              >
-                Create an account
-              </button>
+              {isSignup ? 'Already have an account?' : 'New to JyotiAI?'}{' '}
+              {isSignup ? (
+                <a href="/login" className="text-[#F1C979] hover:text-[#FFF7E8] hover:underline">Sign in to JyotiAI</a>
+              ) : (
+                <button type="button" onClick={() => onCreateAccount?.()} className="text-[#F1C979] hover:text-[#FFF7E8] hover:underline">Create an account</button>
+              )}
             </p>
           </div>
         </div>
       </section>
-
-      {heroImageSrc && (
-        <section className="hidden md:block flex-1 relative p-6">
-          <div
-            className="absolute inset-4 rounded-3xl bg-cover bg-center shadow-[0_0_60px_rgba(56,189,248,0.5)]"
-            style={{ backgroundImage: `url(${heroImageSrc})` }}
-          />
-          {testimonials.length > 0 && (
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 px-8 w-full justify-center">
-              <TestimonialCard
-                testimonial={testimonials[0]}
-                delay="animate-delay-100"
-              />
-              {testimonials[1] && (
-                <div className="hidden xl:flex">
-                  <TestimonialCard
-                    testimonial={testimonials[1]}
-                    delay="animate-delay-200"
-                  />
-                </div>
-              )}
-              {testimonials[2] && (
-                <div className="hidden 2xl:flex">
-                  <TestimonialCard
-                    testimonial={testimonials[2]}
-                    delay="animate-delay-300"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-      )}
     </div>
   );
 };
