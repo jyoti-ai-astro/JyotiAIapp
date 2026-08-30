@@ -37,7 +37,7 @@ export async function callLLM(
   const geminiApiKey = envVars.ai.geminiApiKey
   const openaiModel = envVars.ai.predictionModelName
 
-  if (provider === 'gemini' && geminiApiKey) {
+  if ((provider === 'gemini' || !provider) && geminiApiKey) {
     return callGemini(messages, geminiApiKey, signal, options)
   } else if (openaiApiKey) {
     return callOpenAI(messages, openaiApiKey, openaiModel, signal, options)
@@ -142,7 +142,7 @@ async function callGemini(
   const systemInstruction = messages.find((m) => m.role === 'system')?.content || ''
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: {

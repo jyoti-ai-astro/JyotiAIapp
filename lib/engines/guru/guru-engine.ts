@@ -212,7 +212,7 @@ async function generateGeminiResponse(userMessage: string): Promise<string> {
   
   // Note: Adjust endpoint based on actual Gemini API
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${geminiApiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`,
     {
       method: 'POST',
       headers: {
