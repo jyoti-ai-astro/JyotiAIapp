@@ -1,202 +1,113 @@
-/**
- * About Page
- * 
- * Batch 5 - Company Pages
- * 
- * Mission, Vision, Technology, Sacred Sources with R3F background
- */
-
 'use client';
 
 export const dynamic = 'force-dynamic';
 
-import React from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Target, Eye, Code, Book } from 'lucide-react';
+import { ArrowRight, BookOpen, CircleDot, Orbit, ShieldCheck, Sparkles } from 'lucide-react';
 import CompanyPageShell from '@/src/ui/layout/CompanyPageShell';
-import { CompanyTimeline } from '@/components/sections/about/CompanyTimeline';
-import { TestimonialsSection } from '@/components/sections/testimonials/TestimonialsSection';
+
+const principles = [
+  {
+    icon: CircleDot,
+    title: 'Canonical foundation',
+    copy: 'JyotiAI begins with saved birth details and a canonical Kundali so connected experiences are built from the same astrological source.',
+  },
+  {
+    icon: Orbit,
+    title: 'Living timing',
+    copy: 'Dashas, transits, timelines and forecasts should remain connected to the underlying chart instead of becoming isolated readings.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Contextual intelligence',
+    copy: 'AI is used as an interpretation layer around the user’s astrological context, not as a substitute for the chart or a source of invented personal facts.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Trust by design',
+    copy: 'Account state, paid access and personal astrology context are designed to be verified by the server and handled consistently across the product.',
+  },
+];
+
+const journey = [
+  ['Research & prototyping', 'JyotiAI began as an exploration of how traditional Vedic astrology could be made easier to navigate through modern software.'],
+  ['Connected product architecture', 'The product expanded from individual readings into a connected system spanning Kundali, Guru, timing, predictions and saved reports.'],
+  ['Celestial OS evolution', 'The experience was redesigned around one verified birth profile and a cinematic interface that keeps the same personal context visible across modules.'],
+  ['Pre-launch stabilization', 'Authentication, onboarding, canonical Kundali state, payments, AI resilience and production safety are being hardened before public release.'],
+];
 
 export default function AboutPage() {
   return (
     <CompanyPageShell
-      eyebrow="Our Story"
-      title={
-        <>
-          JyotiAI is building the modern bridge between{' '}
-          <span className="bg-gradient-to-r from-[#FFD57A] to-[#FFB347] bg-clip-text text-transparent">
-            code and cosmos
-          </span>
-        </>
-      }
-      description="We combine ancient Vedic wisdom with cutting-edge AI to make personalized astrological guidance accessible to everyone."
+      eyebrow="About JyotiAI"
+      title={<>One chart. <span className="text-[#efaa4f]">A connected Vedic intelligence system.</span></>}
+      description="JyotiAI is being built to make serious personal astrology easier to explore without fragmenting the birth chart, timing and guidance into disconnected experiences."
     >
-      {/* 2-column intro block */}
-      <div className="grid md:grid-cols-2 gap-8 mb-12">
-        <div className="space-y-4">
-          <h2 className="text-2xl font-heading font-bold text-white mb-4">What we believe</h2>
-          <p className="text-white/70 leading-relaxed">
-            Ancient wisdom holds timeless truths. By combining Vedic astrology, numerology, and palmistry with modern AI,
-            we make these insights accessible to everyone, regardless of their background or location.
-          </p>
+      <section className="grid gap-5 md:grid-cols-2" aria-label="JyotiAI mission and vision">
+        <div className="rounded-[28px] border border-[#d9b75f]/20 bg-[#07131f]/78 p-7 md:p-9">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#e7c772]">Mission</p>
+          <h2 className="mt-4 font-heading text-3xl text-[#fff6df]">Make personal Vedic astrology coherent, contextual and usable.</h2>
+          <p className="mt-5 leading-8 text-[#aab5b2]">We are building a product where verified birth information can power Kundali, timing, questions, predictions and deeper modules through one consistent personal context.</p>
         </div>
-        <div className="space-y-4">
-          <h2 className="text-2xl font-heading font-bold text-white mb-4">What we&apos;re building</h2>
-          <p className="text-white/70 leading-relaxed">
-            A complete spiritual operating system that helps millions discover their true purpose and navigate life&apos;s
-            challenges with confidence. From birth charts to real-time AI guidance, we&apos;re building the future of
-            spiritual technology.
-          </p>
+        <div className="rounded-[28px] border border-[#4c8988]/25 bg-[#07131f]/78 p-7 md:p-9">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#78aaa8]">Vision</p>
+          <h2 className="mt-4 font-heading text-3xl text-[#fff6df]">A trustworthy personal astrology operating system.</h2>
+          <p className="mt-5 leading-8 text-[#aab5b2]">Our direction is a connected celestial model that can move from chart to timing to guidance while preserving provenance, account state and the user’s underlying astrological foundation.</p>
         </div>
-      </div>
+      </section>
 
-      {/* Mission, Vision, Technology, Sacred Sources */}
-      <div className="grid md:grid-cols-2 gap-6 mb-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
-          <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center gap-4 mb-2">
-                <Target className="h-8 w-8 text-[#FFD57A]" />
-                <CardTitle className="text-2xl font-heading text-white">Mission</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="text-white/70 leading-relaxed">
-              <p>
-                To democratize access to ancient spiritual wisdom through modern AI technology, making personalized
-                astrological guidance accessible to everyone, regardless of their background or location.
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
+      <section className="py-4">
+        <div className="mb-8 max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#e7c772]">How we build</p>
+          <h2 className="mt-3 font-heading text-4xl text-[#fff6df] md:text-5xl">Traditional structure underneath. Modern intelligence above it.</h2>
+          <p className="mt-5 text-base leading-8 text-[#aab5b2]">JyotiAI combines astrological calculation and structured product state with modern AI-assisted interpretation. AI outputs are guidance, not guaranteed outcomes, and should remain anchored to the information the product actually knows.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {principles.map(({ icon: Icon, title, copy }, index) => (
+            <motion.article
+              key={title}
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.05 }}
+              className="rounded-2xl border border-[#d9b75f]/15 bg-[#041016]/70 p-6"
+            >
+              <Icon className="h-6 w-6 text-[#efaa4f]" aria-hidden="true" />
+              <h3 className="mt-5 font-heading text-2xl text-[#fff6df]">{title}</h3>
+              <p className="mt-3 leading-7 text-[#9eaaa6]">{copy}</p>
+            </motion.article>
+          ))}
+        </div>
+      </section>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center gap-4 mb-2">
-                <Eye className="h-8 w-8 text-cyan-400" />
-                <CardTitle className="text-2xl font-heading text-white">Vision</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="text-white/70 leading-relaxed">
-              <p>
-                To become the world&apos;s most trusted spiritual guidance platform, combining the timeless wisdom of
-                Vedic astrology, numerology, and palmistry with cutting-edge AI to help millions discover their true
-                purpose and navigate life&apos;s challenges with confidence.
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
+      <section className="rounded-[32px] border border-[#d9b75f]/18 bg-[#030b10]/82 p-6 md:p-10">
+        <div className="flex items-start gap-4">
+          <BookOpen className="mt-1 h-6 w-6 shrink-0 text-[#efaa4f]" aria-hidden="true" />
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#e7c772]">Our journey so far</p>
+            <h2 className="mt-3 font-heading text-4xl text-[#fff6df]">A pre-launch product story, not an invented launch history.</h2>
+          </div>
+        </div>
+        <div className="mt-9 grid gap-4 md:grid-cols-2">
+          {journey.map(([title, copy], index) => (
+            <div key={title} className="relative rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
+              <span className="text-sm font-semibold text-[#8c7742]">0{index + 1}</span>
+              <h3 className="mt-3 font-heading text-2xl text-[#fff6df]">{title}</h3>
+              <p className="mt-3 leading-7 text-[#9eaaa6]">{copy}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center gap-4 mb-2">
-                <Code className="h-8 w-8 text-green-400" />
-                <CardTitle className="text-2xl font-heading text-white">Technology</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="text-white/70 leading-relaxed">
-              <p>
-                We leverage advanced AI models, Swiss Ephemeris for precise astronomical calculations, and modern
-                web technologies to deliver accurate, personalized spiritual insights. Our platform uses React Three
-                Fiber for immersive cosmic experiences and real-time data processing for instant results.
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0A0F1F]/80 to-[#1A2347]/60 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center gap-4 mb-2">
-                <Book className="h-8 w-8 text-violet-400" />
-                <CardTitle className="text-2xl font-heading text-white">Sacred Sources</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="text-white/70 leading-relaxed">
-              <p>
-                Our calculations are based on ancient Vedic texts including Brihat Parashara Hora Shastra, Jaimini
-                Sutras, and classical palmistry texts. We honor the traditional methods while making them accessible
-                through modern technology.
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Company Timeline */}
-      <div className="mb-12">
-        <CompanyTimeline
-          entries={[
-            {
-              title: '2024 - Public Launch',
-              content: 'JyotiAI launched publicly, bringing Vedic astrology and AI together for the first time.',
-            },
-            {
-              title: '2024 - AI Guru Integration',
-              content: 'Integrated advanced AI with RAG (Retrieval-Augmented Generation) for personalized cosmic guidance.',
-            },
-            {
-              title: '2024 - Multi-Module Expansion',
-              content: 'Added palmistry, face reading, aura scanning, and compatibility analysis modules.',
-            },
-          ]}
-        />
-      </div>
-
-      {/* Testimonials */}
-      <div>
-        <TestimonialsSection
-          title="What seekers are saying"
-          description="Real people using JyotiAI every day in India & beyond."
-          testimonials={[
-            {
-              author: {
-                name: 'Priya Sharma',
-                role: 'From Mumbai',
-                avatarUrl: undefined,
-              },
-              text: 'More accurate than any astrologer I&apos;ve consulted. The AI Guru understands context and remembers my chart.',
-            },
-            {
-              author: {
-                name: 'Rajesh Kumar',
-                role: 'From Delhi',
-                avatarUrl: undefined,
-              },
-              text: 'Career Engine changed my life. I found my ideal path and the timing was perfect.',
-            },
-            {
-              author: {
-                name: 'Ananya Patel',
-                role: 'From Bangalore',
-                avatarUrl: undefined,
-              },
-              text: 'Pregnancy prediction beautifully explained. The insights helped me prepare for this new phase.',
-            },
-          ]}
-        />
-      </div>
+      <section className="rounded-[32px] border border-[#efaa4f]/24 bg-[radial-gradient(circle_at_75%_20%,rgba(255,152,45,.13),transparent_24rem),#061016] px-6 py-10 text-center md:px-10 md:py-14">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#e7c772]">Build your own context</p>
+        <h2 className="mx-auto mt-4 max-w-3xl font-heading text-4xl text-[#fff6df] md:text-5xl">Your JyotiAI experience starts with your birth profile, not a generic feed.</h2>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link href="/signup" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-[#ff982d] px-6 font-semibold text-[#081017] transition hover:bg-[#ffad4f]">Begin free <ArrowRight className="h-4 w-4" /></Link>
+          <Link href="/pricing" className="inline-flex min-h-12 items-center rounded-full border border-[#d9b75f]/30 px-6 text-[#fff6df] transition hover:bg-white/[0.05]">See access options</Link>
+        </div>
+      </section>
     </CompanyPageShell>
   );
 }
