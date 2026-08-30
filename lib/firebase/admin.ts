@@ -27,11 +27,13 @@ function getAdminEnv() {
   const rawProjectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
   const rawClientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
   const rawPrivateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+  const rawStorageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
 
   return {
     rawProjectId,
     rawClientEmail,
     rawPrivateKey,
+    rawStorageBucket,
   };
 }
 
@@ -41,13 +43,19 @@ export function getFirebaseAdmin(): admin.app.App | undefined {
     return global._jyotaiAdminApp;
   }
 
-  const { rawProjectId, rawClientEmail, rawPrivateKey } = getAdminEnv();
+  const {
+    rawProjectId,
+    rawClientEmail,
+    rawPrivateKey,
+    rawStorageBucket,
+  } = getAdminEnv();
 
   // Debug: presence only, never log full secrets
   console.log("[firebase-admin] Env presence:", {
     hasProjectId: !!rawProjectId,
     hasClientEmail: !!rawClientEmail,
     hasPrivateKey: !!rawPrivateKey,
+    hasStorageBucket: !!rawStorageBucket,
   });
 
   if (!rawProjectId || !rawClientEmail || !rawPrivateKey) {
@@ -73,6 +81,9 @@ export function getFirebaseAdmin(): admin.app.App | undefined {
           clientEmail,
           privateKey,
         }),
+        ...(rawStorageBucket
+          ? { storageBucket: rawStorageBucket }
+          : {}),
       });
       console.log("[firebase-admin] Admin app initialized for project:", projectId);
     } else {
