@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const razorpayKeySecret = envVars.razorpay.keySecret
     if (!razorpayKeySecret) {
       return NextResponse.json(
-        { error: 'RAZORPAY_KEY_SECRET missing. Payment verification not configured.' },
+        { error: 'Payment verification is temporarily unavailable. Please try again shortly.' },
         { status: 500 }
       )
     }

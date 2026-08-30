@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const webhookSecret = envVars.razorpay.webhookSecret;
     if (!webhookSecret) {
       await logEvent('webhook.failed', {
-        error: 'RAZORPAY_WEBHOOK_SECRET not configured',
+        error: 'Payment webhook is not available',
         source: 'razorpay',
       });
       return NextResponse.json(

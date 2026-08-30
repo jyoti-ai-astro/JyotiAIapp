@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     if (!adminAuth) {
       return NextResponse.json(
-        { error: 'FIREBASE_ADMIN credentials missing. Firebase Admin not initialized.' },
+        { error: 'Authentication is temporarily unavailable. Please try again shortly.' },
         { status: 500 }
       )
     }
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       if (!emailSent) {
         console.error('Magic link email sending returned false')
         return NextResponse.json(
-          { error: 'Failed to send email. Please check if ZEPTO_API_TOKEN is configured in Vercel environment variables.' },
+          { error: 'We could not send the sign-in email right now. Please try again shortly.' },
           { status: 500 }
         )
       }

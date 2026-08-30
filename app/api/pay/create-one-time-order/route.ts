@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET missing. Payment service not configured.',
+            'Payment service is temporarily unavailable. Please try again shortly.',
         },
         { status: 500 }
       );
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              'Razorpay authentication failed. Please verify RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env.local (test key + secret pair from the same Razorpay account).',
+              'Payment service authentication failed. Please try again shortly.',
           },
           { status: 500 }
         );

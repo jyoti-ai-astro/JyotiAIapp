@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     if (!razorpayKeyId || !razorpayKeySecret) {
       return NextResponse.json(
-        { error: 'RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET missing. Payment service not configured.' },
+        { error: 'Subscription management is temporarily unavailable. Please try again shortly.' },
         { status: 500 }
       )
     }

@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (!adminAuth) {
       return NextResponse.json(
-        { error: 'FIREBASE_ADMIN credentials missing. Firebase Admin not initialized.' },
+        { error: 'Authentication is temporarily unavailable. Please try again shortly.' },
         { status: 500 }
       )
     }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Get user data from Firestore
     if (!adminDb) {
       return NextResponse.json(
-        { error: 'FIREBASE_ADMIN credentials missing. Firestore not initialized.' },
+        { error: 'Account verification is temporarily unavailable. Please try again shortly.' },
         { status: 500 }
       )
     }

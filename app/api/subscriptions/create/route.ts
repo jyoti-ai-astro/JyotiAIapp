@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     if (!razorpayPlanId) {
       return NextResponse.json(
         {
-          error: `Razorpay plan ID not configured for ${plan.name}. Please set ${plan.razorpayPlanEnvKey} in environment variables.`,
+          error: `This subscription plan is temporarily unavailable. Please try again shortly.`,
         },
         { status: 400 }
       );
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET missing. Payment service not configured.',
+            'Payment service is temporarily unavailable. Please try again shortly.',
         },
         { status: 500 }
       );

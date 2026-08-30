@@ -68,7 +68,7 @@ export default function LoginPage() {
       setError(null);
       
       if (!auth) {
-        throw new Error('Firebase authentication is not configured. Please add Firebase environment variables to Vercel.');
+        throw new Error('Sign-in is temporarily unavailable. Please try again shortly.');
       }
       
       // Add error handling for popup blockers
