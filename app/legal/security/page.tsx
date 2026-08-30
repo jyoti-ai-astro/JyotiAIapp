@@ -1,110 +1,79 @@
-/**
- * Security Policy Page
- * 
- * Batch 5 - Legal Pages
- * 
- * Security measures and practices
- */
-
-'use client';
-
-export const dynamic = 'force-dynamic';
-
-import React from 'react';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-// Footer removed - using global FooterWrapper from app/layout.tsx
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LegalPageShell } from '@/src/ui/legal/LegalPageShell'
 
 export default function SecurityPage() {
   return (
-    <PageTransitionWrapper>
-      <CosmicCursor />
-      
-      <div className="min-h-screen bg-cosmic-navy text-white">
-        <div className="container mx-auto px-4 py-16 space-y-8">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl font-display font-bold text-gold mb-4">Security Policy</h1>
-            <p className="text-white/70 text-lg">Last updated: January 15, 2024</p>
-          </div>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">1. Introduction</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>
-                At JyotiAI, we take security seriously. This Security Policy outlines the measures we implement to
-                protect your data and ensure the security of our Service.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">2. Data Encryption</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>We use industry-standard encryption to protect your data:</p>
-              <ul className="list-disc list-inside space-y-2">
-                <li>SSL/TLS encryption for data in transit</li>
-                <li>AES-256 encryption for data at rest</li>
-                <li>Encrypted database connections</li>
-                <li>Secure API endpoints</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">3. Access Controls</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>We implement strict access controls:</p>
-              <ul className="list-disc list-inside space-y-2">
-                <li>Multi-factor authentication for admin accounts</li>
-                <li>Role-based access control</li>
-                <li>Regular security audits</li>
-                <li>Employee security training</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">4. Incident Response</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>
-                In the event of a security incident, we will:
-              </p>
-              <ul className="list-disc list-inside space-y-2">
-                <li>Immediately investigate and contain the threat</li>
-                <li>Notify affected users within 72 hours</li>
-                <li>Work with security experts to resolve the issue</li>
-                <li>Implement measures to prevent future incidents</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">5. Reporting Security Issues</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>
-                If you discover a security vulnerability, please report it to:
-              </p>
-              <p className="text-gold">
-                Email: security@jyotiai.in<br />
-                We appreciate responsible disclosure and will respond promptly.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
-      </div>
-    </PageTransitionWrapper>
-  );
+    <LegalPageShell
+      eyebrow="Security"
+      title="Security without invented guarantees."
+      description="JyotiAI is designed to protect account and service data using the controls available across its application and infrastructure, while recognizing that no online system is risk-free."
+      updated="30 August 2026"
+      sections={[
+        {
+          title: 'Our approach',
+          content: (
+            <p>
+              Security is treated as an engineering and operational
+              responsibility across authentication, authorization, server-side
+              secrets, payment verification and access to application data.
+            </p>
+          ),
+        },
+        {
+          title: 'Authentication and access',
+          content: (
+            <p>
+              JyotiAI uses authenticated sessions and server-side authorization
+              checks for protected functionality. Sensitive server credentials
+              are intended to remain outside client-side application code.
+            </p>
+          ),
+        },
+        {
+          title: 'Payments',
+          content: (
+            <p>
+              Payment flows use provider-side transaction processing and
+              server-side verification before JyotiAI grants the corresponding
+              entitlement. JyotiAI does not claim that beginning checkout alone
+              grants access.
+            </p>
+          ),
+        },
+        {
+          title: 'Data transmission and infrastructure',
+          content: (
+            <p>
+              Production web traffic is expected to use HTTPS transport
+              provided by the deployed web infrastructure. JyotiAI also relies
+              on established third-party cloud services for portions of its
+              infrastructure. We do not claim a specific at-rest encryption
+              algorithm, security certification or audit status unless it has
+              been separately verified.
+            </p>
+          ),
+        },
+        {
+          title: 'No absolute-security promise',
+          content: (
+            <p>
+              No application, network or storage system can guarantee complete
+              security. Security practices evolve as the product, providers and
+              threat landscape change.
+            </p>
+          ),
+        },
+        {
+          title: 'Reporting a security concern',
+          content: (
+            <p>
+              If you believe you have identified a security issue affecting
+              JyotiAI, please use the security contact published on our Contact
+              page. Do not exploit, publicly disclose or access other
+              users&apos; information while investigating a suspected issue.
+            </p>
+          ),
+        },
+      ]}
+    />
+  )
 }

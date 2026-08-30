@@ -94,7 +94,7 @@ export function AuthenticatedAppShell({ children }: { children: React.ReactNode 
     <div className="grid gap-6 md:grid-cols-[16rem_minmax(0,1fr)]">
       <aside
         data-dashboard-sidebar="true"
-        className="hidden self-start md:block md:pt-10"
+        className="relative z-50 hidden self-start md:block md:pt-10"
       >
         <div
           data-dashboard-sidebar-surface="true"

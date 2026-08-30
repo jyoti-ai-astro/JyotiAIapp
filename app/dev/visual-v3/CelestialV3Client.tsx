@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 
 import { SolarJyotiMark } from '@/src/ui/brand/SolarJyotiMark'
+import { useUserStore } from '@/store/user-store'
 import styles from './visual-v3.module.css'
 
 const CelestialV3Scene = dynamic(() => import('./CelestialV3Scene'), {
@@ -166,6 +167,19 @@ export function CelestialV3Client() {
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const user = useUserStore((state) => state.user)
+
+  const chartEntryHref = user
+    ? user.onboarded
+      ? '/kundali'
+      : '/onboarding'
+    : '/signup?redirect=/onboarding'
+
+  const chartEntryLabel = user?.onboarded
+    ? 'Enter my chart'
+    : user
+      ? 'Complete my chart'
+      : 'Begin my chart'
 
   return (
     <main className={styles.page}>
@@ -253,14 +267,29 @@ export function CelestialV3Client() {
         </nav>
 
         <div className={styles.headerActions}>
-          <Link className={styles.signIn} href="/login">
-            Sign in
-          </Link>
+          {user ? (
+            <>
+              <Link className={styles.signIn} href="/profile">
+                Account
+              </Link>
 
-          <Link className={styles.headerCta} href="/onboarding">
-            Begin
-            <ArrowRight size={15} />
-          </Link>
+              <Link className={styles.headerCta} href="/dashboard">
+                Open Dashboard
+                <ArrowRight size={15} />
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link className={styles.signIn} href="/login">
+                Sign in
+              </Link>
+
+              <Link className={styles.headerCta} href={chartEntryHref}>
+                Begin
+                <ArrowRight size={15} />
+              </Link>
+            </>
+          )}
 
           <button
             type="button"
@@ -303,13 +332,29 @@ export function CelestialV3Client() {
           </Link>
 
           <div className={styles.mobileMenuActions}>
-            <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-              Sign in
-            </Link>
-            <Link href="/onboarding" onClick={() => setMobileMenuOpen(false)}>
-              Begin my chart
-              <ArrowRight size={15} />
-            </Link>
+            {user ? (
+              <>
+                <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
+                  Account
+                </Link>
+
+                <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                  Open Dashboard
+                  <ArrowRight size={15} />
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                  Sign in
+                </Link>
+
+                <Link href={chartEntryHref} onClick={() => setMobileMenuOpen(false)}>
+                  Begin my chart
+                  <ArrowRight size={15} />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -335,8 +380,8 @@ export function CelestialV3Client() {
           </p>
 
           <div className={styles.actions}>
-            <Link className={styles.primaryAction} href="/onboarding">
-              Enter my chart
+            <Link className={styles.primaryAction} href={chartEntryHref}>
+              {chartEntryLabel}
               <ArrowRight size={18} />
             </Link>
 
@@ -493,7 +538,7 @@ export function CelestialV3Client() {
             foundation.
           </p>
 
-          <Link className={styles.primaryAction} href="/onboarding">
+          <Link className={styles.primaryAction} href={chartEntryHref}>
             Create my celestial map
             <ArrowRight size={18} />
           </Link>
@@ -690,7 +735,7 @@ export function CelestialV3Client() {
           </div>
 
           <div className={styles.conversionActions}>
-            <Link className={styles.primaryAction} href="/onboarding">
+            <Link className={styles.primaryAction} href={chartEntryHref}>
               Begin my chart
               <ArrowRight size={18} />
             </Link>

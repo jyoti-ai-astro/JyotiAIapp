@@ -1,108 +1,67 @@
-/**
- * Refund Policy Page
- * 
- * Batch 5 - Legal Pages
- * 
- * Refund and cancellation policy
- */
-
-'use client';
-
-export const dynamic = 'force-dynamic';
-
-import React from 'react';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-// Footer removed - using global FooterWrapper from app/layout.tsx
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LegalPageShell } from '@/src/ui/legal/LegalPageShell'
 
 export default function RefundPage() {
   return (
-    <PageTransitionWrapper>
-      <CosmicCursor />
-      
-      <div className="min-h-screen bg-cosmic-navy text-white">
-        <div className="container mx-auto px-4 py-16 space-y-8">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl font-display font-bold text-gold mb-4">Refund Policy</h1>
-            <p className="text-white/70 text-lg">Last updated: January 15, 2024</p>
-          </div>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">1. Introduction</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>
-                This Refund Policy outlines the terms and conditions for refunds and cancellations of subscriptions
-                and services purchased through JyotiAI.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">2. Refund Eligibility</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>Refunds may be issued in the following circumstances:</p>
-              <ul className="list-disc list-inside space-y-2">
-                <li>Within 7 days of purchase for unused subscriptions</li>
-                <li>If service is unavailable due to technical issues on our end</li>
-                <li>If there is a billing error</li>
-                <li>As required by applicable law</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">3. Non-Refundable Items</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>The following are not eligible for refunds:</p>
-              <ul className="list-disc list-inside space-y-2">
-                <li>Services that have been fully consumed or delivered</li>
-                <li>Digital products that have been downloaded</li>
-                <li>Subscriptions cancelled after the refund period</li>
-                <li>Third-party fees or charges</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">4. Refund Process</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>To request a refund:</p>
-              <ol className="list-decimal list-inside space-y-2">
-                <li>Contact our support team at refunds@jyotiai.in</li>
-                <li>Provide your order number and reason for refund</li>
-                <li>Wait for our team to review your request (typically within 5 business days)</li>
-                <li>Receive refund to your original payment method (5-10 business days)</li>
-              </ol>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">5. Contact Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>
-                For refund inquiries, please contact us at:
-              </p>
-              <p className="text-gold">
-                Email: refunds@jyotiai.in<br />
-                Address: [Your Company Address]
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
-      </div>
-    </PageTransitionWrapper>
-  );
+    <LegalPageShell
+      eyebrow="Payments"
+      title="Refunds and subscription cancellation."
+      description="This page explains the distinction between cancelling future subscription renewals and requesting review of a completed charge."
+      updated="30 August 2026"
+      sections={[
+        {
+          title: 'Subscriptions',
+          content: (
+            <p>
+              Where cancellation is available, cancelling a subscription stops
+              future renewal according to the subscription state and provider
+              processing applicable to that account. Cancellation does not by
+              itself mean that a previous charge has been refunded.
+            </p>
+          ),
+        },
+        {
+          title: 'One-time purchases',
+          content: (
+            <p>
+              One-time purchases grant the product or entitlement identified at
+              checkout after payment verification. They are distinct from
+              recurring subscriptions.
+            </p>
+          ),
+        },
+        {
+          title: 'Refund requests',
+          content: (
+            <p>
+              If you believe a charge is incorrect, duplicated, unauthorized,
+              or the purchased entitlement was not delivered as expected,
+              contact JyotiAI support with enough transaction information for
+              the issue to be reviewed. Eligibility can depend on the
+              transaction circumstances and applicable law.
+            </p>
+          ),
+        },
+        {
+          title: 'Processing',
+          content: (
+            <p>
+              Where a refund is approved and technically available, processing
+              may involve the payment provider and financial institutions.
+              JyotiAI does not promise a fixed bank-processing timeline that it
+              cannot control.
+            </p>
+          ),
+        },
+        {
+          title: 'Statutory rights',
+          content: (
+            <p>
+              Nothing on this page is intended to remove consumer rights that
+              apply and cannot lawfully be waived.
+            </p>
+          ),
+        },
+      ]}
+    />
+  )
 }

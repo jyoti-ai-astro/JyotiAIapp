@@ -1,106 +1,119 @@
-/**
- * Terms of Service Page
- * 
- * Batch 5 - Legal Pages
- * 
- * Terms and conditions
- */
-
-'use client';
-
-export const dynamic = 'force-dynamic';
-
-import React from 'react';
-import { PageTransitionWrapper } from '@/components/global/PageTransitionWrapper';
-import { CosmicCursor } from '@/components/global/CosmicCursor';
-// Footer removed - using global FooterWrapper from app/layout.tsx
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LegalPageShell } from '@/src/ui/legal/LegalPageShell'
 
 export default function TermsPage() {
   return (
-    <PageTransitionWrapper>
-      <CosmicCursor />
-      
-      <div className="min-h-screen bg-cosmic-navy text-white">
-        <div className="container mx-auto px-4 py-16 space-y-8">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl font-display font-bold text-gold mb-4">Terms of Service</h1>
-            <p className="text-white/70 text-lg">Last updated: January 15, 2024</p>
-          </div>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">1. Introduction</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
+    <LegalPageShell
+      eyebrow="Terms"
+      title="Terms for using JyotiAI."
+      description="These terms set the ground rules for accounts, astrology and AI experiences, purchases, acceptable use and service availability."
+      updated="30 August 2026"
+      sections={[
+        {
+          title: 'Using JyotiAI',
+          content: (
+            <p>
+              By accessing or using JyotiAI, you agree to use the service
+              lawfully and in accordance with these terms. If you do not agree,
+              do not use the service.
+            </p>
+          ),
+        },
+        {
+          title: 'Accounts',
+          content: (
+            <p>
+              You are responsible for information submitted through your
+              account and for taking reasonable steps to protect access to it.
+              You should provide accurate information where accuracy is
+              necessary for calculations or account administration.
+            </p>
+          ),
+        },
+        {
+          title: 'Astrology and AI output',
+          content: (
+            <>
               <p>
-                Welcome to JyotiAI. These Terms of Service (&quot;Terms&quot;) govern your access to and use of our
-                spiritual guidance platform. By using our services, you agree to be bound by these Terms.
+                JyotiAI provides astrology calculations, interpretations and
+                AI-assisted experiences for informational, reflective and
+                personal-use purposes.
               </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">2. Definitions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <ul className="list-disc list-inside space-y-2">
-                <li><strong>&quot;Service&quot;</strong> refers to the JyotiAI platform and all associated features.</li>
-                <li><strong>&quot;User&quot;</strong> refers to any individual who accesses or uses our Service.</li>
-                <li><strong>&quot;Content&quot;</strong> refers to all data, text, images, and other materials on our platform.</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">3. User Rights</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>You have the right to:</p>
-              <ul className="list-disc list-inside space-y-2">
-                <li>Access and use our Service in accordance with these Terms</li>
-                <li>Create and manage your spiritual profile</li>
-                <li>Receive astrological insights and guidance</li>
-                <li>Cancel your subscription at any time</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">4. Limitations</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
-              <p>You agree not to:</p>
-              <ul className="list-disc list-inside space-y-2">
-                <li>Use our Service for any illegal or unauthorized purpose</li>
-                <li>Attempt to gain unauthorized access to our systems</li>
-                <li>Share your account credentials with others</li>
-                <li>Reproduce or distribute our Content without permission</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-cosmic-indigo/50 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-            <CardHeader>
-              <CardTitle className="text-2xl text-gold">5. Contact Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-white/80">
               <p>
-                If you have any questions about these Terms, please contact us at:
+                Outputs may be incomplete, probabilistic or incorrect. They
+                should not be treated as guaranteed predictions or as medical,
+                legal, financial, mental-health or other professional advice.
+                Decisions remain your responsibility.
               </p>
-              <p className="text-gold">
-                Email: legal@jyotiai.in<br />
-                Address: [Your Company Address]
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Footer removed - using global FooterWrapper from app/layout.tsx */}
-      </div>
-    </PageTransitionWrapper>
-  );
+            </>
+          ),
+        },
+        {
+          title: 'Purchases and subscriptions',
+          content: (
+            <p>
+              Some features may require a subscription, ticket, entitlement or
+              one-time purchase. Prices and the applicable purchase terms are
+              presented before checkout. Payment processing may be performed by
+              a third-party payment provider. Access is subject to successful
+              payment verification and the entitlement associated with the
+              purchase.
+            </p>
+          ),
+        },
+        {
+          title: 'Acceptable use',
+          content: (
+            <p>
+              You may not misuse JyotiAI, attempt unauthorized access, interfere
+              with service operation, circumvent access or payment controls,
+              upload unlawful or rights-infringing material, probe systems
+              without authorization, or use the service to harm others.
+            </p>
+          ),
+        },
+        {
+          title: 'Intellectual property',
+          content: (
+            <p>
+              JyotiAI&apos;s software, branding, interface and original service
+              content are protected by applicable intellectual-property laws.
+              Third-party software remains subject to its respective licenses.
+              You retain responsibility for content and materials you submit.
+            </p>
+          ),
+        },
+        {
+          title: 'Service availability',
+          content: (
+            <p>
+              JyotiAI may change, maintain, suspend or discontinue features as
+              the product evolves. We do not promise uninterrupted or
+              error-free operation, and third-party infrastructure can affect
+              availability.
+            </p>
+          ),
+        },
+        {
+          title: 'Liability',
+          content: (
+            <p>
+              To the extent permitted by applicable law, JyotiAI is provided
+              without guarantees about the accuracy of interpretive or
+              AI-generated output. Nothing in these terms excludes rights or
+              liabilities that cannot lawfully be excluded.
+            </p>
+          ),
+        },
+        {
+          title: 'Changes',
+          content: (
+            <p>
+              These terms may be updated as the service changes. The current
+              version and last-updated date will be published on this page.
+            </p>
+          ),
+        },
+      ]}
+    />
+  )
 }

@@ -16,6 +16,7 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { AuthenticatedAppShell } from '@/src/ui/layout/AuthenticatedAppShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -107,7 +108,7 @@ function getPlanetsByHouse(grahas: Record<string, KundaliGraha>, houseNumber?: n
   return Object.values(grahas).filter((graha) => Number(graha.house) === houseNumber)
 }
 
-export default function KundaliPage() {
+function KundaliExperience() {
   const router = useRouter()
   const { user } = useUserStore()
   const {
@@ -256,6 +257,7 @@ export default function KundaliPage() {
       <DashboardPageShell
         title="Your Vedic Birth Chart"
         subtitle="Preparing your JyotiAI chart workspace."
+        withAuthenticatedShell={false}
       >
         <Card>
           <LoadingState
@@ -269,7 +271,11 @@ export default function KundaliPage() {
 
   if (loading || ticketLoading) {
     return (
-      <DashboardPageShell title="Your Vedic Birth Chart" subtitle="Preparing your Kundali view.">
+      <DashboardPageShell
+        title="Your Vedic Birth Chart"
+        subtitle="Preparing your Kundali view."
+        withAuthenticatedShell={false}
+      >
         <Card>
           <LoadingState title="Loading Kundali" description="Reading your saved birth chart." />
         </Card>
@@ -279,7 +285,11 @@ export default function KundaliPage() {
 
   if (error) {
     return (
-      <DashboardPageShell title="Your Vedic Birth Chart" subtitle="A clear view of your saved chart.">
+      <DashboardPageShell
+        title="Your Vedic Birth Chart"
+        subtitle="A clear view of your saved chart."
+        withAuthenticatedShell={false}
+      >
         <Card>
           <ErrorState
             title="Kundali unavailable"
@@ -1336,5 +1346,21 @@ function AdvancedDetails({ kundali }: { kundali: KundaliData }) {
         </details>
       </CardContent>
     </Card>
+  )
+}
+
+
+export default function KundaliPage() {
+  return (
+    <div
+      data-jyoti-product-shell="true"
+      className="relative min-h-screen bg-[#02080d] text-[#f7f1e7]"
+    >
+      <div className="mx-auto w-full max-w-[1800px] px-4 sm:px-5 lg:px-6">
+        <AuthenticatedAppShell>
+          <KundaliExperience />
+        </AuthenticatedAppShell>
+      </div>
+    </div>
   )
 }

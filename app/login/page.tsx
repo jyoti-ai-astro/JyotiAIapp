@@ -168,6 +168,23 @@ export default function LoginPage() {
       // Store email in localStorage for callback
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('emailForSignIn', email);
+
+        const requestedRedirect = searchParams.get('redirect');
+
+        if (
+          requestedRedirect &&
+          requestedRedirect.startsWith('/') &&
+          !requestedRedirect.startsWith('//') &&
+          !requestedRedirect.startsWith('/login') &&
+          !requestedRedirect.startsWith('/signup')
+        ) {
+          window.localStorage.setItem(
+            'authRedirectAfterSignIn',
+            requestedRedirect
+          );
+        } else {
+          window.localStorage.removeItem('authRedirectAfterSignIn');
+        }
       }
 
       const response = await fetch('/api/auth/magic-link', {

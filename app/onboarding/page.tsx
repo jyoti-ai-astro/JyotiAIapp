@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useUserStore } from '@/store/user-store';
 import { CosmicOnboarding } from '@/components/onboarding/CosmicOnboarding';
 import { invalidateAuthenticatedRead } from '@/lib/client/authenticated-read'
@@ -41,14 +42,18 @@ export default function OnboardingPage() {
     lng: undefined,
   });
 
-  // Redirect unauthenticated users
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      router.replace('/login');
+      return;
+    }
+
+    if (user.onboarded) {
+      router.replace('/dashboard');
     }
   }, [user, router]);
 
-  if (!user) {
+  if (!user || user.onboarded) {
     return null;
   }
 
@@ -259,19 +264,30 @@ export default function OnboardingPage() {
   };
 
   return (
-    <CosmicOnboarding
-      step={step}
-      formData={formData}
-      setFormData={setFormData}
-      rashiData={rashiData}
-      selectedRashi={selectedRashi}
-      setSelectedRashi={setSelectedRashi}
-      onBirthDetailsSubmit={handleBirthDetailsSubmit}
-      onRashiConfirm={handleRashiConfirm}
-      onRashiBack={() => setStep(1)}
-      onComplete={handleComplete}
-      loading={loading}
-      errorMessage={errorMessage}
-    />
+    <div className="relative min-h-screen">
+      <div className="absolute right-6 top-5 z-50 md:right-10 md:top-6">
+        <Link
+          href="/dashboard"
+          className="inline-flex min-h-10 items-center rounded-full border border-[#d7aa57]/25 bg-[#071014]/90 px-4 text-sm text-[#d9d2c4] backdrop-blur transition hover:border-[#d7aa57]/50 hover:text-[#fff7e8]"
+        >
+          Do this later
+        </Link>
+      </div>
+
+      <CosmicOnboarding
+        step={step}
+        formData={formData}
+        setFormData={setFormData}
+        rashiData={rashiData}
+        selectedRashi={selectedRashi}
+        setSelectedRashi={setSelectedRashi}
+        onBirthDetailsSubmit={handleBirthDetailsSubmit}
+        onRashiConfirm={handleRashiConfirm}
+        onRashiBack={() => setStep(1)}
+        onComplete={handleComplete}
+        loading={loading}
+        errorMessage={errorMessage}
+      />
+    </div>
   );
 }

@@ -47,11 +47,16 @@ export function Header() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ${
+      data-jyoti-global-header="true"
+      className={`fixed inset-x-0 top-0 z-50 border-b text-[#fff7e8] transition-all duration-300 ${
         scrolled
-          ? 'border-[#d7aa57]/24 bg-[#050c10]/92 shadow-[0_12px_36px_rgba(0,0,0,0.22)] backdrop-blur-xl'
-          : 'border-[#d7aa57]/14 bg-[#050c10]/72 backdrop-blur-lg'
+          ? 'border-[#d7aa57]/22 bg-[#030b10]/[0.97] shadow-[0_14px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl'
+          : 'border-[#d7aa57]/14 bg-[#030b10]/[0.94] backdrop-blur-xl'
       }`}
+      style={{
+        backgroundColor: 'rgba(3, 11, 16, 0.97)',
+        color: '#fff7e8',
+      }}
     >
       <div className="mx-auto flex h-20 max-w-[1500px] items-center justify-between px-5 md:px-8">
         <Link

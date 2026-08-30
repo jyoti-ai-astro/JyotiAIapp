@@ -109,7 +109,25 @@ export default function AuthCallbackPage() {
 
         setStatus('success')
 
-        router.replace(data.onboarded ? '/dashboard' : '/onboarding')
+        const storedRedirect =
+          window.localStorage.getItem('authRedirectAfterSignIn')
+
+        window.localStorage.removeItem('authRedirectAfterSignIn')
+
+        const safeStoredRedirect =
+          storedRedirect &&
+          storedRedirect.startsWith('/') &&
+          !storedRedirect.startsWith('//') &&
+          !storedRedirect.startsWith('/login') &&
+          !storedRedirect.startsWith('/signup')
+            ? storedRedirect
+            : null
+
+        const destination = !data.onboarded
+          ? '/onboarding'
+          : safeStoredRedirect || '/dashboard'
+
+        window.location.assign(destination)
       } catch (callbackError: unknown) {
         console.error('Magic-link callback error:', callbackError)
 

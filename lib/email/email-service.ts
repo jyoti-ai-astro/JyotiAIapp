@@ -191,6 +191,26 @@ export async function sendMagicLink(email: string, loginUrl: string, device?: st
 }
 
 /**
+ * Send password recovery email
+ */
+export async function sendPasswordResetLink(
+  email: string,
+  resetUrl: string
+): Promise<boolean> {
+  const { getPasswordResetEmailTemplate } = await import('./email-templates')
+  const subject = 'Reset your JyotiAI password'
+  const htmlBody = getPasswordResetEmailTemplate({ email, resetUrl })
+
+  return sendEmail({
+    to: email,
+    from: EMAIL_SENDERS.system,
+    subject,
+    htmlBody,
+    category: 'security',
+  })
+}
+
+/**
  * Send payment receipt email
  */
 export async function sendPaymentReceipt(
