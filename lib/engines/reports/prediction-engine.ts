@@ -248,6 +248,10 @@ async function generateGeminiReport(prompt: string): Promise<PredictionReport> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        generationConfig: {
+          thinkingConfig: { thinkingLevel: 'low' },
+          maxOutputTokens: 2000,
+        },
         contents: [
           {
             parts: [
@@ -269,8 +273,8 @@ async function generateGeminiReport(prompt: string): Promise<PredictionReport> {
   
   try {
     return JSON.parse(content) as PredictionReport
-  } catch (e) {
-    return createFallbackReport()
+  } catch {
+    throw new Error('Gemini returned malformed prediction JSON')
   }
 }
 

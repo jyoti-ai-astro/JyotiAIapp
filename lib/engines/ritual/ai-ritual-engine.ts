@@ -211,6 +211,10 @@ async function generateGeminiRitual(prompt: string, purpose: string): Promise<Ri
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          generationConfig: {
+            thinkingConfig: { thinkingLevel: 'low' },
+            maxOutputTokens: 2000,
+          },
           contents: [
             {
               parts: [
