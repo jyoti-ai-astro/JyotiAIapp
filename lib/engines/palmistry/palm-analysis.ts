@@ -1,13 +1,8 @@
 /**
  * Palmistry Analysis Engine
- * Part B - Section 3: Palmistry Engine
- * Part B - Section 4: Milestone 4 - Step 2
- * 
- * AI Vision integration using OpenAI GPT-4 Vision
  */
 
-import { envVars } from '@/lib/env/env.mjs'
-import OpenAI from 'openai'
+import { callVisionJson } from '@/lib/ai/vision-client'
 import type { PalmAnalysis } from './types'
 
 export interface PalmAnalysisInput {
@@ -15,173 +10,187 @@ export interface PalmAnalysisInput {
   rightPalmUrl: string
 }
 
-/**
- * Analyze palm images using OpenAI Vision
- */
-export async function analyzePalm(input: PalmAnalysisInput): Promise<PalmAnalysis> {
-  const openaiApiKey = envVars.ai.openaiApiKey
-  
-  if (!openaiApiKey) {
-    throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY in your environment variables.')
+type RawPalmAnalysis = {
+  overallScore?: number
+  leftPalm?: {
+    lines?: unknown[]
+    mounts?: unknown[]
+    marks?: unknown[]
+    shape?: string
+  }
+  rightPalm?: {
+    lines?: unknown[]
+    mounts?: unknown[]
+    marks?: unknown[]
+    shape?: string
+  }
+  traits?: {
+    career?: number
+    relationships?: number
+    health?: number
+    wealth?: number
+    spirituality?: number
+  }
+  predictions?: unknown[]
+  recommendedMantra?: string
+}
+
+function bounded(value: unknown): number {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return 0
+  return Math.max(0, Math.min(100, Math.round(number)))
+}
+
+function validatePalmPayload(value: unknown): RawPalmAnalysis {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Invalid palmistry response')
   }
 
-  const openai = new OpenAI({
-    apiKey: openaiApiKey,
-  })
+  const data = value as RawPalmAnalysis
 
+  if (!data.leftPalm || !data.rightPalm || !data.traits) {
+    throw new Error('Incomplete palmistry response')
+  }
+
+  return data
+}
+
+export async function analyzePalm(input: PalmAnalysisInput): Promise<PalmAnalysis> {
   const prompt = `
-    Analyze these two palm images (Left and Right) for a Vedic Palmistry reading.
-    Identify the Life Line, Heart Line, Head Line, and Fate Line.
-    Evaluate the mounts (Venus, Jupiter, Saturn, Sun, Mercury).
+Analyze these two palm images (Left and Right) for a Vedic Palmistry reading.
 
-    Return a strictly valid JSON object with this specific structure:
+Identify the Life Line, Heart Line, Head Line, and Fate Line.
+Evaluate the mounts (Venus, Jupiter, Saturn, Sun, Mercury).
+
+Return ONLY a valid JSON object with this structure:
+{
+  "overallScore": number,
+  "leftPalm": {
+    "lines": ["string"],
+    "mounts": ["string"],
+    "marks": ["string"],
+    "shape": "string"
+  },
+  "rightPalm": {
+    "lines": ["string"],
+    "mounts": ["string"],
+    "marks": ["string"],
+    "shape": "string"
+  },
+  "traits": {
+    "career": number,
+    "relationships": number,
+    "health": number,
+    "wealth": number,
+    "spirituality": number
+  },
+  "predictions": [
     {
-      "overallScore": number (0-100),
-      "leftPalm": { 
-        "lines": ["string"], 
-        "mounts": ["string"], 
-        "marks": ["string"], 
-        "shape": "string" 
-      },
-      "rightPalm": { 
-        "lines": ["string"], 
-        "mounts": ["string"], 
-        "marks": ["string"], 
-        "shape": "string" 
-      },
-      "traits": {
-        "career": number (0-100),
-        "relationships": number (0-100),
-        "health": number (0-100),
-        "wealth": number (0-100),
-        "spirituality": number (0-100)
-      },
-      "predictions": [
-        {
-          "category": "string",
-          "description": "string",
-          "timeframe": "string"
-        }
-      ],
-      "recommendedMantra": "string"
+      "category": "string",
+      "description": "string",
+      "timeframe": "string"
     }
+  ],
+  "recommendedMantra": "string"
+}
 
-    Ensure all numbers are valid integers between 0-100.
-    Shape should be one of: "rectangular", "square", "conical", "spatulate", "philosophical", "mixed"
-  `
+All scores must be integers from 0 through 100.
+Shape must be one of rectangular, square, conical, spatulate, philosophical, mixed.
+`
 
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o', // Using gpt-4o for better vision capabilities
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: input.leftPalmUrl } },
-            { type: 'image_url', image_url: { url: input.rightPalmUrl } },
-          ],
-        },
-      ],
-      response_format: { type: 'json_object' },
-      max_tokens: 2000,
-      temperature: 0.3, // Lower temperature for more consistent analysis
-    })
-
-    const content = response.choices[0].message.content
-    if (!content) {
-      throw new Error('Failed to generate analysis: Empty response from AI')
+  const result = await callVisionJson(
+    prompt,
+    [
+      { url: input.leftPalmUrl },
+      { url: input.rightPalmUrl },
+    ],
+    validatePalmPayload,
+    undefined,
+    {
+      temperature: 0.3,
+      maxTokens: 2000,
     }
+  )
 
-    const result = JSON.parse(content)
-
-    // Validate and transform the response to match our type structure
-    const analysis: PalmAnalysis = {
-      leftPalm: {
-        lines: Array.isArray(result.leftPalm?.lines) 
-          ? result.leftPalm.lines.map((line: string) => ({
-              type: 'life' as const,
-              start: { x: 0, y: 0 },
-              end: { x: 0, y: 0 },
-              length: 0,
-              depth: 0,
-              breaks: [],
-            }))
-          : [],
-        mounts: Array.isArray(result.leftPalm?.mounts)
-          ? result.leftPalm.mounts.map((mount: string) => ({
-              type: 'jupiter' as const,
-              prominence: 0,
-              position: { x: 0, y: 0 },
-            }))
-          : [],
-        marks: Array.isArray(result.leftPalm?.marks)
-          ? result.leftPalm.marks.map((mark: string) => ({
-              type: 'star' as const,
-              position: { x: 0, y: 0 },
-              significance: mark,
-            }))
-          : [],
-        shape: (result.leftPalm?.shape || 'rectangular') as PalmAnalysis['leftPalm']['shape'],
-      },
-      rightPalm: {
-        lines: Array.isArray(result.rightPalm?.lines)
-          ? result.rightPalm.lines.map((line: string) => ({
-              type: 'life' as const,
-              start: { x: 0, y: 0 },
-              end: { x: 0, y: 0 },
-              length: 0,
-              depth: 0,
-              breaks: [],
-            }))
-          : [],
-        mounts: Array.isArray(result.rightPalm?.mounts)
-          ? result.rightPalm.mounts.map((mount: string) => ({
-              type: 'jupiter' as const,
-              prominence: 0,
-              position: { x: 0, y: 0 },
-            }))
-          : [],
-        marks: Array.isArray(result.rightPalm?.marks)
-          ? result.rightPalm.marks.map((mark: string) => ({
-              type: 'star' as const,
-              position: { x: 0, y: 0 },
-              significance: mark,
-            }))
-          : [],
-        shape: (result.rightPalm?.shape || 'rectangular') as PalmAnalysis['rightPalm']['shape'],
-      },
-      overallScore: Math.max(0, Math.min(100, result.overallScore || 0)),
-      traits: {
-        career: Math.max(0, Math.min(100, result.traits?.career || 0)),
-        relationships: Math.max(0, Math.min(100, result.traits?.relationships || 0)),
-        health: Math.max(0, Math.min(100, result.traits?.health || 0)),
-        wealth: Math.max(0, Math.min(100, result.traits?.wealth || 0)),
-        spirituality: Math.max(0, Math.min(100, result.traits?.spirituality || 0)),
-      },
-      predictions: Array.isArray(result.predictions)
-        ? result.predictions.map((pred: any) => ({
-            category: pred.category || 'General',
-            description: pred.description || pred || 'No prediction available',
-            timeframe: pred.timeframe || 'Near future',
+  const analysis: PalmAnalysis = {
+    leftPalm: {
+      lines: Array.isArray(result.leftPalm?.lines)
+        ? result.leftPalm.lines.map(() => ({
+            type: 'life' as const,
+            start: { x: 0, y: 0 },
+            end: { x: 0, y: 0 },
+            length: 0,
+            depth: 0,
+            breaks: [],
           }))
         : [],
-      createdAt: new Date(),
-    }
+      mounts: Array.isArray(result.leftPalm?.mounts)
+        ? result.leftPalm.mounts.map(() => ({
+            type: 'jupiter' as const,
+            prominence: 0,
+            position: { x: 0, y: 0 },
+          }))
+        : [],
+      marks: Array.isArray(result.leftPalm?.marks)
+        ? result.leftPalm.marks.map((mark: any) => ({
+            type: 'star' as const,
+            position: { x: 0, y: 0 },
+            significance: String(mark),
+          }))
+        : [],
+      shape: (result.leftPalm?.shape || 'rectangular') as PalmAnalysis['leftPalm']['shape'],
+    },
 
-    return analysis
-  } catch (error: any) {
-    console.error('AI Vision Analysis Failed:', error)
-    
-    // Provide a more user-friendly error message
-    if (error.message?.includes('API key')) {
-      throw new Error('AI service configuration error. Please contact support.')
-    } else if (error.message?.includes('rate limit')) {
-      throw new Error('Service temporarily unavailable. Please try again in a moment.')
-    } else if (error.message?.includes('invalid image')) {
-      throw new Error('Could not analyze palm images. Please ensure images are clear and properly formatted.')
-    } else {
-      throw new Error('Could not analyze palm images. Please ensure images are clear and try again.')
-    }
+    rightPalm: {
+      lines: Array.isArray(result.rightPalm?.lines)
+        ? result.rightPalm.lines.map(() => ({
+            type: 'life' as const,
+            start: { x: 0, y: 0 },
+            end: { x: 0, y: 0 },
+            length: 0,
+            depth: 0,
+            breaks: [],
+          }))
+        : [],
+      mounts: Array.isArray(result.rightPalm?.mounts)
+        ? result.rightPalm.mounts.map(() => ({
+            type: 'jupiter' as const,
+            prominence: 0,
+            position: { x: 0, y: 0 },
+          }))
+        : [],
+      marks: Array.isArray(result.rightPalm?.marks)
+        ? result.rightPalm.marks.map((mark: any) => ({
+            type: 'star' as const,
+            position: { x: 0, y: 0 },
+            significance: String(mark),
+          }))
+        : [],
+      shape: (result.rightPalm?.shape || 'rectangular') as PalmAnalysis['rightPalm']['shape'],
+    },
+
+    overallScore: bounded(result.overallScore),
+
+    traits: {
+      career: bounded(result.traits?.career),
+      relationships: bounded(result.traits?.relationships),
+      health: bounded(result.traits?.health),
+      wealth: bounded(result.traits?.wealth),
+      spirituality: bounded(result.traits?.spirituality),
+    },
+
+    predictions: Array.isArray(result.predictions)
+      ? result.predictions.map((prediction: any) => ({
+          category: prediction?.category || 'General',
+          description:
+            prediction?.description ||
+            (typeof prediction === 'string' ? prediction : 'No prediction available'),
+          timeframe: prediction?.timeframe || 'Near future',
+        }))
+      : [],
+
+    createdAt: new Date(),
   }
+
+  return analysis
 }
