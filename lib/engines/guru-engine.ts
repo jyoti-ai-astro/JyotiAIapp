@@ -349,6 +349,7 @@ async function callLLM(
   return callSharedLLM(messages, signal, {
     temperature: 0.7,
     maxTokens: 1000,
+    modelRole: 'guru',
   })
 }
 

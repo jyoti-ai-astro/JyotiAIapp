@@ -187,6 +187,9 @@ async function generateAIReport(prompt: string): Promise<PredictionReport> {
     {
       temperature: 0.7,
       maxTokens: 2000,
+      validate: (candidate: string) => {
+        JSON.parse(candidate)
+      },
     }
   )
 

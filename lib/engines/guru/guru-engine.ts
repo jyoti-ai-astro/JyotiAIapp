@@ -162,6 +162,7 @@ async function generateAIResponse(userMessage: string): Promise<string> {
     {
       temperature: 0.7,
       maxTokens: 2000,
+      modelRole: 'guru',
     }
   )
 }

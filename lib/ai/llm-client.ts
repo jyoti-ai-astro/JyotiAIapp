@@ -21,6 +21,8 @@ export interface LLMOptions {
   temperature?: number
   maxTokens?: number
   timeoutMs?: number
+  modelRole?: 'prediction' | 'guru'
+  validate?: (content: string) => void
 }
 
 type ProviderId = 'openai' | 'gemini' | 'xai' | 'anthropic'
@@ -78,6 +80,19 @@ function configured(provider: ProviderId): boolean {
   return Boolean(envVars.ai.anthropicApiKey)
 }
 
+function isRetryableProviderError(error: any): boolean {
+  const code = String(error?.code || '')
+
+  return (
+    code === 'AI_BILLING_OR_QUOTA' ||
+    code === 'AI_RATE_LIMIT' ||
+    code === 'AI_MODEL_UNAVAILABLE' ||
+    code === 'AI_PROVIDER_UNAVAILABLE' ||
+    code === 'AI_NETWORK_ERROR' ||
+    code === 'AI_MALFORMED_RESPONSE'
+  )
+}
+
 export async function callLLM(
   messages: LLMMessage[],
   signal?: AbortSignal,
@@ -91,19 +106,38 @@ export async function callLLM(
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
 
     try {
+      let content: string
+
       if (provider === 'openai') {
-        return await callOpenAI(messages, signal, options)
+        content = await callOpenAI(messages, signal, options)
+      } else if (provider === 'gemini') {
+        content = await callGemini(messages, signal, options)
+      } else if (provider === 'xai') {
+        content = await callXAI(messages, signal, options)
+      } else {
+        content = await callAnthropic(messages, signal, options)
       }
-      if (provider === 'gemini') {
-        return await callGemini(messages, signal, options)
+
+      try {
+        options?.validate?.(content)
+      } catch {
+        throw aiMalformedResponse(PROVIDER_NAMES[provider])
       }
-      if (provider === 'xai') {
-        return await callXAI(messages, signal, options)
-      }
-      return await callAnthropic(messages, signal, options)
+
+      return content
     } catch (error: any) {
       if (signal?.aborted && error?.name === 'AbortError') throw error
+
       errors.push(error)
+
+      if (!isRetryableProviderError(error)) {
+        console.warn(
+          `[AI] ${PROVIDER_NAMES[provider]} generation failed with non-retryable error`,
+          error?.code || error?.name || 'UNKNOWN'
+        )
+        throw error
+      }
+
       console.warn(
         `[AI] ${PROVIDER_NAMES[provider]} generation failed; trying next configured provider`,
         error?.code || error?.name || 'UNKNOWN'
@@ -139,7 +173,10 @@ async function callOpenAI(
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: envVars.ai.predictionModelName,
+          model:
+            options?.modelRole === 'guru'
+              ? envVars.ai.guruModelName
+              : envVars.ai.predictionModelName,
           messages,
           temperature: options?.temperature ?? 0.7,
           max_tokens: options?.maxTokens ?? 2000,

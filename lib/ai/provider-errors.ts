@@ -56,7 +56,11 @@ export function classifyAIResponseError(
   response: Response,
   errorBody: any
 ): AIProviderError {
-  const providerCode = errorBody?.error?.code || errorBody?.type || ''
+  const providerCode =
+    errorBody?.error?.code ||
+    errorBody?.code ||
+    errorBody?.type ||
+    ''
   const providerType = errorBody?.error?.type || errorBody?.type || ''
   const providerMessage =
     errorBody?.error?.message ||
@@ -66,23 +70,25 @@ export function classifyAIResponseError(
 
   const message = `${provider} error: ${providerMessage}`
 
-  if (response.status === 429) {
-    const isQuota =
-      providerCode === 'insufficient_quota' ||
-      providerType === 'insufficient_quota' ||
-      /quota|billing|credit/i.test(String(providerMessage))
+  const isBillingOrQuota =
+    providerCode === 'insufficient_quota' ||
+    providerType === 'insufficient_quota' ||
+    /quota|billing|credit balance|purchase credits|insufficient[_ -]?quota/i.test(
+      `${providerCode} ${providerType} ${providerMessage}`
+    )
 
+  if (response.status === 429) {
     return new AIProviderError(
-      isQuota ? 'AI_BILLING_OR_QUOTA' : 'AI_RATE_LIMIT',
+      isBillingOrQuota ? 'AI_BILLING_OR_QUOTA' : 'AI_RATE_LIMIT',
       message,
-      isQuota
+      isBillingOrQuota
         ? 'AI credits are temporarily unavailable. Please try again later.'
         : 'AI generation is receiving too many requests. Please retry in a moment.',
       429
     )
   }
 
-  if (response.status === 402) {
+  if (response.status === 402 || isBillingOrQuota) {
     return new AIProviderError(
       'AI_BILLING_OR_QUOTA',
       message,
@@ -105,6 +111,19 @@ export function classifyAIResponseError(
       'AI_PROVIDER_UNAVAILABLE',
       message,
       'AI generation is temporarily unavailable. Please retry shortly.',
+      503
+    )
+  }
+
+  if (
+    provider === 'xAI' &&
+    response.status === 400 &&
+    providerCode === 'invalid-argument'
+  ) {
+    return new AIProviderError(
+      'AI_PROVIDER_UNAVAILABLE',
+      message,
+      'The configured AI provider is temporarily unavailable. Please retry shortly.',
       503
     )
   }

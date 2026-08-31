@@ -141,6 +141,9 @@ async function generateAIHoroscope(
     {
       temperature: 0.7,
       maxTokens: 2000,
+      validate: (candidate: string) => {
+        JSON.parse(candidate)
+      },
     }
   )
 
