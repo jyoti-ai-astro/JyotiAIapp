@@ -145,7 +145,7 @@ export default function PregnancyPage() {
                   </p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
                     Your access is valid, but JyotiAI will not present the
-                    current placeholder pregnancy engine as a personalized
+                    pregnancy feature as a personalized
                     production reading. The chart-derived production engine
                     must be connected before this module is released.
                   </p>

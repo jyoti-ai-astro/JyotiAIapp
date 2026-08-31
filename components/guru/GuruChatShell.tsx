@@ -20,7 +20,7 @@ import { useGuruContext } from './GuruContextProvider';
 import { Insight } from '@/lib/guru/insight-injector';
 import { Remedy } from '@/lib/guru/remedy-engine';
 import { VoiceEngine } from '@/lib/guru/voice-engine';
-import { VisionResult } from '@/lib/guru/vision-engine';
+import type { VisionResult } from '@/lib/guru/vision-engine';
 import { VideoEngine, VideoFrameInsight } from '@/lib/guru/video-engine';
 import { CompatibilityMonth } from '@/lib/guru/compatibility-timeline';
 // Phase 30 - F45: Dynamic imports for heavy components
@@ -575,8 +575,8 @@ export function GuruChatShell() {
 
       // Auto-send Guru insights
       if (chatEngineRef.current) {
-        const message = await chatEngineRef.current.handleImageMessage(file, (results) => {
-          setVisionResults(results);
+        const message = await chatEngineRef.current.handleImageMessage(results, (visionResults) => {
+          setVisionResults(visionResults);
         });
 
         // Add assistant message with vision insights

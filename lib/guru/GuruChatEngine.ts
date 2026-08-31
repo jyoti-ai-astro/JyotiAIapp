@@ -12,7 +12,7 @@ import { GuruMemory } from './guru-memory';
 import { injectAllInsights, Insight } from './insight-injector';
 import { generateAllRemedies, Remedy } from './remedy-engine';
 import { VoiceEngine } from './voice-engine';
-import { VisionEngine, VisionResult } from './vision-engine';
+import type { VisionResult } from './vision-engine';
 import { VideoFrameInsight } from './video-engine';
 import { KnowledgeGraph, UserGraph } from './knowledge-graph';
 import { PastLifeEngine, PastLifeResult } from './past-life-engine';
@@ -45,7 +45,6 @@ export class GuruChatEngine {
   private context: GuruContext | null = null;
   private memory: GuruMemory;
   private voiceEngine: VoiceEngine | null = null;
-  private visionEngine: VisionEngine | null = null;
   private knowledgeGraph: KnowledgeGraph;
   private pastLifeEngine: PastLifeEngine;
   private predictionEngine: PredictionEngine;
@@ -67,7 +66,6 @@ export class GuruChatEngine {
 
   constructor() {
     this.memory = new GuruMemory();
-    this.visionEngine = new VisionEngine();
     this.knowledgeGraph = new KnowledgeGraph();
     this.pastLifeEngine = new PastLifeEngine();
     this.predictionEngine = new PredictionEngine();
@@ -476,16 +474,13 @@ export class GuruChatEngine {
    * Analyzes image and sends enriched message to Guru
    */
   async handleImageMessage(
-    file: File,
+    visionResults: VisionResult[],
     onVisionResults?: (results: VisionResult[]) => void
   ): Promise<string> {
     try {
-      if (!this.visionEngine) {
-        throw new Error('Vision engine not initialized');
+      if (!visionResults.length) {
+        throw new Error('Vision analysis returned no usable results');
       }
-
-      // Analyze image
-      const visionResults = await this.visionEngine.analyzeImage(file);
 
       // Add vision findings to memory
       visionResults.forEach(result => {

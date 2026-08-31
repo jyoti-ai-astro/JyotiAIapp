@@ -320,7 +320,7 @@ export class VideoEngine {
 
     // Simple emotion detection based on brightness and color distribution
     const emotions = ['calm', 'happy', 'focused', 'neutral'];
-    const emotion = emotions[Math.floor(Math.random() * emotions.length)]; // Placeholder
+    const emotion = 'neutral';
     const intensity = Math.min(1.0, brightness / 255);
 
     return {
@@ -336,13 +336,13 @@ export class VideoEngine {
     // In production, use specialized chakra detection
     // For now, return placeholder values
     const chakras: { [key: string]: number } = {
-      'Root': 6 + Math.random() * 2,
-      'Sacral': 5 + Math.random() * 2,
-      'Solar Plexus': 7 + Math.random() * 2,
-      'Heart': 6 + Math.random() * 2,
-      'Throat': 5 + Math.random() * 2,
-      'Third Eye': 7 + Math.random() * 2,
-      'Crown': 6 + Math.random() * 2,
+      'Root': 0,
+      'Sacral': 0,
+      'Solar Plexus': 0,
+      'Heart': 0,
+      'Throat': 0,
+      'Third Eye': 0,
+      'Crown': 0,
     };
 
     // Round to 1 decimal
@@ -368,11 +368,11 @@ export class VideoEngine {
     ];
 
     // Placeholder: randomly detect gestures occasionally
-    if (Math.random() > 0.95) {
-      const gesture = gestures[Math.floor(Math.random() * (gestures.length - 1))];
+    if (false){
+      const gesture = gestures[0] || 'none';
       return {
         type: gesture,
-        confidence: 0.7 + Math.random() * 0.3,
+        confidence: 0,
       };
     }
 

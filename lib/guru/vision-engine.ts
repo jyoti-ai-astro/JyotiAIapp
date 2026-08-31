@@ -1,286 +1,409 @@
-/**
- * Vision Engine
- * 
- * Phase 3 — Section 33: PAGES PHASE 18 (F33)
- * 
- * Analyzes images for spiritual insights (palmistry, aura, emotion, kundali, numerology)
- */
+import { callVisionJson } from '@/lib/ai/vision-client'
 
 export interface VisionResult {
-  type: 'palm' | 'aura' | 'emotion' | 'kundali' | 'document';
-  data: PalmistryData | AuraData | EmotionData | KundaliData | DocumentData;
-  confidence: number;
+  type: 'palm' | 'aura' | 'emotion' | 'kundali' | 'document'
+  data: PalmistryData | AuraData | EmotionData | KundaliData | DocumentData
+  confidence: number
 }
 
 export interface PalmistryData {
   lines: {
-    life?: { length: number; clarity: number; breaks: number };
-    heart?: { length: number; clarity: number; branches: number };
-    head?: { length: number; clarity: number; forks: number };
-    fate?: { present: boolean; clarity: number };
-  };
+    life?: { length: number; clarity: number; breaks: number }
+    heart?: { length: number; clarity: number; branches: number }
+    head?: { length: number; clarity: number; forks: number }
+    fate?: { present: boolean; clarity: number }
+  }
   mounts: {
-    [key: string]: { prominence: number; characteristics: string[] };
-  };
+    [key: string]: { prominence: number; characteristics: string[] }
+  }
   overall: {
-    handType: 'earth' | 'air' | 'fire' | 'water';
-    palmShape: string;
-    reading: string;
-  };
+    handType: 'earth' | 'air' | 'fire' | 'water'
+    palmShape: string
+    reading: string
+  }
 }
 
 export interface AuraData {
-  dominantColor: string;
-  colorDistribution: { color: string; percentage: number }[];
-  energyLevel: number; // 0-10
-  chakraStrengths: { name: string; strength: number }[];
-  auraReading: string;
+  dominantColor: string
+  colorDistribution: { color: string; percentage: number }[]
+  energyLevel: number
+  chakraStrengths: { name: string; strength: number }[]
+  auraReading: string
 }
 
 export interface EmotionData {
-  primaryEmotion: string;
-  emotions: { emotion: string; intensity: number }[];
-  energyState: 'high' | 'medium' | 'low';
-  spiritualAlignment: number; // 0-10
-  reading: string;
+  primaryEmotion: string
+  emotions: { emotion: string; intensity: number }[]
+  energyState: 'high' | 'medium' | 'low'
+  spiritualAlignment: number
+  reading: string
 }
 
 export interface KundaliData {
-  extractedText: string;
-  chartType: 'north' | 'south' | 'east' | 'west';
-  planets: { name: string; position: string }[];
-  houses: { number: number; significance: string }[];
-  reading: string;
+  extractedText: string
+  chartType: 'north' | 'south' | 'east' | 'west'
+  planets: { name: string; position: string }[]
+  houses: { number: number; significance: string }[]
+  reading: string
 }
 
 export interface DocumentData {
-  extractedText: string;
+  extractedText: string
   numerology: {
-    lifePath?: number;
-    destiny?: number;
-    personality?: number;
-  };
-  keyDates: string[];
-  reading: string;
+    lifePath?: number
+    destiny?: number
+    personality?: number
+  }
+  keyDates: string[]
+  reading: string
+}
+
+type ImageType = 'palm' | 'face' | 'kundali' | 'document' | 'unknown'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function stringValue(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback
+}
+
+function numberValue(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+function stringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+function fileToVisionImage(file: File): Promise<{ data: string; mimeType: string }> {
+  return file.arrayBuffer().then((buffer) => ({
+    data: Buffer.from(buffer).toString('base64'),
+    mimeType: file.type || 'image/jpeg',
+  }))
+}
+
+function detectImageTypeFromFilename(file: File): ImageType {
+  const filename = file.name.toLowerCase()
+
+  if (filename.includes('palm') || filename.includes('hand')) return 'palm'
+  if (
+    filename.includes('face') ||
+    filename.includes('photo') ||
+    filename.includes('selfie')
+  ) {
+    return 'face'
+  }
+  if (
+    filename.includes('kundali') ||
+    filename.includes('chart') ||
+    filename.includes('horoscope')
+  ) {
+    return 'kundali'
+  }
+  if (
+    filename.includes('document') ||
+    filename.includes('pdf') ||
+    filename.includes('text')
+  ) {
+    return 'document'
+  }
+
+  return 'unknown'
+}
+
+function validateVisionResponse(value: unknown): VisionResult[] {
+  if (!isRecord(value) || !Array.isArray(value.results)) {
+    throw new Error('Invalid Guru Vision response')
+  }
+
+  const allowedTypes = new Set([
+    'palm',
+    'aura',
+    'emotion',
+    'kundali',
+    'document',
+  ])
+
+  const results = value.results
+    .filter(isRecord)
+    .filter((item) => allowedTypes.has(stringValue(item.type)))
+    .map((item) => {
+      const type = stringValue(item.type) as VisionResult['type']
+      const confidence = clamp(numberValue(item.confidence, 0), 0, 1)
+      const rawData = isRecord(item.data) ? item.data : {}
+
+      if (type === 'palm') {
+        const overall = isRecord(rawData.overall) ? rawData.overall : {}
+        const handType = stringValue(overall.handType).toLowerCase()
+        const validHandType =
+          handType === 'earth' ||
+          handType === 'air' ||
+          handType === 'fire' ||
+          handType === 'water'
+            ? handType
+            : 'earth'
+
+        const data: PalmistryData = {
+          lines: {},
+          mounts: {},
+          overall: {
+            handType: validHandType,
+            palmShape: stringValue(overall.palmShape, 'undetermined'),
+            reading: stringValue(overall.reading),
+          },
+        }
+
+        if (!data.overall.reading) {
+          throw new Error('Palm analysis is missing a reading')
+        }
+
+        return { type, confidence, data } as VisionResult
+      }
+
+      if (type === 'aura') {
+        const distribution = Array.isArray(rawData.colorDistribution)
+          ? rawData.colorDistribution
+              .filter(isRecord)
+              .map((entry) => ({
+                color: stringValue(entry.color),
+                percentage: clamp(numberValue(entry.percentage), 0, 100),
+              }))
+              .filter((entry) => entry.color)
+          : []
+
+        const chakras = Array.isArray(rawData.chakraStrengths)
+          ? rawData.chakraStrengths
+              .filter(isRecord)
+              .map((entry) => ({
+                name: stringValue(entry.name),
+                strength: clamp(numberValue(entry.strength), 0, 10),
+              }))
+              .filter((entry) => entry.name)
+          : []
+
+        const data: AuraData = {
+          dominantColor: stringValue(rawData.dominantColor, 'undetermined'),
+          colorDistribution: distribution,
+          energyLevel: clamp(numberValue(rawData.energyLevel), 0, 10),
+          chakraStrengths: chakras,
+          auraReading: stringValue(rawData.auraReading),
+        }
+
+        if (!data.auraReading) {
+          throw new Error('Aura analysis is missing a reading')
+        }
+
+        return { type, confidence, data } as VisionResult
+      }
+
+      if (type === 'emotion') {
+        const emotions = Array.isArray(rawData.emotions)
+          ? rawData.emotions
+              .filter(isRecord)
+              .map((entry) => ({
+                emotion: stringValue(entry.emotion),
+                intensity: clamp(numberValue(entry.intensity), 0, 1),
+              }))
+              .filter((entry) => entry.emotion)
+          : []
+
+        const rawEnergyState = stringValue(rawData.energyState).toLowerCase()
+        const energyState =
+          rawEnergyState === 'high' ||
+          rawEnergyState === 'medium' ||
+          rawEnergyState === 'low'
+            ? rawEnergyState
+            : 'medium'
+
+        const data: EmotionData = {
+          primaryEmotion: stringValue(rawData.primaryEmotion, 'undetermined'),
+          emotions,
+          energyState,
+          spiritualAlignment: clamp(
+            numberValue(rawData.spiritualAlignment),
+            0,
+            10
+          ),
+          reading: stringValue(rawData.reading),
+        }
+
+        if (!data.reading) {
+          throw new Error('Image reflection is missing a reading')
+        }
+
+        return { type, confidence, data } as VisionResult
+      }
+
+      if (type === 'kundali') {
+        const planets = Array.isArray(rawData.planets)
+          ? rawData.planets
+              .filter(isRecord)
+              .map((entry) => ({
+                name: stringValue(entry.name),
+                position: stringValue(entry.position),
+              }))
+              .filter((entry) => entry.name)
+          : []
+
+        const houses = Array.isArray(rawData.houses)
+          ? rawData.houses
+              .filter(isRecord)
+              .map((entry) => ({
+                number: Math.round(numberValue(entry.number)),
+                significance: stringValue(entry.significance),
+              }))
+              .filter(
+                (entry) =>
+                  entry.number >= 1 &&
+                  entry.number <= 12 &&
+                  entry.significance
+              )
+          : []
+
+        const chartTypeRaw = stringValue(rawData.chartType).toLowerCase()
+        const chartType =
+          chartTypeRaw === 'north' ||
+          chartTypeRaw === 'south' ||
+          chartTypeRaw === 'east' ||
+          chartTypeRaw === 'west'
+            ? chartTypeRaw
+            : 'north'
+
+        const data: KundaliData = {
+          extractedText: stringValue(rawData.extractedText),
+          chartType,
+          planets,
+          houses,
+          reading: stringValue(rawData.reading),
+        }
+
+        if (!data.reading) {
+          throw new Error('Kundali image analysis is missing a reading')
+        }
+
+        return { type, confidence, data } as VisionResult
+      }
+
+      const numerologyRaw = isRecord(rawData.numerology)
+        ? rawData.numerology
+        : {}
+
+      const data: DocumentData = {
+        extractedText: stringValue(rawData.extractedText),
+        numerology: {
+          ...(typeof numerologyRaw.lifePath === 'number'
+            ? { lifePath: numerologyRaw.lifePath }
+            : {}),
+          ...(typeof numerologyRaw.destiny === 'number'
+            ? { destiny: numerologyRaw.destiny }
+            : {}),
+          ...(typeof numerologyRaw.personality === 'number'
+            ? { personality: numerologyRaw.personality }
+            : {}),
+        },
+        keyDates: stringArray(rawData.keyDates),
+        reading: stringValue(rawData.reading),
+      }
+
+      if (!data.reading) {
+        throw new Error('Document analysis is missing a reading')
+      }
+
+      return { type, confidence, data } as VisionResult
+    })
+
+  if (!results.length) {
+    throw new Error('Guru Vision returned no usable results')
+  }
+
+  return results
+}
+
+function promptForImageType(imageType: ImageType): string {
+  return [
+    'You are JyotiAI Guru Vision.',
+    'Analyze only what is actually visible in the supplied image.',
+    'Never invent text, dates, chart placements, palm markings, colors, emotions, chakra measurements, or personal facts that cannot reasonably be inferred from the image.',
+    'Do not provide medical, psychiatric, legal, or financial conclusions.',
+    'Treat aura, chakra, palmistry, numerology, and spiritual interpretations as reflective or traditional interpretations, not scientifically established measurements.',
+    'If the image is unclear or unsuitable, say so in the reading instead of fabricating details.',
+    `Filename-based hint: ${imageType}. This hint may be wrong; use the visible image as the authority.`,
+    'Return JSON only with this exact top-level shape: {"results":[...]}',
+    'Each result must have "type", "confidence", and "data".',
+    'Allowed types are palm, aura, emotion, kundali, document.',
+    'For palm data include overall.handType, overall.palmShape, overall.reading. Use lines and mounts only when visibly supportable.',
+    'For aura data include dominantColor, colorDistribution, energyLevel, chakraStrengths, auraReading. Frame these as symbolic visual interpretation rather than objective measurement.',
+    'For emotion data include primaryEmotion, emotions, energyState, spiritualAlignment, reading. Do not claim certainty about a person’s internal emotional state; describe visible-expression impressions only.',
+    'For kundali data include extractedText, chartType, planets, houses, reading. Include only text or placements you can actually read from the image.',
+    'For document data include extractedText, numerology, keyDates, reading. Calculate numerology only from clearly readable supplied text or dates.',
+    'Use confidence from 0 to 1.',
+  ].join('\n')
 }
 
 export class VisionEngine {
-  /**
-   * Analyze image for spiritual insights
-   */
   async analyzeImage(file: File): Promise<VisionResult[]> {
-    try {
-      // Validate file
-      if (!file.type.startsWith('image/')) {
-        throw new Error('File must be an image');
-      }
-
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        throw new Error('Image file too large (max 10MB)');
-      }
-
-      const results: VisionResult[] = [];
-
-      // Detect image type and analyze accordingly
-      const imageType = await this.detectImageType(file);
-
-      switch (imageType) {
-        case 'palm':
-          results.push(await this.palmistryAnalysis(file));
-          break;
-        case 'face':
-          results.push(await this.auraFromFaceAnalysis(file));
-          results.push(await this.emotionFromFaceAnalysis(file));
-          break;
-        case 'kundali':
-          results.push(await this.birthChartTextExtractor(file));
-          break;
-        case 'document':
-          results.push(await this.numerologyFromDocument(file));
-          break;
-        default:
-          // Try all analyses
-          results.push(await this.palmistryAnalysis(file));
-          results.push(await this.auraFromFaceAnalysis(file));
-          results.push(await this.emotionFromFaceAnalysis(file));
-      }
-
-      return results.filter(r => r !== null) as VisionResult[];
-    } catch (error) {
-      console.error('Vision analysis error:', error);
-      throw error;
+    if (!file.type.startsWith('image/')) {
+      throw new Error('File must be an image')
     }
+
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error('Image file too large (max 10MB)')
+    }
+
+    const imageType = detectImageTypeFromFilename(file)
+    const image = await fileToVisionImage(file)
+
+    return callVisionJson(
+      promptForImageType(imageType),
+      [image],
+      validateVisionResponse,
+      undefined,
+      {
+        temperature: 0.2,
+        maxTokens: 2200,
+        timeoutMs: 45000,
+      }
+    )
   }
 
-  /**
-   * Detect image type (palm, face, kundali, document)
-   */
-  private async detectImageType(file: File): Promise<'palm' | 'face' | 'kundali' | 'document' | 'unknown'> {
-    // In production, use ML model or image analysis
-    // For now, use filename and basic heuristics
-    const filename = file.name.toLowerCase();
-
-    if (filename.includes('palm') || filename.includes('hand')) {
-      return 'palm';
-    }
-    if (filename.includes('face') || filename.includes('photo') || filename.includes('selfie')) {
-      return 'face';
-    }
-    if (filename.includes('kundali') || filename.includes('chart') || filename.includes('horoscope')) {
-      return 'kundali';
-    }
-    if (filename.includes('document') || filename.includes('pdf') || filename.includes('text')) {
-      return 'document';
-    }
-
-    return 'unknown';
-  }
-
-  /**
-   * Analyze palmistry from image
-   */
   async palmistryAnalysis(file: File): Promise<VisionResult> {
-    // In production, call OpenAI Vision API or specialized palmistry ML model
-    // For now, return placeholder data
-
-    return {
-      type: 'palm',
-      data: {
-        lines: {
-          life: { length: 0.8, clarity: 0.7, breaks: 0 },
-          heart: { length: 0.9, clarity: 0.8, branches: 2 },
-          head: { length: 0.85, clarity: 0.75, forks: 1 },
-          fate: { present: true, clarity: 0.6 },
-        },
-        mounts: {
-          jupiter: { prominence: 0.7, characteristics: ['leadership', 'ambition'] },
-          saturn: { prominence: 0.6, characteristics: ['wisdom', 'patience'] },
-          sun: { prominence: 0.8, characteristics: ['creativity', 'success'] },
-        },
-        overall: {
-          handType: 'fire',
-          palmShape: 'square',
-          reading: 'Your palm reveals strong leadership qualities and creative potential. The heart line suggests deep emotional connections, while the life line indicates vitality and resilience.',
-        },
-      },
-      confidence: 0.75,
-    };
+    const results = await this.analyzeImage(file)
+    const result = results.find((item) => item.type === 'palm')
+    if (!result) throw new Error('No palm analysis was produced')
+    return result
   }
 
-  /**
-   * Analyze aura from face image
-   */
   async auraFromFaceAnalysis(file: File): Promise<VisionResult> {
-    // In production, use specialized aura detection ML model
-    // For now, return placeholder data
-
-    return {
-      type: 'aura',
-      data: {
-        dominantColor: 'Violet',
-        colorDistribution: [
-          { color: 'Violet', percentage: 40 },
-          { color: 'Indigo', percentage: 30 },
-          { color: 'Blue', percentage: 20 },
-          { color: 'White', percentage: 10 },
-        ],
-        energyLevel: 7.5,
-        chakraStrengths: [
-          { name: 'Crown', strength: 8 },
-          { name: 'Third Eye', strength: 7 },
-          { name: 'Throat', strength: 6 },
-          { name: 'Heart', strength: 7 },
-          { name: 'Solar Plexus', strength: 6 },
-          { name: 'Sacral', strength: 5 },
-          { name: 'Root', strength: 6 },
-        ],
-        auraReading: 'Your aura radiates with spiritual wisdom and intuitive clarity. The dominant violet energy suggests deep connection to higher consciousness and spiritual growth.',
-      },
-      confidence: 0.70,
-    };
+    const results = await this.analyzeImage(file)
+    const result = results.find((item) => item.type === 'aura')
+    if (!result) throw new Error('No aura reflection was produced')
+    return result
   }
 
-  /**
-   * Analyze emotion from face image
-   */
   async emotionFromFaceAnalysis(file: File): Promise<VisionResult> {
-    // In production, use emotion detection ML model
-    // For now, return placeholder data
-
-    return {
-      type: 'emotion',
-      data: {
-        primaryEmotion: 'calm',
-        emotions: [
-          { emotion: 'calm', intensity: 0.8 },
-          { emotion: 'content', intensity: 0.6 },
-          { emotion: 'focused', intensity: 0.5 },
-        ],
-        energyState: 'medium',
-        spiritualAlignment: 7,
-        reading: 'Your facial energy reflects a state of inner peace and spiritual alignment. The calm expression suggests balanced emotions and centered awareness.',
-      },
-      confidence: 0.65,
-    };
+    const results = await this.analyzeImage(file)
+    const result = results.find((item) => item.type === 'emotion')
+    if (!result) throw new Error('No expression reflection was produced')
+    return result
   }
 
-  /**
-   * Extract birth chart text from Kundali image
-   */
   async birthChartTextExtractor(file: File): Promise<VisionResult> {
-    // In production, use OCR (Tesseract, Google Vision, etc.) to extract text
-    // Then parse Kundali chart structure
-    // For now, return placeholder data
-
-    return {
-      type: 'kundali',
-      data: {
-        extractedText: 'Rashi: Scorpio, Lagna: Leo, Nakshatra: Anuradha, Sun: 10th House, Moon: 4th House',
-        chartType: 'north',
-        planets: [
-          { name: 'Sun', position: '10th House' },
-          { name: 'Moon', position: '4th House' },
-          { name: 'Mars', position: '1st House' },
-          { name: 'Mercury', position: '9th House' },
-          { name: 'Jupiter', position: '5th House' },
-          { name: 'Venus', position: '7th House' },
-          { name: 'Saturn', position: '11th House' },
-        ],
-        houses: [
-          { number: 1, significance: 'Self, personality' },
-          { number: 4, significance: 'Home, mother' },
-          { number: 5, significance: 'Creativity, children' },
-          { number: 7, significance: 'Partnership, marriage' },
-          { number: 10, significance: 'Career, reputation' },
-          { number: 11, significance: 'Gains, friends' },
-        ],
-        reading: 'Your birth chart reveals strong career potential (Sun in 10th) and emotional depth (Moon in 4th). The planetary positions suggest a balanced approach to life with emphasis on creativity and relationships.',
-      },
-      confidence: 0.80,
-    };
+    const results = await this.analyzeImage(file)
+    const result = results.find((item) => item.type === 'kundali')
+    if (!result) throw new Error('No Kundali image analysis was produced')
+    return result
   }
 
-  /**
-   * Extract numerology from document image
-   */
   async numerologyFromDocument(file: File): Promise<VisionResult> {
-    // In production, use OCR to extract text, then calculate numerology
-    // For now, return placeholder data
-
-    return {
-      type: 'document',
-      data: {
-        extractedText: 'Name: John Doe, Date of Birth: 1990-05-15',
-        numerology: {
-          lifePath: 7,
-          destiny: 3,
-          personality: 5,
-        },
-        keyDates: ['1990-05-15'],
-        reading: 'The document reveals numerology insights: Life Path 7 suggests spiritual seeking and introspection, while Destiny 3 indicates creative expression and communication.',
-      },
-      confidence: 0.75,
-    };
+    const results = await this.analyzeImage(file)
+    const result = results.find((item) => item.type === 'document')
+    if (!result) throw new Error('No document analysis was produced')
+    return result
   }
 }
-

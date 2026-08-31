@@ -16,11 +16,24 @@ import { validateImageFile, checkFileCorruption } from '@/lib/security/file-vali
 import { generateFingerprint, checkCooldown, setCooldown, getCooldownMessage } from '@/lib/security/abuse-protection';
 import { logSecurityEvent } from '@/lib/security/security-logger';
 import { safetyLayerV3 } from '@/lib/security/safety-layer-v3';
+import { adminAuth } from '@/lib/firebase/admin';
 
 export async function POST(request: NextRequest) {
   let fingerprint: string | undefined;
   
   try {
+    const sessionCookie = request.cookies.get('session')?.value;
+
+    if (!sessionCookie || !adminAuth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+      await adminAuth.verifySessionCookie(sessionCookie, true);
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Phase 28 - F43: Generate fingerprint
     fingerprint = generateFingerprint({
       ip: request.ip || request.headers.get('x-forwarded-for') || undefined,
@@ -125,11 +138,38 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      if (!reading) {
+        return result;
+      }
+
+      if (result.type === 'palm' && 'overall' in result.data) {
+        return {
+          ...result,
+          data: {
+            ...result.data,
+            overall: {
+              ...result.data.overall,
+              reading,
+            },
+          },
+        };
+      }
+
+      if (result.type === 'aura' && 'auraReading' in result.data) {
+        return {
+          ...result,
+          data: {
+            ...result.data,
+            auraReading: reading,
+          },
+        };
+      }
+
       return {
         ...result,
         data: {
           ...result.data,
-          ...(reading ? { reading } : {}),
+          reading,
         },
       };
     });

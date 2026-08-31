@@ -20,7 +20,12 @@ export async function POST(request: NextRequest) {
     const apiKey = request.headers.get('x-api-key')
     const expectedKey = envVars.worker.apiKey
 
-    if (expectedKey && apiKey !== expectedKey) {
+    if (!expectedKey) {
+      console.error('Worker API key is not configured')
+      return NextResponse.json({ error: 'Worker endpoint unavailable' }, { status: 503 })
+    }
+
+    if (!apiKey || apiKey !== expectedKey) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
