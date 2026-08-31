@@ -6,19 +6,8 @@
  * Generates daily horoscope predictions based on user's Rashi
  */
 
-import { envVars } from '@/lib/env/env.mjs'
-import {
-  aiMalformedResponse,
-  aiNetworkError,
-  aiNotConfigured,
-  classifyAIResponseError,
-} from '@/lib/ai/provider-errors'
+import { callLLM } from '@/lib/ai/llm-client'
 import { retrieveRelevantDocuments, type RAGResult } from '@/lib/rag/rag-service'
-import {
-  assertAIProviderAvailable,
-  clearAIProviderFailure,
-  recordAIProviderFailure,
-} from '@/lib/ai/provider-health'
 
 export interface DailyHoroscope {
   date: string
@@ -136,154 +125,40 @@ async function generateAIHoroscope(
   sunSign?: string,
   ascendant?: string
 ): Promise<DailyHoroscope> {
-  const provider = envVars.ai.provider
-  const openaiApiKey = envVars.ai.openaiApiKey
-  const geminiApiKey = envVars.ai.geminiApiKey
-  
-  if (provider === 'gemini' && geminiApiKey) {
-    return generateGeminiHoroscope(prompt, rashi, moonSign, sunSign, ascendant)
-  } else if (openaiApiKey) {
-    return generateOpenAIHoroscope(prompt, rashi, moonSign, sunSign, ascendant)
-  }
-
-  throw aiNotConfigured('Daily horoscope AI')
-}
-
-/**
- * Generate horoscope using OpenAI
- */
-async function generateOpenAIHoroscope(
-  prompt: string,
-  rashi: string,
-  moonSign?: string,
-  sunSign?: string,
-  ascendant?: string
-): Promise<DailyHoroscope> {
-  const openaiApiKey = envVars.ai.openaiApiKey
-  const openaiModel = envVars.ai.predictionModelName
-  if (!openaiApiKey) {
-    throw aiNotConfigured('OpenAI')
-  }
-  
-  assertAIProviderAvailable('OpenAI')
-
-  let response: Response
-  try {
-    response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${openaiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: openaiModel,
-        messages: [
-          { role: 'system', content: 'You are an expert Vedic astrologer. Always respond with valid JSON only.' },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.7,
-        response_format: { type: 'json_object' },
-      }),
-    })
-  } catch {
-    const providerError = aiNetworkError('OpenAI')
-    recordAIProviderFailure('OpenAI', providerError)
-    throw providerError
-  }
-  
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    const providerError = classifyAIResponseError(
-      'OpenAI',
-      response,
-      error
-    )
-    recordAIProviderFailure('OpenAI', providerError)
-    throw providerError
-  }
-  
-  const data = await response.json()
-  const content = data.choices?.[0]?.message?.content
-  if (!content || typeof content !== 'string') {
-    throw aiMalformedResponse('OpenAI')
-  }
-  
-  try {
-    const horoscope = JSON.parse(content)
-    const normalized = normalizeHoroscope(
-      horoscope,
-      rashi,
-      moonSign,
-      sunSign,
-      ascendant
-    )
-    clearAIProviderFailure('OpenAI')
-    return normalized
-  } catch {
-    throw aiMalformedResponse('OpenAI')
-  }
-}
-
-/**
- * Generate horoscope using Gemini
- */
-async function generateGeminiHoroscope(
-  prompt: string,
-  rashi: string,
-  moonSign?: string,
-  sunSign?: string,
-  ascendant?: string
-): Promise<DailyHoroscope> {
-  const geminiApiKey = envVars.ai.geminiApiKey
-  if (!geminiApiKey) {
-    throw aiNotConfigured('Gemini')
-  }
-  
-  let response: Response
-  try {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`,
+  const content = await callLLM(
+    [
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          generationConfig: {
-            thinkingConfig: { thinkingLevel: 'low' },
-            maxOutputTokens: 2000,
-          },
-          contents: [
-            {
-              parts: [
-                { text: 'You are an expert Vedic astrologer. Always respond with valid JSON only.\n\n' + prompt },
-              ],
-            },
-          ],
-        }),
-      }
-    )
-  } catch {
-    throw aiNetworkError('Gemini')
-  }
-  
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw classifyAIResponseError('Gemini', response, error)
-  }
-  
-  const data = await response.json()
-  const content = data.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!content || typeof content !== 'string') {
-    throw aiMalformedResponse('Gemini')
-  }
-  
+        role: 'system',
+        content:
+          'You are an expert Vedic astrologer. Always respond with valid JSON only.',
+      },
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+    undefined,
+    {
+      temperature: 0.7,
+      maxTokens: 2000,
+    }
+  )
+
+  let horoscope: any
+
   try {
-    const horoscope = JSON.parse(content)
-    return normalizeHoroscope(horoscope, rashi, moonSign, sunSign, ascendant)
+    horoscope = JSON.parse(content)
   } catch {
-    throw aiMalformedResponse('Gemini')
+    throw new Error('AI provider returned malformed horoscope JSON')
   }
+
+  return normalizeHoroscope(
+    horoscope,
+    rashi,
+    moonSign,
+    sunSign,
+    ascendant
+  )
 }
 
 function normalizeHoroscope(

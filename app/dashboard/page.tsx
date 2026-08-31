@@ -276,8 +276,11 @@ export default function DashboardPage() {
     loadDashboard()
   }, [loadDashboard, router, user])
 
-  const birthFieldsMissing = !user?.dob || !user?.tob || !user?.pob
-  const profileIncomplete = user ? !user.onboarded || birthFieldsMissing : true
+  const serverProfileComplete = summary.data?.profileComplete === true
+  const birthFieldsMissing =
+    !serverProfileComplete && (!user?.dob || !user?.tob || !user?.pob)
+  const profileIncomplete =
+    !serverProfileComplete && (user ? !user.onboarded || birthFieldsMissing : true)
   const astrologyStale =
     user?.derivedAstrologyStatus === 'stale' ||
     summary.data?.derivedAstrologyStatus === 'stale' ||

@@ -1,16 +1,16 @@
-type Provider = 'OpenAI' | 'Gemini'
+import type { AIProviderName } from '@/lib/ai/provider-errors'
 
 type FailureState = {
   code: string
   until: number
 }
 
-const failures = new Map<Provider, FailureState>()
+const failures = new Map<AIProviderName, FailureState>()
 
 const BILLING_COOLDOWN_MS = 5 * 60 * 1000
 const TRANSIENT_COOLDOWN_MS = 15 * 1000
 
-export function assertAIProviderAvailable(provider: Provider) {
+export function assertAIProviderAvailable(provider: AIProviderName) {
   const state = failures.get(provider)
   if (!state) return
 
@@ -19,9 +19,7 @@ export function assertAIProviderAvailable(provider: Provider) {
     return
   }
 
-  const error: any = new Error(
-    `${provider} temporarily suppressed after provider failure`
-  )
+  const error: any = new Error(`${provider} temporarily suppressed after provider failure`)
   error.code = state.code
   error.clientMessage =
     state.code === 'AI_BILLING_OR_QUOTA'
@@ -30,10 +28,7 @@ export function assertAIProviderAvailable(provider: Provider) {
   throw error
 }
 
-export function recordAIProviderFailure(
-  provider: Provider,
-  error: any
-) {
+export function recordAIProviderFailure(provider: AIProviderName, error: any) {
   const code = String(error?.code || '')
 
   if (code === 'AI_BILLING_OR_QUOTA') {
@@ -56,6 +51,6 @@ export function recordAIProviderFailure(
   }
 }
 
-export function clearAIProviderFailure(provider: Provider) {
+export function clearAIProviderFailure(provider: AIProviderName) {
   failures.delete(provider)
 }

@@ -8,7 +8,7 @@ export type AIErrorCode =
   | 'AI_REQUEST_FAILED'
   | 'AI_NOT_CONFIGURED'
 
-export type AIProviderName = 'OpenAI' | 'Gemini'
+export type AIProviderName = 'OpenAI' | 'Gemini' | 'xAI' | 'Anthropic'
 
 export class AIProviderError extends Error {
   code: AIErrorCode
@@ -56,16 +56,21 @@ export function classifyAIResponseError(
   response: Response,
   errorBody: any
 ): AIProviderError {
-  const providerCode = errorBody?.error?.code || ''
-  const providerType = errorBody?.error?.type || ''
-  const providerMessage = errorBody?.error?.message || 'Unknown provider error'
+  const providerCode = errorBody?.error?.code || errorBody?.type || ''
+  const providerType = errorBody?.error?.type || errorBody?.type || ''
+  const providerMessage =
+    errorBody?.error?.message ||
+    errorBody?.message ||
+    errorBody?.error?.error ||
+    'Unknown provider error'
+
   const message = `${provider} error: ${providerMessage}`
 
   if (response.status === 429) {
     const isQuota =
       providerCode === 'insufficient_quota' ||
       providerType === 'insufficient_quota' ||
-      /quota|billing/i.test(providerMessage)
+      /quota|billing|credit/i.test(String(providerMessage))
 
     return new AIProviderError(
       isQuota ? 'AI_BILLING_OR_QUOTA' : 'AI_RATE_LIMIT',

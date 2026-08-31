@@ -9,6 +9,7 @@
 // Phase 31 - F46: Use validated environment variables
 import { retrieveRelevantDocuments } from '@/lib/rag/rag-service'
 import { envVars } from '@/lib/env/env.mjs'
+import { callLLM } from '@/lib/ai/llm-client'
 
 export interface PredictionReport {
   personality: {
@@ -174,107 +175,25 @@ Generate a comprehensive prediction report in JSON format with the following str
  * Generate report using AI
  */
 async function generateAIReport(prompt: string): Promise<PredictionReport> {
-  const provider = envVars.ai.provider
-  const openaiApiKey = envVars.ai.openaiApiKey
-  const geminiApiKey = envVars.ai.geminiApiKey
-  
-  if (provider === 'gemini' && geminiApiKey) {
-    return generateGeminiReport(prompt)
-  } else if (openaiApiKey) {
-    return generateOpenAIReport(prompt)
-  } else {
-    throw new Error('No AI provider configured')
-  }
-}
-
-/**
- * Generate report using OpenAI
- */
-async function generateOpenAIReport(prompt: string): Promise<PredictionReport> {
-  const openaiApiKey = envVars.ai.openaiApiKey
-  const openaiModel = envVars.ai.predictionModelName
-  if (!openaiApiKey) {
-    throw new Error('OpenAI API key not configured')
-  }
-  
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${openaiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: openaiModel,
-      messages: [
-        { role: 'system', content: 'You are an expert Vedic astrologer. Always respond with valid JSON only.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      response_format: { type: 'json_object' },
-    }),
-  })
-  
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`OpenAI error: ${error.error?.message || 'Unknown error'}`)
-  }
-  
-  const data = await response.json()
-  const content = data.choices[0].message.content
-  
-  try {
-    return JSON.parse(content) as PredictionReport
-  } catch (e) {
-    // Fallback if JSON parsing fails
-    return createFallbackReport()
-  }
-}
-
-/**
- * Generate report using Gemini
- */
-async function generateGeminiReport(prompt: string): Promise<PredictionReport> {
-  const geminiApiKey = envVars.ai.geminiApiKey
-  if (!geminiApiKey) {
-    throw new Error('Gemini API key not configured')
-  }
-  
-  // Note: Adjust endpoint based on actual Gemini API
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  const content = await callLLM(
+    [
+      {
+        role: 'system',
+        content: 'You are an expert Vedic astrologer. Always respond with valid JSON only.',
       },
-      body: JSON.stringify({
-        generationConfig: {
-          thinkingConfig: { thinkingLevel: 'low' },
-          maxOutputTokens: 2000,
-        },
-        contents: [
-          {
-            parts: [
-              { text: 'You are an expert Vedic astrologer. Always respond with valid JSON only.\n\n' + prompt },
-            ],
-          },
-        ],
-      }),
+      { role: 'user', content: prompt },
+    ],
+    undefined,
+    {
+      temperature: 0.7,
+      maxTokens: 2000,
     }
   )
-  
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`Gemini error: ${error.error?.message || 'Unknown error'}`)
-  }
-  
-  const data = await response.json()
-  const content = data.candidates[0].content.parts[0].text
-  
+
   try {
     return JSON.parse(content) as PredictionReport
   } catch {
-    throw new Error('Gemini returned malformed prediction JSON')
+    throw new Error('AI provider returned malformed prediction JSON')
   }
 }
 
