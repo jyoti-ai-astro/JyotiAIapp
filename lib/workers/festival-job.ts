@@ -1,48 +1,65 @@
-/**
- * Festival Background Job
- * Part B - Section 8: Notifications & Daily Insights
- * Milestone 7 - Step 5
- * 
- * Runs daily at midnight to check for festivals
- */
-
 import { adminDb } from '@/lib/firebase/admin'
-import { getFestivalToday, checkDashaSensitivity } from '@/lib/engines/festival/festival-engine'
+import {
+  getFestivalToday,
+  checkDashaSensitivity,
+} from '@/lib/engines/festival/festival-engine'
 import { queueNotification } from '@/lib/services/notification-service'
+import {
+  ExecutorOptions,
+  ExecutorResult,
+  getCalendarDateKey,
+  localHourToUtcDate,
+  normalizeBatchSize,
+  normalizeTimezone,
+} from '@/lib/workers/executor-runtime'
 
-/**
- * Festival Job
- * Checks if today is a festival and queues notifications
- */
-export async function runFestivalJob(): Promise<void> {
+export async function runFestivalJob(
+  options: ExecutorOptions = {}
+): Promise<ExecutorResult> {
   if (!adminDb) {
     throw new Error('Firestore not initialized')
   }
 
-  console.log('Starting festival job...')
-
+  const batchSize = normalizeBatchSize(options.batchSize)
+  const now = options.now ? new Date(options.now) : new Date()
   const festival = getFestivalToday()
 
   if (!festival) {
-    console.log('No festival today')
-    return
+    return {
+      processed: 0,
+      skipped: 0,
+      errors: 0,
+      hasMore: false,
+      nextCursor: null,
+    }
   }
 
-  // Get all users
-  const usersRef = adminDb.collection('users')
-  const usersSnap = await usersRef.where('onboarded', '==', true).get()
+  let query = adminDb
+    .collection('users')
+    .where('onboarded', '==', true)
+    .orderBy('__name__')
+    .limit(batchSize + 1)
 
-  const today = new Date()
-  today.setHours(6, 0, 0, 0) // 6 AM today
+  if (options.cursor) {
+    query = query.startAfter(options.cursor)
+  }
+
+  const snapshot = await query.get()
+  const hasMore = snapshot.docs.length > batchSize
+  const docs = snapshot.docs.slice(0, batchSize)
 
   let processed = 0
+  let skipped = 0
   let errors = 0
 
-  for (const userDoc of usersSnap.docs) {
+  for (const userDoc of docs) {
     try {
       const uid = userDoc.id
+      const userData = userDoc.data()
+      const timezone = normalizeTimezone(userData.timezone)
+      const calendarKey = getCalendarDateKey(now, timezone)
+      const scheduledFor = localHourToUtcDate(calendarKey, 6, timezone)
 
-      // Check Dasha sensitivity
       let dashaSensitive = false
       let currentDasha = ''
 
@@ -50,18 +67,25 @@ export async function runFestivalJob(): Promise<void> {
       const kundaliSnap = await kundaliRef.get()
 
       if (kundaliSnap.exists) {
-        const dashaSnap = await kundaliRef.collection('dasha').doc('vimshottari').get()
+        const dashaSnap = await kundaliRef
+          .collection('dasha')
+          .doc('vimshottari')
+          .get()
+
         if (dashaSnap.exists) {
-          currentDasha = dashaSnap.data()?.currentMahadasha?.planet || ''
-          dashaSensitive = checkDashaSensitivity(festival, currentDasha)
+          currentDasha =
+            dashaSnap.data()?.currentMahadasha?.planet || ''
+          dashaSensitive = checkDashaSensitivity(
+            festival,
+            currentDasha
+          )
         }
       }
 
-      // Queue festival notification
       await queueNotification(
         uid,
         'festival',
-        today,
+        scheduledFor,
         {
           type: 'festival',
           title: `🎉 ${festival.name} - Festival Energy`,
@@ -75,9 +99,11 @@ export async function runFestivalJob(): Promise<void> {
             currentDasha,
             remedies: festival.remedies.join(', '),
             mantras: festival.mantras.join(', '),
+            timezone,
+            calendarKey,
           },
         },
-        `festival:${uid}:${festival.name}:${today.toISOString().slice(0, 10)}`
+        `festival:${uid}:${festival.name}:${calendarKey}`
       )
 
       processed++
@@ -87,5 +113,11 @@ export async function runFestivalJob(): Promise<void> {
     }
   }
 
-  console.log(`Festival job completed. Processed: ${processed}, Errors: ${errors}`)
+  return {
+    processed,
+    skipped,
+    errors,
+    hasMore,
+    nextCursor: hasMore && docs.length ? docs[docs.length - 1].id : null,
+  }
 }
