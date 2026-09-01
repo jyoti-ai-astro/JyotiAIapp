@@ -11,6 +11,10 @@ import {
   clearAIProviderFailure,
   recordAIProviderFailure,
 } from '@/lib/ai/provider-health'
+import {
+  recordAIFallback,
+  recordAIProviderEvent,
+} from '@/lib/observability/operational-events'
 
 export interface LLMMessage {
   role: 'user' | 'assistant' | 'system'
@@ -99,11 +103,32 @@ export async function callLLM(
   options?: LLMOptions
 ): Promise<string> {
   const sequence = providerSequence(envVars.ai.provider)
-  const errors: any[] = []
+  const errors: unknown[] = []
+  let previousRetryableFailure:
+    | { provider: ProviderId; errorCode: string }
+    | null = null
 
   for (const provider of sequence) {
     if (!configured(provider)) continue
-    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+
+    if (previousRetryableFailure) {
+      await recordAIFallback(
+        PROVIDER_NAMES[previousRetryableFailure.provider],
+        PROVIDER_NAMES[provider],
+        previousRetryableFailure.errorCode
+      )
+      previousRetryableFailure = null
+    }
+
+    const startedAt = Date.now()
+
+    await recordAIProviderEvent(
+      'attempt',
+      PROVIDER_NAMES[provider],
+      {
+        modelRole: options?.modelRole,
+      }
+    )
 
     try {
       let content: string
@@ -118,35 +143,63 @@ export async function callLLM(
         content = await callAnthropic(messages, signal, options)
       }
 
-      try {
-        options?.validate?.(content)
-      } catch {
+      if (!content?.trim()) {
         throw aiMalformedResponse(PROVIDER_NAMES[provider])
       }
 
+      await recordAIProviderEvent(
+        'success',
+        PROVIDER_NAMES[provider],
+        {
+          latencyMs: Date.now() - startedAt,
+          modelRole: options?.modelRole,
+        }
+      )
+
       return content
     } catch (error: any) {
-      if (signal?.aborted && error?.name === 'AbortError') throw error
+      const errorCode = String(
+        error?.code ||
+        error?.name ||
+        'UNKNOWN'
+      )
+
+      await recordAIProviderEvent(
+        'failure',
+        PROVIDER_NAMES[provider],
+        {
+          latencyMs: Date.now() - startedAt,
+          errorCode,
+          modelRole: options?.modelRole,
+        }
+      )
 
       errors.push(error)
 
       if (!isRetryableProviderError(error)) {
-        console.warn(
+        console.error(
           `[AI] ${PROVIDER_NAMES[provider]} generation failed with non-retryable error`,
-          error?.code || error?.name || 'UNKNOWN'
+          error
         )
         throw error
       }
 
+      previousRetryableFailure = {
+        provider,
+        errorCode,
+      }
+
       console.warn(
         `[AI] ${PROVIDER_NAMES[provider]} generation failed; trying next configured provider`,
-        error?.code || error?.name || 'UNKNOWN'
+        error
       )
     }
   }
 
-  if (errors.length) throw errors[errors.length - 1]
-  throw aiNotConfigured('AI')
+  throw (
+    errors[errors.length - 1] ||
+    aiNotConfigured('OpenAI')
+  )
 }
 
 async function callOpenAI(

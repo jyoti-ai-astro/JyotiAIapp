@@ -1,47 +1,118 @@
 export const dynamic = 'force-dynamic'
-import { NextRequest, NextResponse } from 'next/server'
-import { processNotificationQueue } from '@/lib/services/notification-service'
 
-/**
- * Process Notification Queue
- * Part B - Section 8: Notifications & Daily Insights
- * Milestone 7 - Step 6
- * 
- * This endpoint should be called by a cron job or scheduled task
- * 
- * Security: Should be protected with API key or server-only access
- */
+import { NextRequest, NextResponse } from 'next/server'
+import { adminDb } from '@/lib/firebase/admin'
+import { processNotificationQueue } from '@/lib/services/notification-service'
+import { recordOperationalEvent } from '@/lib/observability/operational-events'
+
+const JOB_ID = 'notification-queue'
+
+async function updateJobState(data: Record<string, any>) {
+  if (!adminDb) return
+
+  await adminDb
+    .collection('background_jobs')
+    .doc(JOB_ID)
+    .set(data, { merge: true })
+}
+
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now()
+
   try {
-    // Phase 31 - F46: Use validated environment variables
     const { envVars } = await import('@/lib/env/env.mjs')
-    
-    // Verify API key (for security)
+
     const apiKey = request.headers.get('x-api-key')
     const expectedKey = envVars.worker.apiKey
+    const triggerSource =
+      request.headers.get('x-trigger-source') || 'external-scheduler'
 
     if (!expectedKey) {
       console.error('Worker API key is not configured')
-      return NextResponse.json({ error: 'Worker endpoint unavailable' }, { status: 503 })
+
+      return NextResponse.json(
+        { error: 'Worker endpoint unavailable' },
+        { status: 503 }
+      )
     }
 
     if (!apiKey || apiKey !== expectedKey) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Process notification queue
+    await updateJobState({
+      lastRun: new Date(),
+      lastStatus: 'running',
+      lastTriggerSource: triggerSource,
+    })
+
+    await recordOperationalEvent('job.started', {
+      jobId: JOB_ID,
+      triggerSource,
+    })
+
     await processNotificationQueue()
+
+    const durationMs = Date.now() - startedAt
+
+    await updateJobState({
+      lastSuccess: new Date(),
+      lastStatus: 'success',
+      lastDurationMs: durationMs,
+      lastError: null,
+      lastTriggerSource: triggerSource,
+    })
+
+    await recordOperationalEvent('job.succeeded', {
+      jobId: JOB_ID,
+      triggerSource,
+      durationMs,
+    })
 
     return NextResponse.json({
       success: true,
       message: 'Notification queue processed',
+      durationMs,
     })
   } catch (error: any) {
+    const durationMs = Date.now() - startedAt
+    const message =
+      error instanceof Error ? error.message : 'Failed to process queue'
+
+    try {
+      let failures = 1
+
+      if (adminDb) {
+        const current = await adminDb
+          .collection('background_jobs')
+          .doc(JOB_ID)
+          .get()
+
+        failures = Number(current.data()?.failures || 0) + 1
+      }
+
+      await updateJobState({
+        lastFailure: new Date(),
+        lastStatus: 'failed',
+        lastDurationMs: durationMs,
+        lastError: message.slice(0, 300),
+        failures,
+      })
+
+      await recordOperationalEvent('job.failed', {
+        jobId: JOB_ID,
+        durationMs,
+        errorCode: error?.code || error?.name || 'UNKNOWN',
+      })
+    } catch (loggingError) {
+      console.error('Process queue failure logging error:', loggingError)
+    }
+
     console.error('Process queue error:', error)
+
     return NextResponse.json(
-      { error: error.message || 'Failed to process queue' },
+      { error: message },
       { status: 500 }
     )
   }
 }
-
