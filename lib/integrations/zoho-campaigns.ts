@@ -29,6 +29,15 @@ export type ZohoTopic = {
   [key: string]: unknown
 }
 
+export type ZohoCampaignsMutationResponse = {
+  status?: string
+  code?: string
+  message?: string
+  uri?: string
+  version?: string
+  [key: string]: unknown
+}
+
 function requiredEnv(name: string): string {
   const value = process.env[name]?.trim()
   if (!value) throw new Error(`${name} is not configured`)
@@ -41,6 +50,18 @@ export function getZohoClientId(): string {
 
 export function getZohoClientSecret(): string {
   return requiredEnv('ZOHO_CAMPAIGNS_CLIENT_SECRET')
+}
+
+export function getZohoRefreshToken(): string {
+  return requiredEnv('ZOHO_CAMPAIGNS_REFRESH_TOKEN')
+}
+
+export function getZohoListKey(): string {
+  return requiredEnv('ZOHO_CAMPAIGNS_LIST_KEY')
+}
+
+export function getZohoTopicId(): string {
+  return requiredEnv('ZOHO_CAMPAIGNS_TOPIC_ID')
 }
 
 export function getZohoRedirectUri(override?: string): string {
@@ -115,6 +136,21 @@ export async function refreshZohoAccessToken(refreshToken: string): Promise<Zoho
   return data
 }
 
+export async function getZohoAccessToken(): Promise<string> {
+  const data = await refreshZohoAccessToken(getZohoRefreshToken())
+  return data.access_token!
+}
+
+async function parseZohoResponse(response: Response): Promise<unknown> {
+  const text = await response.text()
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return text
+  }
+}
+
 async function zohoCampaignsGet<T>(
   accessToken: string,
   path: string,
@@ -129,19 +165,32 @@ async function zohoCampaignsGet<T>(
     headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
     cache: 'no-store',
   })
-
-  const text = await response.text()
-  let data: unknown = text
-  try {
-    data = JSON.parse(text)
-  } catch {
-    // Keep the text body so failures remain diagnosable without logging tokens.
-  }
-
+  const data = await parseZohoResponse(response)
   if (!response.ok) {
     throw new Error(`Zoho Campaigns API failed (${response.status}): ${typeof data === 'string' ? data : JSON.stringify(data)}`)
   }
+  return data as T
+}
 
+async function zohoCampaignsPost<T>(
+  accessToken: string,
+  path: string,
+  params: Record<string, string>
+): Promise<T> {
+  const body = new URLSearchParams(params)
+  const response = await fetch(`${getZohoCampaignsApiBaseUrl()}${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Zoho-oauthtoken ${accessToken}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body,
+    cache: 'no-store',
+  })
+  const data = await parseZohoResponse(response)
+  if (!response.ok) {
+    throw new Error(`Zoho Campaigns API failed (${response.status}): ${typeof data === 'string' ? data : JSON.stringify(data)}`)
+  }
   return data as T
 }
 
@@ -161,4 +210,52 @@ export async function getZohoTopics(accessToken: string): Promise<ZohoTopic[]> {
     { details: JSON.stringify({ from_index: 0, range: 200 }) }
   )
   return Array.isArray(data.topicDetails) ? data.topicDetails : []
+}
+
+export async function subscribeZohoContact(input: {
+  email: string
+  firstName?: string | null
+  lastName?: string | null
+  source?: string
+}): Promise<ZohoCampaignsMutationResponse> {
+  const accessToken = await getZohoAccessToken()
+  const contactInfo: Record<string, string> = { 'Contact Email': input.email }
+  if (input.firstName?.trim()) contactInfo['First Name'] = input.firstName.trim()
+  if (input.lastName?.trim()) contactInfo['Last Name'] = input.lastName.trim()
+
+  const data = await zohoCampaignsPost<ZohoCampaignsMutationResponse>(
+    accessToken,
+    '/json/listsubscribe',
+    {
+      resfmt: 'JSON',
+      listkey: getZohoListKey(),
+      contactinfo: JSON.stringify(contactInfo),
+      source: input.source || 'JyotiAI App Opt-in',
+      topic_id: getZohoTopicId(),
+    }
+  )
+
+  if (data && data.code && data.code !== '0') {
+    throw new Error(data.message || `Zoho Campaigns subscribe failed (${data.code})`)
+  }
+  return data
+}
+
+export async function unsubscribeZohoContact(email: string): Promise<ZohoCampaignsMutationResponse> {
+  const accessToken = await getZohoAccessToken()
+  const data = await zohoCampaignsPost<ZohoCampaignsMutationResponse>(
+    accessToken,
+    '/json/listunsubscribe',
+    {
+      resfmt: 'JSON',
+      listkey: getZohoListKey(),
+      contactinfo: JSON.stringify({ 'Contact Email': email }),
+      topic_id: getZohoTopicId(),
+    }
+  )
+
+  if (data && data.code && data.code !== '0') {
+    throw new Error(data.message || `Zoho Campaigns unsubscribe failed (${data.code})`)
+  }
+  return data
 }
