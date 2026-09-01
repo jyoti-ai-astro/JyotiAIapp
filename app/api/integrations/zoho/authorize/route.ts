@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const state = randomBytes(32).toString('hex')
-    const response = NextResponse.redirect(buildZohoAuthorizationUrl(state))
+    const callbackUrl = new URL('/api/integrations/zoho/callback', request.nextUrl.origin).toString()
+    const response = NextResponse.redirect(buildZohoAuthorizationUrl(state, callbackUrl))
 
     response.cookies.set('zoho_oauth_state', state, {
       httpOnly: true,
