@@ -25,27 +25,65 @@ export interface Notification {
  */
 export async function createNotification(
   userId: string,
-  notification: Omit<Notification, 'timestamp' | 'read'>
+  notification: Omit<Notification, 'timestamp' | 'read'>,
+  deliveryKey?: string
 ): Promise<string> {
   if (!adminDb) {
     throw new Error('Firestore not initialized')
   }
 
-  const notificationId = `notif_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  const normalizedDeliveryKey = deliveryKey
+    ?.trim()
+    .replace(/[^a-zA-Z0-9:_-]/g, '_')
+    .slice(0, 400)
+
+  const notificationId = normalizedDeliveryKey
+    ? `notif_${normalizedDeliveryKey}`
+    : `notif_${Date.now()}_${Math.random().toString(36).substring(7)}`
+
   const notificationRef = adminDb
     .collection('notifications')
     .doc(userId)
     .collection('items')
     .doc(notificationId)
 
-  await notificationRef.set({
-    ...notification,
-    timestamp: new Date(),
-    read: false,
-  })
+  if (normalizedDeliveryKey) {
+    const created = await adminDb.runTransaction(async (transaction) => {
+      const existing = await transaction.get(notificationRef)
 
-  // Dispatch notification
+      if (existing.exists) {
+        return false
+      }
+
+      transaction.set(notificationRef, {
+        ...notification,
+        timestamp: new Date(),
+        read: false,
+        deliveryKey: normalizedDeliveryKey,
+        dispatchHandoffAt: null,
+      })
+
+      return true
+    })
+
+    if (!created) {
+      return notificationId
+    }
+  } else {
+    await notificationRef.set({
+      ...notification,
+      timestamp: new Date(),
+      read: false,
+      deliveryKey: null,
+      dispatchHandoffAt: null,
+    })
+  }
+
   await dispatchNotification(userId, notification)
+
+  await notificationRef.update({
+    dispatchHandoffAt: new Date(),
+  })
 
   return notificationId
 }
@@ -181,6 +219,8 @@ export async function processNotificationQueue(): Promise<void> {
   }
 
   const now = new Date()
+  const leaseDurationMs = 5 * 60 * 1000
+  const runLeaseId = `lease_${Date.now()}_${Math.random().toString(36).substring(7)}`
   const queueRef = adminDb.collection('notification_queue')
   const queueSnap = await queueRef
     .where('processed', '==', false)
@@ -189,13 +229,121 @@ export async function processNotificationQueue(): Promise<void> {
     .get()
 
   for (const doc of queueSnap.docs) {
-    const queueItem = doc.data()
+    let claimed = false
+
     try {
-      await createNotification(queueItem.userId, queueItem.payload)
-      await doc.ref.update({ processed: true, processedAt: new Date() })
+      claimed = await adminDb.runTransaction(async (transaction) => {
+        const fresh = await transaction.get(doc.ref)
+
+        if (!fresh.exists) {
+          return false
+        }
+
+        const data = fresh.data() || {}
+
+        if (data.processed === true) {
+          return false
+        }
+
+        const leaseExpiresAt = data.leaseExpiresAt?.toDate?.()
+
+        if (
+          data.processing === true &&
+          leaseExpiresAt instanceof Date &&
+          leaseExpiresAt.getTime() > Date.now()
+        ) {
+          return false
+        }
+
+        transaction.update(doc.ref, {
+          processing: true,
+          leaseId: runLeaseId,
+          leaseExpiresAt: new Date(Date.now() + leaseDurationMs),
+          lastAttemptAt: new Date(),
+          attempts: Number(data.attempts || 0) + 1,
+          error: null,
+        })
+
+        return true
+      })
+
+      if (!claimed) {
+        continue
+      }
+
+      const queueItem = doc.data()
+
+      await createNotification(
+        queueItem.userId,
+        queueItem.payload,
+        doc.id
+      )
+
+      await adminDb.runTransaction(async (transaction) => {
+        const fresh = await transaction.get(doc.ref)
+
+        if (!fresh.exists) {
+          return
+        }
+
+        const data = fresh.data() || {}
+
+        if (
+          data.processed === true ||
+          data.leaseId !== runLeaseId
+        ) {
+          return
+        }
+
+        transaction.update(doc.ref, {
+          processed: true,
+          processedAt: new Date(),
+          processing: false,
+          leaseId: null,
+          leaseExpiresAt: null,
+          error: null,
+        })
+      })
     } catch (error) {
       console.error('Failed to process notification:', error)
-      await doc.ref.update({ processed: false, error: (error as Error).message })
+
+      if (!claimed) {
+        continue
+      }
+
+      try {
+        await adminDb.runTransaction(async (transaction) => {
+          const fresh = await transaction.get(doc.ref)
+
+          if (!fresh.exists) {
+            return
+          }
+
+          const data = fresh.data() || {}
+
+          if (
+            data.processed === true ||
+            data.leaseId !== runLeaseId
+          ) {
+            return
+          }
+
+          transaction.update(doc.ref, {
+            processing: false,
+            leaseId: null,
+            leaseExpiresAt: null,
+            error:
+              error instanceof Error
+                ? error.message.slice(0, 300)
+                : 'Notification processing failed',
+          })
+        })
+      } catch (releaseError) {
+        console.error(
+          'Failed to release notification lease:',
+          releaseError
+        )
+      }
     }
   }
 }
