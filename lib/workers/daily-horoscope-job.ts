@@ -13,12 +13,6 @@ import { adminDb } from '@/lib/firebase/admin'
 import { generateDailyHoroscope } from '@/lib/engines/horoscope/daily-horoscope'
 import { queueNotification } from '@/lib/services/notification-service'
 
-type ScheduledEvent = Event
-type ExecutionContext = {
-  waitUntil(promise: Promise<unknown>): void
-  passThroughOnException?(): void
-}
-
 /**
  * Daily Horoscope Job
  * Processes all users and generates daily horoscopes
@@ -76,7 +70,8 @@ export async function runDailyHoroscopeJob(): Promise<void> {
             luckyNumber: horoscope.luckyNumber,
             energyLevel: horoscope.energyLevel,
           },
-        }
+        },
+        `daily:${uid}:${tomorrow.toISOString().slice(0, 10)}`
       )
 
       processed++
@@ -87,13 +82,4 @@ export async function runDailyHoroscopeJob(): Promise<void> {
   }
 
   console.log(`Daily horoscope job completed. Processed: ${processed}, Errors: ${errors}`)
-}
-
-/**
- * Export for Cloudflare Worker
- */
-export default {
-  async scheduled(event: ScheduledEvent, env: any, ctx: ExecutionContext) {
-    await runDailyHoroscopeJob()
-  },
 }

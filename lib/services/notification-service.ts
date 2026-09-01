@@ -133,14 +133,31 @@ export async function queueNotification(
   userId: string,
   type: string,
   scheduledFor: Date,
-  payload: any
+  payload: any,
+  idempotencyKey?: string
 ): Promise<string> {
   if (!adminDb) {
     throw new Error('Firestore not initialized')
   }
 
-  const queueId = `queue_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  const normalizedKey = idempotencyKey
+    ?.trim()
+    .replace(/[^a-zA-Z0-9:_-]/g, '_')
+    .slice(0, 400)
+
+  const queueId = normalizedKey
+    ? `queue_${normalizedKey}`
+    : `queue_${Date.now()}_${Math.random().toString(36).substring(7)}`
+
   const queueRef = adminDb.collection('notification_queue').doc(queueId)
+
+  if (normalizedKey) {
+    const existing = await queueRef.get()
+
+    if (existing.exists) {
+      return queueId
+    }
+  }
 
   await queueRef.set({
     userId,
@@ -148,6 +165,7 @@ export async function queueNotification(
     scheduledFor,
     processed: false,
     payload,
+    idempotencyKey: normalizedKey || null,
     createdAt: new Date(),
   })
 

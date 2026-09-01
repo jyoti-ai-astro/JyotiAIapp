@@ -10,12 +10,6 @@ import { adminDb } from '@/lib/firebase/admin'
 import { getFestivalToday, checkDashaSensitivity } from '@/lib/engines/festival/festival-engine'
 import { queueNotification } from '@/lib/services/notification-service'
 
-type ScheduledEvent = Event
-type ExecutionContext = {
-  waitUntil(promise: Promise<unknown>): void
-  passThroughOnException?(): void
-}
-
 /**
  * Festival Job
  * Checks if today is a festival and queues notifications
@@ -82,7 +76,8 @@ export async function runFestivalJob(): Promise<void> {
             remedies: festival.remedies.join(', '),
             mantras: festival.mantras.join(', '),
           },
-        }
+        },
+        `festival:${uid}:${festival.name}:${today.toISOString().slice(0, 10)}`
       )
 
       processed++
@@ -93,13 +88,4 @@ export async function runFestivalJob(): Promise<void> {
   }
 
   console.log(`Festival job completed. Processed: ${processed}, Errors: ${errors}`)
-}
-
-/**
- * Export for Cloudflare Worker
- */
-export default {
-  async scheduled(event: ScheduledEvent, env: any, ctx: ExecutionContext) {
-    await runFestivalJob()
-  },
 }

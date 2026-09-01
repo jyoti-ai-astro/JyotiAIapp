@@ -80,12 +80,10 @@ export async function GET(request: NextRequest) {
         }
       })
 
-      // System health (simplified - in production, check actual services)
       const systemHealth = {
-        pinecone: 'healthy', // Should check actual Pinecone status
-        workers: 'healthy',
-        cron: 'healthy',
-        // Phase 31 - F46: Use validated environment variables
+        pinecone: 'unknown',
+        workers: 'unscheduled',
+        cron: 'unconfigured',
         aiProvider: (await import('@/lib/env/env.mjs')).envVars.ai.provider,
       }
 
