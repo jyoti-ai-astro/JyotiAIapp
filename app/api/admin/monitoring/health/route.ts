@@ -22,7 +22,6 @@ export const GET = withAdminAuth(
 
       const subscriptionsSnapshot = await adminDb
         .collectionGroup('subscriptions')
-        .where('razorpaySubscriptionId', '!=', null)
         .get()
 
       let totalActive = 0
