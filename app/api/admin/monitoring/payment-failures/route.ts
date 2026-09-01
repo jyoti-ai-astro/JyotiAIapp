@@ -22,16 +22,18 @@ export const GET = withAdminAuth(
 
       const logsSnapshot = await adminDb
         .collection('app_logs')
-        .where('type', '==', 'payment.failed')
         .orderBy('createdAt', 'desc')
-        .limit(20)
+        .limit(200)
         .get()
 
-      const failures = logsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-      }))
+      const failures = logsSnapshot.docs
+        .filter((doc) => doc.data().type === 'payment.failed')
+        .slice(0, 20)
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
+        }))
 
       return NextResponse.json(failures)
     } catch (error: any) {

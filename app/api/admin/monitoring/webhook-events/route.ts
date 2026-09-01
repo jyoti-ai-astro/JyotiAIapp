@@ -22,20 +22,24 @@ export const GET = withAdminAuth(
 
       const logsSnapshot = await adminDb
         .collection('app_logs')
-        .where(
-          'type',
-          'in',
-          ['webhook.received', 'webhook.verified', 'webhook.failed']
-        )
         .orderBy('createdAt', 'desc')
-        .limit(20)
+        .limit(200)
         .get()
 
-      const events = logsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-      }))
+      const webhookTypes = new Set([
+        'webhook.received',
+        'webhook.verified',
+        'webhook.failed',
+      ])
+
+      const events = logsSnapshot.docs
+        .filter((doc) => webhookTypes.has(doc.data().type))
+        .slice(0, 20)
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
+        }))
 
       return NextResponse.json(events)
     } catch (error: any) {
