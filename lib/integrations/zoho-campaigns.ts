@@ -43,8 +43,8 @@ export function getZohoClientSecret(): string {
   return requiredEnv('ZOHO_CAMPAIGNS_CLIENT_SECRET')
 }
 
-export function getZohoRedirectUri(): string {
-  return process.env.ZOHO_CAMPAIGNS_REDIRECT_URI?.trim() || DEFAULT_REDIRECT_URI
+export function getZohoRedirectUri(override?: string): string {
+  return override?.trim() || process.env.ZOHO_CAMPAIGNS_REDIRECT_URI?.trim() || DEFAULT_REDIRECT_URI
 }
 
 export function getZohoAccountsBaseUrl(): string {
@@ -55,24 +55,27 @@ export function getZohoCampaignsApiBaseUrl(): string {
   return process.env.ZOHO_CAMPAIGNS_API_BASE_URL?.trim() || 'https://campaigns.zoho.in/api/v1.1'
 }
 
-export function buildZohoAuthorizationUrl(state: string): string {
+export function buildZohoAuthorizationUrl(state: string, redirectUri?: string): string {
   const url = new URL('/oauth/v2/auth', getZohoAccountsBaseUrl())
   url.searchParams.set('scope', ZOHO_CAMPAIGNS_SCOPES.join(','))
   url.searchParams.set('client_id', getZohoClientId())
   url.searchParams.set('response_type', 'code')
   url.searchParams.set('access_type', 'offline')
   url.searchParams.set('prompt', 'consent')
-  url.searchParams.set('redirect_uri', getZohoRedirectUri())
+  url.searchParams.set('redirect_uri', getZohoRedirectUri(redirectUri))
   url.searchParams.set('state', state)
   return url.toString()
 }
 
-export async function exchangeZohoAuthorizationCode(code: string): Promise<ZohoTokenResponse> {
+export async function exchangeZohoAuthorizationCode(
+  code: string,
+  redirectUri?: string
+): Promise<ZohoTokenResponse> {
   const body = new URLSearchParams({
     code,
     client_id: getZohoClientId(),
     client_secret: getZohoClientSecret(),
-    redirect_uri: getZohoRedirectUri(),
+    redirect_uri: getZohoRedirectUri(redirectUri),
     grant_type: 'authorization_code',
   })
 
