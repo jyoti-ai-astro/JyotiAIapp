@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkAdminSession } from '@/lib/middleware/admin-middleware'
 import {
@@ -7,6 +8,21 @@ import {
   getZohoMailingLists,
   getZohoTopics,
 } from '@/lib/integrations/zoho-campaigns'
+
+const BOOTSTRAP_COOKIE = 'zoho_oauth_bootstrap'
+const BOOTSTRAP_PATH = '/api/integrations/zoho'
+
+function safeEqual(left: string, right: string): boolean {
+  const a = Buffer.from(left)
+  const b = Buffer.from(right)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
+
+function hasBootstrapCookie(request: NextRequest): boolean {
+  const secret = process.env.ZOHO_CAMPAIGNS_BOOTSTRAP_SECRET?.trim()
+  const cookie = request.cookies.get(BOOTSTRAP_COOKIE)?.value
+  return Boolean(secret && cookie && safeEqual(cookie, secret))
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -25,9 +41,9 @@ function htmlPage(title: string, body: string, status = 200) {
 }
 
 export async function GET(request: NextRequest) {
-  const { admin, error: authError } = await checkAdminSession(request)
-  if (authError || !admin) {
-    return htmlPage('Zoho authorization', '<h1>Admin sign-in required</h1><p>Sign in to the JyotiAI admin panel, then start the Zoho authorization again.</p>', 401)
+  const { admin } = await checkAdminSession(request)
+  if (!admin && !hasBootstrapCookie(request)) {
+    return htmlPage('Zoho authorization', '<h1>Authorization session expired</h1><p>Start the Zoho authorization again from the protected JyotiAI setup route.</p>', 401)
   }
 
   const search = request.nextUrl.searchParams
@@ -45,7 +61,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const tokens = await exchangeZohoAuthorizationCode(code)
+    const callbackUrl = new URL('/api/integrations/zoho/callback', request.nextUrl.origin).toString()
+    const tokens = await exchangeZohoAuthorizationCode(code, callbackUrl)
     const accessToken = tokens.access_token!
 
     const [listsResult, topicsResult] = await Promise.allSettled([
@@ -77,10 +94,17 @@ export async function GET(request: NextRequest) {
 
     response.cookies.set('zoho_oauth_state', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: 'lax',
       maxAge: 0,
-      path: '/api/integrations/zoho',
+      path: BOOTSTRAP_PATH,
+    })
+    response.cookies.set(BOOTSTRAP_COOKIE, '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 0,
+      path: BOOTSTRAP_PATH,
     })
     return response
   } catch (err: any) {
