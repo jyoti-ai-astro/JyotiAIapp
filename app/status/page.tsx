@@ -1,106 +1,108 @@
-/**
- * Status Page
- * 
- * Batch 5 - Marketing Pages
- * 
- * System status and uptime
- */
+import {
+  Activity,
+  CheckCircle2,
+  CircleAlert,
+  ExternalLink,
+  ServerCog,
+  ShieldCheck,
+} from 'lucide-react'
+import Link from 'next/link'
 
-'use client';
+import CompanyPageShell from '@/src/ui/layout/CompanyPageShell'
 
-export const dynamic = 'force-dynamic';
-
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import MarketingPageShell from '@/src/ui/layout/MarketingPageShell';
+const surfaces = [
+  {
+    name: 'Public website',
+    description:
+      'Marketing, pricing, company, support and account-entry surfaces.',
+    icon: Activity,
+  },
+  {
+    name: 'Account & astrology services',
+    description:
+      'Authentication, saved birth profile, Kundali and personalized product APIs.',
+    icon: ServerCog,
+  },
+  {
+    name: 'AI-assisted experiences',
+    description:
+      'Guru, predictions, timeline and other generated experiences depend on their configured AI providers.',
+    icon: CircleAlert,
+  },
+]
 
 export default function StatusPage() {
-  const [status, setStatus] = useState<any>({
-    overall: 'operational',
-    services: [
-      { name: 'API', status: 'operational', uptime: '99.9%' },
-      { name: 'Database', status: 'operational', uptime: '99.8%' },
-      { name: 'AI Services', status: 'operational', uptime: '99.7%' },
-      { name: 'File Storage', status: 'operational', uptime: '99.9%' },
-    ],
-  });
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'operational':
-        return <CheckCircle className="h-6 w-6 text-aura-green" />;
-      case 'degraded':
-        return <AlertCircle className="h-6 w-6 text-aura-orange" />;
-      case 'down':
-        return <XCircle className="h-6 w-6 text-aura-red" />;
-      default:
-        return <AlertCircle className="h-6 w-6 text-white/60" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'operational':
-        return <Badge className="bg-aura-green/20 text-aura-green border-aura-green">Operational</Badge>;
-      case 'degraded':
-        return <Badge className="bg-aura-orange/20 text-aura-orange border-aura-orange">Degraded</Badge>;
-      case 'down':
-        return <Badge className="bg-aura-red/20 text-aura-red border-aura-red">Down</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
-  };
-
   return (
-    <MarketingPageShell
-      eyebrow="System Status"
-      title="Live status of JyotiAI"
-      description="Real-time system health and service availability"
+    <CompanyPageShell
+      eyebrow="System status"
+      title={
+        <>
+          JyotiAI service <span className="text-[#efaa4f]">status.</span>
+        </>
+      }
+      description="A transparent pre-launch service overview. We do not publish invented uptime percentages, simulated monitoring results, or a false 'last checked just now' signal."
     >
-        <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white shadow-[0_0_30px_rgba(110,45,235,0.3)]">
-          <CardHeader>
-            <CardTitle className="text-3xl font-display text-gold">Overall Status</CardTitle>
-            <CardDescription className="text-white/70">Current system health</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              {getStatusIcon(status.overall)}
-              {getStatusBadge(status.overall)}
-              <span className="text-white/80">All services are running normally</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {status.services.map((service: any, index: number) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+      <section className="grid gap-4 lg:grid-cols-3">
+        {surfaces.map(({ name, description, icon: Icon }) => (
+          <article
+            key={name}
+            className="rounded-[24px] border border-[#d9b75f]/18 bg-[linear-gradient(145deg,rgba(8,22,28,0.96),rgba(4,13,18,0.98))] p-6"
           >
-            <Card className="bg-cosmic-indigo/80 backdrop-blur-sm border border-cosmic-purple/30 text-white">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-display">{service.name}</CardTitle>
-                  {getStatusBadge(service.status)}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4">
-                  {getStatusIcon(service.status)}
-                  <div>
-                    <p className="text-white/80">Uptime: {service.uptime}</p>
-                    <p className="text-sm text-white/60">Last checked: Just now</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-    </MarketingPageShell>
-  );
-}
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#efaa4f]/25 bg-[#efaa4f]/[0.07] text-[#efaa4f]">
+              <Icon className="h-5 w-5" aria-hidden="true" />
+            </div>
 
+            <h2 className="mt-5 font-heading text-2xl text-[#fff6df]">
+              {name}
+            </h2>
+
+            <p className="mt-3 text-sm leading-7 text-[#aab5b2]">
+              {description}
+            </p>
+
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#d9b75f]/18 bg-white/[0.025] px-3 py-1.5 text-xs font-medium text-[#d8dfdc]">
+              <CheckCircle2 className="h-4 w-4 text-[#78aaa8]" aria-hidden="true" />
+              Pre-launch monitoring
+            </div>
+          </article>
+        ))}
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <article className="rounded-[26px] border border-[#d9b75f]/18 bg-[#07131f]/80 p-6 md:p-7">
+          <ShieldCheck className="h-6 w-6 text-[#efaa4f]" aria-hidden="true" />
+
+          <h2 className="mt-5 font-heading text-2xl text-[#fff6df]">
+            What this page means
+          </h2>
+
+          <p className="mt-3 text-sm leading-7 text-[#aab5b2]">
+            JyotiAI is still in launch preparation. Until automated monitoring
+            and public incident reporting are connected, this page will not
+            claim measured uptime or real-time operational state.
+          </p>
+        </article>
+
+        <article className="rounded-[26px] border border-[#d9b75f]/18 bg-[#07131f]/80 p-6 md:p-7">
+          <ExternalLink className="h-6 w-6 text-[#efaa4f]" aria-hidden="true" />
+
+          <h2 className="mt-5 font-heading text-2xl text-[#fff6df]">
+            Need help with your account?
+          </h2>
+
+          <p className="mt-3 text-sm leading-7 text-[#aab5b2]">
+            Product or account-specific issues belong in the Help Center rather
+            than the public status page.
+          </p>
+
+          <Link
+            href="/support"
+            className="mt-5 inline-flex min-h-11 items-center rounded-full bg-[#ef982f] px-5 text-sm font-semibold text-[#081017] transition hover:bg-[#ffad4f]"
+          >
+            Open Help Center
+          </Link>
+        </article>
+      </section>
+    </CompanyPageShell>
+  )
+}

@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     // Verify ID token with Firebase Admin
     if (!adminAuth) {
       return NextResponse.json(
-        { error: 'FIREBASE_ADMIN credentials missing. Firebase Admin not initialized. Check FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_PRIVATE_KEY, and FIREBASE_ADMIN_CLIENT_EMAIL environment variables.' },
+        { error: 'Authentication is temporarily unavailable. Please try again shortly.' },
         { status: 500 }
       )
     }
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     // Create or update user profile in Firestore
     if (!adminDb) {
       return NextResponse.json(
-        { error: 'FIREBASE_ADMIN credentials missing. Firestore not initialized.' },
+        { error: 'Sign-in is temporarily unavailable. Please try again shortly.' },
         { status: 500 }
       )
     }

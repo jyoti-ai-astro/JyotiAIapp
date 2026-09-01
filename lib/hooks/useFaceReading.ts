@@ -7,7 +7,7 @@
 'use client';
 
 import { useState } from 'react';
-import { faceReadingEngine, type FaceReadingAnalysis } from '@/lib/engines/face-reading-engine';
+import type { FaceReadingAnalysis } from '@/lib/engines/face-reading-engine';
 
 export function useFaceReading() {
   const [loading, setLoading] = useState(false);
@@ -18,8 +18,10 @@ export function useFaceReading() {
     try {
       setLoading(true);
       setError(null);
-      const result = await faceReadingEngine.analyzeFace(imageUrl);
-      setAnalysis(result);
+      void imageUrl;
+      throw new Error(
+        'Face reading is temporarily unavailable while image analysis is being upgraded. No credit has been used.'
+      );
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Analysis failed');
       setError(error);

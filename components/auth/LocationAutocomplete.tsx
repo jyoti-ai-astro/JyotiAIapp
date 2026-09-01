@@ -1,168 +1,268 @@
-// components/auth/LocationAutocomplete.tsx
+'use client'
 
-/**
- * Location Autocomplete Component
- *
- * Autocomplete input for place of birth with geocoding
- * Resolves city names to coordinates and handles ambiguous locations
- */
+import React, {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react'
+import { CheckCircle2, Loader2, MapPin } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
-'use client';
+interface LocationSuggestion {
+  placeId: string
+  formattedAddress: string
+  primaryText?: string
+  secondaryText?: string
+}
 
-import React, { useState, useEffect, useRef, useId } from 'react';
-import { MapPin, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-
-interface LocationResult {
-  formattedAddress: string;
-  lat: number;
-  lng: number;
-  city?: string;
-  country?: string;
+interface VerifiedLocation {
+  placeId: string
+  formattedAddress: string
+  lat: number
+  lng: number
+  city?: string
+  state?: string
+  country?: string
+  countryCode?: string
 }
 
 interface LocationAutocompleteProps {
-  value: string;
-  onChange: (value: string, coordinates?: { lat: number; lng: number }) => void;
-  required?: boolean;
-  className?: string;
-  label?: string;
+  value: string
+  onChange: (
+    value: string,
+    coordinates?: { lat: number; lng: number },
+    location?: VerifiedLocation
+  ) => void
+  required?: boolean
+  className?: string
+  label?: string
 }
 
-export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
+export const LocationAutocomplete: React.FC<
+  LocationAutocompleteProps
+> = ({
   value,
   onChange,
   required = false,
   className = '',
   label = 'Place of Birth',
 }) => {
-  const [query, setQuery] = useState(value);
-  const [suggestions, setSuggestions] = useState<LocationResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
+  const [query, setQuery] = useState(value)
+  const [suggestions, setSuggestions] = useState<
+    LocationSuggestion[]
+  >([])
+  const [loading, setLoading] = useState(false)
+  const [resolving, setResolving] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [selectedLocation, setSelectedLocation] =
+    useState<VerifiedLocation | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const inputRef = useRef<HTMLInputElement>(null);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const inputRef = useRef<HTMLInputElement>(null)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<NodeJS.Timeout>()
 
-  const reactId = useId();
-  const inputId = `${reactId}-location`;
+  const reactId = useId()
+  const inputId = `${reactId}-location`
 
-  // Keep local query in sync if parent value changes externally
   useEffect(() => {
     if (value !== query) {
-      setQuery(value);
+      setQuery(value)
+
+      if (
+        selectedLocation &&
+        value !== selectedLocation.formattedAddress
+      ) {
+        setSelectedLocation(null)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  }, [value])
 
-  // Fetch suggestions from Google Places API or geocoding API via /api/location/search
   const fetchSuggestions = async (searchQuery: string) => {
-    if (!searchQuery || searchQuery.length < 2) {
-      setSuggestions([]);
-      return;
+    const trimmed = searchQuery.trim()
+
+    if (trimmed.length < 2) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
+    setError(null)
+
     try {
-      // Call our geocoding API
       const response = await fetch('/api/location/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery }),
-      });
+        body: JSON.stringify({
+          action: 'search',
+          query: trimmed,
+        }),
+      })
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.results && Array.isArray(data.results)) {
-          setSuggestions(data.results);
-          setShowSuggestions(true);
-        } else if (data.error) {
-          console.warn('Location search error:', data.error);
-          // Still allow manual entry even if autocomplete fails
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.warn(
-          'Location search failed:',
-          errorData.error || 'Unknown error'
-        );
-        // Allow manual entry even if API fails
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || 'Location search is temporarily unavailable.'
+        )
       }
-    } catch (error) {
-      console.error('Location search error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Debounce search
+      const results = Array.isArray(data.results)
+        ? data.results
+        : []
+
+      setSuggestions(results)
+      setShowSuggestions(results.length > 0)
+
+      if (results.length === 0) {
+        setError(
+          'No matching location found. Try a nearby city or include state/country.'
+        )
+      }
+    } catch (err: any) {
+      console.error('Location search error:', err)
+      setSuggestions([])
+      setShowSuggestions(false)
+      setError(
+        err?.message || 'Location search is temporarily unavailable.'
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
+      clearTimeout(debounceRef.current)
+    }
+
+    if (
+      selectedLocation &&
+      query === selectedLocation.formattedAddress
+    ) {
+      return
     }
 
     debounceRef.current = setTimeout(() => {
-      if (query !== value) {
-        fetchSuggestions(query);
-      }
-    }, 300);
+      fetchSuggestions(query)
+    }, 300)
 
     return () => {
       if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
+        clearTimeout(debounceRef.current)
       }
-    };
-  }, [query, value]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query])
 
-  // Handle selection
-  const handleSelect = (location: LocationResult) => {
-    setQuery(location.formattedAddress);
-    setSelectedLocation(location);
-    setShowSuggestions(false);
-    onChange(location.formattedAddress, {
-      lat: location.lat,
-      lng: location.lng,
-    });
-  };
+  const handleSelect = async (
+    suggestion: LocationSuggestion
+  ) => {
+    setResolving(true)
+    setError(null)
 
-  // Handle input change
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setQuery(newValue);
-    setSelectedLocation(null);
-    onChange(newValue);
-  };
+    try {
+      const response = await fetch('/api/location/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'resolve',
+          placeId: suggestion.placeId,
+        }),
+      })
 
-  // Close suggestions when clicking outside
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok || !data.result) {
+        throw new Error(
+          data.error || 'Could not verify the selected location.'
+        )
+      }
+
+      const location = data.result as VerifiedLocation
+
+      setSelectedLocation(location)
+      setQuery(location.formattedAddress)
+      setSuggestions([])
+      setShowSuggestions(false)
+
+      onChange(
+        location.formattedAddress,
+        {
+          lat: location.lat,
+          lng: location.lng,
+        },
+        location
+      )
+    } catch (err: any) {
+      console.error('Location resolve error:', err)
+
+      setSelectedLocation(null)
+      setError(
+        err?.message || 'Could not verify the selected location.'
+      )
+
+      onChange(query)
+    } finally {
+      setResolving(false)
+    }
+  }
+
+  const handleInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const newValue = event.target.value
+
+    setQuery(newValue)
+    setSelectedLocation(null)
+    setError(null)
+
+    onChange(newValue)
+  }
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         suggestionsRef.current &&
-        !suggestionsRef.current.contains(event.target as Node) &&
+        !suggestionsRef.current.contains(
+          event.target as Node
+        ) &&
         inputRef.current &&
         !inputRef.current.contains(event.target as Node)
       ) {
-        setShowSuggestions(false);
+        setShowSuggestions(false)
       }
-    };
+    }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener(
+      'mousedown',
+      handleClickOutside
+    )
+
+    return () =>
+      document.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      )
+  }, [])
 
   return (
     <div className={`relative ${className}`}>
       <Label
-        className="text-white/80 mb-2 flex items-center gap-2"
+        className="mb-2 flex items-center gap-2 text-white/80"
         htmlFor={inputId}
       >
         <MapPin className="h-4 w-4" />
         {label}
-        {required && <span className="text-red-400">*</span>}
+        {required ? (
+          <span className="text-red-400">*</span>
+        ) : null}
       </Label>
+
       <div className="relative">
         <Input
           id={inputId}
@@ -173,51 +273,80 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
           onChange={handleInputChange}
           onFocus={() => {
             if (suggestions.length > 0) {
-              setShowSuggestions(true);
+              setShowSuggestions(true)
             }
           }}
-          placeholder="Start typing city name (e.g., New Delhi, India)"
+          placeholder="Start typing city name (e.g., Sasaram, Bihar, India)"
           required={required}
-          className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:ring-2 focus:ring-gold pr-10"
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={showSuggestions}
+          className="border-white/20 bg-white/10 pr-10 text-white placeholder:text-white/60 focus:ring-2 focus:ring-gold"
         />
-        {loading && (
+
+        {(loading || resolving) && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <Loader2 className="h-4 w-4 animate-spin text-white/60" />
           </div>
         )}
       </div>
 
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && suggestions.length > 0 ? (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full mt-1 bg-[#1A2347] border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+          className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-[#d7aa57]/20 bg-[#07131a] shadow-2xl"
         >
-          {suggestions.map((location, index) => (
+          {suggestions.map((location) => (
             <button
-              key={index}
+              key={location.placeId}
               type="button"
               onClick={() => handleSelect(location)}
-              className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0"
+              className="w-full border-b border-white/5 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-white/5"
             >
-              <div className="text-white font-medium">
-                {location.formattedAddress}
+              <div className="font-medium text-white">
+                {location.primaryText ||
+                  location.formattedAddress}
               </div>
-              {location.city && location.country && (
-                <div className="text-white/60 text-sm mt-1">
-                  {location.city}, {location.country}
+
+              {location.secondaryText ? (
+                <div className="mt-1 text-sm text-white/55">
+                  {location.secondaryText}
                 </div>
-              )}
+              ) : null}
             </button>
           ))}
-        </div>
-      )}
 
-      {selectedLocation && (
-        <div className="mt-2 text-xs text-white/60">
-          Selected: {selectedLocation.formattedAddress} (
-          {selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)})
+          <div className="px-4 py-2 text-right text-[10px] uppercase tracking-[0.14em] text-white/35">
+            Powered by Google
+          </div>
         </div>
-      )}
+      ) : null}
+
+      {selectedLocation ? (
+        <div className="mt-2 flex items-center gap-2 text-xs text-[#8dd0b4]">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          Location verified
+          {selectedLocation.city ? (
+            <span className="text-white/45">
+              · {selectedLocation.city}
+              {selectedLocation.state
+                ? `, ${selectedLocation.state}`
+                : ''}
+            </span>
+          ) : null}
+        </div>
+      ) : query.trim().length > 1 ? (
+        <div className="mt-2 flex items-start gap-2 text-xs leading-5 text-[#b99a67]">
+          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          Select a location from the Google suggestions before continuing.
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="mt-2 text-xs leading-5 text-red-300">
+          {error}
+        </div>
+      ) : null}
     </div>
-  );
-};
+  )
+}

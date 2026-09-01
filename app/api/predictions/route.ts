@@ -156,6 +156,33 @@ export async function POST(request: NextRequest) {
 
       clearTimeout(timeoutId)
 
+      // Preserve normalized AI/provider failure semantics returned by
+      // the prediction engine before applying the generic generation guard.
+      if (
+        result.status === 'error' &&
+        typeof result.errorCode === 'string' &&
+        result.errorCode.startsWith('AI_')
+      ) {
+        const providerStatus =
+          Number.isInteger(result.errorStatus) && (result.errorStatus ?? 0) >= 400
+            ? result.errorStatus!
+            : result.errorCode === 'AI_RATE_LIMIT'
+              ? 429
+              : 503
+
+        return NextResponse.json(
+          {
+            status: 'error',
+            code: result.errorCode,
+            message: result.errorMessage
+              ? `${result.errorMessage} Your prediction credit was not used.`
+              : 'Personalized predictions are temporarily unavailable. Your prediction credit was not used. Please try again later.',
+            retryable: true,
+          },
+          { status: providerStatus }
+        )
+      }
+
       // Phase S: Consume ticket after successful generation
       if (
         result.status === 'error' ||
@@ -219,12 +246,46 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Shared AI clients already normalize provider failures into AI_* codes.
+      // Preserve those semantics here instead of turning known provider
+      // unavailability into a generic Predictions 500.
+      const aiCode =
+        typeof error?.code === 'string' && error.code.startsWith('AI_')
+          ? error.code
+          : null
+
+      if (aiCode) {
+        const providerStatus =
+          Number.isInteger(error?.status) && error.status >= 400
+            ? error.status
+            : aiCode === 'AI_RATE_LIMIT'
+              ? 429
+              : 503
+
+        console.warn('Prediction AI temporarily unavailable:', {
+          code: aiCode,
+        })
+
+        return NextResponse.json(
+          {
+            status: 'error',
+            code: aiCode,
+            message:
+              typeof error?.clientMessage === 'string' && error.clientMessage
+                ? `${error.clientMessage} Your prediction credit was not used.`
+                : 'Personalized predictions are temporarily unavailable. Your prediction credit was not used. Please try again later.',
+            retryable: true,
+          },
+          { status: providerStatus }
+        )
+      }
+
       console.error('Error in prediction engine:', error)
       return NextResponse.json(
         {
           status: 'error',
           code: 'INTERNAL_ERROR',
-          message: 'An error occurred while generating predictions. Please try again.',
+          message: 'An error occurred while generating predictions. Your prediction credit was not used. Please try again.',
         },
         { status: 500 }
       )

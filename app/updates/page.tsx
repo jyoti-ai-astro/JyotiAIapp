@@ -34,11 +34,15 @@ export default function UpdatesPage() {
       features: ['Enhanced AI responses', 'Better context awareness', 'Improved accuracy'],
     },
     {
-      version: 'v5.9',
-      date: '2023-11-15',
-      title: 'Palmistry & Face Reading',
-      description: 'Added AI-powered palmistry and face reading analysis features.',
-      features: ['Palmistry analysis', 'Face reading', 'AI vision integration'],
+      version: 'Current launch note',
+      date: '2026-09-01',
+      title: 'Launch readiness',
+      description: 'JyotiAI is aligning public product claims with the capabilities currently released for customer use.',
+      features: [
+        'Verified Kundali and account context',
+        'Palmistry and aura experiences available',
+        'Face Reading, Compatibility, Business analysis, and Pregnancy production readings remain in upgrade or preview state',
+      ],
     },
   ];
 

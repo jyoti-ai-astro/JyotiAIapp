@@ -9,6 +9,7 @@
 import { useUserStore } from '@/store/user-store'
 import { useState, useEffect } from 'react'
 import { getFeatureAccess, type FeatureKey } from '@/lib/payments/feature-access'
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 
 interface TicketAccessResult {
   hasAccess: boolean
@@ -61,14 +62,7 @@ export function useTicketAccess(feature: FeatureKey): TicketAccessResult {
     const checkAccess = async () => {
       try {
         // Call API endpoint instead of direct Firestore access (client-side)
-        const response = await fetch('/api/user/tickets', {
-          credentials: 'include',
-        })
-        if (!response.ok) {
-          throw new Error('Failed to fetch ticket info')
-        }
-        const data = await response.json()
-        const info = data
+        const info = await authenticatedJsonRead<any>('/api/user/tickets', { ttlMs: 60_000 })
         
         // Phase Q: Use config-based access check
         let hasAccess = false

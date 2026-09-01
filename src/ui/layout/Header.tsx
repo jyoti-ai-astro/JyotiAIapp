@@ -1,147 +1,197 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { SolarJyotiMark } from '@/src/ui/brand/SolarJyotiMark';
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Menu, X, UserRound } from 'lucide-react'
 
-const appEnv = (process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || 'development') as
-  | 'development'
-  | 'staging'
-  | 'production';
+import { SolarJyotiMark } from '@/src/ui/brand/SolarJyotiMark'
+import { useUserStore } from '@/store/user-store'
 
-const navLinks = [
-  { href: '/', label: 'Home' },
+const navItems = [
   { href: '/guru', label: 'Guru' },
   { href: '/kundali', label: 'Kundali' },
+  { href: '/predictions', label: 'Predictions' },
+  { href: '/timeline', label: 'Timeline' },
+  { href: '/reports', label: 'Reports' },
   { href: '/pricing', label: 'Pricing' },
-];
+]
 
 export function Header() {
-  const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname()
+  const user = useUserStore((state) => state.user)
+
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 12);
-    handleScroll();
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    const handleScroll = () => setScrolled(window.scrollY > 12)
+    handleScroll()
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
+    setMenuOpen(false)
+  }, [pathname])
 
   useEffect(() => {
-    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isMobileMenuOpen]);
+      document.body.style.overflow = ''
+    }
+  }, [menuOpen])
+
+  const isActive = (href: string) =>
+    pathname === href || (href !== '/' && pathname.startsWith(`${href}/`))
 
   return (
     <header
-      className={cn(
-        'fixed left-0 right-0 top-0 z-50 border-b transition-colors duration-200',
-        isScrolled
-          ? 'border-[#D8B56A]/35 bg-[#07131F]/94 shadow-[0_12px_34px_rgba(7,19,31,0.26)] backdrop-blur'
-          : 'border-[#D8B56A]/20 bg-[#07131F]/82 backdrop-blur'
-      )}
+      data-jyoti-global-header="true"
+      className={`fixed inset-x-0 top-0 z-50 border-b text-[#fff7e8] transition-all duration-300 ${
+        scrolled
+          ? 'border-[#d7aa57]/22 bg-[#030b10]/[0.97] shadow-[0_14px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl'
+          : 'border-[#d7aa57]/14 bg-[#030b10]/[0.94] backdrop-blur-xl'
+      }`}
+      style={{
+        backgroundColor: 'rgba(3, 11, 16, 0.97)',
+        color: '#fff7e8',
+      }}
     >
-      <div className="page-container py-0">
-        <div className="flex min-h-20 items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3" aria-label="JyotiAI home">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#C9A24A]/45 bg-[#F28C28]/12 text-[#FFF7E8] shadow-[0_0_24px_rgba(242,140,40,0.16)]">
-              <SolarJyotiMark className="h-6 w-6" />
-            </span>
-            <span className="font-heading text-2xl font-semibold tracking-normal text-[#FFF7E8]">
-              JyotiAI
-            </span>
-          </Link>
-
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'rounded-lg px-4 py-3 text-sm font-medium transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                    isActive ? 'bg-[#FFF8E6]/12 text-[#FFF7E8]' : 'text-[#B9C2BF] hover:text-[#FFF7E8]'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="hidden items-center gap-3 md:flex">
-            {appEnv !== 'production' && (
-              <span className="rounded-full border border-[#D9962E]/35 bg-[#D9962E]/12 px-3 py-1 text-xs font-medium text-[#FFF7E8]">
-                {appEnv.toUpperCase()}
-              </span>
-            )}
-            <Link href="/login">
-              <Button variant="ghost" className="text-[#FFF7E8] hover:bg-[#FFF8E6]/10">
-                Sign in
-              </Button>
-            </Link>
-            <Link href="/onboarding">
-              <Button className="bg-[#F28C28] text-[#07131F] hover:bg-[#F28C28]/90">
-                Get my free reading
-              </Button>
-            </Link>
+      <div className="mx-auto flex h-20 max-w-[1500px] items-center justify-between px-5 md:px-8">
+        <Link
+          href="/"
+          className="flex items-center gap-3"
+          aria-label="JyotiAI home"
+        >
+          <SolarJyotiMark className="h-9 w-9 text-[#f0c875]" />
+          <div>
+            <div className="font-heading text-xl text-[#fff7e8]">JyotiAI</div>
+            <div className="hidden text-[9px] uppercase tracking-[0.24em] text-[#b9c2bf]/70 sm:block">
+              Vedic Intelligence
+            </div>
           </div>
+        </Link>
 
-          <button
-            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#D8B56A]/30 bg-[#FFF8E6]/10 text-[#FFF7E8] md:hidden"
-            onClick={() => setIsMobileMenuOpen((open) => !open)}
-            aria-label="Toggle navigation menu"
-            aria-expanded={isMobileMenuOpen}
-          >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+        <nav
+          className="hidden items-center gap-1 lg:flex"
+          aria-label="Primary navigation"
+        >
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`rounded-full px-4 py-2 text-sm transition ${
+                isActive(item.href)
+                  ? 'bg-[#f1c979]/10 text-[#f1c979]'
+                  : 'text-[#c7ceca] hover:bg-white/5 hover:text-[#fff7e8]'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="hidden items-center gap-3 md:flex">
+          {user ? (
+            <>
+              <Link
+                href="/profile"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#d7aa57]/25 px-4 text-sm text-[#e9e3d8] hover:border-[#d7aa57]/50 hover:bg-[#f1c979]/8"
+              >
+                <UserRound className="h-4 w-4" />
+                Account
+              </Link>
+
+              <Link
+                href="/dashboard"
+                className="inline-flex min-h-11 items-center rounded-full bg-[#e69a3a] px-5 text-sm font-semibold text-[#061014] transition hover:bg-[#f0ae55]"
+              >
+                Open Dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="inline-flex min-h-11 items-center px-3 text-sm text-[#e9e3d8] hover:text-[#f1c979]"
+              >
+                Sign in
+              </Link>
+
+              <Link
+                href="/signup"
+                className="inline-flex min-h-11 items-center rounded-full bg-[#e69a3a] px-5 text-sm font-semibold text-[#061014] transition hover:bg-[#f0ae55]"
+              >
+                Begin free
+              </Link>
+            </>
+          )}
         </div>
+
+        <button
+          type="button"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d7aa57]/25 text-[#fff7e8] md:hidden"
+          aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
+          onClick={() => setMenuOpen((value) => !value)}
+        >
+          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
 
-      {isMobileMenuOpen && (
-        <div className="border-t border-[#D8B56A]/25 bg-[#07131F] md:hidden">
-          <nav className="page-container flex flex-col gap-2 py-4" aria-label="Mobile navigation">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'min-h-11 rounded-lg px-4 py-3 text-base font-medium',
-                    isActive ? 'bg-[#FFF8E6]/12 text-[#FFF7E8]' : 'text-[#B9C2BF]'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <Link href="/login">
-                <Button variant="outline" fullWidth>
-                  Sign in
-                </Button>
+      {menuOpen ? (
+        <div className="border-t border-[#d7aa57]/18 bg-[#050c10]/98 px-5 pb-6 pt-4 shadow-2xl md:hidden">
+          <nav className="mx-auto flex max-w-[1500px] flex-col gap-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`rounded-xl px-4 py-3 text-sm ${
+                  isActive(item.href)
+                    ? 'bg-[#f1c979]/10 text-[#f1c979]'
+                    : 'text-[#d3d8d5]'
+                }`}
+              >
+                {item.label}
               </Link>
-              <Link href="/onboarding">
-                <Button fullWidth>Free reading</Button>
-              </Link>
+            ))}
+
+            <div className="mt-4 grid gap-2 border-t border-white/10 pt-4">
+              {user ? (
+                <>
+                  <Link
+                    href="/profile"
+                    className="rounded-xl border border-[#d7aa57]/22 px-4 py-3 text-center text-sm text-[#fff7e8]"
+                  >
+                    Account
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    className="rounded-xl bg-[#e69a3a] px-4 py-3 text-center text-sm font-semibold text-[#061014]"
+                  >
+                    Open Dashboard
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="rounded-xl border border-[#d7aa57]/22 px-4 py-3 text-center text-sm text-[#fff7e8]"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="rounded-xl bg-[#e69a3a] px-4 py-3 text-center text-sm font-semibold text-[#061014]"
+                  >
+                    Begin free
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         </div>
-      )}
+      ) : null}
     </header>
-  );
+  )
 }

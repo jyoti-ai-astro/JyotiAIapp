@@ -99,21 +99,13 @@ export function generateD1Chart(
  * Infrastructure ready, implementation pending
  */
 export function generateD9Chart(
-  grahas: GrahasCollection,
-  bhavas: BhavasCollection,
-  lagna: LagnaData
+  _grahas: GrahasCollection,
+  _bhavas: BhavasCollection,
+  _lagna: LagnaData
 ): DivisionalChart {
-  // TODO: Implement Navamsa calculation
-  // Navamsa divides each sign into 9 parts (3.33 degrees each)
-  // Each part represents a sign
-  
-  return {
-    chartType: 'D9',
-    grahas, // Will be recalculated for D9
-    bhavas, // Will be recalculated for D9
-    lagna, // Navamsa Lagna
-    aspects: [],
-  }
+  throw new Error(
+    'D9_NAVAMSA_NOT_IMPLEMENTED: Navamsa generation is unavailable until canonical divisional-chart calculations are implemented.'
+  )
 }
 
 /**
@@ -121,19 +113,12 @@ export function generateD9Chart(
  * Infrastructure ready, implementation pending
  */
 export function generateD10Chart(
-  grahas: GrahasCollection,
-  bhavas: BhavasCollection,
-  lagna: LagnaData
+  _grahas: GrahasCollection,
+  _bhavas: BhavasCollection,
+  _lagna: LagnaData
 ): DivisionalChart {
-  // TODO: Implement Dashamsa calculation
-  // Dashamsa divides each sign into 10 parts (3 degrees each)
-  
-  return {
-    chartType: 'D10',
-    grahas, // Will be recalculated for D10
-    bhavas, // Will be recalculated for D10
-    lagna, // Dashamsa Lagna
-    aspects: [],
-  }
+  throw new Error(
+    'D10_DASHAMSA_NOT_IMPLEMENTED: Dashamsa generation is unavailable until canonical divisional-chart calculations are implemented.'
+  )
 }
 

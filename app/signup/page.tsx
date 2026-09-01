@@ -11,7 +11,7 @@
 import React, { useState } from 'react';
 import { signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserStore } from '@/store/user-store';
 import { useProtectedRoute } from '@/lib/hooks/useProtectedRoute';
 import AuthLayout from '@/src/ui/sections/auth/AuthLayout';
@@ -20,12 +20,37 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const resolveSignupDestination = (data: any) => {
+    if (!data?.onboarded) {
+      return '/onboarding';
+    }
+
+    const requestedRedirect = searchParams.get('redirect');
+
+    if (
+      requestedRedirect &&
+      requestedRedirect.startsWith('/') &&
+      !requestedRedirect.startsWith('//') &&
+      !requestedRedirect.startsWith('/login') &&
+      !requestedRedirect.startsWith('/signup')
+    ) {
+      return requestedRedirect;
+    }
+
+    return '/dashboard';
+  };
+
+  const completeSignupNavigation = (data: any) => {
+    window.location.assign(resolveSignupDestination(data));
+  };
   
   // Redirect if already authenticated (client-side only)
   useProtectedRoute({
     requireAuth: false,
     redirectIfAuthenticated: true,
-    redirectTo: '/dashboard',
+    redirectTo: '/onboarding',
   });
 
   const handleSocialSignup = async (provider: GoogleAuthProvider | FacebookAuthProvider, providerName: string) => {
@@ -34,7 +59,7 @@ export default function SignupPage() {
       setError(null);
       
       if (!auth) {
-        throw new Error('Firebase authentication is not configured. Please add Firebase environment variables to Vercel.');
+        throw new Error('Account creation is temporarily unavailable. Please try again shortly.');
       }
       
       // Add error handling for popup blockers
@@ -84,10 +109,10 @@ export default function SignupPage() {
           kundaliTickets: data.kundaliTickets || 0,
           lifetimePredictions: data.lifetimePredictions || 0,
           dailyUsage: data.dailyUsage || { count: 0, date: new Date().toISOString().split('T')[0] },
-          onboarded: false,
+          onboarded: data.onboarded || false,
         });
 
-        router.push('/onboarding');
+        completeSignupNavigation(data);
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Signup failed');
@@ -134,6 +159,26 @@ export default function SignupPage() {
       // Store email in localStorage for callback
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('emailForSignIn', email);
+
+        const requestedRedirect = searchParams.get('redirect');
+
+        if (
+          requestedRedirect &&
+          requestedRedirect.startsWith('/') &&
+          !requestedRedirect.startsWith('//') &&
+          !requestedRedirect.startsWith('/login') &&
+          !requestedRedirect.startsWith('/signup')
+        ) {
+          window.localStorage.setItem(
+            'authRedirectAfterSignIn',
+            requestedRedirect
+          );
+        } else {
+          window.localStorage.setItem(
+            'authRedirectAfterSignIn',
+            '/onboarding'
+          );
+        }
       }
 
       const response = await fetch('/api/auth/magic-link', {
@@ -211,7 +256,7 @@ export default function SignupPage() {
           onboarded: false,
         });
 
-        router.push('/onboarding');
+        window.location.assign('/onboarding');
       } else {
         throw new Error('Signup failed');
       }

@@ -22,38 +22,44 @@ const features = [
   {
     icon: Star,
     title: 'Kundali Generator',
-    description: 'Generate accurate birth charts with D1, D9, D10 divisional charts',
+    description: 'Generate your verified D1 birth chart with planetary positions, houses, and canonical JyotiAI chart context',
     color: 'text-[#FFD57A]',
+    availability: 'Available',
   },
   {
     icon: Zap,
     title: 'AI Guru',
     description: 'Chat with your spiritual guide powered by advanced AI',
     color: 'text-cyan-400',
+    availability: 'Available',
   },
   {
     icon: Heart,
     title: 'Compatibility Analysis',
-    description: 'Check relationship compatibility and marriage timing',
+    description: 'Compatibility experience is being upgraded and is not currently released for personalized production readings',
     color: 'text-red-400',
+    availability: 'Upgrading',
   },
   {
     icon: Brain,
-    title: 'Career Engine',
-    description: 'Discover your ideal career path and business opportunities',
+    title: 'Career Guidance',
+    description: 'Explore chart-led career guidance; separate business analysis is currently being upgraded',
     color: 'text-green-400',
+    availability: 'Available',
   },
   {
     icon: Eye,
     title: 'Palmistry & Face Reading',
-    description: 'AI-powered palmistry and face reading analysis',
+    description: 'Palmistry is available; personalized Face Reading is currently being upgraded',
     color: 'text-violet-400',
+    availability: 'Mixed availability',
   },
   {
     icon: Sparkles,
     title: 'Aura Scan',
     description: 'Analyze your energy field and chakra balance',
     color: 'text-orange-400',
+    availability: 'Available',
   },
 ];
 
@@ -97,6 +103,9 @@ export default function FeaturesPage() {
                   <p className="text-white/70 text-base md:text-lg">
                     {feature.description}
                   </p>
+                  <span className="mt-3 inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/70">
+                    {feature.availability}
+                  </span>
                 </div>
               </div>
             </motion.div>

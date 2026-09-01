@@ -23,7 +23,7 @@ import {
   WandSparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUserStore } from '@/store/user-store';
+import { logoutClientSession } from '@/lib/auth/client-session';
 
 const primaryNav = [
   { href: '/dashboard', label: 'Today', icon: Home },
@@ -83,19 +83,18 @@ function NavLink({ href, label, icon: Icon }: { href: string; label: string; ico
 
 export function AuthenticatedAppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { clearUser } = useUserStore();
 
   const handleSignOut = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
-    clearUser();
-    router.push('/login');
+    await logoutClientSession();
+    router.replace('/login');
+    router.refresh();
   };
 
   return (
     <div className="grid gap-6 md:grid-cols-[16rem_minmax(0,1fr)]">
       <aside
         data-dashboard-sidebar="true"
-        className="hidden self-start md:block md:pt-10"
+        className="relative z-50 hidden self-start md:block md:pt-10"
       >
         <div
           data-dashboard-sidebar-surface="true"

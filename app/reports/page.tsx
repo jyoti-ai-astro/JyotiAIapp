@@ -112,7 +112,19 @@ export default function ReportsPage() {
   }
 
   if (!user) {
-    return null
+    return (
+      <DashboardPageShell
+        title="Your Reports"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Your Reports"
+            description="Restoring your saved reports."
+          />
+        </div>
+      </DashboardPageShell>
+    )
   }
 
   const displayReports = reports
@@ -173,22 +185,22 @@ export default function ReportsPage() {
                   type: 'kundali' as const,
                   title: 'Full Kundali Report',
                   description:
-                    'Complete birth chart analysis with planetary positions, dasha periods, and life themes.',
-                  badge: 'Included in Supreme Plan',
+                    'A saved PDF generated from your current verified Kundali data.',
+                  badge: 'Access checked securely',
                 },
                 {
                   type: 'predictions' as const,
                   title: '12-Month Predictions',
                   description:
-                    'Detailed forecasts for career, love, money, health, and spiritual growth.',
-                  badge: 'Paid · ₹299',
+                    'A saved PDF created from your current personalized prediction result.',
+                  badge: 'Access checked securely',
                 },
                 {
                   type: 'timeline' as const,
                   title: '12-Month Timeline',
                   description:
-                    'Month-by-month cosmic journey with themes, intensity, and focus areas.',
-                  badge: 'Paid · ₹299',
+                    'A saved month-by-month report generated from your current timeline state.',
+                  badge: 'Access checked securely',
                 },
               ].map((item) => (
                 <Card
@@ -371,10 +383,16 @@ export default function ReportsPage() {
                             )}
 
                             {report.status === 'failed' && (
-                              <p className="text-sm leading-6 text-[#e7a097]">
-                                {report.failureReason ||
-                                  'Report generation failed'}
-                              </p>
+                              <div className="space-y-1">
+                                <p className="text-sm leading-6 text-[#e7a097]">
+                                  This report was not completed. No ready PDF is available from this attempt.
+                                </p>
+                                <p className="text-xs leading-5 text-[#9f9b94]">
+                                  {report.failureReason
+                                    ? `Technical status: ${report.failureReason}`
+                                    : 'Technical status: report generation failed'}
+                                </p>
+                              </div>
                             )}
                           </div>
 
@@ -384,9 +402,10 @@ export default function ReportsPage() {
                                 onClick={() =>
                                   handleGenerate(report.type)
                                 }
+                                disabled={generating}
                                 className="min-h-11 w-full border-[#e8aa4f] bg-[#e99a34] font-semibold text-[#160d04] hover:bg-[#f1aa4d]"
                               >
-                                Retry
+                                {generating ? 'Retrying...' : 'Retry generation'}
                               </Button>
                             ) : report.status === 'ready' &&
                               report.pdfUrl ? (

@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET missing. Payment service not configured.',
+            'Payment service is temporarily unavailable. Please try again shortly.',
         },
         { status: 500 }
       );
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              'Razorpay authentication failed. Please verify RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env.local (test key + secret pair from the same Razorpay account).',
+              'Payment service authentication failed. Please try again shortly.',
           },
           { status: 500 }
         );
@@ -123,38 +123,76 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Save order to Firestore (non-blocking failures logged only)
-    if (adminDb) {
-      try {
-        const orderRef = adminDb
-          .collection('payments')
-          .doc(uid)
-          .collection('one_time_orders')
-          .doc(order.id);
+    // Firestore is the canonical fulfillment authority.
+    // Never expose a Razorpay checkout order unless this record exists.
+    if (!adminDb) {
+      await logEvent(
+        'api.error',
+        {
+          endpoint: '/api/pay/create-one-time-order',
+          phase: 'canonical_order_persistence',
+          reason: 'firestore_unavailable',
+          orderId: order.id,
+        },
+        uid
+      );
 
-        await orderRef.set({
+      return NextResponse.json(
+        { error: 'Unable to initialize payment order. Please try again.' },
+        { status: 503 }
+      );
+    }
+
+    try {
+      const orderRef = adminDb
+        .collection('payments')
+        .doc(uid)
+        .collection('one_time_orders')
+        .doc(order.id);
+
+      await orderRef.set({
+        orderId: order.id,
+        productId: String(productId),
+        productIdInternal: product.id,
+        amount: product.amountInINR,
+        tickets: product.tickets,
+        status: 'created',
+        createdAt: new Date(),
+      });
+    } catch (firestoreErr: any) {
+      console.error('Canonical payment order persistence failed:', firestoreErr);
+
+      await logEvent(
+        'api.error',
+        {
+          endpoint: '/api/pay/create-one-time-order',
+          phase: 'canonical_order_persistence',
+          reason: 'firestore_write_failed',
+          orderId: order.id,
+          error: firestoreErr?.message || 'Unknown Firestore error',
+        },
+        uid
+      );
+
+      return NextResponse.json(
+        { error: 'Unable to initialize payment order. Please try again.' },
+        { status: 503 }
+      );
+    }
+
+    try {
+      await logEvent(
+        'payment.order_created',
+        {
           orderId: order.id,
           productId: String(productId),
-          productIdInternal: product.id,
           amount: product.amountInINR,
-          tickets: product.tickets,
-          status: 'created',
-          createdAt: new Date(),
-        });
-
-        await logEvent(
-          'payment.order_created',
-          {
-            orderId: order.id,
-            productId: String(productId),
-            amount: product.amountInINR,
-            currency: order.currency,
-          },
-          uid
-        );
-      } catch (logErr: any) {
-        console.error('Non-blocking order log/write error:', logErr);
-      }
+          currency: order.currency,
+        },
+        uid
+      );
+    } catch (logErr: any) {
+      console.error('Payment order audit logging failed:', logErr);
     }
 
     return NextResponse.json({

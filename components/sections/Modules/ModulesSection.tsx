@@ -22,6 +22,7 @@ interface Module {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
+  availability: 'available' | 'upgrading' | 'preview';
 }
 
 const modules: Module[] = [
@@ -31,13 +32,15 @@ const modules: Module[] = [
     description: 'AI-powered hand reading with line detection and destiny analysis',
     icon: Hand,
     href: '/palmistry',
+    availability: 'available',
   },
   {
     id: 'face-reading',
     title: 'Face Reading',
-    description: 'Ancient face reading techniques combined with modern AI vision',
+    description: 'Personalized Face Reading is currently being upgraded and is not released for production analysis',
     icon: User,
     href: '/face',
+    availability: 'upgrading',
   },
   {
     id: 'aura-scan',
@@ -45,27 +48,31 @@ const modules: Module[] = [
     description: 'Dynamic energy field visualization with chakra balance analysis',
     icon: Sparkles,
     href: '/aura',
+    availability: 'available',
   },
   {
     id: 'kundali-generator',
     title: 'Kundali Generator',
-    description: 'Interactive 3D birth chart with planetary positions and house analysis',
+    description: 'Verified D1 birth chart with planetary positions, houses, and canonical JyotiAI chart context',
     icon: Star,
     href: '/kundali',
+    availability: 'available',
   },
   {
     id: 'career-business',
-    title: 'Career & Business',
-    description: 'Career destiny engine and business compatibility checker',
+    title: 'Career Guidance',
+    description: 'Chart-led career guidance is available; separate business analysis is currently being upgraded',
     icon: Briefcase,
     href: '/career',
+    availability: 'available',
   },
   {
     id: 'pregnancy-insights',
     title: 'Pregnancy Insights',
-    description: 'Pregnancy predictions and timing with detailed explanations',
+    description: 'Family-planning astrology module preview; personalized production readings are not yet released',
     icon: Baby,
     href: '/pregnancy',
+    availability: 'preview',
   },
 ];
 
@@ -124,6 +131,15 @@ export function ModulesSection() {
                     <CardDescription className="text-white/70">
                       {module.description}
                     </CardDescription>
+                    <div className="mt-3">
+                      <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/70">
+                        {module.availability === 'available'
+                          ? 'Available'
+                          : module.availability === 'preview'
+                            ? 'Preview'
+                            : 'Upgrading'}
+                      </span>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <Link href={module.href}>
@@ -131,7 +147,11 @@ export function ModulesSection() {
                         variant="ghost"
                         className="w-full text-gold hover:text-white hover:bg-gold/10 group-hover:bg-gold/20 transition-all duration-300"
                       >
-                        Explore module
+                        {module.availability === 'available'
+                          ? 'Explore module'
+                          : module.availability === 'preview'
+                            ? 'View preview'
+                            : 'View status'}
                         <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </Link>

@@ -2,153 +2,251 @@
 
 import Link from 'next/link'
 import {
+  ArrowRight,
   BookOpen,
   CircleHelp,
   CreditCard,
   FileText,
   Mail,
-  MessageCircleQuestion,
   ShieldCheck,
   UserRound,
 } from 'lucide-react'
 
-import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
-import { Card } from '@/components/ui/card'
+import CompanyPageShell from '@/src/ui/layout/CompanyPageShell'
 
 const categories = [
   {
     title: 'Getting started',
-    description: 'Learn where to begin with your profile, Kundali, Guru, predictions, and reports.',
+    description:
+      'Learn where to begin with your profile, Kundali, Guru, predictions, and reports.',
     href: '/dashboard',
     icon: BookOpen,
   },
   {
     title: 'Account & profile',
-    description: 'Review your personal details and the birth information used by JyotiAI.',
+    description:
+      'Review your personal details and the birth information used by JyotiAI.',
     href: '/profile',
     icon: UserRound,
   },
   {
     title: 'Plans & access',
-    description: 'Review your plan, payments, feature access, and available product credits.',
+    description:
+      'Review your plan, payments, feature access, and available product credits.',
     href: '/payments',
     icon: CreditCard,
   },
   {
     title: 'Reports & readings',
-    description: 'Return to generated reports and continue exploring your JyotiAI insights.',
+    description:
+      'Return to generated reports and continue exploring your JyotiAI insights.',
     href: '/reports',
     icon: FileText,
   },
 ]
 
+const questions = [
+  {
+    question: 'Why does a feature ask me to update my birth details?',
+    answer:
+      'Personalized astrology depends on the birth information associated with your JyotiAI profile. If required details are incomplete or need verification, the product may ask you to update them before creating chart-based guidance.',
+  },
+  {
+    question: 'Why am I being asked for a credit or ticket?',
+    answer:
+      'Some JyotiAI experiences use one-time credits or subscription access. Access is applied only after the server verifies the relevant entitlement, so checkout by itself does not unlock a paid feature.',
+  },
+  {
+    question: 'Where can I find readings I already generated?',
+    answer:
+      'Open Reports to return to saved readings and generated reports associated with your JyotiAI account.',
+  },
+]
+
 export function SupportPageClient() {
   return (
-    <DashboardPageShell
-      title="Support"
-      subtitle="Find the right place for account, product, access, and JyotiAI guidance."
-    >
-      <div id="faq" className="grid gap-4 md:grid-cols-2">
-        {categories.map(({ title, description, href, icon: Icon }) => (
-          <Link key={title} href={href} className="group block">
-            <Card
-              size="lg"
-              className="h-full border-border bg-card transition-colors group-hover:border-saffron/45 group-hover:bg-surface-raised"
-            >
+    <>
+      <div data-support-celestial="true">
+        <CompanyPageShell
+          eyebrow="Support"
+          title={
+            <>
+              Help for your{' '}
+              <span className="text-[#efaa4f]">JyotiAI journey.</span>
+            </>
+          }
+          description="Find the right place for account, product, access, reports, and JyotiAI guidance."
+        >
+          <section
+            aria-label="Support categories"
+            className="grid gap-4 md:grid-cols-2"
+          >
+            {categories.map(({ title, description, href, icon: Icon }) => (
+              <Link
+                key={title}
+                href={href}
+                className="group rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#efaa4f]/70"
+              >
+                <article className="relative h-full overflow-hidden rounded-[24px] border border-[#d9b75f]/18 bg-[linear-gradient(145deg,rgba(8,22,28,0.96),rgba(4,13,18,0.98))] p-6 transition duration-200 group-hover:-translate-y-0.5 group-hover:border-[#efaa4f]/45 md:p-7">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_10%,rgba(239,170,79,0.08),transparent_15rem)]"
+                  />
+
+                  <div className="relative flex items-start gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#efaa4f]/25 bg-[#efaa4f]/[0.07] text-[#efaa4f]">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </div>
+
+                    <div>
+                      <h2 className="font-heading text-2xl font-medium text-[#fff6df]">
+                        {title}
+                      </h2>
+
+                      <p className="mt-2 text-sm leading-6 text-[#aab5b2]">
+                        {description}
+                      </p>
+
+                      <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#efaa4f] transition group-hover:text-[#ffd07a]">
+                        Open section
+                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              </Link>
+            ))}
+          </section>
+
+          <section
+            id="faq"
+            aria-labelledby="support-common-questions"
+            className="overflow-hidden rounded-[28px] border border-[#d9b75f]/18 bg-[linear-gradient(150deg,rgba(7,19,25,0.98),rgba(3,11,16,0.99))]"
+          >
+            <div className="flex items-start gap-4 border-b border-[#d9b75f]/14 px-6 py-7 md:px-8">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#efaa4f]/25 bg-[#efaa4f]/[0.07] text-[#efaa4f]">
+                <CircleHelp className="h-5 w-5" aria-hidden="true" />
+              </div>
+
+              <div>
+                <h2
+                  id="support-common-questions"
+                  className="font-heading text-3xl font-medium text-[#fff6df]"
+                >
+                  Common questions
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[#aab5b2]">
+                  Quick guidance for common account and product situations.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              {questions.map(({ question, answer }) => (
+                <details
+                  key={question}
+                  className="group border-b border-[#d9b75f]/12 last:border-b-0"
+                >
+                  <summary className="flex min-h-[76px] cursor-pointer list-none items-center justify-between gap-6 px-6 py-5 text-left font-medium text-[#f7f1e7] outline-none transition hover:bg-white/[0.025] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#efaa4f]/55 md:px-8">
+                    <span>{question}</span>
+                    <span
+                      aria-hidden="true"
+                      className="text-xl text-[#efaa4f] transition-transform group-open:rotate-45"
+                    >
+                      +
+                    </span>
+                  </summary>
+
+                  <div className="px-6 pb-6 md:px-8">
+                    <p className="max-w-4xl text-sm leading-7 text-[#aab5b2] md:text-base">
+                      {answer}
+                    </p>
+                  </div>
+                </details>
+              ))}
+            </div>
+          </section>
+
+          <section className="relative overflow-hidden rounded-[26px] border border-[#efaa4f]/28 bg-[radial-gradient(circle_at_88%_12%,rgba(239,170,79,0.10),transparent_20rem),linear-gradient(145deg,#07151b,#061017)] p-6 md:p-7">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-saffron/25 bg-saffron/10 text-saffron">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#efaa4f]/25 bg-[#efaa4f]/[0.07] text-[#efaa4f]">
+                  <Mail className="h-5 w-5" aria-hidden="true" />
                 </div>
 
                 <div>
-                  <h2 className="font-heading text-xl font-semibold text-primary">{title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-                  <p className="mt-4 text-sm font-medium text-saffron">Open section →</p>
+                  <h2 className="font-heading text-2xl font-medium text-[#fff6df]">
+                    Still need assistance?
+                  </h2>
+
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-[#aab5b2]">
+                    Contact the JyotiAI team for account-specific or unresolved
+                    product issues.
+                  </p>
                 </div>
               </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
 
-      <Card
-        size="lg"
-        className="border-border bg-card shadow-[0_16px_44px_rgba(0,0,0,0.18)]"
-      >
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-saffron/25 bg-saffron/10 text-saffron">
-            <CircleHelp className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div>
-            <h2 className="font-heading text-2xl font-semibold text-primary">Common questions</h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Quick guidance for the most common account and product situations.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface-raised">
-          <details className="group p-4 md:p-5">
-            <summary className="cursor-pointer list-none font-medium text-primary">
-              Why does a feature ask me to update my birth details?
-            </summary>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Personalized astrology features depend on the birth information associated with your
-              account. Review Profile first when JyotiAI reports missing or outdated Kundali data.
-            </p>
-          </details>
-
-          <details className="group p-4 md:p-5">
-            <summary className="cursor-pointer list-none font-medium text-primary">
-              Why am I being asked for a credit or ticket?
-            </summary>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Some generated features use plan entitlements or one-time access credits. Open
-              Payments/Plan to review the access currently available to your account.
-            </p>
-          </details>
-
-          <details className="group p-4 md:p-5">
-            <summary className="cursor-pointer list-none font-medium text-primary">
-              Where can I find readings I already generated?
-            </summary>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Open Reports for saved report experiences. Other product areas may also keep their
-              latest result directly inside the relevant feature.
-            </p>
-          </details>
-        </div>
-      </Card>
-
-      <Card size="lg" className="border-saffron/25 bg-saffron/10">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start gap-3">
-            <MessageCircleQuestion className="mt-1 h-5 w-5 shrink-0 text-saffron" aria-hidden="true" />
-            <div>
-              <h2 className="font-heading text-xl font-semibold text-primary">
-                Still need assistance?
-              </h2>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Contact the JyotiAI support team for account-specific or unresolved product issues.
-              </p>
+              <Link
+                href="/company/contact"
+                className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-[#ef982f] px-6 font-semibold text-[#081017] transition hover:bg-[#ffad4f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffd07a]"
+              >
+                Contact support
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
             </div>
-          </div>
+          </section>
 
-          <Link
-            href="/contact"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-saffron/35 bg-surface-raised px-5 text-sm font-medium text-primary transition-colors hover:border-saffron hover:bg-card"
-          >
-            <Mail className="h-4 w-4" aria-hidden="true" />
-            Contact Support
-          </Link>
-        </div>
-      </Card>
+          <aside className="flex items-start gap-3 rounded-2xl border border-[#d9b75f]/15 bg-[#07131f]/75 px-5 py-4 text-sm leading-6 text-[#9eaaa6]">
+            <ShieldCheck
+              className="mt-0.5 h-5 w-5 shrink-0 text-[#efaa4f]"
+              aria-hidden="true"
+            />
 
-      <div className="flex items-start gap-3 rounded-xl border border-border bg-surface-raised px-4 py-3 text-xs leading-5 text-muted-foreground">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-saffron" aria-hidden="true" />
-        Never share passwords, authentication codes, private keys, or payment credentials in a
-        support message.
+            <p>
+              Never share passwords, authentication codes, private keys, API
+              tokens, or payment-card credentials in a support message.
+            </p>
+          </aside>
+        </CompanyPageShell>
       </div>
-    </DashboardPageShell>
+
+      <style jsx global>{`
+        /*
+         * P4.8A3.3 — Support route visual ownership.
+         * Keep the shared public header dark and legible while Support is
+         * mounted, without modifying the global Header implementation.
+         */
+        body:has([data-support-celestial='true']) header {
+          background: rgba(3, 11, 16, 0.96) !important;
+          border-bottom-color: rgba(217, 183, 95, 0.22) !important;
+          color: #fff7e8 !important;
+          backdrop-filter: blur(18px) !important;
+          -webkit-backdrop-filter: blur(18px) !important;
+        }
+
+        body:has([data-support-celestial='true'])
+          header
+          a:not([class*='bg-orange']):not([class*='bg-[#ef']):not(
+            [class*='bg-[#ff']
+          ),
+        body:has([data-support-celestial='true'])
+          header
+          button:not([class*='bg-orange']):not([class*='bg-[#ef']):not(
+            [class*='bg-[#ff']
+          ) {
+          color: #d8dfdc !important;
+        }
+
+        body:has([data-support-celestial='true']) header a:hover,
+        body:has([data-support-celestial='true']) header button:hover {
+          color: #fff7e8 !important;
+        }
+
+        body:has([data-support-celestial='true']) header::before,
+        body:has([data-support-celestial='true']) header::after {
+          opacity: 0 !important;
+        }
+      `}</style>
+    </>
   )
 }

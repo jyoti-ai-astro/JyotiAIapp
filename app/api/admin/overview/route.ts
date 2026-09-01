@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   return withAdminAuth(async (req, admin) => {
     if (!adminDb) {
       return NextResponse.json(
-        { error: 'FIREBASE_ADMIN credentials missing. Firestore not initialized.' },
+        { error: 'Administrative data is temporarily unavailable.' },
         { status: 500 }
       )
     }

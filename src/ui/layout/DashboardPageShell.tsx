@@ -11,6 +11,7 @@ interface DashboardPageShellProps {
   subtitle?: string;
   children: React.ReactNode;
   rightActions?: React.ReactNode;
+  withAuthenticatedShell?: boolean;
 }
 
 export default function DashboardPageShell({
@@ -18,6 +19,7 @@ export default function DashboardPageShell({
   subtitle,
   children,
   rightActions,
+  withAuthenticatedShell = true,
 }: DashboardPageShellProps) {
   return (
     <div
@@ -35,7 +37,17 @@ export default function DashboardPageShell({
         data-dashboard-content-canvas="true"
         className="page-container relative"
       >
-        <AuthenticatedAppShell>
+        {withAuthenticatedShell ? (
+          <AuthenticatedAppShell>
+            <DashboardShell
+              title={title}
+              subtitle={subtitle}
+              rightActions={rightActions}
+            >
+              {children}
+            </DashboardShell>
+          </AuthenticatedAppShell>
+        ) : (
           <DashboardShell
             title={title}
             subtitle={subtitle}
@@ -43,7 +55,7 @@ export default function DashboardPageShell({
           >
             {children}
           </DashboardShell>
-        </AuthenticatedAppShell>
+        )}
       </div>
     </div>
   );

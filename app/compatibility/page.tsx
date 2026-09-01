@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import DashboardPageShell from "@/src/ui/layout/DashboardPageShell";
+import { LoadingState } from '@/components/ui/feedback-state'
 import { Heart, Sparkles, Calendar, Users } from "lucide-react";
 import Link from "next/link";
 import { OneTimeOfferBanner } from "@/components/paywall/OneTimeOfferBanner";
@@ -32,6 +33,7 @@ import { getFeatureAccess } from "@/lib/payments/feature-access";
 import { checkFeatureAccess } from "@/lib/access/checkFeatureAccess";
 import type { AstroContext } from "@/lib/engines/astro-types";
 
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 export default function CompatibilityPage() {
   const router = useRouter();
   const { user } = useUserStore();
@@ -53,6 +55,7 @@ export default function CompatibilityPage() {
     rashi: "",
   });
   const [astro, setAstro] = useState<AstroContext | null>(null);
+  const compatibilityAvailable = false;
 
   useEffect(() => {
     if (!user) {
@@ -63,19 +66,18 @@ export default function CompatibilityPage() {
   }, [user, router, hasAccess, ticketLoading]);
 
   const fetchAstroContext = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) return
+
     try {
-      const response = await fetch("/api/astro/context", {
-        credentials: "include",
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAstro(data.astro);
-      }
+      const data = await authenticatedJsonRead<{ astro: AstroContext }>(
+        '/api/astro/context',
+        { ttlMs: 60_000 }
+      )
+      setAstro(data.astro)
     } catch (err) {
-      console.error("Error fetching astro context:", err);
+      console.error('Error fetching astro context:', err)
     }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +117,19 @@ export default function CompatibilityPage() {
   };
 
   if (!user) {
-    return null;
+    return (
+      <DashboardPageShell
+        title="Compatibility Analysis"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Compatibility Analysis"
+            description="Preparing your compatibility workspace."
+          />
+        </div>
+      </DashboardPageShell>
+    );
   }
 
   return (
@@ -125,13 +139,12 @@ export default function CompatibilityPage() {
     >
       {/* Context Panel */}
       <div className="mb-8">
-        <OneTimeOfferBanner
-          title="Unlock Full Insights"
-          description="This module uses your birth chart & predictions powered by Guru Brain."
-          priceLabel="₹199"
-          ctaLabel="Unlock Now"
-          ctaHref="/pay/199"
-        />
+        <div className="rounded-2xl border border-[#dba84c]/20 bg-[#0b1519]/90 p-5">
+          <p className="text-sm font-semibold text-[#e5a44a]">Compatibility analysis is temporarily unavailable</p>
+          <p className="mt-2 text-sm leading-6 text-[#a9a49b]">
+            Verified partner birth-chart generation is being upgraded. No compatibility credit will be used while this feature is unavailable.
+          </p>
+        </div>
       </div>
 
       {/* Astro Summary Block */}
@@ -178,7 +191,7 @@ export default function CompatibilityPage() {
       </motion.div>
 
       {/* Partner Details Form */}
-      {!analysis && (
+      {compatibilityAvailable && !analysis && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

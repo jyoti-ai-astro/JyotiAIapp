@@ -20,11 +20,13 @@ import { useUserStore } from "@/store/user-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DashboardPageShell from "@/src/ui/layout/DashboardPageShell";
+import { LoadingState } from '@/components/ui/feedback-state'
 import { OneTimeOfferBanner } from "@/components/paywall/OneTimeOfferBanner";
 import { useTicketAccess } from "@/lib/access/useTicketAccess";
 import { checkFeatureAccess } from "@/lib/access/checkFeatureAccess";
 import type { AstroContext } from "@/lib/engines/astro-types";
 
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 const panel =
   "rounded-2xl border border-[#dba84c]/15 bg-[linear-gradient(145deg,rgba(15,25,28,0.97),rgba(8,17,21,0.97))] shadow-[0_18px_55px_rgba(0,0,0,0.16)]";
 
@@ -51,21 +53,18 @@ export default function CareerPage() {
   }, [user, router, hasAccess, ticketLoading]);
 
   const fetchAstroContext = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) return
 
     try {
-      const response = await fetch("/api/astro/context", {
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAstro(data.astro);
-      }
+      const data = await authenticatedJsonRead<{ astro: AstroContext }>(
+        '/api/astro/context',
+        { ttlMs: 60_000 }
+      )
+      setAstro(data.astro)
     } catch (err) {
-      console.error("Error fetching astro context:", err);
+      console.error('Error fetching astro context:', err)
     }
-  };
+  }
 
   const loadCareerData = async () => {
     try {
@@ -126,7 +125,19 @@ export default function CareerPage() {
   };
 
   if (!user) {
-    return null;
+    return (
+      <DashboardPageShell
+        title="Career Destiny"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Career Destiny"
+            description="Preparing your professional blueprint."
+          />
+        </div>
+      </DashboardPageShell>
+    );
   }
 
   if (ticketLoading) {

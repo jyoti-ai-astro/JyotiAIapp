@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { useGuruChat, type GuruErrorCode } from '@/lib/hooks/useGuruChat'
 import { cn } from '@/lib/utils'
 import { useUserStore } from '@/store/user-store'
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 
 type TicketSummary = {
   hasSubscription: boolean
@@ -145,7 +146,7 @@ export function CosmicGuruChat({
     stopGeneration,
   } = useGuruChat()
 
-  const loadTickets = useCallback(async () => {
+  const loadTickets = useCallback(async (force = false) => {
     if (!user) {
       setTickets(null)
       setTicketsLoading(false)
@@ -154,9 +155,10 @@ export function CosmicGuruChat({
 
     try {
       setTicketsLoading(true)
-      const response = await fetch('/api/user/tickets', { credentials: 'include' })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error || data.message || 'Unable to load Guru access')
+      const data = await authenticatedJsonRead<TicketSummary>('/api/user/tickets', {
+        ttlMs: 60_000,
+        force,
+      })
       setTickets(data)
     } catch {
       setTickets(null)
@@ -213,7 +215,7 @@ export function CosmicGuruChat({
       setFailedPrompt(trimmed)
       return
     }
-    await loadTickets()
+    await loadTickets(true)
   }
 
   const handleSubmit = async (event: React.FormEvent) => {

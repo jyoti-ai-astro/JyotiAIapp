@@ -20,6 +20,7 @@ import { useUserStore } from '@/store/user-store'
 import { usePathname, useRouter } from 'next/navigation'
 import { useGuruChat } from '@/lib/hooks/useGuruChat'
 import { cn } from '@/lib/utils'
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 
 export const GuruChatWidget = () => {
   const pathname = usePathname()
@@ -33,9 +34,6 @@ export const GuruChatWidget = () => {
 
   const { user, canChat, updateUser } = useUserStore()
   const router = useRouter()
-  const { messages, sendMessage, isLoading, isTyping } = useGuruChat(
-    user && viewState === 'chat' ? `session-${user.uid}` : undefined
-  )
 
   const hiddenRoutes = [
     '/login',
@@ -53,6 +51,14 @@ export const GuruChatWidget = () => {
 
   const shouldHideWidget = hiddenRoutes.some((route) =>
     route.endsWith('/') ? pathname.startsWith(route) : pathname === route
+  )
+
+  const widgetSessionId =
+    user && viewState === 'chat' ? `session-${user.uid}` : undefined
+
+  const { messages, sendMessage, isLoading, isTyping } = useGuruChat(
+    widgetSessionId,
+    !shouldHideWidget && isOpen && Boolean(widgetSessionId)
   )
 
   // Determine State
@@ -91,9 +97,9 @@ export const GuruChatWidget = () => {
 
   const refreshCanonicalTickets = async () => {
     try {
-      const response = await fetch('/api/user/tickets', { credentials: 'include' })
-      if (!response.ok) return
-      const data = await response.json().catch(() => null)
+      const data = await authenticatedJsonRead<any>('/api/user/tickets', {
+        force: true,
+      })
       if (!data?.tickets) return
 
       updateUser({

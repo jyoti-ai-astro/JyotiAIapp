@@ -138,12 +138,25 @@ export async function runTimelineEngine(params: {
       throw new Error('Empty response from LLM')
     }
   } catch (error: any) {
-    console.error('Error calling LLM for timeline:', error)
+    console.error(
+      'Error calling LLM for timeline; using canonical degraded fallback:',
+      error
+    )
+
+    // Canonical AstroContext has already been validated above. An AI-provider
+    // outage must not erase the deterministic astrology experience.
     return {
-      status: 'error',
-      overview: 'Unable to generate timeline at this time. Please try again later.',
-      events: [],
-      disclaimers: ['An error occurred while generating timeline. Please try again.'],
+      status: 'degraded',
+      overview:
+        'Your timeline is available in limited mode using your verified astrological chart while live AI interpretation is temporarily unavailable.',
+      events: generateFallbackEvents(
+        monthLabels,
+        astroContext
+      ),
+      disclaimers: [
+        'This limited timeline uses your verified astrological chart without live AI interpretation.',
+        'Astrological guidance is interpretive and should not replace professional medical, legal, or financial advice.',
+      ],
       usedRag,
       usedAstroContext,
     }
@@ -163,11 +176,12 @@ export async function runTimelineEngine(params: {
     // Fallback to structured response
     return {
       status: 'degraded',
-      overview: 'Based on your astrological chart, the next 12 months present a journey of growth and transformation.',
+      overview:
+        'Your timeline is available in limited mode using your verified astrological chart. The live interpretation could not be validated, so JyotiAI is showing deterministic chart-based timing signals instead.',
       events: generateFallbackEvents(monthLabels, astroContext),
       disclaimers: [
-        'These timeline predictions are based on astrological principles and should be treated as guidance, not absolute certainty.',
-        'Individual results may vary. Consult professionals for medical, legal, or financial advice.',
+        'This limited timeline is generated from your verified astrological chart without a validated live AI interpretation.',
+        'Astrological guidance is interpretive and should not replace professional medical, legal, or financial advice.',
       ],
       usedRag,
       usedAstroContext,
@@ -333,7 +347,9 @@ function parseTimelineResponse(
     try {
       const parsed = JSON.parse(jsonMatch[0])
       return {
-        overview: parsed.overview || 'Based on your astrological chart, the next 12 months present a journey of growth.',
+        overview:
+          parsed.overview ||
+          'Live timeline interpretation was unavailable or could not be validated.',
         events: normalizeTimelineEvents(parsed.events || [], monthLabels, astroContext),
         disclaimers: parsed.disclaimers || getDefaultTimelineDisclaimers(),
       }
@@ -530,7 +546,7 @@ function mapHouseToCategory(house: number): 'career' | 'love' | 'money' | 'healt
  */
 function extractOverviewFromText(text: string): string {
   const paragraphs = text.split('\n\n').filter((p) => p.trim().length > 50)
-  return paragraphs[0] || 'Based on your astrological chart, the next 12 months present a journey of growth and transformation.'
+  return paragraphs[0] || 'Live timeline interpretation was unavailable or could not be validated.'
 }
 
 /**

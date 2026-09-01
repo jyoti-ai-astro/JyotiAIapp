@@ -7,7 +7,7 @@
 'use client';
 
 import { useState } from 'react';
-import { businessEngine, type BusinessAnalysis } from '@/lib/engines/business-engine';
+import type { BusinessAnalysis } from '@/lib/engines/business-engine';
 import { useUserStore } from '@/store/user-store';
 
 export function useBusiness() {
@@ -20,8 +20,11 @@ export function useBusiness() {
     try {
       setLoading(true);
       setError(null);
-      const result = await businessEngine.analyzeBusinessIdea(idea, user);
-      setAnalysis(result);
+      void idea;
+      void user;
+      throw new Error(
+        'Business analysis is temporarily unavailable while the calculation engine is being upgraded. No credit has been used.'
+      );
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Analysis failed');
       setError(error);

@@ -8,6 +8,7 @@
 
 import { retrieveRelevantDocuments } from '@/lib/rag/rag-service'
 import { envVars } from '@/lib/env/env.mjs'
+import { callLLM } from '@/lib/ai/llm-client'
 
 export interface GuruContext {
   kundali?: {
@@ -152,90 +153,16 @@ function buildUserMessage(question: string, context: string): string {
  * Generate AI response using OpenAI or Gemini
  */
 async function generateAIResponse(userMessage: string): Promise<string> {
-  const provider = envVars.ai.provider
-  const openaiApiKey = envVars.ai.openaiApiKey
-  const geminiApiKey = envVars.ai.geminiApiKey
-  const openaiModel = envVars.ai.guruModelName
-  
-  if (provider === 'gemini' && geminiApiKey) {
-    return generateGeminiResponse(userMessage)
-  } else if (openaiApiKey) {
-    return generateOpenAIResponse(userMessage, openaiModel)
-  } else {
-    throw new Error('No AI provider configured')
-  }
-}
-
-/**
- * Generate response using OpenAI
- */
-async function generateOpenAIResponse(userMessage: string, model: string): Promise<string> {
-  const openaiApiKey = envVars.ai.openaiApiKey
-  if (!openaiApiKey) {
-    throw new Error('OpenAI API key not configured')
-  }
-  
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${openaiApiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: GURU_SYSTEM_PROMPT },
-        { role: 'user', content: userMessage },
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
-    }),
-  })
-  
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`OpenAI error: ${error.error?.message || 'Unknown error'}`)
-  }
-  
-  const data = await response.json()
-  return data.choices[0].message.content
-}
-
-/**
- * Generate response using Gemini
- */
-async function generateGeminiResponse(userMessage: string): Promise<string> {
-  const geminiApiKey = envVars.ai.geminiApiKey
-  if (!geminiApiKey) {
-    throw new Error('Gemini API key not configured')
-  }
-  
-  // Note: Adjust endpoint based on actual Gemini API
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`,
+  return callLLM(
+    [
+      { role: 'system', content: GURU_SYSTEM_PROMPT },
+      { role: 'user', content: userMessage },
+    ],
+    undefined,
     {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: GURU_SYSTEM_PROMPT },
-              { text: userMessage },
-            ],
-          },
-        ],
-      }),
+      temperature: 0.7,
+      maxTokens: 2000,
+      modelRole: 'guru',
     }
   )
-  
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`Gemini error: ${error.error?.message || 'Unknown error'}`)
-  }
-  
-  const data = await response.json()
-  return data.candidates[0].content.parts[0].text
 }

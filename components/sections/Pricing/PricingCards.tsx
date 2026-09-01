@@ -54,7 +54,7 @@ const pricingTiers: PricingTier[] = [
     features: [
       'Everything in Starter',
       'Full Kundali Analysis',
-      'Palmistry & Face Reading',
+      'Palmistry Analysis',
       'Aura Scan',
       '12-Month Predictions',
     ],
@@ -68,10 +68,9 @@ const pricingTiers: PricingTier[] = [
     description: 'Complete spiritual operating system',
     features: [
       'Everything in Advanced',
-      'Career & Business Engine',
-      'Pregnancy Insights',
-      'Compatibility Analysis',
+      'Career Insights',
       'Advanced Reports (PDF)',
+      'Expanded AI Guru access',
       'Priority Support',
     ],
     cta: 'Go Supreme',
@@ -106,8 +105,8 @@ const oneTimePlans: PricingTier[] = [
     description: 'Deeper insights without a monthly plan.',
     features: [
       'Kundali Report (Basic)',
-      'Relationship Compatibility (Lite)',
-      'Career Reading (Lite)',
+      'One Kundali credit',
+      'Career guidance via AI Guru',
       '3 AI Guru Questions',
     ],
     cta: 'Buy for ₹199',

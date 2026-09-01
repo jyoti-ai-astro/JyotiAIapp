@@ -6,6 +6,16 @@ import { Header } from '@/src/ui/layout/Header'
 import { Footer } from '@/src/ui/layout/Footer'
 import { GuruChatWidget } from '@/components/guru/GuruChatWidget'
 
+const SELF_CONTAINED_PREFIXES = [
+  '/login',
+  '/signup',
+  '/magic-link',
+  '/auth/callback',
+  '/onboarding',
+  '/profile-setup',
+  '/reset-password',
+]
+
 export function RootSiteShell({
   children,
 }: {
@@ -13,14 +23,17 @@ export function RootSiteShell({
 }) {
   const pathname = usePathname()
 
-  const isSelfContainedCelestialExperience =
+  const isSelfContainedExperience =
     pathname === '/' ||
     pathname === '/dev/visual-v2' ||
     pathname === '/dev/visual-v3' ||
     pathname.startsWith('/dev/visual-v2/') ||
-    pathname.startsWith('/dev/visual-v3/')
+    pathname.startsWith('/dev/visual-v3/') ||
+    SELF_CONTAINED_PREFIXES.some(
+      (route) => pathname === route || pathname.startsWith(`${route}/`)
+    )
 
-  if (isSelfContainedCelestialExperience) {
+  if (isSelfContainedExperience) {
     return (
       <main className="relative z-10 min-h-screen">
         {children}
@@ -37,7 +50,6 @@ export function RootSiteShell({
       </main>
 
       <Footer />
-
       <GuruChatWidget />
     </>
   )

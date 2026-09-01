@@ -13,11 +13,18 @@ import { Label } from '@/components/ui/label'
 import { LocationAutocomplete } from '@/components/auth/LocationAutocomplete'
 import Link from 'next/link'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { logoutClientSession } from '@/lib/auth/client-session'
+import {
+  authenticatedJsonRead,
+  invalidateAuthenticatedRead,
+} from '@/lib/client/authenticated-read'
 
 interface ProfileData {
   name: string
   email: string
   photo: string | null
+  gender?: string | null
+  phone?: string | null
   dob: string | null
   tob: string | null
   pob: string | null
@@ -46,6 +53,8 @@ interface ProfileData {
 
 interface ProfileForm {
   name: string
+  gender: string
+  phone: string
   dob: string
   tob: string
   pob: string
@@ -56,9 +65,19 @@ interface ProfileForm {
 
 const DEFAULT_TIMEZONE = 'Asia/Kolkata'
 
+function displayTimezone(value: string) {
+  return value === 'Asia/Calcutta' ? 'Asia/Kolkata' : value
+}
+
+function displayCoordinate(value: number | null) {
+  return value === null || !Number.isFinite(value) ? '' : value.toFixed(4)
+}
+
 function normalizeProfileForm(profile: ProfileData): ProfileForm {
   return {
     name: profile.name || '',
+    gender: profile.gender || '',
+    phone: profile.phone || '',
     dob: profile.dob || '',
     tob: profile.tob || '',
     pob: profile.pob || '',
@@ -70,7 +89,7 @@ function normalizeProfileForm(profile: ProfileData): ProfileForm {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, updateUser, clearUser } = useUserStore()
+  const { user, updateUser } = useUserStore()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -105,16 +124,9 @@ export default function ProfilePage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('/api/user/get', {
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}))
-        throw new Error(data.error || 'Failed to load profile')
-      }
-
-      const result = await response.json()
+      const result = await authenticatedJsonRead<{ user: ProfileData }>(
+        '/api/user/get'
+      )
       setProfile(result.user)
       setForm(normalizeProfileForm(result.user))
     } catch (err: any) {
@@ -153,6 +165,8 @@ export default function ProfilePage() {
 
       const payload: Record<string, any> = {
         name: form.name.trim(),
+        gender: form.gender || null,
+        phone: form.phone.trim() || null,
         dob: form.dob || null,
         tob: form.tob || null,
         pob: form.pob.trim() || null,
@@ -178,6 +192,8 @@ export default function ProfilePage() {
 
       updateUser({
         name: payload.name,
+        gender: payload.gender,
+        phone: payload.phone,
         dob: payload.dob,
         tob: payload.tob,
         pob: payload.pob,
@@ -187,7 +203,14 @@ export default function ProfilePage() {
         derivedAstrologyStatus: data.derivedAstrologyStatus,
       } as any)
 
-      await fetchProfile()
+      invalidateAuthenticatedRead('/api/user/get')
+      const freshResult = await authenticatedJsonRead<{ user: ProfileData }>(
+        '/api/user/get',
+        { force: true }
+      )
+      setProfile(freshResult.user)
+      setForm(normalizeProfileForm(freshResult.user))
+
       setMessage(
         data.birthDataChanged
           ? 'Profile saved. Your astrology data is marked stale; regenerate Kundali before using personalized guidance.'
@@ -204,16 +227,12 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       setLoggingOut(true)
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      })
-      clearUser()
-      router.push('/login')
+      await logoutClientSession()
+      router.replace('/login')
+      router.refresh()
     } catch (err: any) {
       console.error('Logout error:', err)
       setError(err.message || 'Failed to log out')
-    } finally {
       setLoggingOut(false)
     }
   }
@@ -299,16 +318,43 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
                 value={form.name}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
+                placeholder="Your full name"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" value={profile.email || ''} disabled />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <select
+                id="gender"
+                value={form.gender}
+                onChange={(event) => setForm({ ...form, gender: event.target.value })}
+                className="flex min-h-11 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-primary outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Prefer not to specify</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="non-binary">Non-binary</option>
+                <option value="prefer-not-to-say">Prefer not to say</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                autoComplete="tel"
+                value={form.phone}
+                onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                placeholder="Optional"
+              />
             </div>
           </div>
         </CardContent>
@@ -355,23 +401,26 @@ export default function ProfilePage() {
               })
             }
           />
+          <p className="text-xs leading-5 text-muted-foreground">
+            You can change your birth location at any time. Choose a verified Google suggestion when changing it; JyotiAI will refresh the coordinates and timezone and mark personalized astrology stale until you regenerate Kundali.
+          </p>
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="timezone">Timezone</Label>
               <Input
                 id="timezone"
-                value={form.timezone}
+                value={displayTimezone(form.timezone)}
                 disabled
               />
             </div>
             <div className="space-y-2">
               <Label>Latitude</Label>
-              <Input value={form.lat ?? ''} disabled />
+              <Input value={displayCoordinate(form.lat)} disabled />
             </div>
             <div className="space-y-2">
               <Label>Longitude</Label>
-              <Input value={form.lng ?? ''} disabled />
+              <Input value={displayCoordinate(form.lng)} disabled />
             </div>
           </div>
 

@@ -51,30 +51,24 @@ export function isValidTimezone(timezone: unknown): timezone is string {
  */
 export async function geocodePlace(placeName: string): Promise<GeocodeResult> {
   const trimmedPlace = placeName.trim()
+
   if (!trimmedPlace) {
-    throw new GeocodingError('LOCATION_NOT_VERIFIED', 'Place of birth is required.')
-  }
-
-  // First try Google when configured. It provides both coordinates and timezone.
-  try {
-    const geoResult = await geocodeWithGoogle(trimmedPlace)
-    if (geoResult) {
-      return geoResult
-    }
-  } catch (error) {
-    console.warn('Google geocoding failed, trying GeoNames:', error)
-  }
-
-  // Secondary provider: GeoNames. Results are accepted only with a real timezone.
-  try {
-    return await geocodeWithGeoNames(trimmedPlace)
-  } catch (error) {
-    console.error('GeoNames geocoding failed:', error)
     throw new GeocodingError(
       'LOCATION_NOT_VERIFIED',
-      `Could not verify place of birth: ${trimmedPlace}`
+      'Place of birth is required.'
     )
   }
+
+  const geoResult = await geocodeWithGoogle(trimmedPlace)
+
+  if (geoResult) {
+    return geoResult
+  }
+
+  throw new GeocodingError(
+    'LOCATION_NOT_VERIFIED',
+    `Could not verify place of birth: ${trimmedPlace}`
+  )
 }
 
 /**
@@ -185,52 +179,6 @@ async function getTimezoneFromTimezoneDB(
   }
 
   return null
-}
-
-/**
- * Geocode using GeoNames (free, no API key required)
- */
-async function geocodeWithGeoNames(placeName: string): Promise<GeocodeResult> {
-  try {
-    // GeoNames search API
-    const response = await fetch(
-      `http://api.geonames.org/searchJSON?q=${encodeURIComponent(placeName)}&maxRows=1&username=demo`
-    )
-    const data = await response.json()
-
-    if (data.geonames && data.geonames.length > 0) {
-      const place = data.geonames[0]
-      const lat = parseFloat(place.lat)
-      const lng = parseFloat(place.lng)
-      if (!isValidCoordinate(lat, lng)) {
-        throw new GeocodingError('INVALID_COORDINATES', 'GeoNames returned invalid coordinates.')
-      }
-
-      // Get timezone from GeoNames timezone API
-      const timezoneResponse = await fetch(
-        `http://api.geonames.org/timezoneJSON?lat=${lat}&lng=${lng}&username=demo`
-      )
-      const timezoneData = await timezoneResponse.json()
-      const timezone = timezoneData.timezoneId
-
-      if (!isValidTimezone(timezone)) {
-        throw new GeocodingError('TIMEZONE_NOT_VERIFIED', 'GeoNames did not return a valid timezone.')
-      }
-
-      return {
-        lat,
-        lng,
-        timezone,
-        formattedAddress: `${place.name}, ${place.countryName}`,
-        provider: 'geonames',
-      }
-    }
-
-    throw new GeocodingError('LOCATION_NOT_VERIFIED', 'No geocoding results found.')
-  } catch (error) {
-    console.error('GeoNames error:', error)
-    throw error
-  }
 }
 
 /**

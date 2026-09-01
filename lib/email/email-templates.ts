@@ -17,6 +17,11 @@ export interface MagicLinkEmailData {
   device?: string
 }
 
+export interface PasswordResetEmailData {
+  email: string
+  resetUrl: string
+}
+
 export interface PaymentReceiptEmailData {
   email: string
   amount: number
@@ -221,6 +226,35 @@ export function getMagicLinkEmailTemplate(data: MagicLinkEmailData): string {
     `,
     footerNote:
       'This is an automated security email sent because a sign-in link was requested.',
+  })
+}
+
+export function getPasswordResetEmailTemplate(
+  data: PasswordResetEmailData
+): string {
+  const safeEmail = escapeHtml(data.email)
+
+  return emailShell({
+    eyebrow: 'Password recovery',
+    title: 'Reset your JyotiAI password',
+    intro:
+      `We received a request to reset the password for the JyotiAI account associated with <strong style="color:${BRAND.ink};">${safeEmail}</strong>.`,
+    body: `
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:25px;color:${BRAND.muted};">
+        Use the secure button below to choose a new password for your account.
+      </p>
+      ${primaryButton(data.resetUrl, 'Reset my password')}
+      ${notice(
+        'Security',
+        'If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged. Do not forward or share this link with anyone.'
+      )}
+      <p style="margin:25px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:20px;color:${BRAND.muted};">
+        Button not working? Copy this secure address into your browser:<br>
+        <span style="word-break:break-all;color:${BRAND.goldDark};">${escapeHtml(data.resetUrl)}</span>
+      </p>
+    `,
+    footerNote:
+      'This is an automated security email sent because password recovery was requested.',
   })
 }
 

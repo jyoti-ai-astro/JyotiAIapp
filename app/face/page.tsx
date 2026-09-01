@@ -16,6 +16,7 @@ import { useUserStore } from '@/store/user-store';
 import { useFaceReading } from '@/lib/hooks/useFaceReading';
 import { motion } from 'framer-motion';
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell';
+import { LoadingState } from '@/components/ui/feedback-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,7 @@ import { checkFeatureAccess } from '@/lib/access/checkFeatureAccess';
 import type { AstroContext } from '@/lib/engines/astro-types';
 import Link from 'next/link';
 
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 export default function FacePage() {
   const router = useRouter();
   const { user } = useUserStore();
@@ -38,6 +40,7 @@ export default function FacePage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [astro, setAstro] = useState<AstroContext | null>(null);
+  const faceReadingAvailable = false;
 
   useEffect(() => {
     if (!user) {
@@ -48,19 +51,18 @@ export default function FacePage() {
   }, [user, router, hasAccess, ticketLoading]);
 
   const fetchAstroContext = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) return
+
     try {
-      const response = await fetch('/api/astro/context', {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAstro(data.astro);
-      }
+      const data = await authenticatedJsonRead<{ astro: AstroContext }>(
+        '/api/astro/context',
+        { ttlMs: 60_000 }
+      )
+      setAstro(data.astro)
     } catch (err) {
-      console.error('Error fetching astro context:', err);
+      console.error('Error fetching astro context:', err)
     }
-  };
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -106,7 +108,19 @@ export default function FacePage() {
   };
 
   if (!user) {
-    return null;
+    return (
+      <DashboardPageShell
+        title="Face Reading"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Face Reading"
+            description="Preparing your face reading workspace."
+          />
+        </div>
+      </DashboardPageShell>
+    );
   }
 
   return (
@@ -117,13 +131,12 @@ export default function FacePage() {
       <div data-visual-reading-product="true" className="space-y-8">
           {/* Context Panel */}
           <div className="mb-8">
-            <OneTimeOfferBanner
-              title="Unlock Full Insights"
-              description="This module uses your birth chart & predictions powered by Guru Brain."
-              priceLabel="₹199"
-              ctaLabel="Unlock Now"
-              ctaHref="/pay/199"
-            />
+            <div className="rounded-2xl border border-gold/20 bg-[#0b1519]/90 p-5">
+              <p className="text-sm font-semibold text-gold">Face Reading is being upgraded</p>
+              <p className="mt-2 text-sm leading-6 text-white/70">
+                Verified server-side face analysis is not available yet. Upload analysis is disabled and no credit will be used.
+              </p>
+            </div>
           </div>
 
           {/* Astro Summary Block */}
@@ -161,6 +174,7 @@ export default function FacePage() {
                     type="file"
                     accept="image/*"
                     onChange={handleFileSelect}
+                    disabled={!faceReadingAvailable}
                     className="flex-1 file:text-white file:bg-cosmic-purple/50 file:border-none file:rounded-md hover:file:bg-cosmic-purple/70 cursor-pointer"
                   />
                   <Button variant="outline" size="icon" className="bg-white/10 hover:bg-white/20 border-white/20">
@@ -180,10 +194,14 @@ export default function FacePage() {
 
               <Button
                 onClick={handleUpload}
-                disabled={!imageFile || analyzing}
+                disabled={!faceReadingAvailable || !imageFile || analyzing}
                 className="w-full spiritual-gradient text-lg py-3 relative overflow-hidden"
               >
-                {analyzing ? 'Analyzing Face...' : <><Sparkles className="inline-block mr-2 h-5 w-5" /> Analyze My Face</>}
+                {!faceReadingAvailable
+                  ? 'Face Reading temporarily unavailable'
+                  : analyzing
+                    ? 'Analyzing Face...'
+                    : <><Sparkles className="inline-block mr-2 h-5 w-5" /> Analyze My Face</>}
               </Button>
             </CardContent>
           </Card>

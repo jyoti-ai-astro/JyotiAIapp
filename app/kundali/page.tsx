@@ -16,6 +16,7 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
+import { AuthenticatedAppShell } from '@/src/ui/layout/AuthenticatedAppShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,6 +33,7 @@ import {
 } from '@/lib/astrology/display-formatters'
 import { useUserStore } from '@/store/user-store'
 import { KundaliProductionVisualSystem } from '@/components/celestial/KundaliProductionVisualSystem'
+import { invalidateAuthenticatedRead } from '@/lib/client/authenticated-read'
 
 type DashaPeriod = {
   planet?: string | null
@@ -106,7 +108,7 @@ function getPlanetsByHouse(grahas: Record<string, KundaliGraha>, houseNumber?: n
   return Object.values(grahas).filter((graha) => Number(graha.house) === houseNumber)
 }
 
-export default function KundaliPage() {
+function KundaliExperience() {
   const router = useRouter()
   const { user } = useUserStore()
   const {
@@ -211,6 +213,11 @@ export default function KundaliPage() {
         throw new Error(data.message || data.error || 'Kundali generation failed')
       }
 
+      // Canonical Kundali changed: invalidate only dependent authenticated reads.
+      invalidateAuthenticatedRead('/api/kundali/get')
+      invalidateAuthenticatedRead('/api/astro/context')
+      invalidateAuthenticatedRead('/api/timeline')
+
       await fetchKundali()
       setShow3D(false)
     } catch (err: any) {
@@ -245,11 +252,30 @@ export default function KundaliPage() {
     }
   }
 
-  if (!user) return null
+  if (!user) {
+    return (
+      <DashboardPageShell
+        title="Your Vedic Birth Chart"
+        subtitle="Preparing your JyotiAI chart workspace."
+        withAuthenticatedShell={false}
+      >
+        <Card>
+          <LoadingState
+            title="Opening Kundali"
+            description="Restoring your saved JyotiAI session."
+          />
+        </Card>
+      </DashboardPageShell>
+    )
+  }
 
   if (loading || ticketLoading) {
     return (
-      <DashboardPageShell title="Your Vedic Birth Chart" subtitle="Preparing your Kundali view.">
+      <DashboardPageShell
+        title="Your Vedic Birth Chart"
+        subtitle="Preparing your Kundali view."
+        withAuthenticatedShell={false}
+      >
         <Card>
           <LoadingState title="Loading Kundali" description="Reading your saved birth chart." />
         </Card>
@@ -259,7 +285,11 @@ export default function KundaliPage() {
 
   if (error) {
     return (
-      <DashboardPageShell title="Your Vedic Birth Chart" subtitle="A clear view of your saved chart.">
+      <DashboardPageShell
+        title="Your Vedic Birth Chart"
+        subtitle="A clear view of your saved chart."
+        withAuthenticatedShell={false}
+      >
         <Card>
           <ErrorState
             title="Kundali unavailable"
@@ -382,24 +412,6 @@ export default function KundaliPage() {
         [data-kundali-experience="observatory"]
           button:not([class*="bg-primary"]):not([class*="variant-ghost"]) {
           border-color: rgba(225, 173, 96, 0.25);
-        }
-
-        body:has([data-kundali-experience="observatory"]) header {
-          background: rgba(2, 8, 13, 0.975) !important;
-          border-bottom-color: rgba(226, 166, 82, 0.14) !important;
-          backdrop-filter: blur(18px) saturate(120%) !important;
-          box-shadow: none !important;
-        }
-
-        body:has([data-kundali-experience="observatory"]) header::before,
-        body:has([data-kundali-experience="observatory"]) header::after {
-          opacity: 0 !important;
-          display: none !important;
-        }
-
-        body:has([data-kundali-experience="observatory"]) footer {
-          background: #07111f !important;
-          border-top-color: rgba(225, 173, 96, 0.12) !important;
         }
 
         @media (max-width: 1023px) {
@@ -1334,5 +1346,21 @@ function AdvancedDetails({ kundali }: { kundali: KundaliData }) {
         </details>
       </CardContent>
     </Card>
+  )
+}
+
+
+export default function KundaliPage() {
+  return (
+    <div
+      data-jyoti-product-shell="true"
+      className="relative min-h-screen bg-[#02080d] text-[#f7f1e7]"
+    >
+      <div className="mx-auto w-full max-w-[1800px] px-4 sm:px-5 lg:px-6">
+        <AuthenticatedAppShell>
+          <KundaliExperience />
+        </AuthenticatedAppShell>
+      </div>
+    </div>
   )
 }

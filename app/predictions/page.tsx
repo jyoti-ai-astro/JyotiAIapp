@@ -11,6 +11,7 @@ import {
   TrendingUp,
   ShieldAlert,
   Target,
+  LoaderCircle,
 } from 'lucide-react'
 import DashboardPageShell from '@/src/ui/layout/DashboardPageShell'
 import { ProductPageFrame } from '@/components/product'
@@ -111,7 +112,25 @@ export default function PredictionsPage() {
     }
   }
 
-  if (!user) return null
+  if (!user) {
+    return (
+      <ProductPageFrame product="predictions">
+        <DashboardPageShell
+          title="Predictions"
+          subtitle="Preparing your JyotiAI forecast workspace."
+        >
+          <div className="flex min-h-[320px] items-center justify-center rounded-[28px] border border-[#dfa84d]/15 bg-[#091216]">
+            <div className="text-center">
+              <LoaderCircle className="mx-auto h-6 w-6 animate-spin text-[#dfa84d]" />
+              <p className="mt-4 text-sm text-[#aaa69e]">
+                Restoring your saved JyotiAI session.
+              </p>
+            </div>
+          </div>
+        </DashboardPageShell>
+      </ProductPageFrame>
+    )
+  }
 
   return (
     <ProductPageFrame product="predictions">
@@ -120,13 +139,14 @@ export default function PredictionsPage() {
         subtitle="A server-generated 12-month forecast using your current Kundali context"
       >
         <div className="mx-auto w-full max-w-[1320px] space-y-7">
-          <OneTimeOfferBanner
-            title="Unlock Full Insights"
-            description="Predictions require your verified birth profile and canonical Kundali context."
-            priceLabel="₹299"
-            ctaLabel="Unlock Now"
-            ctaHref="/pay/299"
-          />
+          <div className="rounded-2xl border border-[#dca94e]/16 bg-[#0b1519] px-5 py-4">
+            <p className="text-sm font-medium text-[#f5eee2]">
+              Prediction access is checked when you generate.
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[#9f9b94]">
+              JyotiAI uses your verified Kundali and canonical server entitlement state. Existing subscription or prediction access is honored before any purchase option is shown.
+            </p>
+          </div>
 
           <section className="relative overflow-hidden rounded-[28px] border border-[#dfa84d]/20 bg-[#091216] p-6 md:p-8">
             <div
@@ -242,8 +262,7 @@ export default function PredictionsPage() {
                   <CardTitle className="text-[#f5eee2]">Overview</CardTitle>
                   {predictionResult.status === 'degraded' && (
                     <CardDescription className="text-[#d5b47b]">
-                      Generated with canonical Kundali context; supporting
-                      knowledge retrieval was limited.
+                      Limited mode — your canonical Kundali was available, but one or more live interpretation sources were unavailable or could not be validated.
                     </CardDescription>
                   )}
                 </CardHeader>

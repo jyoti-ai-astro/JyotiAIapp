@@ -3,6 +3,10 @@
  */
 
 import type { SubscriptionTier } from '@/store/user-store'
+import {
+  authenticatedJsonRead,
+  invalidateAuthenticatedRead,
+} from '@/lib/client/authenticated-read'
 
 export interface UserProfile {
   uid: string
@@ -31,16 +35,9 @@ export interface UserProfile {
  */
 export async function getCurrentUser(): Promise<UserProfile | null> {
   try {
-    const response = await fetch('/api/user/get', {
-      method: 'GET',
-      credentials: 'include',
-    })
-
-    if (!response.ok) {
-      return null
-    }
-
-    const data = await response.json()
+    const data = await authenticatedJsonRead<{ user?: UserProfile }>(
+      '/api/user/get'
+    )
     return data.user || null
   } catch (error) {
     console.error('Get user error:', error)
@@ -61,6 +58,10 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
       credentials: 'include',
       body: JSON.stringify(updates),
     })
+
+    if (response.ok) {
+      invalidateAuthenticatedRead('/api/user/get')
+    }
 
     return response.ok
   } catch (error) {

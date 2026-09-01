@@ -7,6 +7,7 @@
  */
 
 import { envVars } from '@/lib/env/env.mjs'
+import { callLLM } from '@/lib/ai/llm-client'
 import {
   aiMalformedResponse,
   aiNetworkError,
@@ -129,116 +130,36 @@ async function retrieveRitualKnowledge(query: string): Promise<RAGResult> {
 }
 
 async function generateAIRitual(prompt: string, purpose: string): Promise<Ritual> {
-  const provider = envVars.ai.provider
-  const openaiApiKey = envVars.ai.openaiApiKey
-  const geminiApiKey = envVars.ai.geminiApiKey
+  const content = await callLLM(
+    [
+      {
+        role: 'system',
+        content: 'You are an expert Vedic astrologer. Always respond with valid JSON only.',
+      },
+      { role: 'user', content: prompt },
+    ],
+    undefined,
+    {
+      temperature: 0.7,
+      maxTokens: 2000,
+      validate: (candidate: string) => {
+        JSON.parse(candidate)
+      },
+    }
+  )
 
-  if (provider === 'gemini' && geminiApiKey) {
-    return generateGeminiRitual(prompt, purpose)
-  } else if (openaiApiKey) {
-    return generateOpenAIRitual(prompt, purpose)
+  try {
+    return JSON.parse(content) as Ritual
+  } catch {
+    throw aiMalformedResponse('OpenAI')
   }
-
-  throw aiNotConfigured('Ritual AI')
 }
 
 /**
  * Generate ritual using OpenAI
  */
-async function generateOpenAIRitual(prompt: string, purpose: string): Promise<Ritual> {
-  const openaiApiKey = envVars.ai.openaiApiKey
-  const openaiModel = envVars.ai.predictionModelName
-  if (!openaiApiKey) {
-    throw aiNotConfigured('OpenAI')
-  }
 
-  let response: Response
-  try {
-    response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${openaiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: openaiModel,
-        messages: [
-          { role: 'system', content: 'You are an expert Vedic astrologer. Always respond with valid JSON only.' },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.7,
-        response_format: { type: 'json_object' },
-      }),
-    })
-  } catch {
-    throw aiNetworkError('OpenAI')
-  }
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw classifyAIResponseError('OpenAI', response, error)
-  }
-
-  const data = await response.json()
-  const content = data.choices?.[0]?.message?.content
-  if (!content || typeof content !== 'string') {
-    throw aiMalformedResponse('OpenAI')
-  }
-
-  try {
-    return JSON.parse(content) as Ritual
-  } catch {
-    throw aiMalformedResponse('OpenAI')
-  }
-}
 
 /**
  * Generate ritual using Gemini
  */
-async function generateGeminiRitual(prompt: string, purpose: string): Promise<Ritual> {
-  const geminiApiKey = envVars.ai.geminiApiKey
-  if (!geminiApiKey) {
-    throw aiNotConfigured('Gemini')
-  }
-
-  let response: Response
-  try {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: 'You are an expert Vedic astrologer. Always respond with valid JSON only.\n\n' + prompt },
-              ],
-            },
-          ],
-        }),
-      }
-    )
-  } catch {
-    throw aiNetworkError('Gemini')
-  }
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw classifyAIResponseError('Gemini', response, error)
-  }
-
-  const data = await response.json()
-  const content = data.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!content || typeof content !== 'string') {
-    throw aiMalformedResponse('Gemini')
-  }
-
-  try {
-    return JSON.parse(content) as Ritual
-  } catch {
-    throw aiMalformedResponse('Gemini')
-  }
-}

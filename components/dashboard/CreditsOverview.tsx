@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Sparkles, BookOpen, TrendingUp, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { getUserTickets } from '@/lib/payments/ticket-service'
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 
 export function CreditsOverview() {
   const { user } = useUserStore()
@@ -30,17 +31,12 @@ export function CreditsOverview() {
 
     const fetchTicketInfo = async () => {
       try {
-        const response = await fetch('/api/user/tickets', {
-          credentials: 'include',
+        const data = await authenticatedJsonRead<any>('/api/user/tickets', { ttlMs: 60_000 })
+        setTicketInfo({
+          tickets: data.tickets || { aiGuruTickets: 0, kundaliTickets: 0, lifetimePredictions: 0 },
+          hasSubscription: data.hasSubscription || false,
+          subscriptionPlanId: data.subscriptionPlan || null,
         })
-        if (response.ok) {
-          const data = await response.json()
-          setTicketInfo({
-            tickets: data.tickets || { aiGuruTickets: 0, kundaliTickets: 0, lifetimePredictions: 0 },
-            hasSubscription: data.hasSubscription || false,
-            subscriptionPlanId: data.subscriptionPlan || null,
-          })
-        }
       } catch (error) {
         console.error('Failed to fetch ticket info:', error)
       }

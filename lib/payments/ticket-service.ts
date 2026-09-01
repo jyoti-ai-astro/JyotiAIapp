@@ -320,17 +320,19 @@ export async function splitSubscriptionAndTickets(uid: string): Promise<{
 
     const { hasSubscription, planId, expiry } = detectSubscription(userData)
 
-    const tickets = await fetchUserTickets(uid)
+    const tickets: UserTickets = {
+      aiGuruTickets: userData?.aiGuruTickets || 0,
+      kundaliTickets: userData?.kundaliTickets || 0,
+      lifetimePredictions: userData?.lifetimePredictions || 0,
+      email: userData?.email || undefined,
+      uid,
+    }
 
     return {
       hasSubscription,
       subscriptionPlan: planId,
       subscriptionExpiry: expiry,
-      tickets: tickets || {
-        aiGuruTickets: 0,
-        kundaliTickets: 0,
-        lifetimePredictions: 0,
-      },
+      tickets,
     }
   } catch (error: any) {
     console.error('Error splitting subscription and tickets:', error)

@@ -8,7 +8,7 @@ export type AIErrorCode =
   | 'AI_REQUEST_FAILED'
   | 'AI_NOT_CONFIGURED'
 
-export type AIProviderName = 'OpenAI' | 'Gemini'
+export type AIProviderName = 'OpenAI' | 'Gemini' | 'xAI' | 'Anthropic'
 
 export class AIProviderError extends Error {
   code: AIErrorCode
@@ -56,28 +56,39 @@ export function classifyAIResponseError(
   response: Response,
   errorBody: any
 ): AIProviderError {
-  const providerCode = errorBody?.error?.code || ''
-  const providerType = errorBody?.error?.type || ''
-  const providerMessage = errorBody?.error?.message || 'Unknown provider error'
+  const providerCode =
+    errorBody?.error?.code ||
+    errorBody?.code ||
+    errorBody?.type ||
+    ''
+  const providerType = errorBody?.error?.type || errorBody?.type || ''
+  const providerMessage =
+    errorBody?.error?.message ||
+    errorBody?.message ||
+    errorBody?.error?.error ||
+    'Unknown provider error'
+
   const message = `${provider} error: ${providerMessage}`
 
-  if (response.status === 429) {
-    const isQuota =
-      providerCode === 'insufficient_quota' ||
-      providerType === 'insufficient_quota' ||
-      /quota|billing/i.test(providerMessage)
+  const isBillingOrQuota =
+    providerCode === 'insufficient_quota' ||
+    providerType === 'insufficient_quota' ||
+    /quota|billing|credit balance|purchase credits|insufficient[_ -]?quota/i.test(
+      `${providerCode} ${providerType} ${providerMessage}`
+    )
 
+  if (response.status === 429) {
     return new AIProviderError(
-      isQuota ? 'AI_BILLING_OR_QUOTA' : 'AI_RATE_LIMIT',
+      isBillingOrQuota ? 'AI_BILLING_OR_QUOTA' : 'AI_RATE_LIMIT',
       message,
-      isQuota
+      isBillingOrQuota
         ? 'AI credits are temporarily unavailable. Please try again later.'
         : 'AI generation is receiving too many requests. Please retry in a moment.',
       429
     )
   }
 
-  if (response.status === 402) {
+  if (response.status === 402 || isBillingOrQuota) {
     return new AIProviderError(
       'AI_BILLING_OR_QUOTA',
       message,
@@ -100,6 +111,19 @@ export function classifyAIResponseError(
       'AI_PROVIDER_UNAVAILABLE',
       message,
       'AI generation is temporarily unavailable. Please retry shortly.',
+      503
+    )
+  }
+
+  if (
+    provider === 'xAI' &&
+    response.status === 400 &&
+    providerCode === 'invalid-argument'
+  ) {
+    return new AIProviderError(
+      'AI_PROVIDER_UNAVAILABLE',
+      message,
+      'The configured AI provider is temporarily unavailable. Please retry shortly.',
       503
     )
   }

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { order_id, payment_id, signature, productId } = body
 
-    if (!order_id || !payment_id || !signature || !productId) {
+    if (!order_id || !payment_id || !signature) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const razorpayKeySecret = envVars.razorpay.keySecret
     if (!razorpayKeySecret) {
       return NextResponse.json(
-        { error: 'RAZORPAY_KEY_SECRET missing. Payment verification not configured.' },
+        { error: 'Payment verification is temporarily unavailable. Please try again shortly.' },
         { status: 500 }
       )
     }
@@ -53,22 +53,96 @@ export async function POST(req: NextRequest) {
       .collection('one_time_orders')
       .doc(order_id)
     const orderSnap = await orderRef.get()
-    const orderData = orderSnap.exists ? orderSnap.data() : {}
-    const productIdStr = String(orderData?.productId || productId)
+
+    // The server-created Firestore order is authoritative for fulfillment.
+    // The client may report a product ID for compatibility, but it can never
+    // choose which entitlement is granted.
+    if (!orderSnap.exists) {
+      await logEvent(
+        'api.error',
+        {
+          endpoint: '/api/pay/success-one-time',
+          phase: 'order_authority_validation',
+          reason: 'canonical_order_not_found',
+          orderId: order_id,
+          paymentId: payment_id,
+        },
+        uid
+      )
+
+      return NextResponse.json(
+        { error: 'Payment order not found. Please contact support.' },
+        { status: 404 }
+      )
+    }
+
+    const orderData = orderSnap.data()
+    const canonicalProductId = String(orderData?.productId || '')
+
+    if (!canonicalProductId) {
+      return NextResponse.json(
+        { error: 'Payment order is missing product information' },
+        { status: 409 }
+      )
+    }
+
+    if (productId && String(productId) !== canonicalProductId) {
+      await logEvent(
+        'api.error',
+        {
+          endpoint: '/api/pay/success-one-time',
+          phase: 'product_authority_validation',
+          reason: 'client_product_mismatch',
+          orderId: order_id,
+          canonicalProductId,
+        },
+        uid
+      )
+
+      return NextResponse.json(
+        { error: 'Payment product does not match the original order' },
+        { status: 409 }
+      )
+    }
+
     if (orderData?.fulfilledAt) {
       return NextResponse.json({
         success: true,
         orderId: order_id,
         paymentId: payment_id,
-        productId: productIdStr,
+        productId: canonicalProductId,
         alreadyFulfilled: true,
       })
     }
 
-    // Get one-time product from single source of truth
-    const product = getOneTimeProduct(productIdStr)
+    const product = getOneTimeProduct(canonicalProductId)
     if (!product) {
-      return NextResponse.json({ error: 'Invalid product' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Payment order references an invalid product' },
+        { status: 409 }
+      )
+    }
+
+    if (
+      Number(orderData?.amount) !== product.amountInINR ||
+      orderData?.productIdInternal !== product.id
+    ) {
+      await logEvent(
+        'api.error',
+        {
+          endpoint: '/api/pay/success-one-time',
+          phase: 'order_integrity_validation',
+          reason: 'canonical_order_mismatch',
+          orderId: order_id,
+          canonicalProductId,
+        },
+        uid
+      )
+
+      return NextResponse.json(
+        { error: 'Payment order failed integrity validation' },
+        { status: 409 }
+      )
     }
 
     const userRef = adminDb.collection('users').doc(uid)
@@ -102,7 +176,7 @@ export async function POST(req: NextRequest) {
     }
 
     const oneTimePurchase = {
-      productId: String(productId),
+      productId: canonicalProductId,
       productIdInternal: product.id,
       paymentId: payment_id,
       orderId: order_id,
@@ -113,7 +187,21 @@ export async function POST(req: NextRequest) {
 
     const fulfillment = await adminDb.runTransaction(async (transaction) => {
       const lockedOrderSnap = await transaction.get(orderRef)
-      const lockedOrderData = lockedOrderSnap.exists ? lockedOrderSnap.data() : {}
+
+      if (!lockedOrderSnap.exists) {
+        throw new Error('Canonical payment order disappeared during fulfillment')
+      }
+
+      const lockedOrderData = lockedOrderSnap.data()
+      const lockedProductId = String(lockedOrderData?.productId || '')
+
+      if (
+        lockedProductId !== canonicalProductId ||
+        lockedOrderData?.productIdInternal !== product.id ||
+        Number(lockedOrderData?.amount) !== product.amountInINR
+      ) {
+        throw new Error('Canonical payment order changed during fulfillment')
+      }
 
       if (lockedOrderData?.fulfilledAt) {
         return { alreadyFulfilled: true }
@@ -149,7 +237,7 @@ export async function POST(req: NextRequest) {
         success: true,
         orderId: order_id,
         paymentId: payment_id,
-        productId: productIdStr,
+        productId: canonicalProductId,
         alreadyFulfilled: true,
       })
     }
@@ -158,7 +246,7 @@ export async function POST(req: NextRequest) {
     await logEvent('payment.success', {
       orderId: order_id,
       paymentId: payment_id,
-      productId: String(productId),
+      productId: canonicalProductId,
       amount: product.amountInINR,
       tickets: product.tickets,
     }, uid)
@@ -189,7 +277,7 @@ export async function POST(req: NextRequest) {
       success: true,
       orderId: order_id,
       paymentId: payment_id,
-      productId: String(productId),
+      productId: canonicalProductId,
       ticketsGranted: product.tickets,
     })
   } catch (err: any) {

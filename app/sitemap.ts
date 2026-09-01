@@ -1,6 +1,6 @@
 /**
  * Sitemap Generation
- * 
+ *
  * Dynamic sitemap for all pages
  */
 
@@ -14,12 +14,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '',
     '/features',
     '/pricing',
-    '/about',
-    '/blog',
-    '/contact',
+
+
+
     '/astro',
     '/guru',
-    
+
     // App pages (require auth)
     '/dashboard',
     '/kundali',
@@ -39,12 +39,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/dasha',
     '/settings',
     '/payments',
-    
+
     // Auth pages
     '/login',
     '/signup',
     '/magic-link',
-    
+
     // Legal pages
     '/legal/terms',
     '/legal/privacy',
@@ -52,7 +52,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/legal/cookies',
     '/legal/security',
     '/legal/licenses',
-    
+
     // Company pages
     '/company/about',
     '/company/blog',

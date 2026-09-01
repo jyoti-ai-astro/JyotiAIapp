@@ -7,6 +7,46 @@ import { isValidCoordinate, isValidTimezone } from '@/lib/services/geocoding'
 
 export const dynamic = 'force-dynamic'
 
+function buildDegradedHoroscope(
+  rashi: string,
+  moonSign: string,
+  sunSign?: string,
+  ascendant?: string
+) {
+  const date = new Date().toISOString().split('T')[0]
+
+  return {
+    date,
+    rashi,
+    moonSign,
+    sunSign,
+    ascendant,
+    general:
+      'Use today for steady progress, reflection, and deliberate choices. Your personalized AI interpretation is temporarily limited.',
+    love:
+      'Keep communication simple and sincere. Listening carefully will be more useful than forcing conclusions.',
+    career:
+      'Prioritize one meaningful task and complete it methodically before taking on additional commitments.',
+    money:
+      'Favor clarity and restraint today. Review important financial decisions before acting.',
+    health:
+      'Maintain a balanced routine with adequate rest, hydration, and regular movement.',
+    luckyColor: 'Gold',
+    luckyNumber: 7,
+    dos: [
+      'Focus on one clear priority',
+      'Keep communication thoughtful',
+      'Review important decisions',
+    ],
+    donts: [
+      'Rush major commitments',
+      'React impulsively',
+      'Ignore rest and recovery',
+    ],
+    energyLevel: 'medium' as const,
+  }
+}
+
 /**
  * Get Today's Horoscope
  * Part B - Section 8: Notifications & Daily Insights
@@ -140,13 +180,40 @@ export async function GET(request: NextRequest) {
         console.error('Failed to log horoscope error:', logErr)
       }
 
+      const aiStatus = getAIErrorStatus(engineError)
+
+      // Authentication, Firestore, location and canonical-Kundali gates are
+      // handled before this point. Once canonical astrology is available,
+      // provider/network/quota failures should degrade the experience rather
+      // than break the dashboard.
+      if (aiStatus >= 429 || String(engineError?.code || '').startsWith('AI_')) {
+        return NextResponse.json({
+          success: true,
+          mode: 'degraded',
+          degraded: true,
+          reason: engineError?.code || 'AI_TEMPORARILY_UNAVAILABLE',
+          message:
+            'Live AI interpretation is temporarily unavailable. Showing limited guidance from your verified astrology profile.',
+          horoscope: buildDegradedHoroscope(
+            rashi,
+            moonSign,
+            sunSign,
+            ascendant
+          ),
+        })
+      }
+
       return NextResponse.json(
         {
           success: false,
-          error: engineError?.code || 'HOROSCOPE_GENERATION_FAILED',
-          message: engineError?.clientMessage || 'Daily horoscope generation is temporarily unavailable. Please retry.',
+          error:
+            engineError?.code ||
+            'HOROSCOPE_GENERATION_FAILED',
+          message:
+            engineError?.clientMessage ||
+            'Daily horoscope generation is temporarily unavailable. Please retry.',
         },
-        { status: getAIErrorStatus(engineError) }
+        { status: aiStatus }
       )
     }
   } catch (error: any) {

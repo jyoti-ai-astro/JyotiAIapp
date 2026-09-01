@@ -147,8 +147,27 @@ export async function GET(request: NextRequest) {
     }
 
     const record = snap.data() as TimelineRecord
+
     if (record.status === 'ready' && record.result) {
       return NextResponse.json(getTimelinePayload(record, true))
+    }
+
+    // The canonical Kundali is current at this point because isAstrologyStale()
+    // already passed above. A stored Timeline marked `stale` therefore means
+    // only that the previous Timeline was generated from older astrology.
+    //
+    // This is an expected product state, not an HTTP conflict. Surface it as
+    // a regeneratable empty state so dashboard reads remain healthy while the
+    // POST endpoint can generate a new Timeline from the current Kundali.
+    if (record.status === 'stale') {
+      return NextResponse.json({
+        status: 'empty',
+        code: 'TIMELINE_REGEN_REQUIRED',
+        message:
+          'Your Kundali is current. Generate a new timeline to refresh this insight.',
+        cached: false,
+        generatedAt: null,
+      })
     }
 
     return NextResponse.json(
@@ -157,8 +176,6 @@ export async function GET(request: NextRequest) {
         code:
           record.status === 'generating'
             ? 'TIMELINE_GENERATING'
-            : record.status === 'stale'
-            ? 'TIMELINE_STALE'
             : 'TIMELINE_FAILED',
         message:
           record.failureReason ||

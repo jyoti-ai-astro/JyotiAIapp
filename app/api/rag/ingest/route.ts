@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const { envVars } = await import('@/lib/env/env.mjs')
     if (!envVars.pinecone.apiKey || !envVars.pinecone.indexName) {
       return NextResponse.json(
-        { error: 'PINECONE_API_KEY or PINECONE_INDEX_NAME missing. RAG service not configured.' },
+        { error: 'Knowledge service is temporarily unavailable.' },
         { status: 500 }
       )
     }

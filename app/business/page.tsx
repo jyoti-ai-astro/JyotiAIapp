@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/user-store";
 import { useBusiness } from "@/lib/hooks/useBusiness";
 import DashboardPageShell from "@/src/ui/layout/DashboardPageShell";
+import { LoadingState } from '@/components/ui/feedback-state'
 import { Button } from "@/components/ui/button";
 import { Briefcase } from "lucide-react";
 import { BusinessEngine } from "@/components/engines/BusinessEngine";
@@ -25,6 +26,7 @@ import { checkFeatureAccess } from "@/lib/access/checkFeatureAccess";
 import type { AstroContext } from "@/lib/engines/astro-types";
 import Link from "next/link";
 
+import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
 export default function BusinessPage() {
   const router = useRouter();
   const { user } = useUserStore();
@@ -50,19 +52,18 @@ export default function BusinessPage() {
   }, [user, router, hasAccess, ticketLoading]);
 
   const fetchAstroContext = async () => {
-    if (!user?.uid) return;
+    if (!user?.uid) return
+
     try {
-      const response = await fetch("/api/astro/context", {
-        credentials: "include",
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAstro(data.astro);
-      }
+      const data = await authenticatedJsonRead<{ astro: AstroContext }>(
+        '/api/astro/context',
+        { ttlMs: 60_000 }
+      )
+      setAstro(data.astro)
     } catch (err) {
-      console.error("Error fetching astro context:", err);
+      console.error('Error fetching astro context:', err)
     }
-  };
+  }
 
   const handleAnalyze = async () => {
     if (!businessIdea.trim()) {
@@ -86,7 +87,19 @@ export default function BusinessPage() {
   };
 
   if (!user) {
-    return null;
+    return (
+      <DashboardPageShell
+        title="Business Compatibility"
+        subtitle="Restoring your JyotiAI session."
+      >
+        <div className="rounded-xl border border-border bg-card p-6">
+          <LoadingState
+            title="Opening Business Compatibility"
+            description="Preparing your business workspace."
+          />
+        </div>
+      </DashboardPageShell>
+    );
   }
 
   return (
@@ -97,13 +110,12 @@ export default function BusinessPage() {
       <div className="space-y-8">
         {/* Context Panel */}
         <div className="mb-8">
-          <OneTimeOfferBanner
-            title="Unlock Full Insights"
-            description="This module uses your birth chart & predictions powered by Guru Brain."
-            priceLabel="₹199"
-            ctaLabel="Unlock Now"
-            ctaHref="/pay/199"
-          />
+          <div className="rounded-2xl border border-[#dba84c]/20 bg-[#0b1519]/90 p-5">
+            <p className="text-sm font-semibold text-[#e5a44a]">Business analysis is being upgraded</p>
+            <p className="mt-2 text-sm leading-6 text-[#a9a49b]">
+              We are connecting this workspace to the verified business calculation path. Analysis is temporarily unavailable and no credit will be used.
+            </p>
+          </div>
         </div>
 
         <section className="relative overflow-hidden rounded-2xl border border-[#dba84c]/15 bg-[linear-gradient(145deg,rgba(15,25,28,0.97),rgba(8,17,21,0.97))] p-6 shadow-[0_18px_55px_rgba(0,0,0,0.16)] md:p-8">
@@ -146,7 +158,15 @@ export default function BusinessPage() {
           </section>
         )}
 
-        <BusinessEngine />
+        <section className="rounded-2xl border border-[#dba84c]/15 bg-[#0b1519]/80 p-6">
+          <h2 className="font-semibold text-[#f5eee2]">Business Compatibility</h2>
+          <p className="mt-2 text-sm leading-6 text-[#a9a49b]">
+            Analysis controls are temporarily disabled while the canonical calculation engine is being completed.
+          </p>
+          <Button disabled className="mt-5 min-h-11 w-full">
+            Analysis temporarily unavailable
+          </Button>
+        </section>
 
         {/* Ask Guru With Context Button */}
         {astro && (
