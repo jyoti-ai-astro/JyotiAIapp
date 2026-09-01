@@ -23,6 +23,8 @@ interface ProfileData {
   name: string
   email: string
   photo: string | null
+  gender?: string | null
+  phone?: string | null
   dob: string | null
   tob: string | null
   pob: string | null
@@ -51,6 +53,8 @@ interface ProfileData {
 
 interface ProfileForm {
   name: string
+  gender: string
+  phone: string
   dob: string
   tob: string
   pob: string
@@ -61,9 +65,19 @@ interface ProfileForm {
 
 const DEFAULT_TIMEZONE = 'Asia/Kolkata'
 
+function displayTimezone(value: string) {
+  return value === 'Asia/Calcutta' ? 'Asia/Kolkata' : value
+}
+
+function displayCoordinate(value: number | null) {
+  return value === null || !Number.isFinite(value) ? '' : value.toFixed(4)
+}
+
 function normalizeProfileForm(profile: ProfileData): ProfileForm {
   return {
     name: profile.name || '',
+    gender: profile.gender || '',
+    phone: profile.phone || '',
     dob: profile.dob || '',
     tob: profile.tob || '',
     pob: profile.pob || '',
@@ -151,6 +165,8 @@ export default function ProfilePage() {
 
       const payload: Record<string, any> = {
         name: form.name.trim(),
+        gender: form.gender || null,
+        phone: form.phone.trim() || null,
         dob: form.dob || null,
         tob: form.tob || null,
         pob: form.pob.trim() || null,
@@ -176,6 +192,8 @@ export default function ProfilePage() {
 
       updateUser({
         name: payload.name,
+        gender: payload.gender,
+        phone: payload.phone,
         dob: payload.dob,
         tob: payload.tob,
         pob: payload.pob,
@@ -300,16 +318,43 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
                 value={form.name}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
+                placeholder="Your full name"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" value={profile.email || ''} disabled />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <select
+                id="gender"
+                value={form.gender}
+                onChange={(event) => setForm({ ...form, gender: event.target.value })}
+                className="flex min-h-11 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-primary outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Prefer not to specify</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="non-binary">Non-binary</option>
+                <option value="prefer-not-to-say">Prefer not to say</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                autoComplete="tel"
+                value={form.phone}
+                onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                placeholder="Optional"
+              />
             </div>
           </div>
         </CardContent>
@@ -356,23 +401,26 @@ export default function ProfilePage() {
               })
             }
           />
+          <p className="text-xs leading-5 text-muted-foreground">
+            You can change your birth location at any time. Choose a verified Google suggestion when changing it; JyotiAI will refresh the coordinates and timezone and mark personalized astrology stale until you regenerate Kundali.
+          </p>
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="timezone">Timezone</Label>
               <Input
                 id="timezone"
-                value={form.timezone}
+                value={displayTimezone(form.timezone)}
                 disabled
               />
             </div>
             <div className="space-y-2">
               <Label>Latitude</Label>
-              <Input value={form.lat ?? ''} disabled />
+              <Input value={displayCoordinate(form.lat)} disabled />
             </div>
             <div className="space-y-2">
               <Label>Longitude</Label>
-              <Input value={form.lng ?? ''} disabled />
+              <Input value={displayCoordinate(form.lng)} disabled />
             </div>
           </div>
 

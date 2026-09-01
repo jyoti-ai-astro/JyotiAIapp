@@ -82,7 +82,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     features: [
       'Everything in Starter',
       'Full Kundali Analysis',
-      'Palmistry & Face Reading',
+      'Palmistry Analysis',
       'Aura Scan',
       '12-Month Predictions',
       'More AI Guru usage',
@@ -103,10 +103,9 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     description: 'Complete spiritual operating system',
     features: [
       'Everything in Advanced',
-      'Career & Business Engine',
-      'Pregnancy Insights',
-      'Compatibility Analysis',
+      'Career Insights',
       'Advanced Reports (PDF)',
+      'Expanded AI Guru access',
       'Priority Support',
     ],
     ctaLabel: 'Go Supreme',
@@ -161,10 +160,10 @@ export const ONE_TIME_PRODUCTS: Record<ProductId, OneTimeProduct> = {
     amountInINR: 299,
     name: 'Supreme Reading',
     label: 'Supreme Reading – ₹299',
-    description: 'Extended personalised session (can refine later)',
+    description: 'One 12-month personalized prediction credit',
     bullets: [
-      '5 AI Guru questions',
-      'Extended personalised insight session',
+      '1 personalized 12-month prediction',
+      'Use without starting a monthly subscription',
     ],
     tickets: {
       predictions: 1,

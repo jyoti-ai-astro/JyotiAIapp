@@ -16,8 +16,8 @@ interface SEOOptions {
 }
 
 const defaultTitle = 'JyotiAI - Your Spiritual Operating System';
-const defaultDescription = 'AI-powered spiritual guidance combining astrology, palmistry, face reading, aura analysis, and more';
-const defaultKeywords = ['astrology', 'palmistry', 'spiritual', 'AI', 'kundali', 'numerology'];
+const defaultDescription = 'AI-assisted spiritual guidance combining verified Jyotish chart context with available JyotiAI experiences including Kundali, palmistry, aura analysis, predictions, and more';
+const defaultKeywords = ['astrology', 'palmistry', 'spiritual', 'AI', 'kundali', 'numerology', 'Jyotish'];
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.jyotiai.in';
 
 export function generateMetadata(options: SEOOptions = {}): Metadata {

@@ -176,11 +176,12 @@ export async function runTimelineEngine(params: {
     // Fallback to structured response
     return {
       status: 'degraded',
-      overview: 'Based on your astrological chart, the next 12 months present a journey of growth and transformation.',
+      overview:
+        'Your timeline is available in limited mode using your verified astrological chart. The live interpretation could not be validated, so JyotiAI is showing deterministic chart-based timing signals instead.',
       events: generateFallbackEvents(monthLabels, astroContext),
       disclaimers: [
-        'These timeline predictions are based on astrological principles and should be treated as guidance, not absolute certainty.',
-        'Individual results may vary. Consult professionals for medical, legal, or financial advice.',
+        'This limited timeline is generated from your verified astrological chart without a validated live AI interpretation.',
+        'Astrological guidance is interpretive and should not replace professional medical, legal, or financial advice.',
       ],
       usedRag,
       usedAstroContext,
@@ -346,7 +347,9 @@ function parseTimelineResponse(
     try {
       const parsed = JSON.parse(jsonMatch[0])
       return {
-        overview: parsed.overview || 'Based on your astrological chart, the next 12 months present a journey of growth.',
+        overview:
+          parsed.overview ||
+          'Live timeline interpretation was unavailable or could not be validated.',
         events: normalizeTimelineEvents(parsed.events || [], monthLabels, astroContext),
         disclaimers: parsed.disclaimers || getDefaultTimelineDisclaimers(),
       }
@@ -543,7 +546,7 @@ function mapHouseToCategory(house: number): 'career' | 'love' | 'money' | 'healt
  */
 function extractOverviewFromText(text: string): string {
   const paragraphs = text.split('\n\n').filter((p) => p.trim().length > 50)
-  return paragraphs[0] || 'Based on your astrological chart, the next 12 months present a journey of growth and transformation.'
+  return paragraphs[0] || 'Live timeline interpretation was unavailable or could not be validated.'
 }
 
 /**

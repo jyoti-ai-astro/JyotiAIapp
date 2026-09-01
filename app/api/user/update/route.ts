@@ -92,6 +92,8 @@ export async function POST(request: NextRequest) {
     // Allowed fields that users can update
     const allowedFields = [
       'name',
+      'gender',
+      'phone',
       'dob',
       'tob',
       'pob',
@@ -124,6 +126,20 @@ export async function POST(request: NextRequest) {
           filteredUpdates[field] = updates[field]
         }
       }
+    }
+
+    if (filteredUpdates.gender !== undefined) {
+      const allowedGenders = ['', null, 'female', 'male', 'non-binary', 'prefer-not-to-say']
+      if (!allowedGenders.includes(filteredUpdates.gender)) {
+        return NextResponse.json({ error: 'Invalid gender value' }, { status: 400 })
+      }
+    }
+
+    if (filteredUpdates.phone !== undefined && filteredUpdates.phone !== null) {
+      if (typeof filteredUpdates.phone !== 'string' || filteredUpdates.phone.trim().length > 32) {
+        return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 })
+      }
+      filteredUpdates.phone = filteredUpdates.phone.trim() || null
     }
 
     if (Object.keys(filteredUpdates).length === 1) {

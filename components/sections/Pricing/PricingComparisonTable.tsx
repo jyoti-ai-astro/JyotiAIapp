@@ -6,20 +6,18 @@ import { Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const features = [
-  { name: 'Basic Kundali Chart', starter: true, advanced: true, supreme: true, quick: false, deep: true },
-  { name: 'Full Kundali Analysis', starter: false, advanced: true, supreme: true, quick: false, deep: true },
-  { name: 'Daily Horoscope', starter: true, advanced: true, supreme: true, quick: true, deep: false },
-  { name: 'AI Guru Questions', starter: '5/day', advanced: 'Unlimited', supreme: 'Unlimited', quick: '1', deep: '3' },
-  { name: 'Palmistry & Face Reading', starter: false, advanced: true, supreme: true, quick: false, deep: true },
-  { name: 'Aura Scan', starter: false, advanced: true, supreme: true, quick: false, deep: true },
-  { name: '12-Month Predictions', starter: false, advanced: true, supreme: true, quick: false, deep: false },
-  { name: 'Career & Business Engine', starter: false, advanced: false, supreme: true, quick: false, deep: true },
-  { name: 'Pregnancy Insights', starter: false, advanced: false, supreme: true, quick: false, deep: false },
-  { name: 'Compatibility Analysis', starter: false, advanced: false, supreme: true, quick: false, deep: true },
+  { name: 'Verified D1 Kundali Chart', starter: true, advanced: true, supreme: true, quick: false, deep: true },
+  { name: 'Personalized Predictions', starter: true, advanced: true, supreme: true, quick: true, deep: true },
+  { name: 'AI Guru', starter: true, advanced: true, supreme: true, quick: false, deep: false },
+  { name: 'Palmistry', starter: false, advanced: true, supreme: true, quick: false, deep: true },
+  { name: 'Aura Analysis', starter: false, advanced: true, supreme: true, quick: false, deep: true },
+  { name: 'Career Guidance', starter: false, advanced: true, supreme: true, quick: false, deep: true },
   { name: 'Advanced Reports (PDF)', starter: false, advanced: false, supreme: true, quick: false, deep: false },
-  { name: 'Priority Support', starter: false, advanced: false, supreme: true, quick: false, deep: false },
+  { name: 'Face Reading', starter: false, advanced: false, supreme: false, quick: false, deep: false },
+  { name: 'Business Analysis', starter: false, advanced: false, supreme: false, quick: false, deep: false },
+  { name: 'Compatibility Analysis', starter: false, advanced: false, supreme: false, quick: false, deep: false },
+  { name: 'Pregnancy Insights', starter: false, advanced: false, supreme: false, quick: false, deep: false },
 ]
-
 export function PricingComparisonTable() {
   return (
     <div className="mt-16 md:mt-24">

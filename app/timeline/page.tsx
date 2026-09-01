@@ -167,13 +167,14 @@ export default function TimelinePage() {
         subtitle="A month-by-month view of themes, focus areas, and astrological signals"
       >
         <div className="mx-auto w-full max-w-[1320px] space-y-7">
-          <OneTimeOfferBanner
-            title="Unlock Full Insights"
-            description="This module uses your birth chart & predictions powered by Guru Brain."
-            priceLabel="₹299"
-            ctaLabel="Unlock Now"
-            ctaHref="/pay/299"
-          />
+          <div className="rounded-2xl border border-[#dca94e]/16 bg-[#0b1519] px-5 py-4">
+            <p className="text-sm font-medium text-[#f5eee2]">
+              Timeline access is checked when you generate.
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[#9f9b94]">
+              An active subscription or eligible prediction access can unlock this feature. If more access is required, JyotiAI will show the correct purchase option without spending a credit first.
+            </p>
+          </div>
 
           <motion.section
             initial={{ opacity: 0, y: 16 }}
@@ -277,7 +278,7 @@ export default function TimelinePage() {
                   </CardTitle>
                   {timelineResult.status === 'degraded' && (
                     <CardDescription className="text-[#d5b47b]">
-                      Timeline generated with limited context
+                      Limited chart-based mode — live interpretation was unavailable or could not be validated.
                     </CardDescription>
                   )}
                 </CardHeader>

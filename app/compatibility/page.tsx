@@ -55,6 +55,7 @@ export default function CompatibilityPage() {
     rashi: "",
   });
   const [astro, setAstro] = useState<AstroContext | null>(null);
+  const compatibilityAvailable = false;
 
   useEffect(() => {
     if (!user) {
@@ -138,13 +139,12 @@ export default function CompatibilityPage() {
     >
       {/* Context Panel */}
       <div className="mb-8">
-        <OneTimeOfferBanner
-          title="Unlock Full Insights"
-          description="This module uses your birth chart & predictions powered by Guru Brain."
-          priceLabel="₹199"
-          ctaLabel="Unlock Now"
-          ctaHref="/pay/199"
-        />
+        <div className="rounded-2xl border border-[#dba84c]/20 bg-[#0b1519]/90 p-5">
+          <p className="text-sm font-semibold text-[#e5a44a]">Compatibility analysis is temporarily unavailable</p>
+          <p className="mt-2 text-sm leading-6 text-[#a9a49b]">
+            Verified partner birth-chart generation is being upgraded. No compatibility credit will be used while this feature is unavailable.
+          </p>
+        </div>
       </div>
 
       {/* Astro Summary Block */}
@@ -191,7 +191,7 @@ export default function CompatibilityPage() {
       </motion.div>
 
       {/* Partner Details Form */}
-      {!analysis && (
+      {compatibilityAvailable && !analysis && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

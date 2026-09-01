@@ -93,30 +93,46 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get Lagna if kundali exists
+    // Canonical chart identity comes from D1, not duplicated profile fields.
     let lagna = null
+    let canonicalMoonSign: string | null = null
+    let canonicalNakshatra: string | null = null
+    let canonicalD1Available = false
+
     if (hasKundali) {
       const D1Snap = await kundaliRef.collection('D1').doc('chart').get()
       if (D1Snap.exists) {
-        lagna = D1Snap.data()?.lagna || null
+        const d1 = D1Snap.data()
+        lagna = d1?.lagna || null
+        const moon = d1?.grahas?.moon || d1?.grahas?.Moon || d1?.grahas?.Chandra
+        canonicalMoonSign = typeof moon?.sign === 'string' ? moon.sign : null
+        canonicalNakshatra = formatNakshatraForDisplay(moon?.nakshatra)
+        canonicalD1Available = !!d1?.grahas && !!d1?.bhavas && !!d1?.lagna
       }
     }
 
-    // Check profile completeness
-    const profileComplete =
+    // Profile completeness must reflect verified birth data + a usable canonical chart.
+    const profileComplete = Boolean(
       userData?.dob &&
       userData?.tob &&
       userData?.pob &&
-      userData?.rashi &&
-      formatNakshatraForDisplay(userData?.nakshatra)
+      userData?.locationVerified === true &&
+      Number.isFinite(Number(userData?.lat)) &&
+      Number.isFinite(Number(userData?.lng)) &&
+      userData?.timezone &&
+      hasKundali &&
+      canonicalD1Available &&
+      canonicalMoonSign &&
+      canonicalNakshatra
+    )
 
     return NextResponse.json({
       success: true,
       user: {
         name: userData?.name || 'User',
         photo: userData?.photo || null,
-        rashi: userData?.rashi || null,
-        nakshatra: formatNakshatraForDisplay(userData?.nakshatra),
+        rashi: canonicalMoonSign || userData?.rashi || null,
+        nakshatra: canonicalNakshatra || formatNakshatraForDisplay(userData?.nakshatra),
         lagna: lagna?.sign || null,
         lagnaDetails: lagna,
       },
