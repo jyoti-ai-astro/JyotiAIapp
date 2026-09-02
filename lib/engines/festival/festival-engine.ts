@@ -108,63 +108,7 @@ const FESTIVALS: Omit<Festival, 'date'>[] = [
  * Get festival for today
  */
 export function getFestivalToday(): Festival | null {
-  const today = new Date()
-  const todayMonth = today.getMonth() + 1
-  const todayDate = today.getDate()
-  
-  // Simplified matching - in production, use proper date calculations
-  // This is a placeholder that checks approximate dates
-  
-  // Diwali (usually October/November)
-  if (todayMonth === 10 || todayMonth === 11) {
-    if (todayDate >= 20 && todayDate <= 30) {
-      return {
-        ...FESTIVALS[0],
-        date: today,
-      }
-    }
-  }
-  
-  // Holi (usually March)
-  if (todayMonth === 3) {
-    if (todayDate >= 1 && todayDate <= 10) {
-      return {
-        ...FESTIVALS[1],
-        date: today,
-      }
-    }
-  }
-  
-  // Navratri (twice a year - simplified)
-  if ((todayMonth === 3 && todayDate >= 20 && todayDate <= 30) ||
-      (todayMonth === 10 && todayDate >= 1 && todayDate <= 10)) {
-    return {
-      ...FESTIVALS[2],
-      date: today,
-    }
-  }
-  
-  // Ganesha Chaturthi (usually August/September)
-  if (todayMonth === 8 || todayMonth === 9) {
-    if (todayDate >= 20 && todayDate <= 30) {
-      return {
-        ...FESTIVALS[3],
-        date: today,
-      }
-    }
-  }
-  
-  // Janmashtami (usually August)
-  if (todayMonth === 8) {
-    if (todayDate >= 15 && todayDate <= 25) {
-      return {
-        ...FESTIVALS[4],
-        date: today,
-      }
-    }
-  }
-  
-  return null
+  return getFestivalForDate(new Date())
 }
 
 /**
@@ -193,27 +137,40 @@ export function getUpcomingFestivals(days: number = 30): Festival[] {
 /**
  * Get festival for specific date (simplified)
  */
-function getFestivalForDate(date: Date): Festival | null {
+export function getFestivalForDate(date: Date): Festival | null {
   const month = date.getMonth() + 1
   const day = date.getDate()
-  
-  // Same logic as getFestivalToday but for specific date
-  // This is simplified - use proper calculations in production
-  
-  if (month === 10 || month === 11) {
-    if (day >= 20 && day <= 30) {
-      return { ...FESTIVALS[0], date }
-    }
+
+  // Simplified matching - in production, use proper festival date calculations.
+
+  // Diwali (usually October/November)
+  if ((month === 10 || month === 11) && day >= 20 && day <= 30) {
+    return { ...FESTIVALS[0], date }
   }
-  
-  if (month === 3) {
-    if (day >= 1 && day <= 10) {
-      return { ...FESTIVALS[1], date }
-    }
+
+  // Holi (usually March)
+  if (month === 3 && day >= 1 && day <= 10) {
+    return { ...FESTIVALS[1], date }
   }
-  
-  // Add more festival checks as needed
-  
+
+  // Navratri (twice a year - simplified)
+  if (
+    (month === 3 && day >= 20 && day <= 30) ||
+    (month === 10 && day >= 1 && day <= 10)
+  ) {
+    return { ...FESTIVALS[2], date }
+  }
+
+  // Ganesha Chaturthi (usually August/September)
+  if ((month === 8 || month === 9) && day >= 20 && day <= 30) {
+    return { ...FESTIVALS[3], date }
+  }
+
+  // Janmashtami (usually August)
+  if (month === 8 && day >= 15 && day <= 25) {
+    return { ...FESTIVALS[4], date }
+  }
+
   return null
 }
 

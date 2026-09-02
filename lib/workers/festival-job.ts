@@ -1,6 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin'
 import {
-  getFestivalToday,
+  getFestivalForDate,
   checkDashaSensitivity,
 } from '@/lib/engines/festival/festival-engine'
 import { queueNotification } from '@/lib/services/notification-service'
@@ -22,17 +22,6 @@ export async function runFestivalJob(
 
   const batchSize = normalizeBatchSize(options.batchSize)
   const now = options.now ? new Date(options.now) : new Date()
-  const festival = getFestivalToday()
-
-  if (!festival) {
-    return {
-      processed: 0,
-      skipped: 0,
-      errors: 0,
-      hasMore: false,
-      nextCursor: null,
-    }
-  }
 
   let query = adminDb
     .collection('users')
@@ -58,6 +47,16 @@ export async function runFestivalJob(
       const userData = userDoc.data()
       const timezone = normalizeTimezone(userData.timezone)
       const calendarKey = getCalendarDateKey(now, timezone)
+      const [year, month, day] = calendarKey.split('-').map(Number)
+      const festival = getFestivalForDate(
+        new Date(year, month - 1, day, 12, 0, 0)
+      )
+
+      if (!festival) {
+        skipped++
+        continue
+      }
+
       const scheduledFor = localHourToUtcDate(calendarKey, 6, timezone)
 
       let dashaSensitive = false

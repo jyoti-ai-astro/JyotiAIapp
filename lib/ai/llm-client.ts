@@ -97,6 +97,29 @@ function isRetryableProviderError(error: any): boolean {
   )
 }
 
+const AI_SUCCESS_TELEMETRY_SETTLE_MS = 500
+
+async function settleSuccessTelemetry(
+  telemetry: Promise<void>
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  try {
+    await Promise.race([
+      telemetry,
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, AI_SUCCESS_TELEMETRY_SETTLE_MS)
+      }),
+    ])
+  } catch (error) {
+    console.error('[AI] Failed to record success telemetry', error)
+  } finally {
+    if (timer) {
+      clearTimeout(timer)
+    }
+  }
+}
+
 export async function callLLM(
   messages: LLMMessage[],
   signal?: AbortSignal,
@@ -159,16 +182,16 @@ export async function callLLM(
         }
       }
 
-      void recordAIProviderEvent(
-        'success',
-        PROVIDER_NAMES[provider],
-        {
-          latencyMs: Date.now() - startedAt,
-          modelRole: options?.modelRole,
-        }
-      ).catch((error) => {
-        console.error('[AI] Failed to record success telemetry', error)
-      })
+      await settleSuccessTelemetry(
+        recordAIProviderEvent(
+          'success',
+          PROVIDER_NAMES[provider],
+          {
+            latencyMs: Date.now() - startedAt,
+            modelRole: options?.modelRole,
+          }
+        )
+      )
 
       return content
     } catch (error: any) {

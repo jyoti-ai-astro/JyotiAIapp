@@ -229,6 +229,7 @@ export interface NotificationQueueProcessResult {
   processed: number
   failed: number
   skipped: number
+  hasMore: boolean
 }
 
 export async function processNotificationQueue(): Promise<NotificationQueueProcessResult> {
@@ -239,6 +240,7 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
       processed: 0,
       failed: 0,
       skipped: 0,
+      hasMore: false,
     }
   }
 
@@ -251,18 +253,22 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
   const queueSnap = await queueRef
     .where('processed', '==', false)
     .where('scheduledFor', '<=', now)
-    .limit(100)
+    .limit(101)
     .get()
 
+  const queueDocs = queueSnap.docs.slice(0, 100)
+  const hasMore = queueSnap.docs.length > queueDocs.length
+
   const result: NotificationQueueProcessResult = {
-    due: queueSnap.size,
+    due: queueDocs.length,
     claimed: 0,
     processed: 0,
     failed: 0,
     skipped: 0,
+    hasMore,
   }
 
-  for (const doc of queueSnap.docs) {
+  for (const doc of queueDocs) {
     let claimed = false
 
     try {
