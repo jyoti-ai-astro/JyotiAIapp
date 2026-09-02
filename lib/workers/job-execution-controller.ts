@@ -34,6 +34,7 @@ export class JobExecutionConflictError extends Error {
 }
 
 const JOB_EXECUTION_LEASE_MS = 10 * 60 * 1000
+const JOB_EXECUTION_HEARTBEAT_MS = 2 * 60 * 1000
 
 function jobRef(jobId: ExecutableProducerJobId) {
   if (!adminDb) {
@@ -87,13 +88,14 @@ export async function executeProducerJob(
     throw new Error('Firestore not initialized')
   }
 
+  const db = adminDb
   const startedAtMs = Date.now()
   const startedAt = new Date(startedAtMs)
   const executionId = randomUUID()
   const batchSize = normalizeBatchSize(request.batchSize)
   const ref = jobRef(request.jobId)
 
-  const claim = await adminDb.runTransaction(async (transaction) => {
+  const claim = await db.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(ref)
     const state = snapshot.exists ? snapshot.data() || {} : {}
 
@@ -148,7 +150,53 @@ export async function executeProducerJob(
     batchSize,
   })
 
+  let heartbeatTimer: ReturnType<typeof setInterval> | null = null
+  let heartbeatInFlight = false
+
+  const renewLease = async () => {
+    if (heartbeatInFlight) return
+
+    heartbeatInFlight = true
+
+    try {
+      await db.runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(ref)
+
+        if (!snapshot.exists) {
+          return
+        }
+
+        const state = snapshot.data() || {}
+
+        if (state.executionId !== executionId) {
+          return
+        }
+
+        transaction.set(
+          ref,
+          {
+            executionLeaseExpiresAt: new Date(
+              Date.now() + JOB_EXECUTION_LEASE_MS
+            ),
+          },
+          { merge: true }
+        )
+      })
+    } catch (error) {
+      console.error(
+        `[workers] Failed to renew execution lease for ${request.jobId}`,
+        error
+      )
+    } finally {
+      heartbeatInFlight = false
+    }
+  }
+
   try {
+    heartbeatTimer = setInterval(() => {
+      void renewLease()
+    }, JOB_EXECUTION_HEARTBEAT_MS)
+
     const executor = await loadExecutor(request.jobId)
 
     const options: ExecutorOptions = {
@@ -160,7 +208,65 @@ export async function executeProducerJob(
     const completedAt = new Date()
     const durationMs = Date.now() - startedAtMs
 
-    await adminDb.runTransaction(async (transaction) => {
+    if (result.errors > 0) {
+      const message =
+        `Producer batch completed with ${result.errors} item error` +
+        (result.errors === 1 ? '' : 's')
+
+      await db.runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(ref)
+
+        if (!snapshot.exists) {
+          throw new Error(
+            'Background job state disappeared during failed batch completion'
+          )
+        }
+
+        const state = snapshot.data() || {}
+
+        if (state.executionId !== executionId) {
+          throw new JobExecutionConflictError(
+            'Job execution lease ownership changed before failed batch completion'
+          )
+        }
+
+        transaction.set(
+          ref,
+          {
+            executionId: null,
+            executionLeaseExpiresAt: null,
+            executionStartedAt: null,
+            cursor: claim.cursor,
+            hasMore: true,
+            lastBatchProcessed: result.processed,
+            lastBatchSkipped: result.skipped,
+            lastBatchErrors: result.errors,
+            lastFailure: completedAt,
+            lastStatus: 'failed',
+            lastDurationMs: durationMs,
+            lastError: message,
+            lastTriggerSource: request.triggerSource,
+            failures: Number(state.failures || 0) + 1,
+          },
+          { merge: true }
+        )
+      })
+
+      const batchError: any = new Error(message)
+      batchError.code = 'BATCH_ITEM_ERRORS'
+      batchError.statePersisted = true
+      batchError.batchResult = {
+        processed: result.processed,
+        skipped: result.skipped,
+        errors: result.errors,
+        hasMore: true,
+        nextCursor: claim.cursor,
+      }
+
+      throw batchError
+    }
+
+    await db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(ref)
 
       if (!snapshot.exists) {
@@ -222,35 +328,37 @@ export async function executeProducerJob(
         : 'Background job execution failed'
 
     try {
-      await adminDb.runTransaction(async (transaction) => {
-        const snapshot = await transaction.get(ref)
+      if (error?.statePersisted !== true) {
+        await db.runTransaction(async (transaction) => {
+          const snapshot = await transaction.get(ref)
 
-        if (!snapshot.exists) {
-          return
-        }
+          if (!snapshot.exists) {
+            return
+          }
 
-        const state = snapshot.data() || {}
+          const state = snapshot.data() || {}
 
-        if (state.executionId !== executionId) {
-          return
-        }
+          if (state.executionId !== executionId) {
+            return
+          }
 
-        transaction.set(
-          ref,
-          {
-            executionId: null,
-            executionLeaseExpiresAt: null,
-            executionStartedAt: null,
-            lastFailure: new Date(),
-            lastStatus: 'failed',
-            lastDurationMs: durationMs,
-            lastError: message,
-            lastTriggerSource: request.triggerSource,
-            failures: Number(state.failures || 0) + 1,
-          },
-          { merge: true }
-        )
-      })
+          transaction.set(
+            ref,
+            {
+              executionId: null,
+              executionLeaseExpiresAt: null,
+              executionStartedAt: null,
+              lastFailure: new Date(),
+              lastStatus: 'failed',
+              lastDurationMs: durationMs,
+              lastError: message,
+              lastTriggerSource: request.triggerSource,
+              failures: Number(state.failures || 0) + 1,
+            },
+            { merge: true }
+          )
+        })
+      }
 
       await recordOperationalEvent('job.failed', {
         jobId: request.jobId,
@@ -267,5 +375,9 @@ export async function executeProducerJob(
     }
 
     throw error
+  } finally {
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer)
+    }
   }
 }

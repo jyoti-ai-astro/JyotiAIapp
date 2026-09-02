@@ -51,7 +51,17 @@ export async function POST(request: NextRequest) {
       triggerSource,
     })
 
-    await processNotificationQueue()
+    const result = await processNotificationQueue()
+
+    if (result.failed > 0) {
+      const error: any = new Error(
+        `Notification queue completed with ${result.failed} failed item` +
+          (result.failed === 1 ? '' : 's')
+      )
+      error.code = 'QUEUE_ITEM_FAILURES'
+      error.queueResult = result
+      throw error
+    }
 
     const durationMs = Date.now() - startedAt
 
@@ -73,6 +83,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Notification queue processed',
       durationMs,
+      result,
     })
   } catch (error: any) {
     const durationMs = Date.now() - startedAt
@@ -97,6 +108,7 @@ export async function POST(request: NextRequest) {
         lastDurationMs: durationMs,
         lastError: message.slice(0, 300),
         failures,
+        lastQueueResult: error?.queueResult || null,
       })
 
       await recordOperationalEvent('job.failed', {
@@ -111,7 +123,10 @@ export async function POST(request: NextRequest) {
     console.error('Process queue error:', error)
 
     return NextResponse.json(
-      { error: message },
+      {
+        error: message,
+        result: error?.queueResult || null,
+      },
       { status: 500 }
     )
   }

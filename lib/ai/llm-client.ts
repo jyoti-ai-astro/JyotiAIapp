@@ -112,23 +112,27 @@ export async function callLLM(
     if (!configured(provider)) continue
 
     if (previousRetryableFailure) {
-      await recordAIFallback(
+      void recordAIFallback(
         PROVIDER_NAMES[previousRetryableFailure.provider],
         PROVIDER_NAMES[provider],
         previousRetryableFailure.errorCode
-      )
+      ).catch((error) => {
+        console.error('[AI] Failed to record fallback telemetry', error)
+      })
       previousRetryableFailure = null
     }
 
     const startedAt = Date.now()
 
-    await recordAIProviderEvent(
+    void recordAIProviderEvent(
       'attempt',
       PROVIDER_NAMES[provider],
       {
         modelRole: options?.modelRole,
       }
-    )
+    ).catch((error) => {
+      console.error('[AI] Failed to record attempt telemetry', error)
+    })
 
     try {
       let content: string
@@ -155,14 +159,16 @@ export async function callLLM(
         }
       }
 
-      await recordAIProviderEvent(
+      void recordAIProviderEvent(
         'success',
         PROVIDER_NAMES[provider],
         {
           latencyMs: Date.now() - startedAt,
           modelRole: options?.modelRole,
         }
-      )
+      ).catch((error) => {
+        console.error('[AI] Failed to record success telemetry', error)
+      })
 
       return content
     } catch (error: any) {
@@ -172,7 +178,7 @@ export async function callLLM(
         'UNKNOWN'
       )
 
-      await recordAIProviderEvent(
+      void recordAIProviderEvent(
         'failure',
         PROVIDER_NAMES[provider],
         {
@@ -180,7 +186,12 @@ export async function callLLM(
           errorCode,
           modelRole: options?.modelRole,
         }
-      )
+      ).catch((telemetryError) => {
+        console.error(
+          '[AI] Failed to record failure telemetry',
+          telemetryError
+        )
+      })
 
       errors.push(error)
 

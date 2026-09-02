@@ -223,20 +223,44 @@ export async function queueNotification(
 /**
  * Process notification queue (to be called by cron job)
  */
-export async function processNotificationQueue(): Promise<void> {
+export interface NotificationQueueProcessResult {
+  due: number
+  claimed: number
+  processed: number
+  failed: number
+  skipped: number
+}
+
+export async function processNotificationQueue(): Promise<NotificationQueueProcessResult> {
   if (!adminDb) {
-    return
+    return {
+      due: 0,
+      claimed: 0,
+      processed: 0,
+      failed: 0,
+      skipped: 0,
+    }
   }
 
   const now = new Date()
   const leaseDurationMs = 5 * 60 * 1000
-  const runLeaseId = `lease_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  const runLeaseId =
+    `lease_${Date.now()}_${Math.random().toString(36).substring(7)}`
+
   const queueRef = adminDb.collection('notification_queue')
   const queueSnap = await queueRef
     .where('processed', '==', false)
     .where('scheduledFor', '<=', now)
     .limit(100)
     .get()
+
+  const result: NotificationQueueProcessResult = {
+    due: queueSnap.size,
+    claimed: 0,
+    processed: 0,
+    failed: 0,
+    skipped: 0,
+  }
 
   for (const doc of queueSnap.docs) {
     let claimed = false
@@ -278,8 +302,11 @@ export async function processNotificationQueue(): Promise<void> {
       })
 
       if (!claimed) {
+        result.skipped++
         continue
       }
+
+      result.claimed++
 
       const queueItem = doc.data()
 
@@ -289,33 +316,46 @@ export async function processNotificationQueue(): Promise<void> {
         doc.id
       )
 
-      await adminDb.runTransaction(async (transaction) => {
-        const fresh = await transaction.get(doc.ref)
+      const markedProcessed = await adminDb.runTransaction(
+        async (transaction) => {
+          const fresh = await transaction.get(doc.ref)
 
-        if (!fresh.exists) {
-          return
+          if (!fresh.exists) {
+            return false
+          }
+
+          const data = fresh.data() || {}
+
+          if (
+            data.processed === true ||
+            data.leaseId !== runLeaseId
+          ) {
+            return false
+          }
+
+          transaction.update(doc.ref, {
+            processed: true,
+            processedAt: new Date(),
+            processing: false,
+            leaseId: null,
+            leaseExpiresAt: null,
+            error: null,
+          })
+
+          return true
         }
+      )
 
-        const data = fresh.data() || {}
+      if (!markedProcessed) {
+        throw new Error(
+          'Notification queue lease ownership changed before completion'
+        )
+      }
 
-        if (
-          data.processed === true ||
-          data.leaseId !== runLeaseId
-        ) {
-          return
-        }
-
-        transaction.update(doc.ref, {
-          processed: true,
-          processedAt: new Date(),
-          processing: false,
-          leaseId: null,
-          leaseExpiresAt: null,
-          error: null,
-        })
-      })
+      result.processed++
     } catch (error) {
       console.error('Failed to process notification:', error)
+      result.failed++
 
       if (!claimed) {
         continue
@@ -356,5 +396,6 @@ export async function processNotificationQueue(): Promise<void> {
       }
     }
   }
-}
 
+  return result
+}
