@@ -54,6 +54,7 @@ function deriveStatus(definition: JobDefinition, state: Record<string, any> | un
   if (!definition.schedulerConfigured && !state?.lastRun) return 'unscheduled'
   if (state?.lastStatus === 'failed') return 'failed'
   if (state?.lastStatus === 'running') return 'running'
+  if (state?.lastStatus === 'partial') return 'partial'
   if (state?.lastStatus === 'success' && !definition.schedulerConfigured) return 'manual-only'
   if (state?.lastStatus === 'success') return 'healthy'
   return 'unknown'
@@ -167,10 +168,15 @@ export async function POST(request: NextRequest) {
         }
 
         const hasMore = payload?.result?.hasMore === true
+        const workerPartial =
+          payload?.result?.status === 'partial'
 
         return NextResponse.json({
           success: true,
-          status: hasMore ? 'partial' : 'completed',
+          status:
+            workerPartial || hasMore
+              ? 'partial'
+              : 'completed',
           hasMore,
           worker: payload || null,
         })

@@ -19,11 +19,13 @@ export interface JobExecutionRequest {
   batchSize?: number
 }
 
-export interface JobExecutionResponse extends ExecutorResult {
+export interface JobExecutionResponse
+  extends Omit<ExecutorResult, 'failedItemIds'> {
   jobId: ExecutableProducerJobId
   executionId: string
   durationMs: number
-  status: 'success'
+  status: 'success' | 'partial'
+  deadLetteredItems: number
 }
 
 export class JobExecutionConflictError extends Error {
@@ -35,6 +37,7 @@ export class JobExecutionConflictError extends Error {
 
 const JOB_EXECUTION_LEASE_MS = 10 * 60 * 1000
 const JOB_EXECUTION_HEARTBEAT_MS = 2 * 60 * 1000
+const MAX_BATCH_FAILURE_ATTEMPTS = 3
 
 function jobRef(jobId: ExecutableProducerJobId) {
   if (!adminDb) {
@@ -213,6 +216,13 @@ export async function executeProducerJob(
         `Producer batch completed with ${result.errors} item error` +
         (result.errors === 1 ? '' : 's')
 
+      const deadLetterRef = db
+        .collection('background_job_dead_letters')
+        .doc(`${request.jobId}-${executionId}`)
+
+      let batchFailureAttempt = 1
+      let deadLettered = false
+
       await db.runTransaction(async (transaction) => {
         const snapshot = await transaction.get(ref)
 
@@ -230,27 +240,104 @@ export async function executeProducerJob(
           )
         }
 
+        const persistedFailureCursor =
+          typeof state.batchFailureCursor === 'string'
+            ? state.batchFailureCursor
+            : null
+
+        const sameFailedBatch =
+          persistedFailureCursor === claim.cursor
+
+        batchFailureAttempt =
+          sameFailedBatch
+            ? Number(state.batchFailureAttempts || 0) + 1
+            : 1
+
+        deadLettered =
+          batchFailureAttempt >= MAX_BATCH_FAILURE_ATTEMPTS
+
+        if (deadLettered) {
+          transaction.set(deadLetterRef, {
+            jobId: request.jobId,
+            executionId,
+            failedItemIds: result.failedItemIds,
+            failedItemCount: result.failedItemIds.length,
+            cursor: claim.cursor,
+            nextCursor: result.nextCursor,
+            hasMore: result.hasMore,
+            attempts: batchFailureAttempt,
+            triggerSource: request.triggerSource,
+            createdAt: completedAt,
+          })
+        }
+
         transaction.set(
           ref,
           {
             executionId: null,
             executionLeaseExpiresAt: null,
             executionStartedAt: null,
-            cursor: claim.cursor,
-            hasMore: true,
+            cursor: deadLettered
+              ? result.hasMore
+                ? result.nextCursor
+                : null
+              : claim.cursor,
+            hasMore: deadLettered ? result.hasMore : true,
+            batchFailureCursor: deadLettered
+              ? null
+              : claim.cursor,
+            batchFailureAttempts: deadLettered
+              ? 0
+              : batchFailureAttempt,
             lastBatchProcessed: result.processed,
             lastBatchSkipped: result.skipped,
             lastBatchErrors: result.errors,
             lastFailure: completedAt,
-            lastStatus: 'failed',
+            lastStatus: deadLettered ? 'partial' : 'failed',
             lastDurationMs: durationMs,
-            lastError: message,
+            lastError: deadLettered
+              ? `${message}; ${result.failedItemIds.length} item` +
+                (result.failedItemIds.length === 1 ? '' : 's') +
+                ` dead-lettered after ${batchFailureAttempt} attempts`
+              : message,
             lastTriggerSource: request.triggerSource,
             failures: Number(state.failures || 0) + 1,
+            lastDeadLetterAt: deadLettered
+              ? completedAt
+              : state.lastDeadLetterAt || null,
+            lastDeadLetterCount: deadLettered
+              ? result.failedItemIds.length
+              : Number(state.lastDeadLetterCount || 0),
           },
           { merge: true }
         )
       })
+
+      if (deadLettered) {
+        await recordOperationalEvent('job.failed', {
+          jobId: request.jobId,
+          triggerSource: request.triggerSource,
+          executionId,
+          durationMs,
+          errorCode: 'BATCH_ITEMS_DEAD_LETTERED',
+          deadLetteredItems: result.failedItemIds.length,
+          batchFailureAttempt,
+          hasMore: result.hasMore,
+        })
+
+        return {
+          jobId: request.jobId,
+          executionId,
+          durationMs,
+          status: 'partial',
+          processed: result.processed,
+          skipped: result.skipped,
+          errors: result.errors,
+          hasMore: result.hasMore,
+          nextCursor: result.nextCursor,
+          deadLetteredItems: result.failedItemIds.length,
+        }
+      }
 
       const batchError: any = new Error(message)
       batchError.code = 'BATCH_ITEM_ERRORS'
@@ -292,6 +379,8 @@ export async function executeProducerJob(
           lastBatchProcessed: result.processed,
           lastBatchSkipped: result.skipped,
           lastBatchErrors: result.errors,
+          batchFailureCursor: null,
+          batchFailureAttempts: 0,
           lastSuccess: completedAt,
           lastStatus: 'success',
           lastDurationMs: durationMs,
@@ -318,7 +407,12 @@ export async function executeProducerJob(
       executionId,
       durationMs,
       status: 'success',
-      ...result,
+      processed: result.processed,
+      skipped: result.skipped,
+      errors: result.errors,
+      hasMore: result.hasMore,
+      nextCursor: result.nextCursor,
+      deadLetteredItems: 0,
     }
   } catch (error: any) {
     const durationMs = Date.now() - startedAtMs

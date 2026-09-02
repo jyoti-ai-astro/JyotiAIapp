@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     if (result.hasMore) {
       await updateJobState({
-        lastStatus: 'running',
+        lastStatus: 'partial',
         lastDurationMs: durationMs,
         lastError: null,
         lastTriggerSource: triggerSource,

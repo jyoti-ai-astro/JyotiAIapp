@@ -26,6 +26,7 @@ export async function runTransitAlertJob(
       processed: 0,
       skipped: 0,
       errors: 0,
+      failedItemIds: [],
       hasMore: false,
       nextCursor: null,
     }
@@ -47,6 +48,7 @@ export async function runTransitAlertJob(
   let processed = 0
   let skipped = 0
   let errors = 0
+  const failedItemIds: string[] = []
 
   for (const kundaliDoc of docs) {
     try {
@@ -102,6 +104,7 @@ export async function runTransitAlertJob(
     } catch (error) {
       console.error(`Error processing transit for user ${kundaliDoc.id}:`, error)
       errors++
+      failedItemIds.push(kundaliDoc.id)
     }
   }
 
@@ -109,6 +112,7 @@ export async function runTransitAlertJob(
     processed,
     skipped,
     errors,
+    failedItemIds,
     hasMore,
     nextCursor: hasMore && docs.length ? docs[docs.length - 1].id : null,
   }

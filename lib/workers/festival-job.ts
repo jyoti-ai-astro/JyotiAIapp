@@ -40,6 +40,7 @@ export async function runFestivalJob(
   let processed = 0
   let skipped = 0
   let errors = 0
+  const failedItemIds: string[] = []
 
   for (const userDoc of docs) {
     try {
@@ -114,6 +115,7 @@ export async function runFestivalJob(
     } catch (error) {
       console.error(`Error processing festival for user ${userDoc.id}:`, error)
       errors++
+      failedItemIds.push(userDoc.id)
     }
   }
 
@@ -121,6 +123,7 @@ export async function runFestivalJob(
     processed,
     skipped,
     errors,
+    failedItemIds,
     hasMore,
     nextCursor: hasMore && docs.length ? docs[docs.length - 1].id : null,
   }

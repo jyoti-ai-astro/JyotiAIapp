@@ -12,6 +12,7 @@ export interface ExecutorResult {
   processed: number
   skipped: number
   errors: number
+  failedItemIds: string[]
   hasMore: boolean
   nextCursor: string | null
 }
