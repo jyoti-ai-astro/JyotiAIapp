@@ -59,6 +59,11 @@ export async function runFestivalJob(
 
       const scheduledFor = localHourToUtcDate(calendarKey, 6, timezone)
 
+      if (scheduledFor.getTime() <= now.getTime()) {
+        skipped++
+        continue
+      }
+
       let dashaSensitive = false
       let currentDasha = ''
 

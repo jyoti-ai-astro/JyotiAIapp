@@ -229,6 +229,7 @@ export interface NotificationQueueProcessResult {
   processed: number
   failed: number
   skipped: number
+  leaseConflicts: number
   hasMore: boolean
 }
 
@@ -240,6 +241,7 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
       processed: 0,
       failed: 0,
       skipped: 0,
+      leaseConflicts: 0,
       hasMore: false,
     }
   }
@@ -265,6 +267,7 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
     processed: 0,
     failed: 0,
     skipped: 0,
+    leaseConflicts: 0,
     hasMore,
   }
 
@@ -272,43 +275,53 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
     let claimed = false
 
     try {
-      claimed = await adminDb.runTransaction(async (transaction) => {
-        const fresh = await transaction.get(doc.ref)
+      const claimOutcome = await adminDb.runTransaction(
+        async (transaction): Promise<'claimed' | 'skipped' | 'leased'> => {
+          const fresh = await transaction.get(doc.ref)
 
-        if (!fresh.exists) {
-          return false
+          if (!fresh.exists) {
+            return 'skipped'
+          }
+
+          const data = fresh.data() || {}
+
+          if (data.processed === true) {
+            return 'skipped'
+          }
+
+          const leaseExpiresAt = data.leaseExpiresAt?.toDate?.()
+
+          if (
+            data.processing === true &&
+            leaseExpiresAt instanceof Date &&
+            leaseExpiresAt.getTime() > Date.now()
+          ) {
+            return 'leased'
+          }
+
+          transaction.update(doc.ref, {
+            processing: true,
+            leaseId: runLeaseId,
+            leaseExpiresAt: new Date(Date.now() + leaseDurationMs),
+            lastAttemptAt: new Date(),
+            attempts: Number(data.attempts || 0) + 1,
+            error: null,
+          })
+
+          return 'claimed'
         }
+      )
 
-        const data = fresh.data() || {}
-
-        if (data.processed === true) {
-          return false
-        }
-
-        const leaseExpiresAt = data.leaseExpiresAt?.toDate?.()
-
-        if (
-          data.processing === true &&
-          leaseExpiresAt instanceof Date &&
-          leaseExpiresAt.getTime() > Date.now()
-        ) {
-          return false
-        }
-
-        transaction.update(doc.ref, {
-          processing: true,
-          leaseId: runLeaseId,
-          leaseExpiresAt: new Date(Date.now() + leaseDurationMs),
-          lastAttemptAt: new Date(),
-          attempts: Number(data.attempts || 0) + 1,
-          error: null,
-        })
-
-        return true
-      })
+      claimed = claimOutcome === 'claimed'
 
       if (!claimed) {
         result.skipped++
+
+        if (claimOutcome === 'leased') {
+          result.leaseConflicts++
+          result.hasMore = true
+        }
+
         continue
       }
 

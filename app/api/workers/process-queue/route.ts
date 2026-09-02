@@ -65,12 +65,33 @@ export async function POST(request: NextRequest) {
 
     const durationMs = Date.now() - startedAt
 
+    if (result.hasMore) {
+      await updateJobState({
+        lastStatus: 'running',
+        lastDurationMs: durationMs,
+        lastError: null,
+        lastTriggerSource: triggerSource,
+        lastQueueResult: result,
+      })
+
+      return NextResponse.json({
+        success: true,
+        message:
+          result.leaseConflicts > 0
+            ? 'Notification queue has unfinished leased items'
+            : 'Notification queue has more due items',
+        durationMs,
+        result,
+      })
+    }
+
     await updateJobState({
       lastSuccess: new Date(),
       lastStatus: 'success',
       lastDurationMs: durationMs,
       lastError: null,
       lastTriggerSource: triggerSource,
+      lastQueueResult: result,
     })
 
     await recordOperationalEvent('job.succeeded', {
