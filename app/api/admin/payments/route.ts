@@ -39,6 +39,35 @@ function rangeStart(range: string): Date | null {
   return new Date(Date.now() - days * 86_400_000)
 }
 
+function summarize(rows: Array<{ amount: number; status: string }>) {
+  let verifiedRevenue = 0
+  let successfulPayments = 0
+  let failedPayments = 0
+  let pendingPayments = 0
+
+  rows.forEach((payment) => {
+    if (payment.status === 'success') {
+      verifiedRevenue += payment.amount
+      successfulPayments += 1
+    } else if (payment.status === 'failed') {
+      failedPayments += 1
+    } else if (payment.status === 'pending' || payment.status === 'created') {
+      pendingPayments += 1
+    }
+  })
+
+  const attempts = successfulPayments + failedPayments + pendingPayments
+  return {
+    verifiedRevenue,
+    successfulPayments,
+    failedPayments,
+    pendingPayments,
+    averageOrderValue: successfulPayments ? verifiedRevenue / successfulPayments : 0,
+    successRate: attempts ? (successfulPayments / attempts) * 100 : 0,
+    totalAttempts: attempts,
+  }
+}
+
 /**
  * Canonical payment ledger for Mission Control.
  * Current checkout flows persist orders below payments/{uid}/orders and
@@ -55,11 +84,16 @@ export async function GET(request: NextRequest) {
       try {
         const { searchParams } = new URL(req.url)
         const requestedStatus = (searchParams.get('status') || 'all').trim().toLowerCase()
+        const requestedKind = (searchParams.get('kind') || 'all').trim().toLowerCase()
         const search = (searchParams.get('search') || '').trim().toLowerCase()
         const range = (searchParams.get('range') || '30d').trim().toLowerCase()
         const requestedLimit = Number.parseInt(searchParams.get('limit') || '50', 10)
         const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 200) : 50
         const since = rangeStart(range)
+
+        if (!['all', 'one_time', 'order'].includes(requestedKind)) {
+          return NextResponse.json({ error: 'Invalid payment kind' }, { status: 400 })
+        }
 
         const [ordersSnap, oneTimeOrdersSnap] = await Promise.all([
           adminDb.collectionGroup('orders').limit(5000).get(),
@@ -69,7 +103,7 @@ export async function GET(request: NextRequest) {
         const rawRows = [
           ...ordersSnap.docs
             .filter((doc: any) => isCanonicalPaymentDoc(doc, 'orders'))
-            .map((doc: any) => ({ doc, kind: 'report_or_legacy_order' as const })),
+            .map((doc: any) => ({ doc, kind: 'order' as const })),
           ...oneTimeOrdersSnap.docs
             .filter((doc: any) => isCanonicalPaymentDoc(doc, 'one_time_orders'))
             .map((doc: any) => ({ doc, kind: 'one_time' as const })),
@@ -94,6 +128,7 @@ export async function GET(request: NextRequest) {
 
           return {
             id: data.paymentId || data.orderId || doc.id,
+            kind,
             userId,
             email: data.email || null,
             amount: safeAmount,
@@ -118,47 +153,34 @@ export async function GET(request: NextRequest) {
           return !!createdAt && createdAt >= since
         })
 
-        let verifiedRevenue = 0
-        let successfulPayments = 0
-        let failedPayments = 0
-        let pendingPayments = 0
+        const stats = summarize(inWindow)
+        const oneTimeRows = inWindow.filter((payment) => payment.kind === 'one_time')
+        const orderRows = inWindow.filter((payment) => payment.kind === 'order')
+        const oneTimeStats = summarize(oneTimeRows)
+        const orderStats = summarize(orderRows)
+
         const products = new Map<string, { count: number; revenue: number }>()
         const sources = new Map<string, { count: number; revenue: number }>()
 
         inWindow.forEach((payment) => {
-          if (payment.status === 'success') {
-            verifiedRevenue += payment.amount
-            successfulPayments += 1
+          if (payment.status !== 'success') return
 
-            const productName = String(payment.productId || payment.type || 'Unmapped')
-            const product = products.get(productName) || { count: 0, revenue: 0 }
-            product.count += 1
-            product.revenue += payment.amount
-            products.set(productName, product)
+          const productName = String(payment.productId || payment.type || 'Unmapped')
+          const product = products.get(productName) || { count: 0, revenue: 0 }
+          product.count += 1
+          product.revenue += payment.amount
+          products.set(productName, product)
 
-            const sourceName = payment.attribution.source || 'Direct / unknown'
-            const source = sources.get(sourceName) || { count: 0, revenue: 0 }
-            source.count += 1
-            source.revenue += payment.amount
-            sources.set(sourceName, source)
-          } else if (payment.status === 'failed') {
-            failedPayments += 1
-          } else if (payment.status === 'pending' || payment.status === 'created') {
-            pendingPayments += 1
-          }
+          const sourceName = payment.attribution.source || 'Direct / unknown'
+          const source = sources.get(sourceName) || { count: 0, revenue: 0 }
+          source.count += 1
+          source.revenue += payment.amount
+          sources.set(sourceName, source)
         })
 
-        const attempts = successfulPayments + failedPayments + pendingPayments
-        const stats = {
-          verifiedRevenue,
-          successfulPayments,
-          failedPayments,
-          pendingPayments,
-          averageOrderValue: successfulPayments ? verifiedRevenue / successfulPayments : 0,
-          successRate: attempts ? (successfulPayments / attempts) * 100 : 0,
-        }
-
         let visible = inWindow.filter((payment) => {
+          if (requestedKind !== 'all' && payment.kind !== requestedKind) return false
+
           if (requestedStatus !== 'all') {
             if (requestedStatus === 'pending') {
               if (payment.status !== 'pending') return false
@@ -170,6 +192,7 @@ export async function GET(request: NextRequest) {
           if (search) {
             const haystack = [
               payment.id,
+              payment.kind,
               payment.userId,
               payment.email,
               payment.razorpayPaymentId,
@@ -209,6 +232,10 @@ export async function GET(request: NextRequest) {
           success: true,
           payments: visible,
           stats,
+          segments: {
+            oneTime: oneTimeStats,
+            orders: orderStats,
+          },
           breakdowns: {
             products: Array.from(products.entries())
               .map(([name, value]) => ({ name, ...value }))
@@ -219,10 +246,11 @@ export async function GET(request: NextRequest) {
               .sort((a, b) => b.revenue - a.revenue)
               .slice(0, 12),
           },
-          filters: { search, status: requestedStatus, range },
+          filters: { search, status: requestedStatus, kind: requestedKind, range },
           contract: {
             stores: ['payments/{uid}/orders', 'payments/{uid}/one_time_orders'],
             verifiedStatus: 'completed',
+            kinds: ['order', 'one_time'],
           },
         })
       } catch (error: any) {
