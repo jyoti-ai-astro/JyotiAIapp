@@ -166,9 +166,12 @@ export async function POST(request: NextRequest) {
           )
         }
 
+        const hasMore = payload?.result?.hasMore === true
+
         return NextResponse.json({
           success: true,
-          status: 'completed',
+          status: hasMore ? 'partial' : 'completed',
+          hasMore,
           worker: payload || null,
         })
       } catch (error: any) {

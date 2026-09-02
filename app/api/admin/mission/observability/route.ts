@@ -58,16 +58,56 @@ export async function GET(request: NextRequest) {
 
         const since = new Date(Date.now() - hours * 60 * 60 * 1000)
 
-        const [logsSnapshot, jobsSnapshot] = await Promise.all([
-          adminDb
+        const jobsSnapshot = await adminDb
+          .collection('background_jobs')
+          .get()
+
+        const logDocs: any[] = []
+        const logPageSize = 500
+        const maxLogPages = 20
+        let lastLogDocument: any = null
+        let logScanTruncated = false
+        let reachedWindowBoundary = false
+
+        for (let page = 0; page < maxLogPages; page += 1) {
+          let query = adminDb
             .collection('app_logs')
             .orderBy('createdAt', 'desc')
-            .limit(1500)
-            .get(),
-          adminDb.collection('background_jobs').get(),
-        ])
+            .limit(logPageSize)
 
-        const logs = logsSnapshot.docs
+          if (lastLogDocument) {
+            query = query.startAfter(lastLogDocument)
+          }
+
+          const pageSnapshot = await query.get()
+
+          if (pageSnapshot.empty) {
+            break
+          }
+
+          logDocs.push(...pageSnapshot.docs)
+
+          reachedWindowBoundary = pageSnapshot.docs.some((doc) => {
+            const createdAt = toDate(doc.data().createdAt)
+            return createdAt ? createdAt < since : false
+          })
+
+          if (
+            reachedWindowBoundary ||
+            pageSnapshot.size < logPageSize
+          ) {
+            break
+          }
+
+          lastLogDocument =
+            pageSnapshot.docs[pageSnapshot.docs.length - 1] || null
+
+          if (page === maxLogPages - 1) {
+            logScanTruncated = true
+          }
+        }
+
+        const logs = logDocs
           .map((doc) => ({
             id: doc.id,
             ...doc.data(),
@@ -232,6 +272,12 @@ export async function GET(request: NextRequest) {
           success: true,
           windowHours: hours,
           checkedAt: new Date().toISOString(),
+          logScan: {
+            scannedEvents: logDocs.length,
+            truncated: logScanTruncated,
+            reachedWindowBoundary,
+            maxEvents: logPageSize * maxLogPages,
+          },
           providers,
           jobs,
           counts,

@@ -147,6 +147,14 @@ export async function callLLM(
         throw aiMalformedResponse(PROVIDER_NAMES[provider])
       }
 
+      if (options?.validate) {
+        try {
+          options.validate(content)
+        } catch {
+          throw aiMalformedResponse(PROVIDER_NAMES[provider])
+        }
+      }
+
       await recordAIProviderEvent(
         'success',
         PROVIDER_NAMES[provider],

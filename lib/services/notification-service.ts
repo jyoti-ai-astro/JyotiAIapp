@@ -48,25 +48,35 @@ export async function createNotification(
     .doc(notificationId)
 
   if (normalizedDeliveryKey) {
-    const created = await adminDb.runTransaction(async (transaction) => {
-      const existing = await transaction.get(notificationRef)
+    const dispatchState = await adminDb.runTransaction(
+      async (transaction) => {
+        const existing = await transaction.get(notificationRef)
 
-      if (existing.exists) {
-        return false
+        if (existing.exists) {
+          const existingData = existing.data() || {}
+
+          return {
+            created: false,
+            handedOff: Boolean(existingData.dispatchHandoffAt),
+          }
+        }
+
+        transaction.set(notificationRef, {
+          ...notification,
+          timestamp: new Date(),
+          read: false,
+          deliveryKey: normalizedDeliveryKey,
+          dispatchHandoffAt: null,
+        })
+
+        return {
+          created: true,
+          handedOff: false,
+        }
       }
+    )
 
-      transaction.set(notificationRef, {
-        ...notification,
-        timestamp: new Date(),
-        read: false,
-        deliveryKey: normalizedDeliveryKey,
-        dispatchHandoffAt: null,
-      })
-
-      return true
-    })
-
-    if (!created) {
+    if (dispatchState.handedOff) {
       return notificationId
     }
   } else {

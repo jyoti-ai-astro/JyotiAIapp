@@ -20,22 +20,63 @@ export const GET = withAdminAuth(
         )
       }
 
-      const logsSnapshot = await adminDb
-        .collection('app_logs')
-        .orderBy('createdAt', 'desc')
-        .limit(200)
-        .get()
+      const failures: Array<Record<string, any>> = []
+      const pageSize = 200
+      const maxPages = 50
+      let lastDocument: any = null
+      let scanTruncated = false
 
-      const failures = logsSnapshot.docs
-        .filter((doc) => doc.data().type === 'payment.failed')
-        .slice(0, 20)
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-        }))
+      for (let page = 0; page < maxPages && failures.length < 20; page += 1) {
+        let query = adminDb
+          .collection('app_logs')
+          .orderBy('createdAt', 'desc')
+          .limit(pageSize)
 
-      return NextResponse.json(failures)
+        if (lastDocument) {
+          query = query.startAfter(lastDocument)
+        }
+
+        const logsSnapshot = await query.get()
+
+        if (logsSnapshot.empty) {
+          break
+        }
+
+        for (const doc of logsSnapshot.docs) {
+          if (doc.data().type !== 'payment.failed') {
+            continue
+          }
+
+          failures.push({
+            id: doc.id,
+            ...doc.data(),
+            createdAt:
+              doc.data().createdAt?.toDate?.() ||
+              doc.data().createdAt,
+          })
+
+          if (failures.length >= 20) {
+            break
+          }
+        }
+
+        if (logsSnapshot.size < pageSize) {
+          break
+        }
+
+        lastDocument =
+          logsSnapshot.docs[logsSnapshot.docs.length - 1] || null
+
+        if (page === maxPages - 1 && failures.length < 20) {
+          scanTruncated = true
+        }
+      }
+
+      return NextResponse.json(failures.slice(0, 20), {
+        headers: {
+          'X-JyotiAI-Log-Scan-Truncated': scanTruncated ? 'true' : 'false',
+        },
+      })
     } catch (error: any) {
       console.error('Get payment failures error:', error)
 
