@@ -120,6 +120,26 @@ export async function executeProducerJob(
         ? state.cursor
         : null
 
+    const persistedFailureCursor =
+      typeof state.batchFailureCursor === 'string' &&
+      state.batchFailureCursor.trim()
+        ? state.batchFailureCursor
+        : null
+
+    const persistedLogicalRunStartedAt = toDate(
+      state.logicalRunStartedAt
+    )
+
+    const continuingDrain =
+      cursor !== null ||
+      state.hasMore === true ||
+      persistedFailureCursor !== null
+
+    const logicalRunStartedAt =
+      continuingDrain && persistedLogicalRunStartedAt
+        ? persistedLogicalRunStartedAt
+        : startedAt
+
     transaction.set(
       ref,
       {
@@ -129,6 +149,7 @@ export async function executeProducerJob(
           startedAtMs + JOB_EXECUTION_LEASE_MS
         ),
         lastRun: startedAt,
+        logicalRunStartedAt,
         lastStatus: 'running',
         lastTriggerSource: request.triggerSource,
         lastError: null,
@@ -139,6 +160,7 @@ export async function executeProducerJob(
     return {
       claimed: true as const,
       cursor,
+      logicalRunStartedAt,
     }
   })
 
@@ -205,6 +227,7 @@ export async function executeProducerJob(
     const options: ExecutorOptions = {
       cursor: claim.cursor,
       batchSize,
+      now: claim.logicalRunStartedAt,
     }
 
     const result = await executor(options)
@@ -283,6 +306,10 @@ export async function executeProducerJob(
                 : null
               : claim.cursor,
             hasMore: deadLettered ? result.hasMore : true,
+            logicalRunStartedAt:
+              deadLettered && !result.hasMore
+                ? null
+                : claim.logicalRunStartedAt,
             batchFailureCursor: deadLettered
               ? null
               : claim.cursor,
@@ -376,13 +403,18 @@ export async function executeProducerJob(
           executionStartedAt: null,
           cursor: result.hasMore ? result.nextCursor : null,
           hasMore: result.hasMore,
+          logicalRunStartedAt: result.hasMore
+            ? claim.logicalRunStartedAt
+            : null,
           lastBatchProcessed: result.processed,
           lastBatchSkipped: result.skipped,
           lastBatchErrors: result.errors,
           batchFailureCursor: null,
           batchFailureAttempts: 0,
-          lastSuccess: completedAt,
-          lastStatus: 'success',
+          ...(result.hasMore
+            ? {}
+            : { lastSuccess: completedAt }),
+          lastStatus: result.hasMore ? 'partial' : 'success',
           lastDurationMs: durationMs,
           lastError: null,
           lastTriggerSource: request.triggerSource,
@@ -391,22 +423,24 @@ export async function executeProducerJob(
       )
     })
 
-    await recordOperationalEvent('job.succeeded', {
-      jobId: request.jobId,
-      triggerSource: request.triggerSource,
-      executionId,
-      durationMs,
-      processed: result.processed,
-      skipped: result.skipped,
-      errors: result.errors,
-      hasMore: result.hasMore,
-    })
+    if (!result.hasMore) {
+      await recordOperationalEvent('job.succeeded', {
+        jobId: request.jobId,
+        triggerSource: request.triggerSource,
+        executionId,
+        durationMs,
+        processed: result.processed,
+        skipped: result.skipped,
+        errors: result.errors,
+        hasMore: result.hasMore,
+      })
+    }
 
     return {
       jobId: request.jobId,
       executionId,
       durationMs,
-      status: 'success',
+      status: result.hasMore ? 'partial' : 'success',
       processed: result.processed,
       skipped: result.skipped,
       errors: result.errors,
