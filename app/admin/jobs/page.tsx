@@ -51,6 +51,7 @@ export default function JobsPage() {
     if (!confirm(`Trigger ${jobId} now?`)) return
 
     const maxBatchesPerTrigger = 20
+    let totalDeadLetteredItems = 0
 
     try {
       for (let batch = 1; batch <= maxBatchesPerTrigger; batch += 1) {
@@ -66,12 +67,28 @@ export default function JobsPage() {
           throw new Error(data.error || 'Job execution failed')
         }
 
+        const batchDeadLetteredItems =
+          typeof data.deadLetteredItems === 'number' &&
+          Number.isFinite(data.deadLetteredItems)
+            ? Math.max(0, Math.floor(data.deadLetteredItems))
+            : 0
+
+        totalDeadLetteredItems += batchDeadLetteredItems
+
         if (data.status !== 'partial' || data.hasMore !== true) {
-          alert(
-            batch === 1
-              ? 'Job completed successfully'
-              : `Job completed successfully after ${batch} batches`
-          )
+          if (totalDeadLetteredItems > 0) {
+            alert(
+              `Job completed with ${totalDeadLetteredItems} dead-lettered ` +
+                `item${totalDeadLetteredItems === 1 ? '' : 's'}. ` +
+                'Review the dead-letter queue before treating this run as fully successful.'
+            )
+          } else {
+            alert(
+              batch === 1
+                ? 'Job completed successfully'
+                : `Job completed successfully after ${batch} batches`
+            )
+          }
 
           await fetchJobs()
           return
@@ -80,6 +97,12 @@ export default function JobsPage() {
 
       alert(
         `Job processed ${maxBatchesPerTrigger} batches and still has more work. ` +
+          (
+            totalDeadLetteredItems > 0
+              ? `${totalDeadLetteredItems} item${totalDeadLetteredItems === 1 ? '' : 's'} ` +
+                'were dead-lettered during this trigger. '
+              : ''
+          ) +
           'The saved cursor is preserved; trigger the job again to continue.'
       )
 

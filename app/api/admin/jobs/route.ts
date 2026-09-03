@@ -170,6 +170,13 @@ export async function POST(request: NextRequest) {
         const hasMore = payload?.result?.hasMore === true
         const workerPartial =
           payload?.result?.status === 'partial'
+        const rawDeadLetteredItems =
+          payload?.result?.deadLetteredItems
+        const deadLetteredItems =
+          typeof rawDeadLetteredItems === 'number' &&
+          Number.isFinite(rawDeadLetteredItems)
+            ? Math.max(0, Math.floor(rawDeadLetteredItems))
+            : 0
 
         return NextResponse.json({
           success: true,
@@ -178,6 +185,7 @@ export async function POST(request: NextRequest) {
               ? 'partial'
               : 'completed',
           hasMore,
+          deadLetteredItems,
           worker: payload || null,
         })
       } catch (error: any) {

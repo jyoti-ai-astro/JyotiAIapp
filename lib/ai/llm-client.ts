@@ -120,6 +120,27 @@ async function settleSuccessTelemetry(
   }
 }
 
+async function settleFailureTelemetry(
+  telemetry: Promise<void>
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  try {
+    await Promise.race([
+      telemetry,
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, AI_SUCCESS_TELEMETRY_SETTLE_MS)
+      }),
+    ])
+  } catch (error) {
+    console.error('[AI] Failed to record failure telemetry', error)
+  } finally {
+    if (timer) {
+      clearTimeout(timer)
+    }
+  }
+}
+
 export async function callLLM(
   messages: LLMMessage[],
   signal?: AbortSignal,
@@ -131,7 +152,7 @@ export async function callLLM(
     | { provider: ProviderId; errorCode: string }
     | null = null
 
-  for (const provider of sequence) {
+  for (const [providerIndex, provider] of sequence.entries()) {
     if (!configured(provider)) continue
 
     if (previousRetryableFailure) {
@@ -201,7 +222,7 @@ export async function callLLM(
         'UNKNOWN'
       )
 
-      void recordAIProviderEvent(
+      const failureTelemetry = recordAIProviderEvent(
         'failure',
         PROVIDER_NAMES[provider],
         {
@@ -209,22 +230,41 @@ export async function callLLM(
           errorCode,
           modelRole: options?.modelRole,
         }
-      ).catch((telemetryError) => {
+      )
+
+      errors.push(error)
+
+      const retryable = isRetryableProviderError(error)
+      const hasLaterConfiguredProvider = sequence
+        .slice(providerIndex + 1)
+        .some(configured)
+      const terminalFailure =
+        !retryable || !hasLaterConfiguredProvider
+
+      if (terminalFailure) {
+        await settleFailureTelemetry(failureTelemetry)
+
+        if (!retryable) {
+          console.error(
+            `[AI] ${PROVIDER_NAMES[provider]} generation failed with non-retryable error`,
+            error
+          )
+        } else {
+          console.error(
+            `[AI] ${PROVIDER_NAMES[provider]} generation failed with no configured fallback provider`,
+            error
+          )
+        }
+
+        throw error
+      }
+
+      void failureTelemetry.catch((telemetryError) => {
         console.error(
           '[AI] Failed to record failure telemetry',
           telemetryError
         )
       })
-
-      errors.push(error)
-
-      if (!isRetryableProviderError(error)) {
-        console.error(
-          `[AI] ${PROVIDER_NAMES[provider]} generation failed with non-retryable error`,
-          error
-        )
-        throw error
-      }
 
       previousRetryableFailure = {
         provider,
