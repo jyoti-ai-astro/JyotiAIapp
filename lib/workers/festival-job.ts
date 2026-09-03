@@ -8,6 +8,7 @@ import {
   ExecutorOptions,
   ExecutorResult,
   getCalendarDateKey,
+  getNextCalendarDateKey,
   localHourToUtcDate,
   normalizeBatchSize,
   normalizeTimezone,
@@ -47,20 +48,20 @@ export async function runFestivalJob(
       const uid = userDoc.id
       const userData = userDoc.data()
       const timezone = normalizeTimezone(userData.timezone)
-      const calendarKey = getCalendarDateKey(now, timezone)
+      let calendarKey = getCalendarDateKey(now, timezone)
+      let scheduledFor = localHourToUtcDate(calendarKey, 6, timezone)
+
+      if (scheduledFor.getTime() <= now.getTime()) {
+        calendarKey = getNextCalendarDateKey(now, timezone)
+        scheduledFor = localHourToUtcDate(calendarKey, 6, timezone)
+      }
+
       const [year, month, day] = calendarKey.split('-').map(Number)
       const festival = getFestivalForDate(
         new Date(year, month - 1, day, 12, 0, 0)
       )
 
       if (!festival) {
-        skipped++
-        continue
-      }
-
-      const scheduledFor = localHourToUtcDate(calendarKey, 6, timezone)
-
-      if (scheduledFor.getTime() <= now.getTime()) {
         skipped++
         continue
       }
