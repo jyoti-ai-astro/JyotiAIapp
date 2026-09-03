@@ -141,8 +141,12 @@ export default function AdminMonitoringPage() {
     useState<SubscriptionHealth | null>(null)
   const [paymentFailures, setPaymentFailures] =
     useState<LogEntry[]>([])
+  const [paymentFailuresTruncated, setPaymentFailuresTruncated] =
+    useState(false)
   const [webhookEvents, setWebhookEvents] =
     useState<LogEntry[]>([])
+  const [webhookEventsTruncated, setWebhookEventsTruncated] =
+    useState(false)
   const [jobs, setJobs] =
     useState<OperationalJob[]>([])
   const [observability, setObservability] =
@@ -159,6 +163,20 @@ export default function AdminMonitoringPage() {
     return response.json()
   }
 
+  const fetchCappedLogJson = async (url: string) => {
+    const response = await fetch(url, {
+      cache: 'no-store',
+    })
+
+    if (!response.ok) return null
+
+    return {
+      data: await response.json(),
+      truncated:
+        response.headers.get('X-JyotiAI-Log-Scan-Truncated') === 'true',
+    }
+  }
+
   const fetchMonitoringData = async () => {
     setRefreshing(true)
 
@@ -173,16 +191,22 @@ export default function AdminMonitoringPage() {
       ] = await Promise.all([
         fetchJson('/api/admin/monitoring/payments-config'),
         fetchJson('/api/admin/monitoring/health'),
-        fetchJson('/api/admin/monitoring/payment-failures'),
-        fetchJson('/api/admin/monitoring/webhook-events'),
+        fetchCappedLogJson('/api/admin/monitoring/payment-failures'),
+        fetchCappedLogJson('/api/admin/monitoring/webhook-events'),
         fetchJson('/api/admin/jobs'),
         fetchJson('/api/admin/mission/observability?hours=24'),
       ])
 
       if (config) setPaymentsConfig(config)
       if (health) setSubscriptionHealth(health)
-      if (Array.isArray(failures)) setPaymentFailures(failures)
-      if (Array.isArray(webhooks)) setWebhookEvents(webhooks)
+      if (Array.isArray(failures?.data)) {
+        setPaymentFailures(failures.data)
+        setPaymentFailuresTruncated(failures.truncated)
+      }
+      if (Array.isArray(webhooks?.data)) {
+        setWebhookEvents(webhooks.data)
+        setWebhookEventsTruncated(webhooks.truncated)
+      }
       if (Array.isArray(jobData?.jobs)) setJobs(jobData.jobs)
       if (operational?.success) setObservability(operational)
     } catch (error) {
@@ -520,32 +544,43 @@ export default function AdminMonitoringPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {paymentFailures.length ? (
-                <div className="max-h-72 space-y-2 overflow-y-auto">
-                  {paymentFailures.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="rounded border border-red-500/30 bg-red-500/10 p-3"
-                    >
-                      <div className="text-sm font-medium text-white">
-                        {entry.type}
-                      </div>
-                      <div className="mt-1 text-xs text-white/60">
-                        {new Date(entry.createdAt).toLocaleString()}
-                      </div>
-                      {entry.data?.error && (
-                        <div className="mt-1 text-xs text-red-300">
-                          {entry.data.error}
+              <div className="space-y-3">
+                {paymentFailuresTruncated ? (
+                  <div className="rounded-lg border border-yellow-300/30 bg-yellow-300/10 p-3 text-sm text-yellow-100">
+                    Payment failure results may be incomplete because the log
+                    scan reached its limit.
+                  </div>
+                ) : null}
+
+                {paymentFailures.length ? (
+                  <div className="max-h-72 space-y-2 overflow-y-auto">
+                    {paymentFailures.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="rounded border border-red-500/30 bg-red-500/10 p-3"
+                      >
+                        <div className="text-sm font-medium text-white">
+                          {entry.type}
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-white/70">
-                  No recent payment failures.
-                </p>
-              )}
+                        <div className="mt-1 text-xs text-white/60">
+                          {new Date(entry.createdAt).toLocaleString()}
+                        </div>
+                        {entry.data?.error && (
+                          <div className="mt-1 text-xs text-red-300">
+                            {entry.data.error}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-white/70">
+                    {paymentFailuresTruncated
+                      ? 'No payment failures were found in the scanned portion of the logs.'
+                      : 'No recent payment failures.'}
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -556,32 +591,43 @@ export default function AdminMonitoringPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {webhookEvents.length ? (
-                <div className="max-h-72 space-y-2 overflow-y-auto">
-                  {webhookEvents.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="rounded border border-blue-500/30 bg-blue-500/10 p-3"
-                    >
-                      <div className="text-sm font-medium text-white">
-                        {entry.type}
-                      </div>
-                      <div className="mt-1 text-xs text-white/60">
-                        {new Date(entry.createdAt).toLocaleString()}
-                      </div>
-                      {entry.data?.event && (
-                        <div className="mt-1 text-xs text-blue-300">
-                          {entry.data.event}
+              <div className="space-y-3">
+                {webhookEventsTruncated ? (
+                  <div className="rounded-lg border border-yellow-300/30 bg-yellow-300/10 p-3 text-sm text-yellow-100">
+                    Webhook event results may be incomplete because the log
+                    scan reached its limit.
+                  </div>
+                ) : null}
+
+                {webhookEvents.length ? (
+                  <div className="max-h-72 space-y-2 overflow-y-auto">
+                    {webhookEvents.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="rounded border border-blue-500/30 bg-blue-500/10 p-3"
+                      >
+                        <div className="text-sm font-medium text-white">
+                          {entry.type}
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-white/70">
-                  No recent webhook events.
-                </p>
-              )}
+                        <div className="mt-1 text-xs text-white/60">
+                          {new Date(entry.createdAt).toLocaleString()}
+                        </div>
+                        {entry.data?.event && (
+                          <div className="mt-1 text-xs text-blue-300">
+                            {entry.data.event}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-white/70">
+                    {webhookEventsTruncated
+                      ? 'No webhook events were found in the scanned portion of the logs.'
+                      : 'No recent webhook events.'}
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
