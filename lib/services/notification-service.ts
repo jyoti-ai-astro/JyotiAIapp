@@ -47,11 +47,17 @@ export async function createNotification(
     .collection('items')
     .doc(notificationId)
 
+  let dispatchClaimedAt: Date | null = null
+  let dispatchLeaseExpiresAt: Date | null = null
+
   if (normalizedDeliveryKey) {
-    const dispatchClaimedAt = new Date()
-    const dispatchLeaseExpiresAt = new Date(
-      dispatchClaimedAt.getTime() + 5 * 60 * 1000
+    const claimedAt = new Date()
+    const leaseExpiresAt = new Date(
+      claimedAt.getTime() + 5 * 60 * 1000
     )
+
+    dispatchClaimedAt = claimedAt
+    dispatchLeaseExpiresAt = leaseExpiresAt
 
     const dispatchState = await adminDb.runTransaction(
       async (transaction) => {
@@ -83,7 +89,7 @@ export async function createNotification(
           ) {
             if (
               existingLeaseExpiresAt.getTime() >
-              dispatchClaimedAt.getTime()
+              claimedAt.getTime()
             ) {
               return 'in-flight' as const
             }
@@ -92,7 +98,7 @@ export async function createNotification(
               notificationRef,
               {
                 dispatchState: 'ambiguous',
-                dispatchAmbiguousAt: dispatchClaimedAt,
+                dispatchAmbiguousAt: claimedAt,
                 dispatchLeaseExpiresAt: null,
               },
               { merge: true }
@@ -105,8 +111,8 @@ export async function createNotification(
             notificationRef,
             {
               dispatchState: 'claimed',
-              dispatchClaimedAt,
-              dispatchLeaseExpiresAt,
+              dispatchClaimedAt: claimedAt,
+              dispatchLeaseExpiresAt: leaseExpiresAt,
               dispatchAmbiguousAt: null,
             },
             { merge: true }
@@ -117,12 +123,12 @@ export async function createNotification(
 
         transaction.set(notificationRef, {
           ...notification,
-          timestamp: dispatchClaimedAt,
+          timestamp: claimedAt,
           read: false,
           deliveryKey: normalizedDeliveryKey,
           dispatchState: 'claimed',
-          dispatchClaimedAt,
-          dispatchLeaseExpiresAt,
+          dispatchClaimedAt: claimedAt,
+          dispatchLeaseExpiresAt: leaseExpiresAt,
           dispatchAmbiguousAt: null,
           dispatchHandoffAt: null,
         })
@@ -160,7 +166,24 @@ export async function createNotification(
     })
   }
 
-  await dispatchNotification(userId, notification)
+  try {
+    await dispatchNotification(userId, notification)
+  } catch (error) {
+    if (
+      normalizedDeliveryKey &&
+      dispatchClaimedAt &&
+      dispatchLeaseExpiresAt &&
+      error instanceof NotificationDispatchConfirmedFailure
+    ) {
+      await releaseConfirmedDispatchFailure(
+        notificationRef,
+        dispatchClaimedAt,
+        dispatchLeaseExpiresAt
+      )
+    }
+
+    throw error
+  }
 
   await notificationRef.update({
     dispatchState: 'handed-off',
@@ -169,6 +192,64 @@ export async function createNotification(
   })
 
   return notificationId
+}
+
+class NotificationDispatchConfirmedFailure extends Error {
+  constructor() {
+    super('Notification email dispatch was not confirmed')
+    this.name = 'NotificationDispatchConfirmedFailure'
+  }
+}
+
+async function releaseConfirmedDispatchFailure(
+  notificationRef: FirebaseFirestore.DocumentReference,
+  expectedClaimedAt: Date,
+  expectedLeaseExpiresAt: Date
+): Promise<void> {
+  if (!adminDb) {
+    return
+  }
+
+  await adminDb.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(notificationRef)
+
+    if (!snapshot.exists) {
+      return
+    }
+
+    const data = snapshot.data() || {}
+
+    if (
+      data.dispatchHandoffAt ||
+      data.dispatchState !== 'claimed'
+    ) {
+      return
+    }
+
+    const claimedAt = data.dispatchClaimedAt?.toDate?.()
+    const leaseExpiresAt =
+      data.dispatchLeaseExpiresAt?.toDate?.()
+
+    if (
+      !(claimedAt instanceof Date) ||
+      !(leaseExpiresAt instanceof Date) ||
+      claimedAt.getTime() !== expectedClaimedAt.getTime() ||
+      leaseExpiresAt.getTime() !== expectedLeaseExpiresAt.getTime()
+    ) {
+      return
+    }
+
+    transaction.set(
+      notificationRef,
+      {
+        dispatchState: 'retryable',
+        dispatchClaimedAt: null,
+        dispatchLeaseExpiresAt: null,
+        dispatchAmbiguousAt: null,
+      },
+      { merge: true }
+    )
+  })
 }
 
 /**
@@ -198,9 +279,7 @@ async function dispatchNotification(
       })
 
       if (!emailSent) {
-        throw new Error(
-          'Notification email dispatch was not confirmed'
-        )
+        throw new NotificationDispatchConfirmedFailure()
       }
     } catch (error) {
       console.error('Failed to send notification email:', error)

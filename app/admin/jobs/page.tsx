@@ -73,7 +73,7 @@ export default function JobsPage() {
             ? Math.max(0, Math.floor(data.deadLetteredItems))
             : 0
 
-        totalDeadLetteredItems += batchDeadLetteredItems
+        totalDeadLetteredItems = batchDeadLetteredItems
 
         if (data.status !== 'partial' || data.hasMore !== true) {
           if (totalDeadLetteredItems > 0) {
