@@ -48,6 +48,11 @@ export async function createNotification(
     .doc(notificationId)
 
   if (normalizedDeliveryKey) {
+    const dispatchClaimedAt = new Date()
+    const dispatchLeaseExpiresAt = new Date(
+      dispatchClaimedAt.getTime() + 5 * 60 * 1000
+    )
+
     const dispatchState = await adminDb.runTransaction(
       async (transaction) => {
         const existing = await transaction.get(notificationRef)
@@ -55,29 +60,91 @@ export async function createNotification(
         if (existing.exists) {
           const existingData = existing.data() || {}
 
-          return {
-            created: false,
-            handedOff: Boolean(existingData.dispatchHandoffAt),
+          if (existingData.dispatchHandoffAt) {
+            return 'handed-off' as const
           }
+
+          if (
+            existingData.dispatchState === 'ambiguous' ||
+            existingData.dispatchAmbiguousAt
+          ) {
+            return 'ambiguous' as const
+          }
+
+          const existingClaimedAt =
+            existingData.dispatchClaimedAt?.toDate?.()
+
+          const existingLeaseExpiresAt =
+            existingData.dispatchLeaseExpiresAt?.toDate?.()
+
+          if (
+            existingClaimedAt instanceof Date &&
+            existingLeaseExpiresAt instanceof Date
+          ) {
+            if (
+              existingLeaseExpiresAt.getTime() >
+              dispatchClaimedAt.getTime()
+            ) {
+              return 'in-flight' as const
+            }
+
+            transaction.set(
+              notificationRef,
+              {
+                dispatchState: 'ambiguous',
+                dispatchAmbiguousAt: dispatchClaimedAt,
+                dispatchLeaseExpiresAt: null,
+              },
+              { merge: true }
+            )
+
+            return 'ambiguous' as const
+          }
+
+          transaction.set(
+            notificationRef,
+            {
+              dispatchState: 'claimed',
+              dispatchClaimedAt,
+              dispatchLeaseExpiresAt,
+              dispatchAmbiguousAt: null,
+            },
+            { merge: true }
+          )
+
+          return 'claimed' as const
         }
 
         transaction.set(notificationRef, {
           ...notification,
-          timestamp: new Date(),
+          timestamp: dispatchClaimedAt,
           read: false,
           deliveryKey: normalizedDeliveryKey,
+          dispatchState: 'claimed',
+          dispatchClaimedAt,
+          dispatchLeaseExpiresAt,
+          dispatchAmbiguousAt: null,
           dispatchHandoffAt: null,
         })
 
-        return {
-          created: true,
-          handedOff: false,
-        }
+        return 'claimed' as const
       }
     )
 
-    if (dispatchState.handedOff) {
+    if (dispatchState === 'handed-off') {
       return notificationId
+    }
+
+    if (dispatchState === 'in-flight') {
+      throw new Error(
+        'Notification dispatch is already in progress'
+      )
+    }
+
+    if (dispatchState === 'ambiguous') {
+      throw new Error(
+        'Notification dispatch outcome is ambiguous; automatic redispatch refused'
+      )
     }
   } else {
     await notificationRef.set({
@@ -85,6 +152,10 @@ export async function createNotification(
       timestamp: new Date(),
       read: false,
       deliveryKey: null,
+      dispatchState: 'claimed',
+      dispatchClaimedAt: new Date(),
+      dispatchLeaseExpiresAt: null,
+      dispatchAmbiguousAt: null,
       dispatchHandoffAt: null,
     })
   }
@@ -92,7 +163,9 @@ export async function createNotification(
   await dispatchNotification(userId, notification)
 
   await notificationRef.update({
+    dispatchState: 'handed-off',
     dispatchHandoffAt: new Date(),
+    dispatchLeaseExpiresAt: null,
   })
 
   return notificationId
@@ -116,14 +189,22 @@ async function dispatchNotification(
   if (notification.delivery.includes('email') && userEmail) {
     try {
       const emailHtml = generateNotificationEmail(notification)
-      await sendEmail({
+      const emailSent = await sendEmail({
         to: userEmail,
         subject: notification.title,
         htmlBody: emailHtml,
         category: 'alert',
+        queueOnFailure: false,
       })
+
+      if (!emailSent) {
+        throw new Error(
+          'Notification email dispatch was not confirmed'
+        )
+      }
     } catch (error) {
       console.error('Failed to send notification email:', error)
+      throw error
     }
   }
 }

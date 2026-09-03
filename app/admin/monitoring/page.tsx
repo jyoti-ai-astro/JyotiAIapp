@@ -73,6 +73,10 @@ type OperationalJob = {
 type ObservabilitySnapshot = {
   windowHours: number
   checkedAt: string
+  logScan: {
+    scannedEvents: number
+    truncated: boolean
+  }
   providers: ProviderHealth[]
   counts: {
     operationalEvents: number
@@ -239,7 +243,18 @@ export default function AdminMonitoringPage() {
           </CardHeader>
           <CardContent>
             {observability ? (
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
+              <div className="space-y-4">
+                {observability.logScan?.truncated ? (
+                  <div className="rounded-lg border border-yellow-300/30 bg-yellow-300/10 p-3 text-sm text-yellow-100">
+                    This snapshot is truncated. Counts and AI provider metrics
+                    reflect the first{' '}
+                    {observability.logScan.scannedEvents.toLocaleString()}{' '}
+                    events scanned in the selected window and are not complete
+                    totals.
+                  </div>
+                ) : null}
+
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
                 {Object.entries(observability.counts).map(
                   ([key, value]) => (
                     <div
@@ -255,6 +270,7 @@ export default function AdminMonitoringPage() {
                     </div>
                   )
                 )}
+                </div>
               </div>
             ) : (
               <p className="text-white/70">
@@ -268,6 +284,9 @@ export default function AdminMonitoringPage() {
           <CardHeader>
             <CardTitle className="text-gold">
               AI Provider Health
+              {observability?.logScan?.truncated
+                ? ' — truncated scan'
+                : ''}
             </CardTitle>
           </CardHeader>
           <CardContent>

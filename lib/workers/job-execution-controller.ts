@@ -127,6 +127,11 @@ export async function executeProducerJob(
     const logicalRunStartedAt =
       persistedLogicalRunStartedAt ?? startedAt
 
+    const logicalRunDeadLetteredItems = Math.max(
+      0,
+      Number(state.logicalRunDeadLetteredItems || 0)
+    )
+
     transaction.set(
       ref,
       {
@@ -148,6 +153,7 @@ export async function executeProducerJob(
       claimed: true as const,
       cursor,
       logicalRunStartedAt,
+      logicalRunDeadLetteredItems,
     }
   })
 
@@ -226,6 +232,10 @@ export async function executeProducerJob(
         `Producer batch completed with ${result.errors} item error` +
         (result.errors === 1 ? '' : 's')
 
+      const accumulatedDeadLetteredItems =
+        claim.logicalRunDeadLetteredItems +
+        result.failedItemIds.length
+
       const deadLetterRef = db
         .collection('background_job_dead_letters')
         .doc(`${request.jobId}-${executionId}`)
@@ -297,6 +307,12 @@ export async function executeProducerJob(
               deadLettered && !result.hasMore
                 ? null
                 : claim.logicalRunStartedAt,
+            logicalRunDeadLetteredItems:
+              deadLettered && !result.hasMore
+                ? 0
+                : deadLettered
+                  ? accumulatedDeadLetteredItems
+                  : claim.logicalRunDeadLetteredItems,
             batchFailureCursor: deadLettered
               ? null
               : claim.cursor,
@@ -335,6 +351,7 @@ export async function executeProducerJob(
           durationMs,
           errorCode: 'BATCH_ITEMS_DEAD_LETTERED',
           deadLetteredItems: result.failedItemIds.length,
+          logicalRunDeadLetteredItems: accumulatedDeadLetteredItems,
           batchFailureAttempt,
           hasMore: result.hasMore,
         })
@@ -349,7 +366,7 @@ export async function executeProducerJob(
           errors: result.errors,
           hasMore: result.hasMore,
           nextCursor: result.nextCursor,
-          deadLetteredItems: result.failedItemIds.length,
+          deadLetteredItems: accumulatedDeadLetteredItems,
         }
       }
 
@@ -366,6 +383,19 @@ export async function executeProducerJob(
 
       throw batchError
     }
+
+    const logicalRunDegraded =
+      claim.logicalRunDeadLetteredItems > 0
+
+    const terminalLogicalRunDegraded =
+      !result.hasMore && logicalRunDegraded
+
+    const logicalRunDeadLetterError =
+      terminalLogicalRunDegraded
+        ? `${claim.logicalRunDeadLetteredItems} item` +
+          (claim.logicalRunDeadLetteredItems === 1 ? '' : 's') +
+          ' dead-lettered during the logical run'
+        : null
 
     await db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(ref)
@@ -393,17 +423,23 @@ export async function executeProducerJob(
           logicalRunStartedAt: result.hasMore
             ? claim.logicalRunStartedAt
             : null,
+          logicalRunDeadLetteredItems: result.hasMore
+            ? claim.logicalRunDeadLetteredItems
+            : 0,
           lastBatchProcessed: result.processed,
           lastBatchSkipped: result.skipped,
           lastBatchErrors: result.errors,
           batchFailureCursor: null,
           batchFailureAttempts: 0,
-          ...(result.hasMore
-            ? {}
-            : { lastSuccess: completedAt }),
-          lastStatus: result.hasMore ? 'partial' : 'success',
+          ...(!result.hasMore && !terminalLogicalRunDegraded
+            ? { lastSuccess: completedAt }
+            : {}),
+          lastStatus:
+            result.hasMore || terminalLogicalRunDegraded
+              ? 'partial'
+              : 'success',
           lastDurationMs: durationMs,
-          lastError: null,
+          lastError: logicalRunDeadLetterError,
           lastTriggerSource: request.triggerSource,
         },
         { merge: true }
@@ -411,29 +447,43 @@ export async function executeProducerJob(
     })
 
     if (!result.hasMore) {
-      await recordOperationalEvent('job.succeeded', {
-        jobId: request.jobId,
-        triggerSource: request.triggerSource,
-        executionId,
-        durationMs,
-        processed: result.processed,
-        skipped: result.skipped,
-        errors: result.errors,
-        hasMore: result.hasMore,
-      })
+      if (terminalLogicalRunDegraded) {
+        await recordOperationalEvent('job.failed', {
+          jobId: request.jobId,
+          triggerSource: request.triggerSource,
+          executionId,
+          durationMs,
+          errorCode: 'LOGICAL_RUN_DEAD_LETTERED',
+          deadLetteredItems: claim.logicalRunDeadLetteredItems,
+        })
+      } else {
+        await recordOperationalEvent('job.succeeded', {
+          jobId: request.jobId,
+          triggerSource: request.triggerSource,
+          executionId,
+          durationMs,
+          processed: result.processed,
+          skipped: result.skipped,
+          errors: result.errors,
+          hasMore: result.hasMore,
+        })
+      }
     }
 
     return {
       jobId: request.jobId,
       executionId,
       durationMs,
-      status: result.hasMore ? 'partial' : 'success',
+      status:
+        result.hasMore || terminalLogicalRunDegraded
+          ? 'partial'
+          : 'success',
       processed: result.processed,
       skipped: result.skipped,
       errors: result.errors,
       hasMore: result.hasMore,
       nextCursor: result.nextCursor,
-      deadLetteredItems: 0,
+      deadLetteredItems: claim.logicalRunDeadLetteredItems,
     }
   } catch (error: any) {
     const durationMs = Date.now() - startedAtMs

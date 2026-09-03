@@ -24,6 +24,7 @@ interface EmailOptions {
   category: 'login' | 'payment' | 'report' | 'alert' | 'festival' | 'security' | 'admin'
   replyTo?: string
   from?: string
+  queueOnFailure?: boolean
   attachments?: Array<{
     filename: string
     content: string
@@ -159,7 +160,11 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     return success
   } catch (error: any) {
     await logEmail(options, 'failed', error.message)
-    await queueEmailForRetry(options, error.message)
+
+    if (options.queueOnFailure !== false) {
+      await queueEmailForRetry(options, error.message)
+    }
+
     return false
   }
 }
