@@ -120,25 +120,12 @@ export async function executeProducerJob(
         ? state.cursor
         : null
 
-    const persistedFailureCursor =
-      typeof state.batchFailureCursor === 'string' &&
-      state.batchFailureCursor.trim()
-        ? state.batchFailureCursor
-        : null
-
     const persistedLogicalRunStartedAt = toDate(
       state.logicalRunStartedAt
     )
 
-    const continuingDrain =
-      cursor !== null ||
-      state.hasMore === true ||
-      persistedFailureCursor !== null
-
     const logicalRunStartedAt =
-      continuingDrain && persistedLogicalRunStartedAt
-        ? persistedLogicalRunStartedAt
-        : startedAt
+      persistedLogicalRunStartedAt ?? startedAt
 
     transaction.set(
       ref,
