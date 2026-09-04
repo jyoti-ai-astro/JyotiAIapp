@@ -1,5 +1,5 @@
-export const DEFAULT_EXECUTOR_BATCH_SIZE = 25
-export const MAX_EXECUTOR_BATCH_SIZE = 100
+export const DEFAULT_EXECUTOR_BATCH_SIZE = 5
+export const MAX_EXECUTOR_BATCH_SIZE = 10
 export const DEFAULT_TIMEZONE = 'Asia/Kolkata'
 
 export interface ExecutorOptions {

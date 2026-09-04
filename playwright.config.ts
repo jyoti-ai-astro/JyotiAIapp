@@ -5,12 +5,12 @@ const baseURL =
   'http://127.0.0.1:3000'
 
 const isRemotePreview = Boolean(process.env.PLAYWRIGHT_BASE_URL)
-const vercelAutomationBypassSecret =
-  process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+const vercelBypassCookie =
+  process.env.VERCEL_BYPASS_COOKIE
 
-if (isRemotePreview && !vercelAutomationBypassSecret) {
+if (isRemotePreview && !vercelBypassCookie) {
   throw new Error(
-    'VERCEL_AUTOMATION_BYPASS_SECRET is required for remote Preview tests',
+    'VERCEL_BYPASS_COOKIE is required for remote Preview tests',
   )
 }
 
@@ -40,11 +40,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     extraHTTPHeaders:
-      isRemotePreview && vercelAutomationBypassSecret
+      isRemotePreview && vercelBypassCookie
         ? {
-            'x-vercel-protection-bypass':
-              vercelAutomationBypassSecret,
-            'x-vercel-set-bypass-cookie': 'true',
+            cookie: vercelBypassCookie,
           }
         : undefined,
   },

@@ -17,7 +17,7 @@ for (const path of publicPages) {
     })
 
     expect(response).not.toBeNull()
-    expect(response?.status()).toBeLessThan(500)
+    expect(response?.status()).toBeLessThan(400)
     await expect(page.locator('body')).toBeVisible()
   })
 }
