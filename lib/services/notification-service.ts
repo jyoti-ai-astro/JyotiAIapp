@@ -176,7 +176,10 @@ export async function createNotification(
       normalizedDeliveryKey &&
       dispatchClaimedAt &&
       dispatchLeaseExpiresAt &&
-      error instanceof NotificationDispatchConfirmedFailure
+      (
+        error instanceof NotificationDispatchConfirmedFailure ||
+        error instanceof NotificationDispatchPreSendFailure
+      )
     ) {
       await releaseConfirmedDispatchFailure(
         notificationRef,
@@ -201,6 +204,13 @@ class NotificationDispatchConfirmedFailure extends Error {
   constructor() {
     super('Notification email dispatch was not confirmed')
     this.name = 'NotificationDispatchConfirmedFailure'
+  }
+}
+
+class NotificationDispatchPreSendFailure extends Error {
+  constructor() {
+    super('Notification dispatch failed before external send')
+    this.name = 'NotificationDispatchPreSendFailure'
   }
 }
 
@@ -266,7 +276,15 @@ async function dispatchNotification(
   if (!adminDb) return
 
   const userRef = adminDb.collection('users').doc(userId)
-  const userSnap = await userRef.get()
+  let userSnap: FirebaseFirestore.DocumentSnapshot
+
+  try {
+    userSnap = await userRef.get()
+  } catch (error) {
+    console.error('Failed to read notification recipient before dispatch:', error)
+    throw new NotificationDispatchPreSendFailure()
+  }
+
   const userEmail = userSnap.exists ? userSnap.data()?.email : null
 
   // Send email if email delivery is enabled

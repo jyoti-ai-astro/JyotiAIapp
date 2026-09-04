@@ -216,6 +216,10 @@ export async function callLLM(
 
       return content
     } catch (error: any) {
+      if (signal?.aborted) {
+        throw error
+      }
+
       const errorCode = String(
         error?.code ||
         error?.name ||
