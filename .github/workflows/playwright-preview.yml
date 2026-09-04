@@ -92,7 +92,7 @@ jobs:
                 }
               ).trim()
 
-              if (!/^\\d{3}$/.test(httpCode) || Number(httpCode) >= 400) {
+              if (!/^\d{3}$/.test(httpCode) || Number(httpCode) >= 400) {
                 throw new Error(
                   `Vercel trusted-source request returned HTTP ${httpCode}`
                 )
