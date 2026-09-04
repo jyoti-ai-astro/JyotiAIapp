@@ -17,6 +17,13 @@ const getZeptoConfig = () => {
   }
 }
 
+export class EmailDispatchConfirmedFailure extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'EmailDispatchConfirmedFailure'
+  }
+}
+
 interface EmailOptions {
   to: string
   subject: string
@@ -25,6 +32,7 @@ interface EmailOptions {
   replyTo?: string
   from?: string
   queueOnFailure?: boolean
+  throwOnFailure?: boolean
   attachments?: Array<{
     filename: string
     content: string
@@ -61,7 +69,9 @@ async function sendViaZeptoMail(options: EmailOptions): Promise<boolean> {
           fromProcessEnv: process.env.ZEPTO_API_TOKEN ? 'found' : 'missing',
         })
       }
-      throw new Error('Email service not configured. Please contact support.')
+      throw new EmailDispatchConfirmedFailure(
+        'Email service not configured. Please contact support.'
+      )
     }
     
     const response = await fetch(zeptoConfig.apiUrl, {
@@ -91,7 +101,9 @@ async function sendViaZeptoMail(options: EmailOptions): Promise<boolean> {
 
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(`ZeptoMail API error: ${response.status} - ${errorText}`)
+      throw new EmailDispatchConfirmedFailure(
+        `ZeptoMail API error: ${response.status} - ${errorText}`
+      )
     }
 
     return true
@@ -163,6 +175,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 
     if (options.queueOnFailure !== false) {
       await queueEmailForRetry(options, error.message)
+    }
+
+    if (options.throwOnFailure === true) {
+      throw error
     }
 
     return false

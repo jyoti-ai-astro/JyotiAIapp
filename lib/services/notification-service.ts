@@ -7,7 +7,10 @@
  */
 
 import { adminDb } from '@/lib/firebase/admin'
-import { sendEmail } from '@/lib/email/email-service'
+import {
+  EmailDispatchConfirmedFailure,
+  sendEmail,
+} from '@/lib/email/email-service'
 
 export interface Notification {
   type: 'daily' | 'transit' | 'festival' | 'chakra' | 'system'
@@ -276,13 +279,21 @@ async function dispatchNotification(
         htmlBody: emailHtml,
         category: 'alert',
         queueOnFailure: false,
+        throwOnFailure: true,
       })
 
       if (!emailSent) {
-        throw new NotificationDispatchConfirmedFailure()
+        throw new Error(
+          'Notification email dispatch returned false without classified failure'
+        )
       }
     } catch (error) {
       console.error('Failed to send notification email:', error)
+
+      if (error instanceof EmailDispatchConfirmedFailure) {
+        throw new NotificationDispatchConfirmedFailure()
+      }
+
       throw error
     }
   }
