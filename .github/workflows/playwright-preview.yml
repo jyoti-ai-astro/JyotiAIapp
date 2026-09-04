@@ -6,7 +6,6 @@ on:
 permissions:
   contents: read
   deployments: read
-  id-token: write
 
 concurrency:
   group: playwright-preview-${{ github.event.deployment.sha }}
@@ -41,23 +40,28 @@ jobs:
 
       - name: Establish Vercel protection bypass
         id: vercel-bypass
-        uses: actions/github-script@v7
         env:
           PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url }}
-        with:
-          script: |
-            const audience = 'https://github.com/jyoti-ai-astro'
-            const oidcToken = await core.getIDToken(audience)
-            core.setSecret(oidcToken)
-            core.setOutput('token', oidcToken)
-
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        shell: bash
+        run: |
+          test -n "$PLAYWRIGHT_BASE_URL"
+          test -n "$VERCEL_AUTOMATION_BYPASS_SECRET"
+          COOKIE_JAR="$RUNNER_TEMP/vercel-bypass-cookie.txt"
+          HTTP_CODE="$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' --cookie-jar "$COOKIE_JAR" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" -H "x-vercel-set-bypass-cookie: true" "$PLAYWRIGHT_BASE_URL")"
+          test "$HTTP_CODE" -lt 500
+          BYPASS_COOKIE="$(awk '$6 == "_vercel_jwt" { print $6 "=" $7 }' "$COOKIE_JAR" | tail -1)"
+          test -n "$BYPASS_COOKIE"
+          echo "::add-mask::$BYPASS_COOKIE"
+          echo "cookie=$BYPASS_COOKIE" >> "$GITHUB_OUTPUT"
+          rm -f "$COOKIE_JAR"
       - name: Run Preview smoke tests
         env:
           PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url }}
-          VERCEL_TRUSTED_OIDC_TOKEN: ${{ steps.vercel-bypass.outputs.token }}
+          VERCEL_BYPASS_COOKIE: ${{ steps.vercel-bypass.outputs.cookie }}
         run: |
           test -n "$PLAYWRIGHT_BASE_URL"
-          test -n "$VERCEL_TRUSTED_OIDC_TOKEN"
+          test -n "$VERCEL_BYPASS_COOKIE"
           npm run test:e2e:chromium
 
       - name: Upload failure evidence
