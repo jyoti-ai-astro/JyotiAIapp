@@ -4,6 +4,16 @@ const baseURL =
   process.env.PLAYWRIGHT_BASE_URL ||
   'http://127.0.0.1:3000'
 
+const isRemotePreview = Boolean(process.env.PLAYWRIGHT_BASE_URL)
+const vercelAutomationBypassSecret =
+  process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+
+if (isRemotePreview && !vercelAutomationBypassSecret) {
+  throw new Error(
+    'VERCEL_AUTOMATION_BYPASS_SECRET is required for remote Preview tests',
+  )
+}
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -29,6 +39,14 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    extraHTTPHeaders:
+      isRemotePreview && vercelAutomationBypassSecret
+        ? {
+            'x-vercel-protection-bypass':
+              vercelAutomationBypassSecret,
+            'x-vercel-set-bypass-cookie': 'true',
+          }
+        : undefined,
   },
 
   projects: [

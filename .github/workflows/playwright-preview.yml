@@ -41,8 +41,10 @@ jobs:
       - name: Run Preview smoke tests
         env:
           PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           test -n "$PLAYWRIGHT_BASE_URL"
+          test -n "$VERCEL_AUTOMATION_BYPASS_SECRET"
           npm run test:e2e:chromium
 
       - name: Upload failure evidence
