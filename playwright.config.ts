@@ -5,12 +5,12 @@ const baseURL =
   'http://127.0.0.1:3000'
 
 const isRemotePreview = Boolean(process.env.PLAYWRIGHT_BASE_URL)
-const vercelBypassCookie =
-  process.env.VERCEL_BYPASS_COOKIE
+const vercelTrustedOidcToken =
+  process.env.VERCEL_TRUSTED_OIDC_TOKEN
 
-if (isRemotePreview && !vercelBypassCookie) {
+if (isRemotePreview && !vercelTrustedOidcToken) {
   throw new Error(
-    'VERCEL_BYPASS_COOKIE is required for remote Preview tests',
+    'VERCEL_TRUSTED_OIDC_TOKEN is required for remote Preview tests',
   )
 }
 
@@ -40,9 +40,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     extraHTTPHeaders:
-      isRemotePreview && vercelBypassCookie
+      isRemotePreview && vercelTrustedOidcToken
         ? {
-            cookie: vercelBypassCookie,
+            'x-vercel-trusted-oidc-idp-token': vercelTrustedOidcToken,
           }
         : undefined,
   },

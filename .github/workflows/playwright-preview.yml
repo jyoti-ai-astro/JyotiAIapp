@@ -46,91 +46,18 @@ jobs:
           PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url }}
         with:
           script: |
-            const fs = require('fs')
-            const os = require('os')
-            const path = require('path')
-            const { execFileSync } = require('child_process')
-
-            const baseUrl = process.env.PLAYWRIGHT_BASE_URL
-
-            if (!baseUrl) {
-              core.setFailed('PLAYWRIGHT_BASE_URL is required')
-              return
-            }
-
             const audience = 'https://github.com/jyoti-ai-astro'
             const oidcToken = await core.getIDToken(audience)
-
             core.setSecret(oidcToken)
+            core.setOutput('token', oidcToken)
 
-            const cookieJar = path.join(
-              os.tmpdir(),
-              `jyotiai-vercel-${process.pid}-${Date.now()}.cookies`
-            )
-
-            try {
-              const httpCode = execFileSync(
-                'curl',
-                [
-                  '--silent',
-                  '--show-error',
-                  '--location',
-                  '--output',
-                  '/dev/null',
-                  '--write-out',
-                  '%{http_code}',
-                  '--cookie-jar',
-                  cookieJar,
-                  '-H',
-                  `x-vercel-trusted-oidc-idp-token: ${oidcToken}`,
-                  '-H',
-                  'x-vercel-set-bypass-cookie: true',
-                  baseUrl,
-                ],
-                {
-                  encoding: 'utf8',
-                }
-              ).trim()
-
-              if (!/^\d{3}$/.test(httpCode) || Number(httpCode) >= 400) {
-                throw new Error(
-                  `Vercel trusted-source request returned HTTP ${httpCode}`
-                )
-              }
-
-              const cookieFile = fs.readFileSync(cookieJar, 'utf8')
-
-              const cookieLine = cookieFile
-                .split(/\\r?\\n/)
-                .filter((line) => line && !line.startsWith('#'))
-                .map((line) => line.split('\\t'))
-                .find(
-                  (fields) =>
-                    fields.length >= 7 &&
-                    fields[5] === '_vercel_jwt'
-                )
-
-              if (!cookieLine) {
-                throw new Error(
-                  'Vercel trusted-source bypass cookie was not established'
-                )
-              }
-
-              const bypassCookie =
-                `${cookieLine[5]}=${cookieLine[6]}`
-
-              core.setSecret(bypassCookie)
-              core.setOutput('cookie', bypassCookie)
-            } finally {
-              fs.rmSync(cookieJar, { force: true })
-            }
       - name: Run Preview smoke tests
         env:
           PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url }}
-          VERCEL_BYPASS_COOKIE: ${{ steps.vercel-bypass.outputs.cookie }}
+          VERCEL_TRUSTED_OIDC_TOKEN: ${{ steps.vercel-bypass.outputs.token }}
         run: |
           test -n "$PLAYWRIGHT_BASE_URL"
-          test -n "$VERCEL_BYPASS_COOKIE"
+          test -n "$VERCEL_TRUSTED_OIDC_TOKEN"
           npm run test:e2e:chromium
 
       - name: Upload failure evidence
