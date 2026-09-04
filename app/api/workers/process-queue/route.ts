@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { processNotificationQueue } from '@/lib/services/notification-service'
 import { recordOperationalEvent } from '@/lib/observability/operational-events'
+import { FieldValue } from 'firebase-admin/firestore'
 
 const JOB_ID = 'notification-queue'
 
@@ -112,23 +113,12 @@ export async function POST(request: NextRequest) {
       error instanceof Error ? error.message : 'Failed to process queue'
 
     try {
-      let failures = 1
-
-      if (adminDb) {
-        const current = await adminDb
-          .collection('background_jobs')
-          .doc(JOB_ID)
-          .get()
-
-        failures = Number(current.data()?.failures || 0) + 1
-      }
-
       await updateJobState({
         lastFailure: new Date(),
         lastStatus: 'failed',
         lastDurationMs: durationMs,
         lastError: message.slice(0, 300),
-        failures,
+        failures: FieldValue.increment(1),
         lastQueueResult: error?.queueResult || null,
       })
 
