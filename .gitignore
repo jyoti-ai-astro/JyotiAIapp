@@ -56,3 +56,6 @@ firebase-service-account.json
 
 SETUP_INSTRUCTIONS_PRIVATE.txt
 .env*
+/playwright-report
+/test-results
+/blob-report
