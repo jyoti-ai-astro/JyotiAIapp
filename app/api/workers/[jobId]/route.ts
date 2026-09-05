@@ -11,8 +11,6 @@ export const dynamic = 'force-dynamic'
 
 const EXECUTABLE_JOBS = new Set<ExecutableProducerJobId>([
   'daily-horoscope',
-  'transit-alert',
-  'festival',
 ])
 
 function isExecutableJobId(
