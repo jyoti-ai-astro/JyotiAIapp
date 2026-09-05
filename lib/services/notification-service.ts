@@ -7,7 +7,10 @@
  */
 
 import { adminDb } from '@/lib/firebase/admin'
-import { sendEmail } from '@/lib/email/email-service'
+import {
+  EmailDispatchConfirmedFailure,
+  sendEmail,
+} from '@/lib/email/email-service'
 
 export interface Notification {
   type: 'daily' | 'transit' | 'festival' | 'chakra' | 'system'
@@ -25,29 +28,241 @@ export interface Notification {
  */
 export async function createNotification(
   userId: string,
-  notification: Omit<Notification, 'timestamp' | 'read'>
+  notification: Omit<Notification, 'timestamp' | 'read'>,
+  deliveryKey?: string
 ): Promise<string> {
   if (!adminDb) {
     throw new Error('Firestore not initialized')
   }
 
-  const notificationId = `notif_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  const normalizedDeliveryKey = deliveryKey
+    ?.trim()
+    .replace(/[^a-zA-Z0-9:_-]/g, '_')
+    .slice(0, 400)
+
+  const notificationId = normalizedDeliveryKey
+    ? `notif_${normalizedDeliveryKey}`
+    : `notif_${Date.now()}_${Math.random().toString(36).substring(7)}`
+
   const notificationRef = adminDb
     .collection('notifications')
     .doc(userId)
     .collection('items')
     .doc(notificationId)
 
-  await notificationRef.set({
-    ...notification,
-    timestamp: new Date(),
-    read: false,
+  let dispatchClaimedAt: Date | null = null
+  let dispatchLeaseExpiresAt: Date | null = null
+
+  if (normalizedDeliveryKey) {
+    const claimedAt = new Date()
+    const leaseExpiresAt = new Date(
+      claimedAt.getTime() + 5 * 60 * 1000
+    )
+
+    dispatchClaimedAt = claimedAt
+    dispatchLeaseExpiresAt = leaseExpiresAt
+
+    const dispatchState = await adminDb.runTransaction(
+      async (transaction) => {
+        const existing = await transaction.get(notificationRef)
+
+        if (existing.exists) {
+          const existingData = existing.data() || {}
+
+          if (existingData.dispatchHandoffAt) {
+            return 'handed-off' as const
+          }
+
+          if (
+            existingData.dispatchState === 'ambiguous' ||
+            existingData.dispatchAmbiguousAt
+          ) {
+            return 'ambiguous' as const
+          }
+
+          const existingClaimedAt =
+            existingData.dispatchClaimedAt?.toDate?.()
+
+          const existingLeaseExpiresAt =
+            existingData.dispatchLeaseExpiresAt?.toDate?.()
+
+          if (
+            existingClaimedAt instanceof Date &&
+            existingLeaseExpiresAt instanceof Date
+          ) {
+            if (
+              existingLeaseExpiresAt.getTime() >
+              claimedAt.getTime()
+            ) {
+              return 'in-flight' as const
+            }
+
+            transaction.set(
+              notificationRef,
+              {
+                dispatchState: 'ambiguous',
+                dispatchAmbiguousAt: claimedAt,
+                dispatchLeaseExpiresAt: null,
+              },
+              { merge: true }
+            )
+
+            return 'ambiguous' as const
+          }
+
+          transaction.set(
+            notificationRef,
+            {
+              dispatchState: 'claimed',
+              dispatchClaimedAt: claimedAt,
+              dispatchLeaseExpiresAt: leaseExpiresAt,
+              dispatchAmbiguousAt: null,
+            },
+            { merge: true }
+          )
+
+          return 'claimed' as const
+        }
+
+        transaction.set(notificationRef, {
+          ...notification,
+          timestamp: claimedAt,
+          read: false,
+          deliveryKey: normalizedDeliveryKey,
+          dispatchState: 'claimed',
+          dispatchClaimedAt: claimedAt,
+          dispatchLeaseExpiresAt: leaseExpiresAt,
+          dispatchAmbiguousAt: null,
+          dispatchHandoffAt: null,
+        })
+
+        return 'claimed' as const
+      }
+    )
+
+    if (dispatchState === 'handed-off') {
+      return notificationId
+    }
+
+    if (dispatchState === 'in-flight') {
+      throw new Error(
+        'Notification dispatch is already in progress'
+      )
+    }
+
+    if (dispatchState === 'ambiguous') {
+      throw new Error(
+        'Notification dispatch outcome is ambiguous; automatic redispatch refused'
+      )
+    }
+  } else {
+    await notificationRef.set({
+      ...notification,
+      timestamp: new Date(),
+      read: false,
+      deliveryKey: null,
+      dispatchState: 'claimed',
+      dispatchClaimedAt: new Date(),
+      dispatchLeaseExpiresAt: null,
+      dispatchAmbiguousAt: null,
+      dispatchHandoffAt: null,
+    })
+  }
+
+  try {
+    await dispatchNotification(userId, notification)
+  } catch (error) {
+    if (
+      normalizedDeliveryKey &&
+      dispatchClaimedAt &&
+      dispatchLeaseExpiresAt &&
+      (
+        error instanceof NotificationDispatchConfirmedFailure ||
+        error instanceof NotificationDispatchPreSendFailure
+      )
+    ) {
+      await releaseConfirmedDispatchFailure(
+        notificationRef,
+        dispatchClaimedAt,
+        dispatchLeaseExpiresAt
+      )
+    }
+
+    throw error
+  }
+
+  await notificationRef.update({
+    dispatchState: 'handed-off',
+    dispatchHandoffAt: new Date(),
+    dispatchLeaseExpiresAt: null,
   })
 
-  // Dispatch notification
-  await dispatchNotification(userId, notification)
-
   return notificationId
+}
+
+class NotificationDispatchConfirmedFailure extends Error {
+  constructor() {
+    super('Notification email dispatch was not confirmed')
+    this.name = 'NotificationDispatchConfirmedFailure'
+  }
+}
+
+class NotificationDispatchPreSendFailure extends Error {
+  constructor() {
+    super('Notification dispatch failed before external send')
+    this.name = 'NotificationDispatchPreSendFailure'
+  }
+}
+
+async function releaseConfirmedDispatchFailure(
+  notificationRef: FirebaseFirestore.DocumentReference,
+  expectedClaimedAt: Date,
+  expectedLeaseExpiresAt: Date
+): Promise<void> {
+  if (!adminDb) {
+    return
+  }
+
+  await adminDb.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(notificationRef)
+
+    if (!snapshot.exists) {
+      return
+    }
+
+    const data = snapshot.data() || {}
+
+    if (
+      data.dispatchHandoffAt ||
+      data.dispatchState !== 'claimed'
+    ) {
+      return
+    }
+
+    const claimedAt = data.dispatchClaimedAt?.toDate?.()
+    const leaseExpiresAt =
+      data.dispatchLeaseExpiresAt?.toDate?.()
+
+    if (
+      !(claimedAt instanceof Date) ||
+      !(leaseExpiresAt instanceof Date) ||
+      claimedAt.getTime() !== expectedClaimedAt.getTime() ||
+      leaseExpiresAt.getTime() !== expectedLeaseExpiresAt.getTime()
+    ) {
+      return
+    }
+
+    transaction.set(
+      notificationRef,
+      {
+        dispatchState: 'retryable',
+        dispatchClaimedAt: null,
+        dispatchLeaseExpiresAt: null,
+        dispatchAmbiguousAt: null,
+      },
+      { merge: true }
+    )
+  })
 }
 
 /**
@@ -61,21 +276,43 @@ async function dispatchNotification(
   if (!adminDb) return
 
   const userRef = adminDb.collection('users').doc(userId)
-  const userSnap = await userRef.get()
+  let userSnap: FirebaseFirestore.DocumentSnapshot
+
+  try {
+    userSnap = await userRef.get()
+  } catch (error) {
+    console.error('Failed to read notification recipient before dispatch:', error)
+    throw new NotificationDispatchPreSendFailure()
+  }
+
   const userEmail = userSnap.exists ? userSnap.data()?.email : null
 
   // Send email if email delivery is enabled
   if (notification.delivery.includes('email') && userEmail) {
     try {
       const emailHtml = generateNotificationEmail(notification)
-      await sendEmail({
+      const emailSent = await sendEmail({
         to: userEmail,
         subject: notification.title,
         htmlBody: emailHtml,
         category: 'alert',
+        queueOnFailure: false,
+        throwOnFailure: true,
       })
+
+      if (!emailSent) {
+        throw new Error(
+          'Notification email dispatch returned false without classified failure'
+        )
+      }
     } catch (error) {
       console.error('Failed to send notification email:', error)
+
+      if (error instanceof EmailDispatchConfirmedFailure) {
+        throw new NotificationDispatchConfirmedFailure()
+      }
+
+      throw error
     }
   }
 }
@@ -133,14 +370,31 @@ export async function queueNotification(
   userId: string,
   type: string,
   scheduledFor: Date,
-  payload: any
+  payload: any,
+  idempotencyKey?: string
 ): Promise<string> {
   if (!adminDb) {
     throw new Error('Firestore not initialized')
   }
 
-  const queueId = `queue_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  const normalizedKey = idempotencyKey
+    ?.trim()
+    .replace(/[^a-zA-Z0-9:_-]/g, '_')
+    .slice(0, 400)
+
+  const queueId = normalizedKey
+    ? `queue_${normalizedKey}`
+    : `queue_${Date.now()}_${Math.random().toString(36).substring(7)}`
+
   const queueRef = adminDb.collection('notification_queue').doc(queueId)
+
+  if (normalizedKey) {
+    const existing = await queueRef.get()
+
+    if (existing.exists) {
+      return queueId
+    }
+  }
 
   await queueRef.set({
     userId,
@@ -148,6 +402,7 @@ export async function queueNotification(
     scheduledFor,
     processed: false,
     payload,
+    idempotencyKey: normalizedKey || null,
     createdAt: new Date(),
   })
 
@@ -157,28 +412,254 @@ export async function queueNotification(
 /**
  * Process notification queue (to be called by cron job)
  */
-export async function processNotificationQueue(): Promise<void> {
+const NOTIFICATION_QUEUE_MAX_ATTEMPTS = 3
+
+export interface NotificationQueueProcessResult {
+  due: number
+  claimed: number
+  processed: number
+  failed: number
+  deadLettered: number
+  skipped: number
+  leaseConflicts: number
+  hasMore: boolean
+}
+
+export async function processNotificationQueue(): Promise<NotificationQueueProcessResult> {
   if (!adminDb) {
-    return
+    return {
+      due: 0,
+      claimed: 0,
+      processed: 0,
+      failed: 0,
+      deadLettered: 0,
+      skipped: 0,
+      leaseConflicts: 0,
+      hasMore: false,
+    }
   }
 
   const now = new Date()
+  const leaseDurationMs = 5 * 60 * 1000
+  const runLeaseId =
+    `lease_${Date.now()}_${Math.random().toString(36).substring(7)}`
+
   const queueRef = adminDb.collection('notification_queue')
   const queueSnap = await queueRef
     .where('processed', '==', false)
     .where('scheduledFor', '<=', now)
-    .limit(100)
+    .limit(101)
     .get()
 
-  for (const doc of queueSnap.docs) {
-    const queueItem = doc.data()
+  const queueDocs = queueSnap.docs.slice(0, 100)
+  const hasMore = queueSnap.docs.length > queueDocs.length
+
+  const result: NotificationQueueProcessResult = {
+    due: queueDocs.length,
+    claimed: 0,
+    processed: 0,
+    failed: 0,
+    deadLettered: 0,
+    skipped: 0,
+    leaseConflicts: 0,
+    hasMore,
+  }
+
+  for (const doc of queueDocs) {
+    let claimed = false
+
     try {
-      await createNotification(queueItem.userId, queueItem.payload)
-      await doc.ref.update({ processed: true, processedAt: new Date() })
+      const claimOutcome = await adminDb.runTransaction(
+        async (
+          transaction
+        ): Promise<
+          'claimed' | 'skipped' | 'leased' | 'dead-lettered'
+        > => {
+          const fresh = await transaction.get(doc.ref)
+
+          if (!fresh.exists) {
+            return 'skipped'
+          }
+
+          const data = fresh.data() || {}
+
+          if (data.processed === true) {
+            return 'skipped'
+          }
+
+          const attempts = Math.max(
+            0,
+            Number(data.attempts || 0)
+          )
+
+          const leaseExpiresAt = data.leaseExpiresAt?.toDate?.()
+
+          if (
+            data.processing === true &&
+            leaseExpiresAt instanceof Date &&
+            leaseExpiresAt.getTime() > Date.now()
+          ) {
+            return 'leased'
+          }
+
+          if (attempts >= NOTIFICATION_QUEUE_MAX_ATTEMPTS) {
+            transaction.update(doc.ref, {
+              processed: true,
+              deadLettered: true,
+              deadLetteredAt: new Date(),
+              processing: false,
+              leaseId: null,
+              leaseExpiresAt: null,
+              error:
+                data.error ||
+                'Notification retry limit exhausted',
+            })
+
+            return 'dead-lettered'
+          }
+
+          transaction.update(doc.ref, {
+            processing: true,
+            leaseId: runLeaseId,
+            leaseExpiresAt: new Date(Date.now() + leaseDurationMs),
+            lastAttemptAt: new Date(),
+            attempts: Number(data.attempts || 0) + 1,
+            error: null,
+          })
+
+          return 'claimed'
+        }
+      )
+
+      claimed = claimOutcome === 'claimed'
+
+      if (!claimed) {
+        result.skipped++
+
+        if (claimOutcome === 'leased') {
+          result.leaseConflicts++
+          result.hasMore = true
+        }
+
+        if (claimOutcome === 'dead-lettered') {
+          result.deadLettered++
+        }
+
+        continue
+      }
+
+      result.claimed++
+
+      const queueItem = doc.data()
+
+      await createNotification(
+        queueItem.userId,
+        queueItem.payload,
+        doc.id
+      )
+
+      const markedProcessed = await adminDb.runTransaction(
+        async (transaction) => {
+          const fresh = await transaction.get(doc.ref)
+
+          if (!fresh.exists) {
+            return false
+          }
+
+          const data = fresh.data() || {}
+
+          if (
+            data.processed === true ||
+            data.leaseId !== runLeaseId
+          ) {
+            return false
+          }
+
+          transaction.update(doc.ref, {
+            processed: true,
+            processedAt: new Date(),
+            processing: false,
+            leaseId: null,
+            leaseExpiresAt: null,
+            error: null,
+          })
+
+          return true
+        }
+      )
+
+      if (!markedProcessed) {
+        throw new Error(
+          'Notification queue lease ownership changed before completion'
+        )
+      }
+
+      result.processed++
     } catch (error) {
       console.error('Failed to process notification:', error)
-      await doc.ref.update({ processed: false, error: (error as Error).message })
+      result.failed++
+
+      if (!claimed) {
+        continue
+      }
+
+      try {
+        await adminDb.runTransaction(async (transaction) => {
+          const fresh = await transaction.get(doc.ref)
+
+          if (!fresh.exists) {
+            return
+          }
+
+          const data = fresh.data() || {}
+
+          if (
+            data.processed === true ||
+            data.leaseId !== runLeaseId
+          ) {
+            return
+          }
+
+          const attempts = Math.max(
+            0,
+            Number(data.attempts || 0)
+          )
+
+          const errorMessage =
+            error instanceof Error
+              ? error.message.slice(0, 300)
+              : 'Notification processing failed'
+
+          if (attempts >= NOTIFICATION_QUEUE_MAX_ATTEMPTS) {
+            transaction.update(doc.ref, {
+              processed: true,
+              deadLettered: true,
+              deadLetteredAt: new Date(),
+              processing: false,
+              leaseId: null,
+              leaseExpiresAt: null,
+              error: errorMessage,
+            })
+
+            result.deadLettered++
+            return
+          }
+
+          transaction.update(doc.ref, {
+            processing: false,
+            leaseId: null,
+            leaseExpiresAt: null,
+            error: errorMessage,
+          })
+        })
+      } catch (releaseError) {
+        console.error(
+          'Failed to release notification lease:',
+          releaseError
+        )
+      }
     }
   }
-}
 
+  return result
+}

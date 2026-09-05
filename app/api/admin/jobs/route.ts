@@ -1,104 +1,234 @@
 export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { withAdminAuth } from '@/lib/middleware/admin-middleware'
+import { envVars } from '@/lib/env/env.mjs'
 
-/**
- * Get Background Jobs Status API
- * Milestone 10 - Step 10
- */
+type JobDefinition = {
+  id: string
+  name: string
+  schedule: string
+  configured: boolean
+  schedulerConfigured: boolean
+  endpoint: string | null
+}
+
+const JOB_DEFINITIONS: JobDefinition[] = [
+  {
+    id: 'daily-horoscope',
+    name: 'Daily Horoscope Job',
+    schedule: '5 AM daily',
+    configured: true,
+    schedulerConfigured: false,
+    endpoint: '/api/workers/daily-horoscope',
+  },
+  {
+    id: 'transit-alert',
+    name: 'Transit Alert Job',
+    schedule: 'Hourly',
+    configured: false,
+    schedulerConfigured: false,
+    endpoint: null,
+  },
+  {
+    id: 'festival',
+    name: 'Festival Job',
+    schedule: 'Midnight daily',
+    configured: false,
+    schedulerConfigured: false,
+    endpoint: null,
+  },
+  {
+    id: 'notification-queue',
+    name: 'Notification Queue Worker',
+    schedule: 'External scheduler required',
+    configured: true,
+    schedulerConfigured: false,
+    endpoint: '/api/workers/process-queue',
+  },
+]
+
+const RUNNING_FALLBACK_STALE_MS = 30 * 60 * 1000
+
+function timestampMs(value: any): number | null {
+  if (value instanceof Date) {
+    return value.getTime()
+  }
+
+  if (value && typeof value.toDate === 'function') {
+    const date = value.toDate()
+    return date instanceof Date ? date.getTime() : null
+  }
+
+  return null
+}
+
+function isStaleRunningState(state: Record<string, any> | undefined): boolean {
+  const now = Date.now()
+  const leaseExpiresAt = timestampMs(state?.executionLeaseExpiresAt)
+
+  if (leaseExpiresAt !== null) {
+    return leaseExpiresAt <= now
+  }
+
+  const lastRun = timestampMs(state?.lastRun)
+
+  return (
+    lastRun !== null &&
+    now - lastRun > RUNNING_FALLBACK_STALE_MS
+  )
+}
+
+function deriveStatus(definition: JobDefinition, state: Record<string, any> | undefined) {
+  if (!definition.configured) return 'unconfigured'
+  if (!definition.schedulerConfigured && !state?.lastRun) return 'unscheduled'
+  if (state?.lastStatus === 'failed') return 'failed'
+
+  if (state?.lastStatus === 'running') {
+    return isStaleRunningState(state) ? 'failed' : 'running'
+  }
+
+  if (state?.lastStatus === 'partial') return 'partial'
+  if (state?.lastStatus === 'success' && !definition.schedulerConfigured) return 'manual-only'
+  if (state?.lastStatus === 'success') return 'healthy'
+  return 'unknown'
+}
+
 export async function GET(request: NextRequest) {
   return withAdminAuth(
-    async (req, admin) => {
+    async () => {
       if (!adminDb) {
-        return NextResponse.json({ error: 'Firestore not initialized' }, { status: 500 })
+        return NextResponse.json(
+          { error: 'Firestore not initialized' },
+          { status: 500 }
+        )
       }
 
       try {
-        const jobsRef = adminDb.collection('background_jobs')
-        const snapshot = await jobsRef.get()
+        const snapshot = await adminDb.collection('background_jobs').get()
+        const persisted = new Map(
+          snapshot.docs.map((doc) => [doc.id, doc.data()])
+        )
 
-        const jobs = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
+        const jobs = JOB_DEFINITIONS.map((definition) => {
+          const state = persisted.get(definition.id)
 
-        const defaultJobs = [
-          { id: 'daily-horoscope', name: 'Daily Horoscope Job', schedule: '5 AM daily', status: 'active', lastRun: null, nextRun: null, failures: 0 },
-          { id: 'transit-alert', name: 'Transit Alert Job', schedule: 'Hourly', status: 'active', lastRun: null, nextRun: null, failures: 0 },
-          { id: 'festival', name: 'Festival Job', schedule: 'Midnight daily', status: 'active', lastRun: null, nextRun: null, failures: 0 },
-          { id: 'notification-queue', name: 'Notification Queue Worker', schedule: 'Every 5 minutes', status: 'active', lastRun: null, nextRun: null, failures: 0 },
-        ]
+          return {
+            ...definition,
+            ...(state || {}),
+            status: deriveStatus(definition, state),
+            failures: Number(state?.failures || 0),
+            lastRun: state?.lastRun || null,
+            lastSuccess: state?.lastSuccess || null,
+            lastFailure: state?.lastFailure || null,
+            lastDurationMs: state?.lastDurationMs || null,
+            lastError: state?.lastError || null,
+          }
+        })
 
-        const jobMap = new Map(jobs.map((j) => [j.id, j]))
-        const allJobs = defaultJobs.map((job) => ({
-          ...job,
-          ...(jobMap.get(job.id) || {}),
-        }))
-
-        return NextResponse.json({ success: true, jobs: allJobs })
+        return NextResponse.json({
+          success: true,
+          jobs,
+          scheduler: {
+            configured: false,
+            source: 'none-detected-in-repository',
+          },
+        })
       } catch (error: any) {
         console.error('Get jobs error:', error)
-        return NextResponse.json({ error: error.message || 'Failed to get jobs' }, { status: 500 })
+        return NextResponse.json(
+          { error: error?.message || 'Failed to get jobs' },
+          { status: 500 }
+        )
       }
     },
     'logs.read'
   )(request)
 }
 
-/**
- * Trigger Background Job API
- * Milestone 10 - Step 10
- */
 export async function POST(request: NextRequest) {
   return withAdminAuth(
     async (req, admin) => {
       try {
         const { jobId } = await req.json()
+        const definition = JOB_DEFINITIONS.find((job) => job.id === jobId)
 
-        if (!jobId) {
-          return NextResponse.json({ error: 'jobId is required' }, { status: 400 })
-        }
-
-        const jobEndpoints: Record<string, string> = {
-          'daily-horoscope': '/api/workers/daily-horoscope',
-          'transit-alert': '/api/workers/transit-alert',
-          'festival': '/api/workers/festival',
-          'notification-queue': '/api/workers/process-queue',
-        }
-
-        const endpoint = jobEndpoints[jobId]
-        if (!endpoint) {
-          return NextResponse.json({ error: 'Invalid job ID' }, { status: 400 })
-        }
-
-        const response = await fetch(`${req.nextUrl.origin}${endpoint}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Cookie: req.headers.get('cookie') || '',
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to trigger job')
-        }
-
-        if (adminDb) {
-          await adminDb.collection('background_jobs').doc(jobId).set(
-            {
-              lastRun: new Date(),
-              triggeredBy: admin.uid,
-              status: 'running',
-            },
-            { merge: true }
+        if (!definition) {
+          return NextResponse.json(
+            { error: 'Invalid job ID' },
+            { status: 400 }
           )
         }
 
-        return NextResponse.json({ success: true })
+        if (!definition.configured || !definition.endpoint) {
+          return NextResponse.json(
+            {
+              error: 'Job is not implemented as an executable worker route',
+              status: 'unconfigured',
+            },
+            { status: 409 }
+          )
+        }
+
+        const workerKey = envVars.worker.apiKey
+
+        if (!workerKey) {
+          return NextResponse.json(
+            { error: 'Worker API key is not configured' },
+            { status: 503 }
+          )
+        }
+
+        const response = await fetch(`${req.nextUrl.origin}${definition.endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': workerKey,
+            'x-trigger-source': `admin:${admin.uid}`,
+          },
+          cache: 'no-store',
+        })
+
+        const payload = await response.json().catch(() => null)
+
+        if (!response.ok) {
+          return NextResponse.json(
+            {
+              error: payload?.error || 'Worker execution failed',
+              status: 'failed',
+            },
+            { status: response.status }
+          )
+        }
+
+        const hasMore = payload?.result?.hasMore === true
+        const workerPartial =
+          payload?.result?.status === 'partial'
+        const rawDeadLetteredItems =
+          payload?.result?.deadLetteredItems
+        const deadLetteredItems =
+          typeof rawDeadLetteredItems === 'number' &&
+          Number.isFinite(rawDeadLetteredItems)
+            ? Math.max(0, Math.floor(rawDeadLetteredItems))
+            : 0
+
+        return NextResponse.json({
+          success: true,
+          status:
+            workerPartial || hasMore
+              ? 'partial'
+              : 'completed',
+          hasMore,
+          deadLetteredItems,
+          worker: payload || null,
+        })
       } catch (error: any) {
         console.error('Trigger job error:', error)
-        return NextResponse.json({ error: error.message || 'Failed to trigger job' }, { status: 500 })
+        return NextResponse.json(
+          { error: error?.message || 'Failed to trigger job' },
+          { status: 500 }
+        )
       }
     },
     'jobs.trigger'

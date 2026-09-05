@@ -1,0 +1,76 @@
+name: JyotiAI Preview Smoke
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+  deployments: read
+
+concurrency:
+  group: playwright-preview-${{ github.event.deployment.sha }}
+  cancel-in-progress: true
+
+jobs:
+  preview-smoke:
+    if: >
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Preview'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout deployed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Establish Vercel protection bypass
+        id: vercel-bypass
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        shell: bash
+        run: |
+          test -n "$PLAYWRIGHT_BASE_URL"
+          test -n "$VERCEL_AUTOMATION_BYPASS_SECRET"
+          COOKIE_JAR="$RUNNER_TEMP/vercel-bypass-cookie.txt"
+          HTTP_CODE="$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' --cookie-jar "$COOKIE_JAR" -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" -H "x-vercel-set-bypass-cookie: true" "$PLAYWRIGHT_BASE_URL")"
+          test "$HTTP_CODE" -lt 500
+          BYPASS_COOKIE="$(awk '$6 == "_vercel_jwt" { print $6 "=" $7 }' "$COOKIE_JAR" | tail -1)"
+          test -n "$BYPASS_COOKIE"
+          echo "::add-mask::$BYPASS_COOKIE"
+          echo "cookie=$BYPASS_COOKIE" >> "$GITHUB_OUTPUT"
+          rm -f "$COOKIE_JAR"
+      - name: Run Preview smoke tests
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url }}
+          VERCEL_BYPASS_COOKIE: ${{ steps.vercel-bypass.outputs.cookie }}
+        run: |
+          test -n "$PLAYWRIGHT_BASE_URL"
+          test -n "$VERCEL_BYPASS_COOKIE"
+          npm run test:e2e:chromium
+
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-${{ github.event.deployment.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 3

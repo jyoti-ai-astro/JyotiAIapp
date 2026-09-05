@@ -16,7 +16,10 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "validate:deployment": "node scripts/validate-deployment.mjs",
-    "validate:build": "npm run build 2>&1 | tee build-log.txt"
+    "validate:build": "npm run build 2>&1 | tee build-log.txt",
+    "test:e2e": "playwright test",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
@@ -69,6 +72,7 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",

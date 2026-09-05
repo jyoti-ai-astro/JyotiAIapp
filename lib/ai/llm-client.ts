@@ -11,6 +11,10 @@ import {
   clearAIProviderFailure,
   recordAIProviderFailure,
 } from '@/lib/ai/provider-health'
+import {
+  recordAIFallback,
+  recordAIProviderEvent,
+} from '@/lib/observability/operational-events'
 
 export interface LLMMessage {
   role: 'user' | 'assistant' | 'system'
@@ -93,17 +97,111 @@ function isRetryableProviderError(error: any): boolean {
   )
 }
 
+const AI_SUCCESS_TELEMETRY_SETTLE_MS = 500
+
+async function settleSuccessTelemetry(
+  telemetry: Promise<void>
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  try {
+    await Promise.race([
+      telemetry,
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, AI_SUCCESS_TELEMETRY_SETTLE_MS)
+      }),
+    ])
+  } catch (error) {
+    console.error('[AI] Failed to record success telemetry', error)
+  } finally {
+    if (timer) {
+      clearTimeout(timer)
+    }
+  }
+}
+
+async function settleFailureTelemetry(
+  telemetry: Promise<void>
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  try {
+    await Promise.race([
+      telemetry,
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, AI_SUCCESS_TELEMETRY_SETTLE_MS)
+      }),
+    ])
+  } catch (error) {
+    console.error('[AI] Failed to record failure telemetry', error)
+  } finally {
+    if (timer) {
+      clearTimeout(timer)
+    }
+  }
+}
+
 export async function callLLM(
   messages: LLMMessage[],
   signal?: AbortSignal,
   options?: LLMOptions
 ): Promise<string> {
   const sequence = providerSequence(envVars.ai.provider)
-  const errors: any[] = []
+  const errors: unknown[] = []
+  const pendingTelemetry: Promise<void>[] = []
 
-  for (const provider of sequence) {
+  const settlePendingTelemetry = async () => {
+    const pending = pendingTelemetry.splice(0)
+
+    if (pending.length) {
+      await Promise.all(pending)
+    }
+  }
+
+  let previousRetryableFailure:
+    | { provider: ProviderId; errorCode: string }
+    | null = null
+
+  for (const [providerIndex, provider] of sequence.entries()) {
     if (!configured(provider)) continue
-    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+
+    if (signal?.aborted) {
+      await settlePendingTelemetry()
+      const abortError = new Error('Request aborted')
+      abortError.name = 'AbortError'
+      throw abortError
+    }
+
+    if (previousRetryableFailure) {
+      pendingTelemetry.push(
+        settleSuccessTelemetry(
+          recordAIFallback(
+            PROVIDER_NAMES[previousRetryableFailure.provider],
+            PROVIDER_NAMES[provider],
+            previousRetryableFailure.errorCode
+          ).catch((error) => {
+            console.error('[AI] Failed to record fallback telemetry', error)
+          })
+        )
+      )
+      previousRetryableFailure = null
+    }
+
+    const startedAt = Date.now()
+
+    pendingTelemetry.push(
+      settleSuccessTelemetry(
+        recordAIProviderEvent(
+          'attempt',
+          PROVIDER_NAMES[provider],
+          {
+            modelRole: options?.modelRole,
+          }
+        ).catch((error) => {
+          console.error('[AI] Failed to record attempt telemetry', error)
+        })
+      )
+    )
 
     try {
       let content: string
@@ -118,35 +216,102 @@ export async function callLLM(
         content = await callAnthropic(messages, signal, options)
       }
 
-      try {
-        options?.validate?.(content)
-      } catch {
+      if (!content?.trim()) {
         throw aiMalformedResponse(PROVIDER_NAMES[provider])
       }
 
+      if (options?.validate) {
+        try {
+          options.validate(content)
+        } catch {
+          throw aiMalformedResponse(PROVIDER_NAMES[provider])
+        }
+      }
+
+      await settleSuccessTelemetry(
+        recordAIProviderEvent(
+          'success',
+          PROVIDER_NAMES[provider],
+          {
+            latencyMs: Date.now() - startedAt,
+            modelRole: options?.modelRole,
+          }
+        )
+      )
+
+      await settlePendingTelemetry()
+
       return content
     } catch (error: any) {
-      if (signal?.aborted && error?.name === 'AbortError') throw error
+      if (signal?.aborted) {
+        await settlePendingTelemetry()
+        throw error
+      }
+
+      const errorCode = String(
+        error?.code ||
+        error?.name ||
+        'UNKNOWN'
+      )
+
+      const failureTelemetry = recordAIProviderEvent(
+        'failure',
+        PROVIDER_NAMES[provider],
+        {
+          latencyMs: Date.now() - startedAt,
+          errorCode,
+          modelRole: options?.modelRole,
+        }
+      )
 
       errors.push(error)
 
-      if (!isRetryableProviderError(error)) {
-        console.warn(
-          `[AI] ${PROVIDER_NAMES[provider]} generation failed with non-retryable error`,
-          error?.code || error?.name || 'UNKNOWN'
-        )
+      const retryable = isRetryableProviderError(error)
+      const hasLaterConfiguredProvider = sequence
+        .slice(providerIndex + 1)
+        .some(configured)
+      const terminalFailure =
+        !retryable || !hasLaterConfiguredProvider
+
+      if (terminalFailure) {
+        await settleFailureTelemetry(failureTelemetry)
+        await settlePendingTelemetry()
+
+        if (!retryable) {
+          console.error(
+            `[AI] ${PROVIDER_NAMES[provider]} generation failed with non-retryable error`,
+            error
+          )
+        } else {
+          console.error(
+            `[AI] ${PROVIDER_NAMES[provider]} generation failed with no configured fallback provider`,
+            error
+          )
+        }
+
         throw error
+      }
+
+      pendingTelemetry.push(
+        settleFailureTelemetry(failureTelemetry)
+      )
+
+      previousRetryableFailure = {
+        provider,
+        errorCode,
       }
 
       console.warn(
         `[AI] ${PROVIDER_NAMES[provider]} generation failed; trying next configured provider`,
-        error?.code || error?.name || 'UNKNOWN'
+        error
       )
     }
   }
 
-  if (errors.length) throw errors[errors.length - 1]
-  throw aiNotConfigured('AI')
+  throw (
+    errors[errors.length - 1] ||
+    aiNotConfigured('OpenAI')
+  )
 }
 
 async function callOpenAI(

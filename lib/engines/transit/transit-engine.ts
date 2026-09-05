@@ -82,7 +82,7 @@ export function matchTransitsWithKundali(
 function detectMercuryRetrograde(startDate: Date, endDate: Date): Transit | null {
   // Simplified: Mercury retrograde happens ~3 times per year
   // In production, use actual ephemeris calculations
-  const today = new Date()
+  const today = new Date(startDate)
   const daysSinceJan1 = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24))
   
   // Approximate retrograde periods (this is simplified)
@@ -97,7 +97,7 @@ function detectMercuryRetrograde(startDate: Date, endDate: Date): Transit | null
       return {
         planet: 'Mercury',
         event: 'Mercury Retrograde',
-        date: new Date(),
+        date: new Date(startDate),
         impact: 'medium',
         description: 'Mercury is retrograde. Communication and technology may be affected.',
         affectedHouses: [3, 6, 10], // Communication, work, career houses
@@ -122,7 +122,7 @@ function detectMajorTransits(startDate: Date, endDate: Date): Transit[] {
   const jupiterTransit: Transit = {
     planet: 'Jupiter',
     event: 'Jupiter Transit',
-    date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+    date: new Date(startDate.getTime() + 2 * 24 * 60 * 60 * 1000), // 2 days from start date
     impact: 'strong',
     description: 'Jupiter transits bring expansion and growth opportunities.',
     affectedHouses: [1, 5, 9], // Self, creativity, spirituality
@@ -134,7 +134,7 @@ function detectMajorTransits(startDate: Date, endDate: Date): Transit[] {
   const saturnTransit: Transit = {
     planet: 'Saturn',
     event: 'Saturn Transit',
-    date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+    date: new Date(startDate.getTime() + 5 * 24 * 60 * 60 * 1000), // 5 days from start date
     impact: 'medium',
     description: 'Saturn transits bring discipline and structure.',
     affectedHouses: [10, 11], // Career, gains
