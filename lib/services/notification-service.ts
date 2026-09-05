@@ -492,6 +492,16 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
             Number(data.attempts || 0)
           )
 
+          const leaseExpiresAt = data.leaseExpiresAt?.toDate?.()
+
+          if (
+            data.processing === true &&
+            leaseExpiresAt instanceof Date &&
+            leaseExpiresAt.getTime() > Date.now()
+          ) {
+            return 'leased'
+          }
+
           if (attempts >= NOTIFICATION_QUEUE_MAX_ATTEMPTS) {
             transaction.update(doc.ref, {
               processed: true,
@@ -506,16 +516,6 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
             })
 
             return 'dead-lettered'
-          }
-
-          const leaseExpiresAt = data.leaseExpiresAt?.toDate?.()
-
-          if (
-            data.processing === true &&
-            leaseExpiresAt instanceof Date &&
-            leaseExpiresAt.getTime() > Date.now()
-          ) {
-            return 'leased'
           }
 
           transaction.update(doc.ref, {
