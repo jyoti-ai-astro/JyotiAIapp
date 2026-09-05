@@ -6,6 +6,7 @@ export interface ExecutorOptions {
   cursor?: string | null
   batchSize?: number
   now?: Date
+  retryItemIds?: string[]
 }
 
 export interface ExecutorResult {

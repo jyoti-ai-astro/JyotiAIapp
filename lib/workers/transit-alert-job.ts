@@ -51,6 +51,14 @@ export async function runTransitAlertJob(
   const failedItemIds: string[] = []
 
   for (const kundaliDoc of docs) {
+    if (
+      options.retryItemIds?.length &&
+      !options.retryItemIds.includes(kundaliDoc.id)
+    ) {
+      skipped++
+      continue
+    }
+
     try {
       const uid = kundaliDoc.id
       const D1Snap = await kundaliDoc.ref.collection('D1').doc('chart').get()

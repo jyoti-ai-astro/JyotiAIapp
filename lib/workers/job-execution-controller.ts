@@ -38,6 +38,7 @@ export class JobExecutionConflictError extends Error {
 const JOB_EXECUTION_LEASE_MS = 10 * 60 * 1000
 const JOB_EXECUTION_HEARTBEAT_MS = 2 * 60 * 1000
 const MAX_BATCH_FAILURE_ATTEMPTS = 3
+const LOGICAL_RUN_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
 function jobRef(jobId: ExecutableProducerJobId) {
   if (!adminDb) {
@@ -124,13 +125,30 @@ export async function executeProducerJob(
       state.logicalRunStartedAt
     )
 
-    const logicalRunStartedAt =
-      persistedLogicalRunStartedAt ?? startedAt
+    const logicalRunStale =
+      persistedLogicalRunStartedAt instanceof Date &&
+      startedAtMs - persistedLogicalRunStartedAt.getTime() >
+        LOGICAL_RUN_MAX_AGE_MS
 
-    const logicalRunDeadLetteredItems = Math.max(
-      0,
-      Number(state.logicalRunDeadLetteredItems || 0)
-    )
+    const effectiveCursor = logicalRunStale ? null : cursor
+
+    const logicalRunStartedAt = logicalRunStale
+      ? startedAt
+      : persistedLogicalRunStartedAt ?? startedAt
+
+    const logicalRunDeadLetteredItems = logicalRunStale
+      ? 0
+      : Math.max(0, Number(state.logicalRunDeadLetteredItems || 0))
+
+    const batchFailureItemIds =
+      !logicalRunStale &&
+      state.batchFailureCursor === effectiveCursor &&
+      Array.isArray(state.batchFailureItemIds)
+        ? state.batchFailureItemIds.filter(
+            (itemId: unknown): itemId is string =>
+              typeof itemId === 'string' && Boolean(itemId)
+          )
+        : []
 
     transaction.set(
       ref,
@@ -151,9 +169,10 @@ export async function executeProducerJob(
 
     return {
       claimed: true as const,
-      cursor,
+      cursor: effectiveCursor,
       logicalRunStartedAt,
       logicalRunDeadLetteredItems,
+      batchFailureItemIds,
     }
   })
 
@@ -221,6 +240,9 @@ export async function executeProducerJob(
       cursor: claim.cursor,
       batchSize,
       now: claim.logicalRunStartedAt,
+      retryItemIds: claim.batchFailureItemIds.length
+        ? claim.batchFailureItemIds
+        : undefined,
     }
 
     const result = await executor(options)
@@ -319,6 +341,9 @@ export async function executeProducerJob(
             batchFailureAttempts: deadLettered
               ? 0
               : batchFailureAttempt,
+            batchFailureItemIds: deadLettered
+              ? []
+              : result.failedItemIds,
             lastBatchProcessed: result.processed,
             lastBatchSkipped: result.skipped,
             lastBatchErrors: result.errors,
@@ -431,6 +456,7 @@ export async function executeProducerJob(
           lastBatchErrors: result.errors,
           batchFailureCursor: null,
           batchFailureAttempts: 0,
+          batchFailureItemIds: [],
           ...(!result.hasMore && !terminalLogicalRunDegraded
             ? { lastSuccess: completedAt }
             : {}),

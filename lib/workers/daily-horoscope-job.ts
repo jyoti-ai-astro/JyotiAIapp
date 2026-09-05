@@ -40,6 +40,14 @@ export async function runDailyHoroscopeJob(
   const failedItemIds: string[] = []
 
   for (const userDoc of docs) {
+    if (
+      options.retryItemIds?.length &&
+      !options.retryItemIds.includes(userDoc.id)
+    ) {
+      skipped++
+      continue
+    }
+
     try {
       const userData = userDoc.data()
       const uid = userDoc.id
