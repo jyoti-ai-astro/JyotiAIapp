@@ -412,11 +412,14 @@ export async function queueNotification(
 /**
  * Process notification queue (to be called by cron job)
  */
+const NOTIFICATION_QUEUE_MAX_ATTEMPTS = 3
+
 export interface NotificationQueueProcessResult {
   due: number
   claimed: number
   processed: number
   failed: number
+  deadLettered: number
   skipped: number
   leaseConflicts: number
   hasMore: boolean
@@ -429,6 +432,7 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
       claimed: 0,
       processed: 0,
       failed: 0,
+      deadLettered: 0,
       skipped: 0,
       leaseConflicts: 0,
       hasMore: false,
@@ -455,6 +459,7 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
     claimed: 0,
     processed: 0,
     failed: 0,
+    deadLettered: 0,
     skipped: 0,
     leaseConflicts: 0,
     hasMore,
@@ -465,7 +470,11 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
 
     try {
       const claimOutcome = await adminDb.runTransaction(
-        async (transaction): Promise<'claimed' | 'skipped' | 'leased'> => {
+        async (
+          transaction
+        ): Promise<
+          'claimed' | 'skipped' | 'leased' | 'dead-lettered'
+        > => {
           const fresh = await transaction.get(doc.ref)
 
           if (!fresh.exists) {
@@ -476,6 +485,27 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
 
           if (data.processed === true) {
             return 'skipped'
+          }
+
+          const attempts = Math.max(
+            0,
+            Number(data.attempts || 0)
+          )
+
+          if (attempts >= NOTIFICATION_QUEUE_MAX_ATTEMPTS) {
+            transaction.update(doc.ref, {
+              processed: true,
+              deadLettered: true,
+              deadLetteredAt: new Date(),
+              processing: false,
+              leaseId: null,
+              leaseExpiresAt: null,
+              error:
+                data.error ||
+                'Notification retry limit exhausted',
+            })
+
+            return 'dead-lettered'
           }
 
           const leaseExpiresAt = data.leaseExpiresAt?.toDate?.()
@@ -509,6 +539,10 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
         if (claimOutcome === 'leased') {
           result.leaseConflicts++
           result.hasMore = true
+        }
+
+        if (claimOutcome === 'dead-lettered') {
+          result.deadLettered++
         }
 
         continue
@@ -586,14 +620,36 @@ export async function processNotificationQueue(): Promise<NotificationQueueProce
             return
           }
 
+          const attempts = Math.max(
+            0,
+            Number(data.attempts || 0)
+          )
+
+          const errorMessage =
+            error instanceof Error
+              ? error.message.slice(0, 300)
+              : 'Notification processing failed'
+
+          if (attempts >= NOTIFICATION_QUEUE_MAX_ATTEMPTS) {
+            transaction.update(doc.ref, {
+              processed: true,
+              deadLettered: true,
+              deadLetteredAt: new Date(),
+              processing: false,
+              leaseId: null,
+              leaseExpiresAt: null,
+              error: errorMessage,
+            })
+
+            result.deadLettered++
+            return
+          }
+
           transaction.update(doc.ref, {
             processing: false,
             leaseId: null,
             leaseExpiresAt: null,
-            error:
-              error instanceof Error
-                ? error.message.slice(0, 300)
-                : 'Notification processing failed',
+            error: errorMessage,
           })
         })
       } catch (releaseError) {

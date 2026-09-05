@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb } from '@/lib/firebase/admin'
 import { processNotificationQueue } from '@/lib/services/notification-service'
@@ -17,8 +18,44 @@ async function updateJobState(data: Record<string, any>) {
     .set(data, { merge: true })
 }
 
+async function updateOwnedJobState(
+  executionId: string,
+  data: Record<string, any>
+): Promise<boolean> {
+  if (!adminDb) return false
+
+  const ref = adminDb.collection('background_jobs').doc(JOB_ID)
+
+  return adminDb.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref)
+
+    if (!snapshot.exists) {
+      return false
+    }
+
+    const state = snapshot.data() || {}
+
+    if (state.executionId !== executionId) {
+      return false
+    }
+
+    transaction.set(
+      ref,
+      {
+        ...data,
+        executionId: null,
+        executionStartedAt: null,
+      },
+      { merge: true }
+    )
+
+    return true
+  })
+}
+
 export async function POST(request: NextRequest) {
   const startedAt = Date.now()
+  const executionId = randomUUID()
 
   try {
     const { envVars } = await import('@/lib/env/env.mjs')
@@ -42,6 +79,8 @@ export async function POST(request: NextRequest) {
     }
 
     await updateJobState({
+      executionId,
+      executionStartedAt: new Date(),
       lastRun: new Date(),
       lastStatus: 'running',
       lastTriggerSource: triggerSource,
@@ -67,7 +106,7 @@ export async function POST(request: NextRequest) {
     const durationMs = Date.now() - startedAt
 
     if (result.hasMore) {
-      await updateJobState({
+      await updateOwnedJobState(executionId, {
         lastStatus: 'partial',
         lastDurationMs: durationMs,
         lastError: null,
@@ -86,7 +125,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    await updateJobState({
+    await updateOwnedJobState(executionId, {
       lastSuccess: new Date(),
       lastStatus: 'success',
       lastDurationMs: durationMs,
@@ -113,7 +152,7 @@ export async function POST(request: NextRequest) {
       error instanceof Error ? error.message : 'Failed to process queue'
 
     try {
-      await updateJobState({
+      await updateOwnedJobState(executionId, {
         lastFailure: new Date(),
         lastStatus: 'failed',
         lastDurationMs: durationMs,
