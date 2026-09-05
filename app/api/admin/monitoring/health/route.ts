@@ -60,7 +60,7 @@ export const GET = withAdminAuth(
       )
     }
   },
-  'logs.read'
+  'payments.read'
 )
 
 void (null as unknown as NextRequest)
