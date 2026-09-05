@@ -163,6 +163,16 @@ export async function executeProducerJob(
         lastStatus: 'running',
         lastTriggerSource: request.triggerSource,
         lastError: null,
+        ...(logicalRunStale
+          ? {
+              cursor: null,
+              hasMore: false,
+              logicalRunDeadLetteredItems: 0,
+              batchFailureCursor: null,
+              batchFailureAttempts: 0,
+              batchFailureItemIds: [],
+            }
+          : {}),
       },
       { merge: true }
     )

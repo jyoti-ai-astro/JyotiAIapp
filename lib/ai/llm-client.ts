@@ -155,6 +155,12 @@ export async function callLLM(
   for (const [providerIndex, provider] of sequence.entries()) {
     if (!configured(provider)) continue
 
+    if (signal?.aborted) {
+      const abortError = new Error('Request aborted')
+      abortError.name = 'AbortError'
+      throw abortError
+    }
+
     if (previousRetryableFailure) {
       void recordAIFallback(
         PROVIDER_NAMES[previousRetryableFailure.provider],
