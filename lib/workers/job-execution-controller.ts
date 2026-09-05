@@ -164,6 +164,14 @@ export async function executeProducerJob(
         ? state.batchFailureHasMore
         : null
 
+    const batchFailureBatchSize =
+      !logicalRunStale &&
+      state.batchFailureCursor === effectiveCursor &&
+      Number.isFinite(Number(state.batchFailureBatchSize)) &&
+      Number(state.batchFailureBatchSize) > 0
+        ? normalizeBatchSize(Number(state.batchFailureBatchSize))
+        : null
+
     transaction.set(
       ref,
       {
@@ -187,6 +195,7 @@ export async function executeProducerJob(
               batchFailureItemIds: [],
               batchFailureNextCursor: null,
               batchFailureHasMore: null,
+              batchFailureBatchSize: null,
             }
           : {}),
       },
@@ -201,6 +210,7 @@ export async function executeProducerJob(
       batchFailureItemIds,
       batchFailureNextCursor,
       batchFailureHasMore,
+      batchFailureBatchSize,
     }
   })
 
@@ -266,7 +276,11 @@ export async function executeProducerJob(
 
     const options: ExecutorOptions = {
       cursor: claim.cursor,
-      batchSize,
+      batchSize:
+        claim.batchFailureItemIds.length &&
+        claim.batchFailureBatchSize !== null
+          ? claim.batchFailureBatchSize
+          : batchSize,
       now: claim.logicalRunStartedAt,
       retryItemIds: claim.batchFailureItemIds.length
         ? claim.batchFailureItemIds
@@ -387,6 +401,12 @@ export async function executeProducerJob(
             batchFailureHasMore: deadLettered
               ? null
               : result.hasMore,
+            batchFailureBatchSize: deadLettered
+              ? null
+              : claim.batchFailureItemIds.length &&
+                  claim.batchFailureBatchSize !== null
+                ? claim.batchFailureBatchSize
+                : batchSize,
             lastBatchProcessed: result.processed,
             lastBatchSkipped: result.skipped,
             lastBatchErrors: result.errors,
@@ -502,6 +522,7 @@ export async function executeProducerJob(
           batchFailureItemIds: [],
           batchFailureNextCursor: null,
           batchFailureHasMore: null,
+          batchFailureBatchSize: null,
           ...(!result.hasMore && !terminalLogicalRunDegraded
             ? { lastSuccess: completedAt }
             : {}),
