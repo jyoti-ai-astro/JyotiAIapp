@@ -148,6 +148,16 @@ export async function callLLM(
 ): Promise<string> {
   const sequence = providerSequence(envVars.ai.provider)
   const errors: unknown[] = []
+  const pendingTelemetry: Promise<void>[] = []
+
+  const settlePendingTelemetry = async () => {
+    const pending = pendingTelemetry.splice(0)
+
+    if (pending.length) {
+      await Promise.all(pending)
+    }
+  }
+
   let previousRetryableFailure:
     | { provider: ProviderId; errorCode: string }
     | null = null
@@ -156,33 +166,42 @@ export async function callLLM(
     if (!configured(provider)) continue
 
     if (signal?.aborted) {
+      await settlePendingTelemetry()
       const abortError = new Error('Request aborted')
       abortError.name = 'AbortError'
       throw abortError
     }
 
     if (previousRetryableFailure) {
-      void recordAIFallback(
-        PROVIDER_NAMES[previousRetryableFailure.provider],
-        PROVIDER_NAMES[provider],
-        previousRetryableFailure.errorCode
-      ).catch((error) => {
-        console.error('[AI] Failed to record fallback telemetry', error)
-      })
+      pendingTelemetry.push(
+        settleSuccessTelemetry(
+          recordAIFallback(
+            PROVIDER_NAMES[previousRetryableFailure.provider],
+            PROVIDER_NAMES[provider],
+            previousRetryableFailure.errorCode
+          ).catch((error) => {
+            console.error('[AI] Failed to record fallback telemetry', error)
+          })
+        )
+      )
       previousRetryableFailure = null
     }
 
     const startedAt = Date.now()
 
-    void recordAIProviderEvent(
-      'attempt',
-      PROVIDER_NAMES[provider],
-      {
-        modelRole: options?.modelRole,
-      }
-    ).catch((error) => {
-      console.error('[AI] Failed to record attempt telemetry', error)
-    })
+    pendingTelemetry.push(
+      settleSuccessTelemetry(
+        recordAIProviderEvent(
+          'attempt',
+          PROVIDER_NAMES[provider],
+          {
+            modelRole: options?.modelRole,
+          }
+        ).catch((error) => {
+          console.error('[AI] Failed to record attempt telemetry', error)
+        })
+      )
+    )
 
     try {
       let content: string
@@ -220,9 +239,12 @@ export async function callLLM(
         )
       )
 
+      await settlePendingTelemetry()
+
       return content
     } catch (error: any) {
       if (signal?.aborted) {
+        await settlePendingTelemetry()
         throw error
       }
 
@@ -253,6 +275,7 @@ export async function callLLM(
 
       if (terminalFailure) {
         await settleFailureTelemetry(failureTelemetry)
+        await settlePendingTelemetry()
 
         if (!retryable) {
           console.error(
@@ -269,12 +292,9 @@ export async function callLLM(
         throw error
       }
 
-      void failureTelemetry.catch((telemetryError) => {
-        console.error(
-          '[AI] Failed to record failure telemetry',
-          telemetryError
-        )
-      })
+      pendingTelemetry.push(
+        settleFailureTelemetry(failureTelemetry)
+      )
 
       previousRetryableFailure = {
         provider,
