@@ -150,6 +150,20 @@ export async function executeProducerJob(
           )
         : []
 
+    const batchFailureNextCursor =
+      !logicalRunStale &&
+      state.batchFailureCursor === effectiveCursor &&
+      typeof state.batchFailureNextCursor === 'string'
+        ? state.batchFailureNextCursor
+        : null
+
+    const batchFailureHasMore =
+      !logicalRunStale &&
+      state.batchFailureCursor === effectiveCursor &&
+      typeof state.batchFailureHasMore === 'boolean'
+        ? state.batchFailureHasMore
+        : null
+
     transaction.set(
       ref,
       {
@@ -171,6 +185,8 @@ export async function executeProducerJob(
               batchFailureCursor: null,
               batchFailureAttempts: 0,
               batchFailureItemIds: [],
+              batchFailureNextCursor: null,
+              batchFailureHasMore: null,
             }
           : {}),
       },
@@ -183,6 +199,8 @@ export async function executeProducerJob(
       logicalRunStartedAt,
       logicalRunDeadLetteredItems,
       batchFailureItemIds,
+      batchFailureNextCursor,
+      batchFailureHasMore,
     }
   })
 
@@ -256,6 +274,15 @@ export async function executeProducerJob(
     }
 
     const result = await executor(options)
+
+    if (claim.batchFailureItemIds.length) {
+      if (typeof claim.batchFailureHasMore === 'boolean') {
+        result.hasMore = claim.batchFailureHasMore
+      }
+
+      result.nextCursor = claim.batchFailureNextCursor
+    }
+
     const completedAt = new Date()
     const durationMs = Date.now() - startedAtMs
 
@@ -354,6 +381,12 @@ export async function executeProducerJob(
             batchFailureItemIds: deadLettered
               ? []
               : result.failedItemIds,
+            batchFailureNextCursor: deadLettered
+              ? null
+              : result.nextCursor,
+            batchFailureHasMore: deadLettered
+              ? null
+              : result.hasMore,
             lastBatchProcessed: result.processed,
             lastBatchSkipped: result.skipped,
             lastBatchErrors: result.errors,
@@ -467,6 +500,8 @@ export async function executeProducerJob(
           batchFailureCursor: null,
           batchFailureAttempts: 0,
           batchFailureItemIds: [],
+          batchFailureNextCursor: null,
+          batchFailureHasMore: null,
           ...(!result.hasMore && !terminalLogicalRunDegraded
             ? { lastSuccess: completedAt }
             : {}),

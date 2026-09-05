@@ -49,11 +49,46 @@ const JOB_DEFINITIONS: JobDefinition[] = [
   },
 ]
 
+const RUNNING_FALLBACK_STALE_MS = 30 * 60 * 1000
+
+function timestampMs(value: any): number | null {
+  if (value instanceof Date) {
+    return value.getTime()
+  }
+
+  if (value && typeof value.toDate === 'function') {
+    const date = value.toDate()
+    return date instanceof Date ? date.getTime() : null
+  }
+
+  return null
+}
+
+function isStaleRunningState(state: Record<string, any> | undefined): boolean {
+  const now = Date.now()
+  const leaseExpiresAt = timestampMs(state?.executionLeaseExpiresAt)
+
+  if (leaseExpiresAt !== null) {
+    return leaseExpiresAt <= now
+  }
+
+  const lastRun = timestampMs(state?.lastRun)
+
+  return (
+    lastRun !== null &&
+    now - lastRun > RUNNING_FALLBACK_STALE_MS
+  )
+}
+
 function deriveStatus(definition: JobDefinition, state: Record<string, any> | undefined) {
   if (!definition.configured) return 'unconfigured'
   if (!definition.schedulerConfigured && !state?.lastRun) return 'unscheduled'
   if (state?.lastStatus === 'failed') return 'failed'
-  if (state?.lastStatus === 'running') return 'running'
+
+  if (state?.lastStatus === 'running') {
+    return isStaleRunningState(state) ? 'failed' : 'running'
+  }
+
   if (state?.lastStatus === 'partial') return 'partial'
   if (state?.lastStatus === 'success' && !definition.schedulerConfigured) return 'manual-only'
   if (state?.lastStatus === 'success') return 'healthy'
