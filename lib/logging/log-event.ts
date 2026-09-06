@@ -7,6 +7,7 @@
  */
 
 import { adminDb } from '@/lib/firebase/admin';
+import { sanitizeLogPayload } from './sanitize-log-payload';
 
 export type LogEventType =
   | 'subscription.created'
@@ -41,26 +42,6 @@ export interface LogEventData {
 }
 
 /**
- * Strip undefined values from objects (Firestore does not allow undefined)
- */
-function stripUndefined<T = any>(value: T): T {
-  if (value === null || typeof value !== 'object') {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    return value.map(stripUndefined) as unknown as T;
-  }
-
-  const cleaned: Record<string, any> = {};
-  for (const [key, val] of Object.entries(value)) {
-    if (typeof val === 'undefined') continue;
-    cleaned[key] = stripUndefined(val as any);
-  }
-  return cleaned as T;
-}
-
-/**
  * Log an event to Firestore
  */
 export async function logEvent(
@@ -75,8 +56,8 @@ export async function logEvent(
   }
 
   try {
-    const safeData = stripUndefined(data || {});
-    const safeMetadata = stripUndefined(metadata || {});
+    const safeData = sanitizeLogPayload(data || {});
+    const safeMetadata = sanitizeLogPayload(metadata || {});
 
     const logEntry: LogEventData = {
       type,
