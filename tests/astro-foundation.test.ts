@@ -12,7 +12,7 @@ import {
 import {
   attachKundaliAstroFacts,
   normalizeFirestoreKundaliData,
-} from '../lib/engines/astro-context-builder'
+} from '../lib/engines/astro-context-normalizers'
 import { generateFullKundali } from '../lib/engines/kundali/generator'
 import type { BirthDetails } from '../lib/engines/kundali/swisseph-wrapper'
 import type { KundaliData as LegacyKundaliData } from '../lib/engines/kundali-engine'

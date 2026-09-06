@@ -23,7 +23,7 @@ export interface BhavasCollection {
 /**
  * House system type
  */
-export type HouseSystem = 'whole-sign' | 'equal'
+export type HouseSystem = 'placidus' | 'whole-sign' | 'equal'
 
 /**
  * Calculate approximate house cusps.
