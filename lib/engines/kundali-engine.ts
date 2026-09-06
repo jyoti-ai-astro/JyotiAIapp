@@ -1,8 +1,15 @@
 /**
  * Kundali Engine
  * 
- * Mock Kundali calculation engine
+ * Internal approximate Kundali calculation engine
  */
+
+import {
+  INTERNAL_APPROX_ASTRO_ENGINE,
+  createAstroFactsMetadata,
+  type AstroEngineMetadata,
+  type AstroFactsMetadata,
+} from './astro-facts';
 
 export interface PlanetPosition {
   planet: string;
@@ -24,6 +31,10 @@ export interface HouseData {
 }
 
 export interface KundaliData {
+  meta?: {
+    astroEngine?: AstroEngineMetadata;
+    astroFacts?: AstroFactsMetadata;
+  };
   grahas: PlanetPosition[];
   houses: HouseData[];
   lagna: {
@@ -56,7 +67,7 @@ export interface KundaliData {
 
 class KundaliEngine {
   async generateKundali(dob: string, tob: string, pob: string): Promise<KundaliData> {
-    // Mock calculation - in real implementation, this would use Swiss Ephemeris
+    // Internal approximate calculation. This does not use Swiss Ephemeris.
     const planets: PlanetPosition[] = [
       {
         planet: 'Sun',
@@ -187,6 +198,10 @@ class KundaliEngine {
     antardashaEnd.setMonth(antardashaEnd.getMonth() + 18);
 
     return {
+      meta: {
+        astroEngine: { ...INTERNAL_APPROX_ASTRO_ENGINE },
+        astroFacts: createAstroFactsMetadata(),
+      },
       grahas: planets,
       houses,
       lagna: {
@@ -215,4 +230,3 @@ class KundaliEngine {
 }
 
 export const kundaliEngine = new KundaliEngine();
-

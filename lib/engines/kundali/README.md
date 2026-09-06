@@ -1,50 +1,18 @@
-# Swiss Ephemeris Integration
+# Kundali Engine Foundation
 
-## Setup Instructions
+## Current Status
 
-### 1. Download Ephemeris Data Files
+- Current engine id: `internal_approx_v1`
+- Accuracy class: `APPROXIMATE`
+- Validation status: `UNVALIDATED`
+- Swiss Ephemeris usage: `false`
 
-Swiss Ephemeris requires data files for accurate calculations. Download from:
-https://www.astro.com/swisseph/swephinfo_e.htm
+The implementation in this directory uses internal approximate calculations. It must not be represented as Swiss Ephemeris-backed, Lahiri-validated, or production-grade precision.
 
-### 2. Required Files
+## Reference Data
 
-Place these files in `/lib/engines/kundali/data/`:
+`data/reference-dataset.schema.json` defines the schema for future golden/reference validation cases. The repository intentionally does not include authoritative numeric astrology fixtures.
 
-- `SEPL_*.se1` - Planetary ephemeris (main planets)
-- `SEAT_*.se1` - Asteroid ephemeris (optional)
-- `SEMO_*.se1` - Moon ephemeris (for high precision)
+## Compatibility
 
-### 3. File Structure
-
-```
-/lib/engines/kundali/
-  ├── data/
-  │   ├── SEPL_*.se1
-  │   ├── SEAT_*.se1
-  │   └── SEMO_*.se1
-  ├── swisseph-wrapper.ts
-  └── generator.ts
-```
-
-### 4. Update Implementation
-
-Once files are in place, update `swisseph-wrapper.ts` to use actual Swiss Ephemeris library:
-
-```typescript
-const swisseph = require('swisseph')
-// Initialize with data file path
-swisseph.swe_set_ephe_path('./lib/engines/kundali/data')
-```
-
-### 5. Current Status
-
-- ✅ Base layer structure implemented
-- ✅ Interface defined
-- ✅ Rashi/Nakshatra conversion functions ready
-- ⏳ Awaiting ephemeris data files for actual calculations
-
-## License Note
-
-Swiss Ephemeris is free for non-commercial use. For commercial use, check licensing requirements.
-
+Astro metadata is additive. Historical Kundali records that do not include the new metadata fields remain valid input for existing readers.

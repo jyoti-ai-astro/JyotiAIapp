@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jyotiai.local/schemas/kundali-reference-dataset.schema.json",
+  "title": "Kundali Reference Dataset Schema",
+  "description": "Schema-only contract for future golden/reference Kundali validation data. This file intentionally contains no authoritative numeric astrology fixtures.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "source", "cases"],
+  "properties": {
+    "schemaVersion": {
+      "const": "kundali_reference_dataset_v1"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "license", "authority", "notes"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "license": { "type": "string", "minLength": 1 },
+        "authority": {
+          "type": "string",
+          "description": "Human-readable provenance for an external reference calculation source."
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/referenceCase" }
+    }
+  },
+  "$defs": {
+    "referenceCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "birthDetails", "expected"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "birthDetails": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["date", "time", "timezone", "latitude", "longitude"],
+          "properties": {
+            "date": { "type": "string", "format": "date" },
+            "time": {
+              "type": "string",
+              "pattern": "^([01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d$"
+            },
+            "timezone": { "type": "string", "minLength": 1 },
+            "placeName": { "type": "string" },
+            "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+            "longitude": { "type": "number", "minimum": -180, "maximum": 180 }
+          }
+        },
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ayanamsa", "houseSystem", "planets", "lagna"],
+          "properties": {
+            "ayanamsa": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name"],
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "valueDegrees": { "type": "number", "minimum": 0, "maximum": 360 }
+              }
+            },
+            "houseSystem": { "type": "string", "minLength": 1 },
+            "planets": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/expectedPlanet" }
+            },
+            "lagna": { "$ref": "#/$defs/expectedPoint" },
+            "notes": { "type": "string" }
+          }
+        }
+      }
+    },
+    "expectedPlanet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planet", "longitude"],
+      "properties": {
+        "planet": {
+          "enum": ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+        },
+        "longitude": { "type": "number", "minimum": 0, "exclusiveMaximum": 360 },
+        "sign": { "type": "string" },
+        "nakshatra": { "type": "string" },
+        "pada": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "house": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "toleranceArcSeconds": { "type": "number", "minimum": 0 },
+        "retrograde": { "type": "boolean" }
+      }
+    },
+    "expectedPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["longitude"],
+      "properties": {
+        "longitude": { "type": "number", "minimum": 0, "exclusiveMaximum": 360 },
+        "sign": { "type": "string" },
+        "nakshatra": { "type": "string" },
+        "pada": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "house": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "toleranceArcSeconds": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
