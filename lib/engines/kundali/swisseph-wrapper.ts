@@ -1,9 +1,9 @@
 /**
- * AI-Based Astro Engine - Astronomical Calculations
+ * Internal Approximate Astro Engine - Astronomical Calculations
  * Part B - Section 4: Kundali Engine
  * 
- * This module provides complete planet position calculations using AI-based astronomical algorithms
- * Replaces Swiss Ephemeris with internal AI-powered calculations
+ * This module provides approximate planet position calculations using internal algorithms.
+ * It does not use Swiss Ephemeris and is not production-grade ephemeris precision.
  */
 
 // Planet constants
@@ -56,8 +56,7 @@ export interface CalculatedPositions {
 }
 
 /**
- * AI-Based Planet Position Calculation
- * Uses astronomical algorithms for accurate planet positions
+ * Internal approximate planet position calculation.
  */
 function calculatePlanetPositionAI(planetId: number, jd: number): {
   longitude: number
@@ -69,7 +68,7 @@ function calculatePlanetPositionAI(planetId: number, jd: number): {
   const daysSinceJ2000 = jd - 2451545.0
   const centuries = daysSinceJ2000 / 36525.0
   
-  // Base orbital elements (simplified, AI-enhanced calculations)
+  // Base orbital elements (simplified calculations)
   // These are approximate - in production, use more sophisticated algorithms
   let meanAnomaly = 0
   let meanLongitude = 0
@@ -174,7 +173,7 @@ function calculatePlanetPositionAI(planetId: number, jd: number): {
 
 /**
  * Convert date/time to Julian Day Number (UTC)
- * Accurate calculation for astronomical purposes
+ * Approximate calculation for internal use
  */
 export function toJulianDay(birth: BirthDetails): number {
   const { year, month, day, hour, minute, second } = birth
@@ -244,13 +243,13 @@ export function longitudeToNakshatra(longitude: number): { nakshatra: string; pa
 }
 
 /**
- * Calculate planet position with full details using AI-based calculations
+ * Calculate planet position with full details using internal approximate calculations
  */
 function calculatePlanetPosition(
   planetId: number,
   jd: number
 ): PlanetPosition {
-  // Use AI-based astronomical calculations
+  // Use internal approximate astronomical calculations
   const { longitude, latitude, distance, speed } = calculatePlanetPositionAI(planetId, jd)
   
   // Normalize longitude to 0-360
@@ -277,7 +276,7 @@ function calculatePlanetPosition(
 }
 
 /**
- * Calculate all planet positions using AI-based astronomical calculations
+ * Calculate all planet positions using internal approximate astronomical calculations
  */
 export async function calculatePlanetPositions(birth: BirthDetails): Promise<CalculatedPositions> {
   const jd = toJulianDay(birth)

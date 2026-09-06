@@ -11,6 +11,7 @@ import { predictionEngine, type DailyPrediction } from '@/lib/engines/prediction
 import { timelineEngine, type MonthTimeline } from '@/lib/engines/timeline-engine'
 import { Timestamp } from 'firebase-admin/firestore'
 import { isValidCoordinate, isValidTimezone } from '@/lib/services/geocoding'
+import { isAstroFactsMetadata } from '@/lib/engines/astro-facts'
 import type {
   AstroContext,
   AstroBirthData,
@@ -130,6 +131,14 @@ async function loadCanonicalKundali(userId: string): Promise<KundaliData | null>
   })) as KundaliData['houses']
 
   return {
+    ...(isAstroFactsMetadata(kundaliRoot?.meta?.astroFacts)
+      ? {
+          meta: {
+            astroEngine: kundaliRoot.meta.astroEngine,
+            astroFacts: kundaliRoot.meta.astroFacts,
+          },
+        }
+      : {}),
     grahas,
     houses,
     lagna: {
@@ -417,6 +426,7 @@ export async function buildAstroContext(
     personalityTags,
     riskFlags,
     cachedAt: new Date().toISOString(),
+    ...(kundali.meta?.astroFacts ? { astroFacts: kundali.meta.astroFacts } : {}),
     // Super Phase B - Enhanced fields
     dashaTimeline: dashaTimeline.length > 0 ? dashaTimeline : undefined,
     transitEvents: transitEvents.length > 0 ? transitEvents : undefined,

@@ -5,6 +5,8 @@
  * Reusable type system for all astrology computation
  */
 
+import type { AstroFactsMetadata } from './astro-facts'
+
 /**
  * Birth data required for astrological calculations
  */
@@ -139,5 +141,5 @@ export interface AstroContext {
   dashaTimeline?: AstroDashaPeriod[]; // Top N dasha periods, sorted by upcoming
   transitEvents?: AstroTransitEvent[]; // Upcoming transit events with strong intensity
   lifeThemes?: AstroLifeTheme[]; // High-level life themes (3-5 themes)
+  astroFacts?: AstroFactsMetadata; // Optional so historical Kundali/context records still load
 }
-

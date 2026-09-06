@@ -11,6 +11,12 @@ import { calculateBhavas, type BhavasCollection } from './bhavas'
 import { calculateLagnaData, type LagnaData } from './lagna'
 import { generateD1Chart, type DivisionalChart } from './divisional-charts'
 import { calculateVimshottariDasha, type DashaCalculation } from './dasha'
+import {
+  INTERNAL_APPROX_ASTRO_ENGINE,
+  createAstroFactsMetadata,
+  type AstroEngineMetadata,
+  type AstroFactsMetadata,
+} from '../astro-facts'
 
 export interface KundaliData {
   meta: {
@@ -18,6 +24,8 @@ export interface KundaliData {
     generatedAt: Date
     chartType: 'D1'
     houseSystem: string
+    astroEngine: AstroEngineMetadata
+    astroFacts: AstroFactsMetadata
   }
   D1: DivisionalChart
   dasha: DashaCalculation
@@ -95,6 +103,8 @@ export async function generateFullKundali(birth: BirthDetails): Promise<KundaliD
       generatedAt: new Date(),
       chartType: 'D1',
       houseSystem: 'placidus',
+      astroEngine: { ...INTERNAL_APPROX_ASTRO_ENGINE },
+      astroFacts: createAstroFactsMetadata(),
     },
     D1,
     dasha,

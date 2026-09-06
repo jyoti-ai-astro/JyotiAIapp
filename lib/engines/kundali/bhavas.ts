@@ -2,8 +2,8 @@
  * Bhava (House) Calculation Module
  * Part B - Section 4: Step 3
  * 
- * Computes house cusps and planet placements using Placidus house system
- * (Can be extended to Whole Sign system for Indian preference)
+ * Computes approximate house cusps and planet placements.
+ * (Can be extended to validated house systems later)
  */
 
 import { calculateLagna, type BirthDetails } from './swisseph-wrapper'
@@ -26,8 +26,7 @@ export interface BhavasCollection {
 export type HouseSystem = 'placidus' | 'whole-sign' | 'equal'
 
 /**
- * Calculate house cusps using Placidus system
- * This is a simplified version - full implementation requires Swiss Ephemeris house calculation
+ * Calculate approximate house cusps.
  */
 export async function calculateBhavas(
   birth: BirthDetails,
@@ -54,8 +53,7 @@ export async function calculateBhavas(
       }
     }
   } else {
-    // Placidus system (simplified - full implementation needs Swiss Ephemeris)
-    // For now, use whole sign as approximation
+    // Requested house systems currently fall back to whole sign approximation.
     const lagnaSignIndex = Math.floor(lagna / 30)
     
     for (let i = 1; i <= 12; i++) {
@@ -131,4 +129,3 @@ function findHouseForPlanet(planetLongitude: number, bhavas: BhavasCollection): 
   
   return null
 }
-
