@@ -16,6 +16,7 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test:astro-foundation": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' tests/astro-foundation.test.ts",
+    "test:logging-sanitizer": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' tests/logging-sanitizer.test.ts",
     "validate:deployment": "node scripts/validate-deployment.mjs",
     "validate:build": "npm run build 2>&1 | tee build-log.txt",
     "test:e2e": "playwright test",
