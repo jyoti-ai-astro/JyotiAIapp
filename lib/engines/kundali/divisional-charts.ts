@@ -104,7 +104,7 @@ export function generateD9Chart(
   _lagna: LagnaData
 ): DivisionalChart {
   throw new Error(
-    'D9_NAVAMSA_NOT_IMPLEMENTED: Navamsa generation is unavailable until canonical divisional-chart calculations are implemented.'
+    'D9_NAVAMSA_NOT_IMPLEMENTED: Navamsa generation is unavailable until validated divisional-chart calculations are implemented.'
   )
 }
 
@@ -118,7 +118,6 @@ export function generateD10Chart(
   _lagna: LagnaData
 ): DivisionalChart {
   throw new Error(
-    'D10_DASHAMSA_NOT_IMPLEMENTED: Dashamsa generation is unavailable until canonical divisional-chart calculations are implemented.'
+    'D10_DASHAMSA_NOT_IMPLEMENTED: Dashamsa generation is unavailable until validated divisional-chart calculations are implemented.'
   )
 }
-

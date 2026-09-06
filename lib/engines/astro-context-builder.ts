@@ -84,29 +84,15 @@ function dateToIso(value: any): string {
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
 }
 
-async function loadCanonicalKundali(userId: string): Promise<KundaliData | null> {
-  if (!adminDb) {
-    throw new Error('Firestore not initialized')
-  }
-
-  const kundaliRef = adminDb.collection('kundali').doc(userId)
-  const [kundaliSnap, d1Snap, dashaSnap] = await Promise.all([
-    kundaliRef.get(),
-    kundaliRef.collection('D1').doc('chart').get(),
-    kundaliRef.collection('dasha').doc('vimshottari').get(),
-  ])
-
-  if (!kundaliSnap.exists || !d1Snap.exists || !dashaSnap.exists) {
-    return null
-  }
-
-  const kundaliRoot = kundaliSnap.data()
+export function normalizeFirestoreKundaliData(
+  kundaliRoot: any,
+  d1: any,
+  dashaData: any
+): KundaliData | null {
   if (kundaliRoot?.meta?.stale === true) {
     return null
   }
 
-  const d1 = d1Snap.data()
-  const dashaData = dashaSnap.data()
   if (!d1?.grahas || !d1?.bhavas || !d1?.lagna || !dashaData?.currentMahadasha || !dashaData?.currentAntardasha) {
     return null
   }
@@ -172,6 +158,29 @@ async function loadCanonicalKundali(userId: string): Promise<KundaliData | null>
       d10: null,
     },
   }
+}
+
+async function loadCanonicalKundali(userId: string): Promise<KundaliData | null> {
+  if (!adminDb) {
+    throw new Error('Firestore not initialized')
+  }
+
+  const kundaliRef = adminDb.collection('kundali').doc(userId)
+  const [kundaliSnap, d1Snap, dashaSnap] = await Promise.all([
+    kundaliRef.get(),
+    kundaliRef.collection('D1').doc('chart').get(),
+    kundaliRef.collection('dasha').doc('vimshottari').get(),
+  ])
+
+  if (!kundaliSnap.exists || !d1Snap.exists || !dashaSnap.exists) {
+    return null
+  }
+
+  return normalizeFirestoreKundaliData(
+    kundaliSnap.data(),
+    d1Snap.data(),
+    dashaSnap.data()
+  )
 }
 
 /**
@@ -304,6 +313,18 @@ function normalizeTimeline(timeline: MonthTimeline[]): AstroTimelineEvent[] {
   return events
 }
 
+export function attachKundaliAstroFacts(
+  context: AstroContext,
+  kundali: KundaliData
+): AstroContext {
+  return kundali.meta?.astroFacts
+    ? {
+        ...context,
+        astroFacts: kundali.meta.astroFacts,
+      }
+    : context
+}
+
 /**
  * Derive personality tags from chart
  */
@@ -418,7 +439,7 @@ export async function buildAstroContext(
     console.error('Error deriving life themes:', error)
   }
 
-  const context: AstroContext = {
+  const context: AstroContext = attachKundaliAstroFacts({
     birthData,
     coreChart,
     dasha,
@@ -426,12 +447,11 @@ export async function buildAstroContext(
     personalityTags,
     riskFlags,
     cachedAt: new Date().toISOString(),
-    ...(kundali.meta?.astroFacts ? { astroFacts: kundali.meta.astroFacts } : {}),
     // Super Phase B - Enhanced fields
     dashaTimeline: dashaTimeline.length > 0 ? dashaTimeline : undefined,
     transitEvents: transitEvents.length > 0 ? transitEvents : undefined,
     lifeThemes: lifeThemes.length > 0 ? lifeThemes : undefined,
-  }
+  }, kundali)
 
   // Cache in Firestore
   const contextRef = adminDb.collection('users').doc(userId).collection('astroContext').doc('current')

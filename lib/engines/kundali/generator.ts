@@ -18,6 +18,8 @@ import {
   type AstroFactsMetadata,
 } from '../astro-facts'
 
+const KUNDALI_HOUSE_SYSTEM = 'whole-sign-approximation'
+
 export interface KundaliData {
   meta: {
     birthDetails: BirthDetails
@@ -57,7 +59,7 @@ export class KundaliGenerator {
   async generateD1(birth: BirthDetails): Promise<DivisionalChart> {
     const grahas = await calculateGrahas(birth)
     const lagna = await calculateLagnaData(birth)
-    const bhavas = await calculateBhavas(birth, lagna.longitude, grahas, 'placidus')
+    const bhavas = await calculateBhavas(birth, lagna.longitude, grahas, 'whole-sign')
     return generateD1Chart(grahas, bhavas, lagna)
   }
   
@@ -85,7 +87,7 @@ export async function generateFullKundali(birth: BirthDetails): Promise<KundaliD
   const lagna = await calculateLagnaData(birth)
   
   // Step 3: Calculate Bhavas (Houses)
-  const bhavas = await calculateBhavas(birth, lagna.longitude, grahas, 'placidus')
+  const bhavas = await calculateBhavas(birth, lagna.longitude, grahas, 'whole-sign')
   
   // Step 4: Generate D1 Chart
   const D1 = generateD1Chart(grahas, bhavas, lagna)
@@ -102,7 +104,7 @@ export async function generateFullKundali(birth: BirthDetails): Promise<KundaliD
       birthDetails: birth,
       generatedAt: new Date(),
       chartType: 'D1',
-      houseSystem: 'placidus',
+      houseSystem: KUNDALI_HOUSE_SYSTEM,
       astroEngine: { ...INTERNAL_APPROX_ASTRO_ENGINE },
       astroFacts: createAstroFactsMetadata(),
     },

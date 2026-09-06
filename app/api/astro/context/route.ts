@@ -8,9 +8,9 @@ import {
 export const dynamic = 'force-dynamic'
 
 /**
- * Canonical authenticated AstroContext read endpoint.
+ * Authenticated AstroContext read endpoint.
  *
- * AstroContext is built from the verified JyotiAI Kundali pipeline.
+ * AstroContext is built from the saved JyotiAI Kundali pipeline.
  * This endpoint exists for authenticated product pages that need to
  * display chart context such as Sun sign, Moon sign, Ascendant and
  * current Mahadasha.
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
             success: false,
             code: 'ASTRO_CONTEXT_MISSING',
             message:
-              'Generate or refresh your verified Kundali before requesting personalized astrology context.',
+              'Generate or refresh your Kundali before requesting personalized astrology context.',
           },
           { status: 409 }
         )
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
             code: error.code || 'ASTRO_CONTEXT_FAILED',
             message:
               error.message ||
-              'Unable to build your verified astrology context.',
+              'Unable to build your astrology context.',
           },
           { status: 409 }
         )

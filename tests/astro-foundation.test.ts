@@ -9,9 +9,14 @@ import {
   createAstroFactsMetadata,
   isAstroFactsMetadata,
 } from '../lib/engines/astro-facts'
+import {
+  attachKundaliAstroFacts,
+  normalizeFirestoreKundaliData,
+} from '../lib/engines/astro-context-builder'
 import { generateFullKundali } from '../lib/engines/kundali/generator'
 import type { BirthDetails } from '../lib/engines/kundali/swisseph-wrapper'
 import type { KundaliData as LegacyKundaliData } from '../lib/engines/kundali-engine'
+import type { AstroContext } from '../lib/engines/astro-types'
 
 async function testGeneratedKundaliMetadata() {
   const birth: BirthDetails = {
@@ -37,6 +42,7 @@ async function testGeneratedKundaliMetadata() {
   assert.equal(kundali.meta.astroFacts.engineId, 'internal_approx_v1')
   assert.equal(kundali.meta.astroFacts.accuracyClass, 'APPROXIMATE')
   assert.equal(kundali.meta.astroFacts.validationStatus, 'UNVALIDATED')
+  assert.equal(kundali.meta.houseSystem, 'whole-sign-approximation')
 }
 
 function testHistoricalKundaliShapeStillCompiles() {
@@ -96,11 +102,149 @@ function testMetadataGuard() {
   )
 }
 
+function createFirestoreD1Data() {
+  return {
+    grahas: {
+      sun: {
+        planet: 'Sun',
+        sign: 'Aries',
+        nakshatra: 'Ashwini',
+        pada: 1,
+        house: 1,
+        longitude: 1,
+        latitude: 0,
+        degreesInSign: 1,
+        retrograde: false,
+      },
+      moon: {
+        planet: 'Moon',
+        sign: 'Taurus',
+        nakshatra: 'Rohini',
+        pada: 2,
+        house: 2,
+        longitude: 31,
+        latitude: 0,
+        degreesInSign: 1,
+        retrograde: false,
+      },
+    },
+    bhavas: {
+      1: {
+        houseNumber: 1,
+        sign: 'Aries',
+        cuspLongitude: 0,
+        planets: ['sun'],
+      },
+      2: {
+        houseNumber: 2,
+        sign: 'Taurus',
+        cuspLongitude: 30,
+        planets: ['moon'],
+      },
+    },
+    lagna: {
+      sign: 'Aries',
+      longitude: 0,
+    },
+  }
+}
+
+function createFirestoreDashaData() {
+  return {
+    currentMahadasha: {
+      planet: 'Jupiter',
+      startDate: '2020-01-01T00:00:00.000Z',
+      endDate: '2036-01-01T00:00:00.000Z',
+    },
+    currentAntardasha: {
+      planet: 'Venus',
+      startDate: '2024-01-01T00:00:00.000Z',
+      endDate: '2025-01-01T00:00:00.000Z',
+    },
+  }
+}
+
+function createAstroContextFixture(): AstroContext {
+  return {
+    birthData: {
+      dateOfBirth: '1990-01-01',
+      timeOfBirth: '12:00',
+      timezone: 'Asia/Kolkata',
+      placeName: 'Delhi',
+      latitude: 28.6139,
+      longitude: 77.209,
+    },
+    coreChart: {
+      houses: [],
+      planets: [],
+      ascendantSign: 'Aries',
+      moonSign: 'Taurus',
+      sunSign: 'Aries',
+    },
+    dasha: {
+      currentMahadasha: {
+        planet: 'Jupiter',
+        startDate: '2020-01-01T00:00:00.000Z',
+        endDate: '2036-01-01T00:00:00.000Z',
+      },
+      currentAntardasha: {
+        planet: 'Venus',
+        startDate: '2024-01-01T00:00:00.000Z',
+        endDate: '2025-01-01T00:00:00.000Z',
+      },
+      next3Events: [],
+    },
+    timeline: [],
+    personalityTags: [],
+    riskFlags: [],
+    cachedAt: '2026-09-06T00:00:00.000Z',
+  }
+}
+
+function testFirestoreMetadataPropagationToAstroContext() {
+  const astroFacts = createAstroFactsMetadata()
+  const normalized = normalizeFirestoreKundaliData(
+    {
+      meta: {
+        astroFacts,
+      },
+    },
+    createFirestoreD1Data(),
+    createFirestoreDashaData()
+  )
+
+  assert.notEqual(normalized, null)
+  const normalizedAstroFacts = normalized?.meta?.astroFacts
+  assert.notEqual(normalizedAstroFacts, undefined)
+  assert.equal(normalizedAstroFacts?.engineId, ASTRO_ENGINE_ID)
+
+  const context = attachKundaliAstroFacts(createAstroContextFixture(), normalized!)
+  assert.equal(context.astroFacts?.engineId, ASTRO_ENGINE_ID)
+  assert.equal(context.astroFacts?.accuracyClass, ASTRO_ACCURACY_CLASS)
+  assert.equal(context.astroFacts?.validationStatus, ASTRO_VALIDATION_STATUS)
+}
+
+function testHistoricalFirestoreReadCompatibility() {
+  const normalized = normalizeFirestoreKundaliData(
+    { meta: { generatedAt: '2024-01-01T00:00:00.000Z' } },
+    createFirestoreD1Data(),
+    createFirestoreDashaData()
+  )
+
+  assert.notEqual(normalized, null)
+  assert.equal(normalized?.meta, undefined)
+
+  const context = attachKundaliAstroFacts(createAstroContextFixture(), normalized!)
+  assert.equal(context.astroFacts, undefined)
+}
+
 async function main() {
   await testGeneratedKundaliMetadata()
   testHistoricalKundaliShapeStillCompiles()
   testReferenceDatasetSchemaOnly()
   testMetadataGuard()
+  testFirestoreMetadataPropagationToAstroContext()
+  testHistoricalFirestoreReadCompatibility()
 }
 
 main().catch((error) => {

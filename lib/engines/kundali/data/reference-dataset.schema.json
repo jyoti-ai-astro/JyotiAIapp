@@ -19,7 +19,7 @@
         "license": { "type": "string", "minLength": 1 },
         "authority": {
           "type": "string",
-          "description": "Human-readable provenance for the trusted calculation source."
+          "description": "Human-readable provenance for an external reference calculation source."
         },
         "notes": { "type": "string" }
       }

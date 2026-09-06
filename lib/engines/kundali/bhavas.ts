@@ -23,7 +23,7 @@ export interface BhavasCollection {
 /**
  * House system type
  */
-export type HouseSystem = 'placidus' | 'whole-sign' | 'equal'
+export type HouseSystem = 'whole-sign' | 'equal'
 
 /**
  * Calculate approximate house cusps.
@@ -32,7 +32,7 @@ export async function calculateBhavas(
   birth: BirthDetails,
   lagna: number,
   grahas: GrahasCollection,
-  houseSystem: HouseSystem = 'placidus'
+  houseSystem: HouseSystem = 'whole-sign'
 ): Promise<BhavasCollection> {
   const bhavas: BhavasCollection = {}
   
