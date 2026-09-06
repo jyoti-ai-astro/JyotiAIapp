@@ -51,6 +51,7 @@ export type DependencyHealthStatus =
   | 'healthy'
   | 'degraded'
   | 'failing'
+  | 'unavailable'
   | 'mocked'
   | 'unconfigured'
 
@@ -60,6 +61,7 @@ export const DEPENDENCY_HEALTH_STATUSES: readonly DependencyHealthStatus[] = [
   'healthy',
   'degraded',
   'failing',
+  'unavailable',
   'mocked',
   'unconfigured',
 ] as const
@@ -74,6 +76,9 @@ export type UserExposure =
   | 'beta'
   | 'gated'
   | 'public'
+  | 'disabled'
+  | 'preview_visible'
+  | 'preview-visible'
 
 export const USER_EXPOSURES: readonly UserExposure[] = [
   'hidden',
@@ -82,6 +87,9 @@ export const USER_EXPOSURES: readonly UserExposure[] = [
   'beta',
   'gated',
   'public',
+  'disabled',
+  'preview_visible',
+  'preview-visible',
 ] as const
 
 /**

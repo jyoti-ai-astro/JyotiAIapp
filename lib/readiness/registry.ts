@@ -70,27 +70,27 @@ export const FEATURE_READINESS_REGISTRY: FeatureReadinessRegistry = {
     key: 'business',
     label: 'Business Compatibility',
     route: '/business',
-    implementationStatus: 'partial',
+    implementationStatus: 'stub',
     runtimeVerified: false,
-    truthQuality: 'heuristic',
-    dependencyHealth: 'healthy',
-    userExposure: 'gated',
+    truthQuality: 'placeholder',
+    dependencyHealth: 'unavailable',
+    userExposure: 'disabled',
     productionEligible: false,
-    dependencies: ['components/engines/BusinessEngine.tsx'],
-    notes: 'Business compatibility engine wired to ticket checks and heuristic model evaluation.',
+    dependencies: ['lib/hooks/useBusiness.ts', 'app/business/page.tsx'],
+    notes: 'Runtime hook useBusiness throws unavailable error; UI analysis button is disabled while canonical calculation engine is being upgraded.',
   },
   compatibility: {
     key: 'compatibility',
     label: 'Compatibility Analysis',
     route: '/compatibility',
-    implementationStatus: 'partial',
+    implementationStatus: 'stub',
     runtimeVerified: false,
-    truthQuality: 'approximate',
-    dependencyHealth: 'healthy',
-    userExposure: 'gated',
+    truthQuality: 'placeholder',
+    dependencyHealth: 'unavailable',
+    userExposure: 'disabled',
     productionEligible: false,
-    dependencies: ['lib/hooks/useCompatibility.ts', 'lib/engines/compatibility'],
-    notes: 'Ashtakoota matching depends on approximate planetary/lunar coordinates.',
+    dependencies: ['lib/hooks/useCompatibility.ts', 'app/compatibility/page.tsx'],
+    notes: 'Runtime hook useCompatibility returns unavailable error; partner birth-chart form is disabled in UI while calculation path is being upgraded.',
   },
   numerology: {
     key: 'numerology',
@@ -109,14 +109,14 @@ export const FEATURE_READINESS_REGISTRY: FeatureReadinessRegistry = {
     key: 'face',
     label: 'Face Reading',
     route: '/face',
-    implementationStatus: 'partial',
+    implementationStatus: 'stub',
     runtimeVerified: false,
-    truthQuality: 'heuristic',
-    dependencyHealth: 'degraded',
-    userExposure: 'gated',
+    truthQuality: 'placeholder',
+    dependencyHealth: 'unavailable',
+    userExposure: 'disabled',
     productionEligible: false,
-    dependencies: ['lib/hooks/useFaceReading.ts', 'app/api/face-reading'],
-    notes: 'Requires external multimodal AI vision inference; unverified fallback handling under failure.',
+    dependencies: ['lib/hooks/useFaceReading.ts', 'app/face/page.tsx'],
+    notes: 'Runtime hook useFaceReading throws unavailable error; file upload input and analysis button are disabled in UI while verified server analysis is being implemented.',
   },
   palmistry: {
     key: 'palmistry',
@@ -150,12 +150,16 @@ export const FEATURE_READINESS_REGISTRY: FeatureReadinessRegistry = {
     route: '/calendar',
     implementationStatus: 'partial',
     runtimeVerified: false,
-    truthQuality: 'approximate',
-    dependencyHealth: 'healthy',
-    userExposure: 'gated',
+    truthQuality: 'mock',
+    dependencyHealth: 'failing',
+    userExposure: 'preview_visible',
     productionEligible: false,
-    dependencies: ['components/calendar/CosmicCalendar.tsx'],
-    notes: 'Calendar visualization active; transit timing derives from approximate planetary motion.',
+    dependencies: [
+      'components/calendar/CosmicCalendar.tsx',
+      'app/api/festival/today/route.ts',
+      'app/api/transits/upcoming/route.ts',
+    ],
+    notes: 'UI renders deterministic preview calendar (mock tithi/nakshatra seed data); backend festival (/api/festival/today) and transit (/api/transits/upcoming) endpoints return 503 unavailable.',
   },
   rituals: {
     key: 'rituals',
@@ -190,8 +194,8 @@ export const FEATURE_READINESS_REGISTRY: FeatureReadinessRegistry = {
     implementationStatus: 'stub',
     runtimeVerified: false,
     truthQuality: 'placeholder',
-    dependencyHealth: 'healthy',
-    userExposure: 'gated',
+    dependencyHealth: 'unconfigured',
+    userExposure: 'preview_visible',
     productionEligible: false,
     dependencies: ['app/pregnancy/page.tsx'],
     notes: 'Preview shell only; domain calculation and recommendation logic not yet implemented.',
@@ -326,7 +330,16 @@ export function getFeaturesByDependencyHealth(
 export function getFeaturesByUserExposure(
   exposure: UserExposure
 ): FeatureReadinessRecord[] {
-  return getAllFeatureReadiness().filter((f) => f.userExposure === exposure)
+  return getAllFeatureReadiness().filter((f) => {
+    if (f.userExposure === exposure) return true
+    if (
+      (exposure === 'preview_visible' && f.userExposure === 'preview-visible') ||
+      (exposure === 'preview-visible' && f.userExposure === 'preview_visible')
+    ) {
+      return true
+    }
+    return false
+  })
 }
 
 /**
@@ -363,6 +376,18 @@ export function evaluateProductionEligibility(
   if (record.dependencyHealth !== 'healthy') {
     failingCriteria.push(
       `dependencyHealth is '${record.dependencyHealth}', expected 'healthy'`
+    )
+  }
+
+  if (
+    record.userExposure === 'disabled' ||
+    record.userExposure === 'hidden' ||
+    record.userExposure === 'dev_only' ||
+    record.userExposure === 'preview_visible' ||
+    record.userExposure === 'preview-visible'
+  ) {
+    failingCriteria.push(
+      `userExposure is '${record.userExposure}', must be 'gated' or 'public' for production eligibility`
     )
   }
 
@@ -404,6 +429,7 @@ export function getFeatureReadinessSummary(): FeatureReadinessSummary {
     healthy: 0,
     degraded: 0,
     failing: 0,
+    unavailable: 0,
     mocked: 0,
     unconfigured: 0,
   }
@@ -415,6 +441,9 @@ export function getFeatureReadinessSummary(): FeatureReadinessSummary {
     beta: 0,
     gated: 0,
     public: 0,
+    disabled: 0,
+    preview_visible: 0,
+    'preview-visible': 0,
   }
 
   let productionEligibleCount = 0
