@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState, ErrorState, LoadingState, RetryButton } from '@/components/ui/feedback-state'
 import { useUserStore } from '@/store/user-store'
 import { authenticatedJsonRead } from '@/lib/client/authenticated-read'
+import { getKundaliActivationAction } from '@/lib/onboarding/activation'
 
 type RequestState<T> = {
   loading: boolean
@@ -463,6 +464,7 @@ export default function DashboardPage() {
           horoscope={horoscope}
           onRetry={loadDashboard}
           kundaliBlocked={todayGuidanceBlocked}
+          profileIncomplete={profileIncomplete}
         />
 
         <Card>
@@ -520,20 +522,24 @@ function TodayCard({
   horoscope,
   onRetry,
   kundaliBlocked,
+  profileIncomplete,
 }: {
   horoscope: RequestState<HoroscopeData>
   onRetry: () => void
   kundaliBlocked: boolean
+  profileIncomplete: boolean
 }) {
   if (kundaliBlocked) {
+    const action = getKundaliActivationAction({ profileIncomplete })
+
     return (
       <Card>
         <EmptyState
           title="Today’s guidance needs your current Kundali"
           description="Complete or refresh your birth chart before JyotiAI can show personalized daily guidance."
           action={
-            <Link href="/kundali">
-              <Button>Open Kundali</Button>
+            <Link href={action.href}>
+              <Button>{action.label}</Button>
             </Link>
           }
         />

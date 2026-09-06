@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { DatePickerInput } from '@/components/auth/DatePickerInput'
 import { LocationAutocomplete } from '@/components/auth/LocationAutocomplete'
 import { SolarJyotiMark } from '@/src/ui/brand/SolarJyotiMark'
+import { getBirthProfileActivationState } from '@/lib/onboarding/activation'
 
 interface NakshatraObj {
   nakshatra: string
@@ -74,6 +75,7 @@ export const CosmicOnboarding: React.FC<CosmicOnboardingProps> = ({
   errorMessage,
 }) => {
   const timeInputId = useId()
+  const birthActivation = getBirthProfileActivationState(formData)
 
   const nakshatraDisplay =
     !rashiData
@@ -247,13 +249,7 @@ export const CosmicOnboarding: React.FC<CosmicOnboardingProps> = ({
                   onSubmit={(event) => {
                     event.preventDefault()
 
-                    if (
-                      !formData.dob ||
-                      !formData.tob ||
-                      !formData.pob ||
-                      typeof formData.lat !== 'number' ||
-                      typeof formData.lng !== 'number'
-                    ) {
+                    if (!birthActivation.canContinue) {
                       return
                     }
 
@@ -314,19 +310,58 @@ export const CosmicOnboarding: React.FC<CosmicOnboardingProps> = ({
                     </div>
                   </div>
 
+                  <div className="rounded-2xl border border-[#d7aa57]/14 bg-white/[0.025] p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-[#fff7e8]">
+                        Birth profile readiness
+                      </p>
+                      <span className="shrink-0 text-xs text-[#f1c979]">
+                        {birthActivation.completedCount}/{birthActivation.totalCount}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {birthActivation.requirements.map((requirement) => (
+                        <div
+                          key={requirement.key}
+                          className="flex min-h-8 items-center gap-2 text-xs text-[#c7d0cb]"
+                        >
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                              requirement.complete
+                                ? 'border-[#8dd0b4]/50 bg-[#8dd0b4]/12 text-[#8dd0b4]'
+                                : 'border-white/14 bg-white/[0.025] text-[#7f8a86]'
+                            }`}
+                            aria-hidden="true"
+                          >
+                            {requirement.complete ? <Check className="h-3 w-3" /> : null}
+                          </span>
+                          {requirement.label}
+                        </div>
+                      ))}
+                    </div>
+
+                    {!birthActivation.canContinue ? (
+                      <p className="mt-3 text-xs leading-5 text-[#b99a67]">
+                        Complete the remaining items before continuing.
+                      </p>
+                    ) : (
+                      <p className="mt-3 text-xs leading-5 text-[#8dd0b4]">
+                        Ready to calculate your chart.
+                      </p>
+                    )}
+                  </div>
+
                   <Button
                     type="submit"
-                    disabled={
-                      loading ||
-                      !formData.dob ||
-                      !formData.tob ||
-                      !formData.pob ||
-                      typeof formData.lat !== 'number' ||
-                      typeof formData.lng !== 'number'
-                    }
+                    disabled={loading || !birthActivation.canContinue}
                     className="min-h-12 w-full rounded-xl bg-[#e69a3a] font-semibold text-[#061014] hover:bg-[#f0ae55]"
                   >
-                    {loading ? 'Preparing your chart...' : 'Continue to chart'}
+                    {loading
+                      ? 'Preparing your chart...'
+                      : birthActivation.canContinue
+                        ? 'Continue to chart'
+                        : 'Complete birth profile'}
                     {!loading ? <ArrowRight className="ml-2 h-4 w-4" /> : null}
                   </Button>
                 </form>
