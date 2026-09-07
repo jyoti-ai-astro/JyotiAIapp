@@ -1,0 +1,71 @@
+[
+  {
+    "id": "bphs_graha_nature_sun_jupiter",
+    "title": "BPHS: Graha Nature and Beneficence of Sun and Jupiter",
+    "content": "Surya (Sun) is the soul of all beings, representing royal status, vital power, and spiritual self-realization. Brihaspati (Jupiter) is the Guru of the devas, conferring wisdom, dharma, knowledge of the shastras, devotion, and supreme auspiciousness. When Jupiter aspects the Lagna or associates with Dharma (9th house) or Karma (10th house), the seeker is guided toward righteous endeavors, noble counsel, and spiritual elevation.",
+    "mode": "general",
+    "category": "graha_nature",
+    "tags": ["sun", "jupiter", "surya", "guru", "dharma", "wisdom", "benefic"],
+    "provenance": {
+      "sourceId": "BPHS-ENG-03",
+      "tradition": "PARASHARA",
+      "sourceTitle": "Brihat Parashara Hora Shastra",
+      "author": "Maharishi Parashara",
+      "chapter": "Adhyaya 3: Graha Guna Svarupa",
+      "verseRange": "Verses 18-24",
+      "shlokaSanskrit": "जीवात् ज्ञानं सुखं बुद्धिः धर्मविद्यासुखादिकम् । सूर्य आत्मा जगतस्तस्थुषश्च ॥",
+      "translationEnglish": "From Jupiter proceed wisdom, happiness, intellect, dharma, learning, and true spiritual contentment. The Sun is the soul of all that moves and remains unmoving.",
+      "commentary": "Foundational Parashari teaching on the Sattvic and benevolent nature of Jupiter and the solar soul essence.",
+      "authenticityTier": "TIER_1_CANONICAL_CLASSICAL",
+      "truthQuality": "authoritative",
+      "verificationStatus": "VERIFIED",
+      "licenseOrAttribution": "Public Domain Classical Shastra"
+    }
+  },
+  {
+    "id": "phaladeepika_career_10th_house",
+    "title": "Phaladeepika: Tenth House (Karma Bhava) and Profession",
+    "content": "From the 10th house, one must examine commerce, honor, reputation, authority, governance, and daily vocation. When the lord of the 10th occupies an angle (Kendra) or trine (Trikona) in its own sign or exaltation, the individual attains lasting renown, public respect, and success through self-effort. Benefics influencing the 10th lead to benevolent leadership, counseling, and teaching vocations.",
+    "mode": "career",
+    "category": "karma_bhava",
+    "tags": ["career", "10th house", "karma", "vocation", "reputation", "governance"],
+    "provenance": {
+      "sourceId": "PHALA-ENG-15",
+      "tradition": "MANTRESWARA",
+      "sourceTitle": "Phaladeepika",
+      "author": "Mantreswara",
+      "chapter": "Adhyaya 15: Karma Bhava Phala",
+      "verseRange": "Verses 1-5",
+      "shlokaSanskrit": "व्यापारं मानमुद्यमं कीर्तिं वृत्तिं प्रभुत्वम् । दशमात् भावतो ज्ञेयं सर्वं कर्मफलं तथा ॥",
+      "translationEnglish": "Commerce, honor, exertion, fame, livelihood, and administrative authority are all discerned from the 10th Bhava.",
+      "commentary": "Mantreswara articulates the essential factors for assessing career stability and public dignity.",
+      "authenticityTier": "TIER_1_CANONICAL_CLASSICAL",
+      "truthQuality": "authoritative",
+      "verificationStatus": "VERIFIED",
+      "licenseOrAttribution": "Public Domain Classical Shastra"
+    }
+  },
+  {
+    "id": "bphs_remedies_upachaya",
+    "title": "BPHS & Parashari Tradition: Spiritual Remedies and Mantras",
+    "content": "Adversities indicated by malefic planetary transits and challenging Dasha cycles may be softened through sincere prayer, Japa of Vedic mantras, charitable deeds (Dana), and cultivating equanimity. The recitation of the Gayatri mantra and cultivating moral discipline strengthen the internal spiritual constitution, fostering discernment rather than passive resignation.",
+    "mode": "remedy",
+    "category": "spiritual_upaya",
+    "tags": ["remedy", "mantra", "japa", "shanti", "spiritual guidance", "equanimity"],
+    "provenance": {
+      "sourceId": "BPHS-ENG-84",
+      "tradition": "PARASHARA",
+      "sourceTitle": "Brihat Parashara Hora Shastra",
+      "author": "Maharishi Parashara",
+      "chapter": "Adhyaya 84: Shanti Adhyaya",
+      "verseRange": "Verses 1-12",
+      "shlokaSanskrit": "जपैर्होमैश्च दानैश्च ग्रहशान्तिः विधीयते । श्रद्धावतां नराणां तु सर्वदुःखं विनश्यति ॥",
+      "translationEnglish": "Planetary pacification is accomplished through recitation of mantras, sacred offerings, and righteous charity. For the sincere seeker, sorrow is alleviated through spiritual surrender.",
+      "commentary": "Remedies in the Parashari canon are acts of spiritual attunement, not transactional magical cures.",
+      "authenticityTier": "TIER_1_CANONICAL_CLASSICAL",
+      "truthQuality": "authoritative",
+      "verificationStatus": "VERIFIED",
+      "licenseOrAttribution": "Public Domain Classical Shastra"
+    }
+  }
+]

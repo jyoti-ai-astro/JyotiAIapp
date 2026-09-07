@@ -10,6 +10,9 @@ export { retrieveRelevantDocuments, storeKnowledgeDocument, type RAGResult } fro
 export { generateEmbedding } from './rag-service'
 export { initializePinecone, getPineconeIndex } from './pinecone-client'
 
+// Guru / RAG Core Consolidation (P1-003)
+export * from './core'
+
 /**
  * Guru RAG Mode - Super Phase C
  */
