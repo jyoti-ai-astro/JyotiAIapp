@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jyotiai.local/schemas/corpus-document.schema.json",
+  "title": "Guru RAG Corpus Document Schema",
+  "description": "Schema contract for Vedic astrological knowledge documents, classical treatises, commentaries, and provenance tracking.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "content", "mode", "category", "tags", "provenance"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for the document"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Document title"
+    },
+    "content": {
+      "type": "string",
+      "minLength": 20,
+      "description": "Primary text content of the document"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "general",
+        "career",
+        "relationship",
+        "health",
+        "finance",
+        "remedy",
+        "nakshatra",
+        "dasha",
+        "compatibility"
+      ],
+      "description": "Guru RAG domain mode"
+    },
+    "category": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Domain category"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Semantic keywords for retrieval"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "tradition",
+        "sourceTitle",
+        "authenticityTier",
+        "truthQuality",
+        "verificationStatus",
+        "licenseOrAttribution"
+      ],
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Identifier for source text"
+        },
+        "tradition": {
+          "type": "string",
+          "enum": [
+            "PARASHARA",
+            "JAIMINI",
+            "VARAHAMIHIRA",
+            "MANTRESWARA",
+            "KALYANA_VARMA",
+            "VAIDYANATHA",
+            "VEDIC_CLASSICAL_GENERAL",
+            "MODERN_VEDIC",
+            "SPIRITUAL_HERMENEUTIC",
+            "PANCHANG_TRADITION"
+          ]
+        },
+        "sourceTitle": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Classical or scholarly source title"
+        },
+        "author": {
+          "type": "string",
+          "description": "Author or sage attribute"
+        },
+        "chapter": {
+          "type": ["string", "number"],
+          "description": "Chapter reference or Adhyaya"
+        },
+        "verseRange": {
+          "type": "string",
+          "description": "Verse or shloka numbers"
+        },
+        "shlokaSanskrit": {
+          "type": "string",
+          "description": "Sanskrit text in Devanagari or IAST"
+        },
+        "translationEnglish": {
+          "type": "string",
+          "description": "English translation"
+        },
+        "commentary": {
+          "type": "string",
+          "description": "Hermeneutic or practical commentary"
+        },
+        "authenticityTier": {
+          "type": "string",
+          "enum": [
+            "TIER_1_CANONICAL_CLASSICAL",
+            "TIER_2_COMMENTARY_HERMENEUTIC",
+            "TIER_3_MODERN_SYNTHESIS",
+            "TIER_4_HEURISTIC_EXPLORATORY"
+          ]
+        },
+        "truthQuality": {
+          "type": "string",
+          "enum": ["approximate", "heuristic", "verified", "authoritative"]
+        },
+        "verificationStatus": {
+          "type": "string",
+          "enum": ["VERIFIED", "UNVALIDATED"]
+        },
+        "licenseOrAttribution": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
