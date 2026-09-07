@@ -1,0 +1,123 @@
+{
+  "common": {
+    "appName": "JyotiAI",
+    "tagline": "Aapka Bhavishya, AI aur Prachin Vedic Gyan dwara Decoded",
+    "continue": "Aage Badhein",
+    "submit": "Submit Karein",
+    "cancel": "Cancel Karein",
+    "back": "Wapas Jayein",
+    "save": "Save Karein",
+    "share": "Share Karein",
+    "retry": "Dobara Try Karein",
+    "close": "Band Karein",
+    "loading": "Cosmic energies ke sath connect ho rahe hain...",
+    "blessing": "Divine cosmic light aapke raste ko roshan kare.",
+    "selectLanguage": "Bhasha Chunein",
+    "betaTag": "Beta",
+    "viewAll": "Sabhi Dekhein"
+  },
+  "nav": {
+    "home": "Home",
+    "guru": "AI Guru",
+    "kundali": "Kundali",
+    "predictions": "Predictions",
+    "timeline": "Cosmic Timeline",
+    "reports": "Reports",
+    "numerology": "Numerology",
+    "palmistry": "Palmistry",
+    "pricing": "Pricing",
+    "profile": "Profile",
+    "settings": "Settings",
+    "login": "Log In",
+    "logout": "Log Out"
+  },
+  "guru": {
+    "title": "Jyoti AI Guru",
+    "subtitle": "Vedic wisdom aur graha sthiti par aadharit spiritual guidance",
+    "greeting": "Namaste. Main JyotiAI Guru hoon. Aaj aapki spiritual journey mein kaise guide kar sakta hoon?",
+    "inputPlaceholder": "Apne career, relationship ya cosmic path ke baare mein Guru se puchein...",
+    "sendButton": "Guru se Puchein",
+    "thinking": "Cosmic blueprints aur Vedic knowledge consult ho rahi hai...",
+    "disclaimer": "AI Guru astrological principles par aadharit spiritual guidance provide karta hai. Yeh medical, legal ya financial advice nahi hai.",
+    "suggestedQuestionsTitle": "Suggested Sawaal",
+    "modes": {
+      "general": "General Guidance",
+      "career": "Career aur Prosperity",
+      "relationship": "Love aur Harmony",
+      "spiritual": "Spiritual Growth",
+      "remedy": "Vedic Upay"
+    }
+  },
+  "kundali": {
+    "title": "Vedic Janam Kundali",
+    "subtitle": "Aapke birth ke exact moment par planetary alignments",
+    "birthDetails": "Birth Details",
+    "dateOfBirth": "Date of Birth",
+    "timeOfBirth": "Time of Birth",
+    "placeOfBirth": "Place of Birth",
+    "lagna": "Ascendant (Lagna)",
+    "rashi": "Moon Sign (Rashi)",
+    "nakshatra": "Birth Star (Nakshatra)",
+    "dasha": "Planetary Period (Dasha)",
+    "currentMahadasha": "Current Mahadasha",
+    "currentAntardasha": "Current Antardasha",
+    "houses": "Bhavas (Houses)",
+    "planets": "Grahas (Planets)",
+    "divisionalCharts": "Divisional Charts (Vargas)"
+  },
+  "numerology": {
+    "title": "Vedic Numerology",
+    "subtitle": "Aapki birth date aur sacred name ke cosmic numbers",
+    "lifePath": "Life Path Number",
+    "destinyNumber": "Destiny Number",
+    "soulUrge": "Soul Urge Number",
+    "personalityNumber": "Personality Number"
+  },
+  "predictions": {
+    "title": "Cosmic Forecast",
+    "subtitle": "Planetary transits aur probabilities par aadharit life insights",
+    "today": "Aaj ki Guidance",
+    "thisWeek": "Is Hafte",
+    "thisMonth": "Is Mahine",
+    "thisYear": "Annual Outlook",
+    "cosmicAlignment": "Cosmic Alignment"
+  },
+  "timeline": {
+    "title": "12-Month Cosmic Timeline",
+    "subtitle": "Key planetary transitions, auspicious windows aur energy changes",
+    "currentPeriod": "Current Planetary Phase",
+    "upcomingTransits": "Upcoming Transits",
+    "auspiciousDates": "Shubh Muhurta"
+  },
+  "reports": {
+    "title": "Spiritual Reports",
+    "subtitle": "Detailed astrological analysis aur insights",
+    "downloadPdf": "PDF Report Download Karein",
+    "viewReport": "Online Report Dekhein",
+    "comprehensiveAnalysis": "Comprehensive Analysis"
+  },
+  "pricing": {
+    "title": "Spiritual Access Plans",
+    "subtitle": "Apni journey ke hisaab se suitable guidance plan chunein",
+    "plans": "Membership Plans",
+    "tickets": "Question Tickets",
+    "unlockGuidance": "Complete Guidance Unlock Karein",
+    "featureGated": "Is feature ke liye active membership ya ticket chahiye"
+  },
+  "auth": {
+    "welcomeBack": "JyotiAI mein wapas swagat hai",
+    "createAccount": "Apni cosmic journey shuru karein",
+    "emailLabel": "Email Address",
+    "passwordLabel": "Password",
+    "loginWithGoogle": "Google ke sath continue karein",
+    "magicLink": "Magic Link bhejein",
+    "logoutSuccess": "Aap successfully log out ho chuke hain."
+  },
+  "errors": {
+    "genericError": "Kuch unexpected error hua. Cosmic energies realign ho rahi hain.",
+    "networkError": "Network connection break ho gaya. Kripya connection check karein.",
+    "sessionExpired": "Aapka session expire ho gaya. Kripya dobara login karein.",
+    "timeoutError": "Jawab aane mein expected se zyada time lag raha hai. Kuch der baad try karein.",
+    "kundaliRequired": "Personalized guidance ke liye kripya apni birth profile banayein."
+  }
+}

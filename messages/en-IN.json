@@ -1,0 +1,123 @@
+{
+  "common": {
+    "appName": "JyotiAI",
+    "tagline": "Your Destiny, Decoded by AI + Ancient Wisdom",
+    "continue": "Continue",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "back": "Back",
+    "save": "Save",
+    "share": "Share",
+    "retry": "Try Again",
+    "close": "Close",
+    "loading": "Connecting with cosmic energies...",
+    "blessing": "May divine cosmic light illuminate your path.",
+    "selectLanguage": "Select Language",
+    "betaTag": "Beta",
+    "viewAll": "View All"
+  },
+  "nav": {
+    "home": "Home",
+    "guru": "AI Guru",
+    "kundali": "Kundali",
+    "predictions": "Predictions",
+    "timeline": "Cosmic Timeline",
+    "reports": "Reports",
+    "numerology": "Numerology",
+    "palmistry": "Palmistry",
+    "pricing": "Pricing",
+    "profile": "Profile",
+    "settings": "Settings",
+    "login": "Log In",
+    "logout": "Log Out"
+  },
+  "guru": {
+    "title": "Jyoti AI Guru",
+    "subtitle": "Spiritual guidance rooted in Vedic wisdom and cosmic blueprints",
+    "greeting": "Namaste. I am JyotiAI Guru. How may I guide your spiritual journey today?",
+    "inputPlaceholder": "Ask Guru anything about your career, relationships, or cosmic path...",
+    "sendButton": "Ask Guru",
+    "thinking": "Consulting cosmic blueprints and sacred wisdom...",
+    "disclaimer": "AI Guru provides spiritual perspectives based on astrological principles. Not intended as medical, legal, or financial advice.",
+    "suggestedQuestionsTitle": "Suggested Inquiries",
+    "modes": {
+      "general": "General Guidance",
+      "career": "Career & Prosperity",
+      "relationship": "Love & Harmony",
+      "spiritual": "Spiritual Growth",
+      "remedy": "Vedic Remedies"
+    }
+  },
+  "kundali": {
+    "title": "Vedic Birth Chart (Kundali)",
+    "subtitle": "Accurate planetary alignments at your exact moment of birth",
+    "birthDetails": "Birth Profile",
+    "dateOfBirth": "Date of Birth",
+    "timeOfBirth": "Time of Birth",
+    "placeOfBirth": "Place of Birth",
+    "lagna": "Ascendant (Lagna)",
+    "rashi": "Moon Sign (Rashi)",
+    "nakshatra": "Birth Star (Nakshatra)",
+    "dasha": "Planetary Period (Dasha)",
+    "currentMahadasha": "Current Mahadasha",
+    "currentAntardasha": "Current Antardasha",
+    "houses": "Bhavas (Houses)",
+    "planets": "Grahas (Planets)",
+    "divisionalCharts": "Divisional Charts (Vargas)"
+  },
+  "numerology": {
+    "title": "Vedic Numerology",
+    "subtitle": "Cosmic frequencies encoded in your birth date and sacred name",
+    "lifePath": "Life Path Number",
+    "destinyNumber": "Destiny Number",
+    "soulUrge": "Soul Urge Number",
+    "personalityNumber": "Personality Number"
+  },
+  "predictions": {
+    "title": "Cosmic Forecast",
+    "subtitle": "Planetary transits and probability-based insights for your life journey",
+    "today": "Today's Guidance",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "thisYear": "Annual Outlook",
+    "cosmicAlignment": "Cosmic Alignment"
+  },
+  "timeline": {
+    "title": "12-Month Cosmic Timeline",
+    "subtitle": "Key planetary transitions, auspicious windows, and energetic shifts",
+    "currentPeriod": "Current Planetary Phase",
+    "upcomingTransits": "Upcoming Transits",
+    "auspiciousDates": "Auspicious Timing (Muhurta)"
+  },
+  "reports": {
+    "title": "Comprehensive Spiritual Reports",
+    "subtitle": "In-depth astrological analyses synthesized with clarity and reverence",
+    "downloadPdf": "Download PDF Report",
+    "viewReport": "View Online Report",
+    "comprehensiveAnalysis": "Comprehensive Analysis"
+  },
+  "pricing": {
+    "title": "Spiritual Access Plans",
+    "subtitle": "Choose the level of cosmic guidance that aligns with your journey",
+    "plans": "Membership Plans",
+    "tickets": "Question Tickets",
+    "unlockGuidance": "Unlock Complete Guidance",
+    "featureGated": "This feature requires an active membership or ticket"
+  },
+  "auth": {
+    "welcomeBack": "Welcome Back to JyotiAI",
+    "createAccount": "Begin Your Cosmic Journey",
+    "emailLabel": "Email Address",
+    "passwordLabel": "Password",
+    "loginWithGoogle": "Continue with Google",
+    "magicLink": "Send Magic Link",
+    "logoutSuccess": "You have been peacefully logged out."
+  },
+  "errors": {
+    "genericError": "Something unexpected occurred. The cosmic energies are realigning.",
+    "networkError": "Network connection interrupted. Please verify your connection.",
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "timeoutError": "The inquiry took longer than expected. Please try again in a moment.",
+    "kundaliRequired": "Please create your birth profile to unlock personalized guidance."
+  }
+}
