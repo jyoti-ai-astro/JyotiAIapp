@@ -8,6 +8,7 @@ import {
   FEATURE_ACCESS,
   type FeatureKey,
 } from '../lib/payments/feature-access'
+import { API_ENDPOINTS } from '../lib/dev/api-endpoints'
 import {
   DEPENDENCY_HEALTH_STATUSES,
   FEATURE_READINESS_REGISTRY,
@@ -220,9 +221,7 @@ function testDependencyHealthUnavailableSemantics() {
 
   const unavailableFeatures = getFeaturesByDependencyHealth('unavailable')
   const unavailableKeys = unavailableFeatures.map((f) => f.key)
-  assert.equal(unavailableKeys.length, 3, 'Expected 3 features with unavailable dependencies')
-  assert.ok(unavailableKeys.includes('business'))
-  assert.ok(unavailableKeys.includes('compatibility'))
+  assert.equal(unavailableKeys.length, 1, 'Expected 1 feature with unavailable dependencies')
   assert.ok(unavailableKeys.includes('face'))
 
   const failingFeatures = getFeaturesByDependencyHealth('failing')
@@ -257,9 +256,9 @@ function testRepositoryTruthForDisabledHooksAndUIs() {
   )
 
   const businessRecord = getFeatureReadiness('business')
-  assert.equal(businessRecord.implementationStatus, 'stub')
-  assert.equal(businessRecord.truthQuality, 'placeholder')
-  assert.equal(businessRecord.dependencyHealth, 'unavailable')
+  assert.equal(businessRecord.implementationStatus, 'partial')
+  assert.equal(businessRecord.truthQuality, 'heuristic')
+  assert.equal(businessRecord.dependencyHealth, 'healthy')
   assert.equal(businessRecord.userExposure, 'disabled')
 
   // Compatibility hook & UI truth
@@ -286,9 +285,9 @@ function testRepositoryTruthForDisabledHooksAndUIs() {
   )
 
   const compatibilityRecord = getFeatureReadiness('compatibility')
-  assert.equal(compatibilityRecord.implementationStatus, 'stub')
-  assert.equal(compatibilityRecord.truthQuality, 'placeholder')
-  assert.equal(compatibilityRecord.dependencyHealth, 'unavailable')
+  assert.equal(compatibilityRecord.implementationStatus, 'partial')
+  assert.equal(compatibilityRecord.truthQuality, 'heuristic')
+  assert.equal(compatibilityRecord.dependencyHealth, 'healthy')
   assert.equal(compatibilityRecord.userExposure, 'disabled')
 
   // Face Reading hook & UI truth
@@ -323,6 +322,56 @@ function testRepositoryTruthForDisabledHooksAndUIs() {
   assert.equal(faceRecord.truthQuality, 'placeholder')
   assert.equal(faceRecord.dependencyHealth, 'unavailable')
   assert.equal(faceRecord.userExposure, 'disabled')
+}
+
+function testRepositoryTruthForDisabledApiPresentFeatures() {
+  const businessEndpoint = API_ENDPOINTS.find((endpoint) => endpoint.key === 'business-compatibility')
+  assert.ok(businessEndpoint, 'business API endpoint must be present in API_ENDPOINTS')
+  assert.equal(businessEndpoint.path, '/api/business/compatibility')
+  assert.equal(businessEndpoint.ticketGuarded, true)
+  assert.equal(businessEndpoint.featureKey, 'business')
+
+  const businessRouteSource = fs.readFileSync(
+    path.join(ROOT_DIR, 'app/api/business/compatibility/route.ts'),
+    'utf8'
+  )
+  assert.ok(
+    businessRouteSource.includes("const featureKey: FeatureKey = 'business'"),
+    'business API route must enforce canonical business FeatureKey'
+  )
+  assert.ok(
+    businessRouteSource.includes('ensureFeatureAccess') &&
+      businessRouteSource.includes('consumeFeatureTicket'),
+    'business API route must remain ticket guarded'
+  )
+  assert.ok(
+    businessRouteSource.includes('analyzeBusinessCompatibility'),
+    'business API route must invoke the heuristic compatibility engine'
+  )
+
+  const compatibilityEndpoint = API_ENDPOINTS.find((endpoint) => endpoint.key === 'compatibility-analyze')
+  assert.ok(compatibilityEndpoint, 'compatibility API endpoint must be present in API_ENDPOINTS')
+  assert.equal(compatibilityEndpoint.path, '/api/compatibility/analyze')
+  assert.equal(compatibilityEndpoint.ticketGuarded, true)
+  assert.equal(compatibilityEndpoint.featureKey, 'compatibility')
+
+  const compatibilityRouteSource = fs.readFileSync(
+    path.join(ROOT_DIR, 'app/api/compatibility/analyze/route.ts'),
+    'utf8'
+  )
+  assert.ok(
+    compatibilityRouteSource.includes("const featureKey: FeatureKey = 'compatibility'"),
+    'compatibility API route must enforce canonical compatibility FeatureKey'
+  )
+  assert.ok(
+    compatibilityRouteSource.includes('ensureFeatureAccess') &&
+      compatibilityRouteSource.includes('consumeFeatureTicket'),
+    'compatibility API route must remain ticket guarded'
+  )
+  assert.ok(
+    compatibilityRouteSource.includes('analyzeCompatibility'),
+    'compatibility API route must invoke the heuristic relationship engine'
+  )
 }
 
 function testRepositoryTruthForCalendarAnd503Apis() {
@@ -500,23 +549,23 @@ function testFeatureReadinessSummary() {
 
   // Implementation status breakdown
   assert.equal(summary.byImplementationStatus.complete, 5) // kundali, numerology, planets, houses, dasha
-  assert.equal(summary.byImplementationStatus.partial, 8)  // career, palmistry, aura, calendar, rituals, charts, predictions, timeline
-  assert.equal(summary.byImplementationStatus.stub, 4)     // business, compatibility, face, pregnancy
+  assert.equal(summary.byImplementationStatus.partial, 10) // career, business, compatibility, palmistry, aura, calendar, rituals, charts, predictions, timeline
+  assert.equal(summary.byImplementationStatus.stub, 2)     // face, pregnancy
   assert.equal(summary.byImplementationStatus.deprecated, 0)
 
   // Truth quality breakdown
-  assert.equal(summary.byTruthQuality.placeholder, 4)   // business, compatibility, face, pregnancy
+  assert.equal(summary.byTruthQuality.placeholder, 2)   // face, pregnancy
   assert.equal(summary.byTruthQuality.mock, 1)          // calendar
   assert.equal(summary.byTruthQuality.approximate, 6)   // kundali, planets, houses, dasha, charts, timeline
-  assert.equal(summary.byTruthQuality.heuristic, 5)     // career, palmistry, aura, rituals, predictions
+  assert.equal(summary.byTruthQuality.heuristic, 7)     // career, business, compatibility, palmistry, aura, rituals, predictions
   assert.equal(summary.byTruthQuality.verified, 1)      // numerology
   assert.equal(summary.byTruthQuality.authoritative, 0)
 
   // Dependency health breakdown
-  assert.equal(summary.byDependencyHealth.healthy, 10)     // kundali, career, numerology, rituals, planets, houses, dasha, charts, predictions, timeline
+  assert.equal(summary.byDependencyHealth.healthy, 12)     // kundali, career, business, compatibility, numerology, rituals, planets, houses, dasha, charts, predictions, timeline
   assert.equal(summary.byDependencyHealth.degraded, 2)    // palmistry, aura
   assert.equal(summary.byDependencyHealth.failing, 1)     // calendar
-  assert.equal(summary.byDependencyHealth.unavailable, 3) // business, compatibility, face
+  assert.equal(summary.byDependencyHealth.unavailable, 1) // face
   assert.equal(summary.byDependencyHealth.unconfigured, 1) // pregnancy
 
   // User exposure breakdown
@@ -563,6 +612,7 @@ function main() {
   testUserExposureExplicitSemantics()
   testDependencyHealthUnavailableSemantics()
   testRepositoryTruthForDisabledHooksAndUIs()
+  testRepositoryTruthForDisabledApiPresentFeatures()
   testRepositoryTruthForCalendarAnd503Apis()
   testRepositoryTruthForFilesystemDependenciesAndRoutes()
   testRepositoryTruthForRuntimeVerification()
