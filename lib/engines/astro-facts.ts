@@ -46,6 +46,20 @@ export function createAstroFactsMetadata(): AstroFactsMetadata {
   }
 }
 
+function isInternalApproxAstroEngineMetadata(value: unknown): value is AstroEngineMetadata {
+  const candidate = value as Partial<AstroEngineMetadata> | null
+  return (
+    !!candidate &&
+    candidate.id === ASTRO_ENGINE_ID &&
+    candidate.name === INTERNAL_APPROX_ASTRO_ENGINE.name &&
+    candidate.accuracyClass === ASTRO_ACCURACY_CLASS &&
+    candidate.validationStatus === ASTRO_VALIDATION_STATUS &&
+    candidate.calculationBasis === INTERNAL_APPROX_ASTRO_ENGINE.calculationBasis &&
+    candidate.usesSwissEphemeris === false &&
+    candidate.claimsProductionPrecision === false
+  )
+}
+
 export function isAstroFactsMetadata(value: unknown): value is AstroFactsMetadata {
   const candidate = value as Partial<AstroFactsMetadata> | null
   return (
@@ -53,6 +67,15 @@ export function isAstroFactsMetadata(value: unknown): value is AstroFactsMetadat
     candidate.schemaVersion === ASTRO_FACTS_SCHEMA_VERSION &&
     candidate.engineId === ASTRO_ENGINE_ID &&
     candidate.accuracyClass === ASTRO_ACCURACY_CLASS &&
-    candidate.validationStatus === ASTRO_VALIDATION_STATUS
+    candidate.validationStatus === ASTRO_VALIDATION_STATUS &&
+    isInternalApproxAstroEngineMetadata(candidate.generatedBy)
   )
+}
+
+export function isProductionEligibleAstroFacts(value: unknown): boolean {
+  if (!isAstroFactsMetadata(value)) {
+    return false
+  }
+
+  return false
 }

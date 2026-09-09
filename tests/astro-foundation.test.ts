@@ -8,6 +8,7 @@ import {
   ASTRO_VALIDATION_STATUS,
   createAstroFactsMetadata,
   isAstroFactsMetadata,
+  isProductionEligibleAstroFacts,
 } from '../lib/engines/astro-facts'
 import {
   attachKundaliAstroFacts,
@@ -92,6 +93,7 @@ function testMetadataGuard() {
   const metadata = createAstroFactsMetadata()
 
   assert.equal(isAstroFactsMetadata(metadata), true)
+  assert.equal(isProductionEligibleAstroFacts(metadata), false)
   assert.equal(isAstroFactsMetadata(undefined), false)
   assert.equal(
     isAstroFactsMetadata({
@@ -100,6 +102,62 @@ function testMetadataGuard() {
     }),
     false
   )
+  assert.equal(
+    isAstroFactsMetadata({
+      ...metadata,
+      generatedBy: {
+        ...metadata.generatedBy,
+        claimsProductionPrecision: true,
+      },
+    }),
+    false
+  )
+  assert.equal(
+    isAstroFactsMetadata({
+      ...metadata,
+      generatedBy: {
+        ...metadata.generatedBy,
+        usesSwissEphemeris: true,
+      },
+    }),
+    false
+  )
+  assert.equal(
+    isProductionEligibleAstroFacts({
+      ...metadata,
+      generatedBy: {
+        ...metadata.generatedBy,
+        claimsProductionPrecision: true,
+        usesSwissEphemeris: true,
+      },
+    }),
+    false
+  )
+}
+
+function testCorruptFirestoreMetadataDoesNotPropagate() {
+  const astroFacts = createAstroFactsMetadata()
+  const normalized = normalizeFirestoreKundaliData(
+    {
+      meta: {
+        astroFacts: {
+          ...astroFacts,
+          generatedBy: {
+            ...astroFacts.generatedBy,
+            claimsProductionPrecision: true,
+          },
+        },
+      },
+    },
+    createFirestoreD1Data(),
+    createFirestoreDashaData()
+  )
+
+  assert.notEqual(normalized, null)
+  assert.equal(normalized?.meta, undefined)
+
+  const context = attachKundaliAstroFacts(createAstroContextFixture(), normalized!)
+  assert.equal(context.astroFacts, undefined)
 }
 
 function createFirestoreD1Data() {
@@ -243,6 +301,7 @@ async function main() {
   testHistoricalKundaliShapeStillCompiles()
   testReferenceDatasetSchemaOnly()
   testMetadataGuard()
+  testCorruptFirestoreMetadataDoesNotPropagate()
   testFirestoreMetadataPropagationToAstroContext()
   testHistoricalFirestoreReadCompatibility()
 }
